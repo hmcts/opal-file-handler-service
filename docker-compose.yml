@@ -1,7 +1,7 @@
 version: '2.1'
 
 services:
-  opal-filehandling:
+  opal-file-handling:
     build:
       context: .
       args:

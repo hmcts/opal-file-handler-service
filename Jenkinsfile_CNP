@@ -6,6 +6,6 @@
 
 def type = "java"
 def product = "opal"
-def component = "filehandling"
+def component = "file-handling-service"
 
 withPipeline(type, product, component) {}

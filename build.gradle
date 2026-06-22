@@ -168,7 +168,7 @@ dependencies {
 }
 
 bootJar {
-  archiveFileName = "opal-filehandling.jar"
+  archiveFileName = "opal-file-handling.jar"
 
   manifest {
     attributes('Implementation-Version': project.version.toString())
