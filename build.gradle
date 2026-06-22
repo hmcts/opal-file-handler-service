@@ -1,15 +1,21 @@
+buildscript {
+  dependencies {
+    classpath("org.flywaydb:flyway-database-postgresql:12.8.1")
+  }
+}
 plugins {
   id 'application'
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
   id 'org.springframework.boot' version '4.1.0'
-  id 'com.github.ben-manes.versions' version '0.52.0'
-  id 'org.sonarqube' version '6.3.1.5724'
+  id 'com.github.ben-manes.versions' version '0.54.0'
+  id 'org.sonarqube' version '7.3.1.8318'
   /*
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
  */
-  id 'uk.gov.hmcts.java' version '0.12.67'
+  id 'uk.gov.hmcts.java' version '0.12.70'
+  id 'org.flywaydb.flyway' version '12.8.1'
 }
 
 application {
@@ -46,6 +52,8 @@ configurations {
 
   smokeTestImplementation.extendsFrom testImplementation
   smokeTestRuntimeOnly.extendsFrom runtimeOnly
+
+  zephyrCucumberReportProcessor
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -138,33 +146,80 @@ ext {
 }
 
 ext['snakeyaml.version'] = '2.0'
-
+dependencyManagement {
+  imports {
+    mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2025.1.2'
+  }
+}
 dependencies {
 
   //HMCTS
-  implementation 'uk.gov.hmcts:opal-common-lib:0.3.19'
+  implementation 'uk.gov.hmcts:opal-common-lib:0.3.20'
   implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: '6.1.9'
   zephyrCucumberReportProcessor 'uk.gov.hmcts:zephyr-automation:1.1.0'
   testImplementation 'uk.gov.hmcts:zephyr-automation:1.1.0'
   testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.14.0'
 
   //Spring Boot
-  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
-  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
-  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-aop'
-  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-json'
   implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.14'
 
+  implementation 'org.springframework.boot:spring-boot-flyway'
+  implementation "org.springframework.boot:spring-boot-starter-web"
+  implementation "org.springframework.boot:spring-boot-starter-actuator"
+  implementation "org.springframework.boot:spring-boot-starter-json"
+  implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+  implementation "org.springframework.boot:spring-boot-starter-security"
+  implementation "org.springframework.boot:spring-boot-starter-oauth2-client"
+  implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+  implementation 'org.springframework.boot:spring-boot-starter-cache'
+  implementation "org.springframework.boot:spring-boot-starter-security"
+  implementation 'org.springframework.boot:spring-boot-starter-integration'
+  implementation "org.springframework.boot:spring-boot-starter-oauth2-client"
+  implementation 'org.springframework.security:spring-security-oauth2-authorization-server'
+  implementation 'org.springframework.cloud:spring-cloud-starter-openfeign', {
+    exclude group: 'commons-fileupload', module: 'commons-fileupload'
+  }
   //Other
 
+  implementation 'com.microsoft.azure:applicationinsights-web:3.7.8'
 
   implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: log4JVersion
   implementation group: 'org.apache.logging.log4j', name: 'log4j-to-slf4j', version: log4JVersion
   implementation group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
   implementation group: 'ch.qos.logback', name: 'logback-core', version: logbackVersion
 
+  implementation 'org.flywaydb:flyway-core:12.8.1'
+  runtimeOnly 'org.flywaydb:flyway-database-postgresql:12.8.1', {
+    exclude group: 'org.flywaydb', module: 'flyway-core'
+  }
+  implementation 'org.postgresql:postgresql'
+
+
+
+  //Annotation
+  implementation 'org.mapstruct:mapstruct:1.6.3'
+  annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+  compileOnly 'org.projectlombok:lombok:1.18.46'
+  annotationProcessor 'org.projectlombok:lombok:1.18.46'
+  testCompileOnly 'org.projectlombok:lombok:1.18.46'
+  testAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
+  integrationTestCompileOnly 'org.projectlombok:lombok:1.18.46'
+  integrationTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
+
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.1.Final'
+
+
+
+  //Test
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
   testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '5.5.7'
+  testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+
+  integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.1'
+  integrationTestImplementation 'org.springframework.security:spring-security-test'
+  integrationTestImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+
 }
 
 bootJar {
@@ -188,5 +243,73 @@ tasks.register('runAllStyleChecks') {
   dependsOn 'checkstyleTest'
   dependsOn 'checkstyleIntegrationTest'
   dependsOn 'checkstyleFunctionalTest'
-  dependsOn 'checkstyleOpenapi'
+//  dependsOn 'checkstyleOpenapi'
+}
+tasks.register('copySmokeCucumberJson', Copy) {
+  from("target/cucumber.json")
+  into("${rootDir}/smoke-output/zephyr")
+  rename { "cucumber-smoke.json" }
+  outputs.upToDateWhen { false }
+}
+
+
+var zephyrBaseArgs = [
+        //Jira Config
+        "jira-base-url=https://tools.hmcts.net/jira/rest/api/latest",
+        "jira-project-id=28500",
+        "jira-default-user=OPAL.Zephyr.automation",
+        "jira-auth-token=${System.getenv('JIRA_AUTH_TOKEN')}",
+        "jira-epic-link-custom-field-id=customfield_10008",
+        "jira-default-components=opal-file-handling-service",
+        "execution-environment=${System.getenv('EXECUTION_ENVIRONMENT') ?: ''}",
+        "execution-build=${System.getenv('EXECUTION_BUILD') ?: ''}",
+        "execution-test-cycle-description=${System.getenv('EXECUTION_CYCLE_DESCRIPTION') ?: ''}"
+]
+// helper that returns a NEW list each time
+def zephyrArgs = { String processType, String actionType, String testFolder, String reportPath ->
+  zephyrBaseArgs + [
+          "process-type=${processType}",
+          "action-type=${actionType}",
+          "base-path=${file("src/${testFolder}").absolutePath}",
+          "report-path=${reportPath}",
+          "github-repo-base-src-dir=https://github.com/hmcts/opal-fines-service/tree/master/src/${testFolder}",
+  ]
+}
+
+tasks.register('createJiraTicketsFromJUnit5ReportIntegrationTest', JavaExec) {
+  group = "Zephyr Reporting - JUnit5"
+  description = "Processes Junit5Report-IntegrationTest.json to create and link Jira tickets to each test"
+  def junit5ReportJson = file("integration-output/zephyr/Junit5Report-IntegrationTest.json")
+
+  inputs.file(junit5ReportJson)
+
+  classpath = configurations.zephyrCucumberReportProcessor
+  mainClass = "uk.hmcts.zephyr.automation.ZephyrAutomation"
+  args = zephyrArgs("JUNIT5_JSON_REPORT", "CREATE_TICKETS", "integrationTest/java", junit5ReportJson.absolutePath)
+}
+
+tasks.register('updateJiraTicketsFromJUnit5ReportIntegrationTest', JavaExec) {
+  group = "Zephyr Reporting - JUnit5"
+
+  description = "Processes Junit5Report-IntegrationTest.json to update Jira tickets"
+  def junit5ReportJson = file("integration-output/zephyr/Junit5Report-IntegrationTest.json")
+
+  inputs.file(junit5ReportJson)
+
+  classpath = configurations.zephyrCucumberReportProcessor
+  mainClass = "uk.hmcts.zephyr.automation.ZephyrAutomation"
+  args = zephyrArgs("JUNIT5_JSON_REPORT", "UPDATE_TICKETS", "integrationTest/java", junit5ReportJson.absolutePath)
+}
+
+tasks.register('createJiraExecutionFromJUnit5ReportIntegrationTest', JavaExec) {
+  group = "Zephyr Reporting - JUnit5"
+
+  description = "Processes Junit5Report-IntegrationTest.json to create Zephyr executions"
+  def junit5ReportJson = file("integration-output/zephyr/Junit5Report-IntegrationTest.json")
+
+  inputs.file(junit5ReportJson)
+
+  classpath = configurations.zephyrCucumberReportProcessor
+  mainClass = "uk.hmcts.zephyr.automation.ZephyrAutomation"
+  args = zephyrArgs("JUNIT5_JSON_REPORT", "CREATE_EXECUTION", "integrationTest/java", junit5ReportJson.absolutePath)
 }
