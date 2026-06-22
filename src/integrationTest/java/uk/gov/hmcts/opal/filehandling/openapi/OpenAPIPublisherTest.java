@@ -1,30 +1,23 @@
 package uk.gov.hmcts.opal.filehandling.openapi;
 
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.web.servlet.MockMvc;
+import uk.gov.hmcts.opal.filehandling.support.AbstractIntegrationTest;
 
 /**
- * Built-in feature which saves service's swagger specs in temporary directory.
- * Each CI run on master should automatically save and upload (if updated) documentation.
+ * Built-in feature which saves service's swagger specs in temporary directory. Each CI run on master should
+ * automatically save and upload (if updated) documentation.
  */
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureMockMvc
-class OpenAPIPublisherTest {
+class OpenAPIPublisherTest extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mvc;
@@ -33,7 +26,9 @@ class OpenAPIPublisherTest {
     @Test
     @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert")
     void generateDocs() throws Exception {
-        byte[] specs = mvc.perform(get("/v3/api-docs"))
+        byte[] specs = mvc.perform(get("/v3/api-docs")
+                .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                .header("authorization", userStateStub.getBearerToken()))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
