@@ -2,14 +2,14 @@ server:
   port: 4075
   shutdown: "graceful"
 
-# If you use a database then uncomment the `group:, readiness: and include: "db"` lines in the health probes and uncomment the datasource section
 management:
+  health:
+    redis:
+      enabled: ${opal.redis.enabled:false}
   endpoint:
     health:
       show-details: "always"
-      # group:
-      #  readiness:
-      #   include: "db"
+
   endpoints:
     web:
       base-path: /
@@ -17,36 +17,140 @@ management:
         include: health, info, prometheus
 
 springdoc:
-  packagesToScan: uk.gov.hmcts.opal.filehandling.controllers
+  packagesToScan: uk.gov.hmcts.opal.controllers,uk.gov.hmcts.opal.authentication.controller
   writer-with-order-by-keys: true
 
 spring:
   config:
     import: "optional:configtree:/mnt/secrets/opal/"
   application:
-    name: Spring Boot Template
-#  datasource:
-#    driver-class-name: org.postgresql.Driver
-#    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}${DB_OPTIONS:}
-#    username: ${DB_USER_NAME}
-#    password: ${DB_PASSWORD}
-#    properties:
-#      charSet: UTF-8
-#    hikari:
-#      minimumIdle: 2
-#      maximumPoolSize: 10
-#      idleTimeout: 10000
-#      poolName: {to-be-defined}HikariCP
-#      maxLifetime: 7200000
-#      connectionTimeout: 30000
-#  jpa:
-#    properties:
-#      hibernate:
-#        jdbc:
-#          lob:
-#            # silence the 'wall-of-text' - unnecessary exception throw about blob types
-#            non_contextual_creation: true
+    name: Opal File Handling Service
+  security:
+    oauth2:
+      client:
+        registration:
+          internal-azure-ad:
+            client-id: ${AAD_CLIENT_ID:00000000-0000-0000-0000-000000000000}
+            client-secret: ${AAD_CLIENT_SECRET:}
+            scope: api://${AAD_CLIENT_ID:00000000-0000-0000-0000-000000000000}/opalinternaluser
+            redirect-uri: ${opal.frontend.url}/sso/login-callback
+            logout-redirect-uri: ${opal.frontend.url}/sso/logout-callback
+            authorization-grant-type: authorization_code
+            response-type: code
+            response-mode: form_post
+            prompt: login
+            issuer-uri: https://sts.windows.net/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/
+            claims: preferred_username
+            provider: internal-azure-ad-provider
+        provider:
+          internal-azure-ad-provider:
+            authorization-uri: ${opal.azure.active-directory-justice-auth-uri}/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/oauth2/v2.0/authorize
+            token-uri: ${opal.azure.active-directory-justice-auth-uri}/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/oauth2/v2.0/token
+            jwk-set-uri: ${opal.azure.active-directory-justice-auth-uri}/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/discovery/v2.0/keys
+            logout-uri: ${opal.azure.active-directory-justice-auth-uri}/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/oauth2/v2.0/logout
+            reset-password-uri: ${opal.azure.active-directory-justice-auth-uri}/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/oauth2/v2.0/authorize
 
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${OPAL_FILE_HANDLING_DB_HOST:localhost}:${OPAL_FILE_HANDLING_DB_PORT:5432}/${OPAL_FILE_HANDLING_DB_NAME:opal-file-handling-db}${OPAL_FILE_HANDLING_DB_OPTIONS:}
+    username: ${OPAL_FILE_HANDLING_DB_USERNAME:opal-db-user}
+    password: ${OPAL_FILE_HANDLING_DB_PASSWORD:opal-db-password}
+    properties:
+      charSet: UTF-8
+    hikari:
+      minimumIdle: 2
+      maximumPoolSize: 10
+      idleTimeout: 10000
+      poolName: OpalHikariCP
+      maxLifetime: 7200000
+      connectionTimeout: 30000
+  jpa:
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        highlight_sql: true
+        generate_statistics: false
+        log_slow_query: 9
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        connection:
+          # Following setting is 'generally' suggested to be false, or a lot of work otherwise
+          provider_disables_autocommit: false
+          # The following mode is advised against? Used only with a JTA Datasource.
+          # handling_mode: DELAYED_ACQUISITION_AND_RELEASE_AFTER_STATEMENT
+        jdbc:
+          lob:
+            # silence the 'wall-of-text' - unnecessary exception throw about blob types
+            non_contextual_creation: true
+  data:
+    redis:
+      url: ${REDIS_CONNECTION_STRING:redis://redis:6379}
+  flyway:
+    url: ${spring.datasource.url}
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+    locations: ${FLYWAY_LOCATIONS:classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/dev}
+    baseline-on-migrate: true
+    ignoreMigrationPatterns: "*:missing"
+
+opal:
+  frontend:
+    url: ${OPAL_FRONTEND_URL:http://localhost:4200}
+  redis:
+    enabled: ${OPAL_REDIS_ENABLED:true}
+    ttl-duration: ${OPAL_REDIS_TTL_DURATION:8H}
+  azure:
+    active-directory-justice-auth-uri: https://login.microsoftonline.com
+  testing-support-endpoints:
+    enabled: ${TESTING_SUPPORT_ENDPOINTS_ENABLED:true}
+  common:
+    domain: file-handling
+    content-digest:
+      request:
+        enforce: ${OPAL_COMMON_CONTENT_DIGEST_REQUEST_ENFORCE:false}
+        auto-generate: ${OPAL_COMMON_CONTENT_DIGEST_REQUEST_AUTO_GENERATE:false}
+      response:
+        enforce: ${OPAL_COMMON_CONTENT_DIGEST_RESPONSE_ENFORCE:false}
+        algorithm: ${OPAL_COMMON_CONTENT_DIGEST_RESPONSE_ALGORITHM:SHA-512}
+      supported-algorithms:
+        sha-512: SHA-512
+
+logging:
+  level:
+    root: ${ROOT_LOG_LEVEL:INFO}
+    opal: ${OPAL_LOG_LEVEL:INFO}
+    org:
+      hibernate:
+        stat: INFO
+        SQL: INFO
+        SQL_SLOW: INFO
+        type:
+          descriptor:
+            sql:
+              BasicBinder: WARN
+        orm:
+          jdbc:
+            bind: INFO
+launchdarkly:
+  sdk-key: ${LAUNCH_DARKLY_SDK_KEY:}
+  offline-mode: ${LAUNCH_DARKLY_OFFLINE_MODE:false}
+  env: ${LAUNCH_DARKLY_ENV:default}
+  enabled: ${LAUNCH_DARKLY_ENABLED:true}
+  file:
+    - ${LAUNCH_DARKLY_FILE:bin/utils/launchdarkly-flags.json}
+  default-flag-values:
+    release-1a: ${RELEASE_1A_ENABLED:true}
+    release-1b: ${RELEASE_1B_ENABLED:false}
+    release-1c: ${RELEASE_1C_ENABLED:false}
+
+user:
+  service:
+    url: ${OPAL_USER_SERVICE_API_URL:http://localhost:4555}
 azure:
   application-insights:
     instrumentation-key: ${opal.AppInsightsInstrumentationKey:00000000-0000-0000-0000-000000000000}
+dbMigration:
+  # When true, the app will run DB migration on startup.
+  # Otherwise, it will just check if all migrations have been applied (and fail to start if not).
+  runOnStartup: ${RUN_DB_MIGRATION_ON_STARTUP:true}
