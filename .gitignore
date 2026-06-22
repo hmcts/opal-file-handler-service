@@ -1,8 +1,17 @@
 .gradle
+bruno/environments/local.env
 /build/
 !gradle/wrapper/gradle-wrapper.jar
 *.class
 bin/main/application.yaml
+smoke-test-report
+functional-test-report
+integration-output
+
+target
+
+### Generated Source ###
+/src/generated
 
 ### STS ###
 .apt_generated
@@ -13,8 +22,12 @@ bin/main/application.yaml
 .springBeans
 
 ### IntelliJ IDEA ###
-.idea
+.idea/*
+!.idea/codeStyles/
+!.idea/codeStyles/Project.xml
+!.idea/codeStyles/codeStyleConfig.xml
 /out
+/.run
 *.iws
 *.iml
 *.ipr
@@ -23,3 +36,11 @@ bin/main/application.yaml
 
 applicationinsights-agent-*.jar
 *.log
+
+### Bruno ###
+
+# Ignore real Bruno environment files
+bruno/environments/*.env
+
+# But keep the template (example)
+!bruno/environments/env.template

@@ -10,11 +10,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import uk.gov.hmcts.opal.filehandling.config.FeignConfiguration;
 
-@SpringBootApplication(
-	scanBasePackages = {
-		"uk.gov.hmcts.opal",
-	}
-)
+@SpringBootApplication(scanBasePackages = "uk.gov.hmcts.opal")
 @EnableJpaRepositories("uk.gov.hmcts.opal.*")
 @EntityScan("uk.gov.hmcts.opal.*")
 @EnableFeignClients(basePackages = "uk.gov.hmcts.opal.*", defaultConfiguration = FeignConfiguration.class)
@@ -22,10 +18,9 @@ import uk.gov.hmcts.opal.filehandling.config.FeignConfiguration;
 @Slf4j
 @ConfigurationPropertiesScan
 @SuppressWarnings("HideUtilityClassConstructor") // Spring needs a constructor, its not a utility class
-
 public class Application {
 
-	public static void main(final String[] args) {
-		SpringApplication.run(Application.class, args);
-	}
+    public static void main(final String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
 }

@@ -1,5 +1,6 @@
 package uk.gov.hmcts.opal.filehandling.authentication.config;
 
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.security.autoconfigure.web.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
@@ -29,8 +30,6 @@ import uk.gov.hmcts.opal.common.user.authorisation.model.Domain;
 import uk.gov.hmcts.opal.filehandling.authentication.config.internal.InternalAuthConfigurationProperties;
 import uk.gov.hmcts.opal.filehandling.authentication.config.internal.InternalAuthProviderConfigurationProperties;
 
-import java.util.Map;
-
 
 @Configuration
 @EnableWebSecurity
@@ -38,101 +37,101 @@ import java.util.Map;
 @Profile("!integration")
 public class SecurityConfig {
 
-	private final CustomAuthenticationExceptions customAuthenticationExceptions;
-	private final CustomOauth2AuthenticationEntryPoint customOauth2AuthenticationEntryPoint;
+    private final CustomAuthenticationExceptions customAuthenticationExceptions;
+    private final CustomOauth2AuthenticationEntryPoint customOauth2AuthenticationEntryPoint;
 
-	private static final String[] AUTH_WHITELIST = {
-		"/swagger-ui.html",
-		"/swagger-ui/**",
-		"/swagger-resources/**",
-		"/v3/**",
-		"/favicon.ico",
-		"/health/**",
-		"/mappings",
-		"/info",
-		"/metrics",
-		"/metrics/**",
-		"/testing-support/**",
-		"/s2s/**",
-		"/"
-	};
+    private static final String[] AUTH_WHITELIST = {
+        "/swagger-ui.html",
+        "/swagger-ui/**",
+        "/swagger-resources/**",
+        "/v3/**",
+        "/favicon.ico",
+        "/health/**",
+        "/mappings",
+        "/info",
+        "/metrics",
+        "/metrics/**",
+        "/testing-support/**",
+        "/s2s/**",
+        "/"
+    };
 
-	@Bean
-	public SecurityFilterChain filterChain(
-		HttpSecurity http,
-		JwtIssuerAuthenticationManagerResolver jwtIssuerAuthenticationManagerResolver) {
-		applyCommonConfig(http)
-			.authorizeHttpRequests(authorize ->
-				authorize.requestMatchers(PathRequest.toStaticResources().atCommonLocations())
-					.permitAll()
-					.requestMatchers(AUTH_WHITELIST)
-					.permitAll()
-					.anyRequest().authenticated()
-			)
-			.exceptionHandling(exceptionHandling ->
-				exceptionHandling
-					.authenticationEntryPoint(customAuthenticationExceptions)
-					.accessDeniedHandler(customAuthenticationExceptions)
-			)
-			.oauth2ResourceServer(oauth2 -> {
-				oauth2.authenticationManagerResolver(jwtIssuerAuthenticationManagerResolver);
-				oauth2.authenticationEntryPoint(customOauth2AuthenticationEntryPoint);
-			});
-		return http.build();
-	}
+    @Bean
+    public SecurityFilterChain filterChain(
+        HttpSecurity http,
+        JwtIssuerAuthenticationManagerResolver jwtIssuerAuthenticationManagerResolver) {
+        applyCommonConfig(http)
+            .authorizeHttpRequests(authorize ->
+                authorize.requestMatchers(PathRequest.toStaticResources().atCommonLocations())
+                    .permitAll()
+                    .requestMatchers(AUTH_WHITELIST)
+                    .permitAll()
+                    .anyRequest().authenticated()
+            )
+            .exceptionHandling(exceptionHandling ->
+                exceptionHandling
+                    .authenticationEntryPoint(customAuthenticationExceptions)
+                    .accessDeniedHandler(customAuthenticationExceptions)
+            )
+            .oauth2ResourceServer(oauth2 -> {
+                oauth2.authenticationManagerResolver(jwtIssuerAuthenticationManagerResolver);
+                oauth2.authenticationEntryPoint(customOauth2AuthenticationEntryPoint);
+            });
+        return http.build();
+    }
 
-	@Bean
-	JwtIssuerAuthenticationManagerResolver jwtIssuerAuthenticationManagerResolver(
-		InternalAuthConfigurationProperties authProps,
-		OpalJwtAuthenticationProvider finesJwtAuthenticationProvider) {
+    @Bean
+    JwtIssuerAuthenticationManagerResolver jwtIssuerAuthenticationManagerResolver(
+        InternalAuthConfigurationProperties authProps,
+        OpalJwtAuthenticationProvider finesJwtAuthenticationProvider) {
 
-		AuthenticationManager manager = finesJwtAuthenticationProvider::authenticate;
-		Map<String, AuthenticationManager> managers = Map.of(authProps.getIssuerUri(), manager);
-		return new JwtIssuerAuthenticationManagerResolver(managers::get);
-	}
+        AuthenticationManager manager = finesJwtAuthenticationProvider::authenticate;
+        Map<String, AuthenticationManager> managers = Map.of(authProps.getIssuerUri(), manager);
+        return new JwtIssuerAuthenticationManagerResolver(managers::get);
+    }
 
-	@Bean
-	OpalJwtAuthenticationProvider finesJwtAuthenticationProvider(
-		NimbusJwtDecoder internalJwtDecoder,
-		UserStateClientService userStateClientService,
-		JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter,
-		OpalCommonConfiguration commonConfiguration) {
+    @Bean
+    OpalJwtAuthenticationProvider finesJwtAuthenticationProvider(
+        NimbusJwtDecoder internalJwtDecoder,
+        UserStateClientService userStateClientService,
+        JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter,
+        OpalCommonConfiguration commonConfiguration) {
 
-		Domain domain = Domain.findByDisplayName(commonConfiguration.getDomain());
+        Domain domain = Domain.findByDisplayName(commonConfiguration.getDomain());
 
-		return new OpalJwtAuthenticationProvider(
-			internalJwtDecoder,
-			userStateClientService,
-			jwtGrantedAuthoritiesConverter,
-			domain
-		);
-	}
+        return new OpalJwtAuthenticationProvider(
+            internalJwtDecoder,
+            userStateClientService,
+            jwtGrantedAuthoritiesConverter,
+            domain
+        );
+    }
 
-	@Bean
-	NimbusJwtDecoder internalJwtDecoder(
-		InternalAuthProviderConfigurationProperties providerProps,
-		InternalAuthConfigurationProperties authProps) {
+    @Bean
+    NimbusJwtDecoder internalJwtDecoder(
+        InternalAuthProviderConfigurationProperties providerProps,
+        InternalAuthConfigurationProperties authProps) {
 
-		var jwtDecoder = NimbusJwtDecoder.withJwkSetUri(providerProps.getJwkSetUri())
-			.jwsAlgorithm(SignatureAlgorithm.RS256)
-			.build();
+        var jwtDecoder = NimbusJwtDecoder.withJwkSetUri(providerProps.getJwkSetUri())
+            .jwsAlgorithm(SignatureAlgorithm.RS256)
+            .build();
 
-		OAuth2TokenValidator<Jwt> jwtValidator =
-			JwtValidators.createDefaultWithIssuer(authProps.getIssuerUri());
-		jwtDecoder.setJwtValidator(jwtValidator);
-		return jwtDecoder;
-	}
+        OAuth2TokenValidator<Jwt> jwtValidator =
+            JwtValidators.createDefaultWithIssuer(authProps.getIssuerUri());
+        jwtDecoder.setJwtValidator(jwtValidator);
+        return jwtDecoder;
+    }
 
-	@Bean
-	JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter() {
-		return new JwtGrantedAuthoritiesConverter();
-	}
+    @Bean
+    JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter() {
+        return new JwtGrantedAuthoritiesConverter();
+    }
 
-	private HttpSecurity applyCommonConfig(HttpSecurity http) {
-		return http
-			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			.csrf(AbstractHttpConfigurer::disable)
-			.formLogin(FormLoginConfigurer::disable)
-			.logout(LogoutConfigurer::disable);
-	}
+    private HttpSecurity applyCommonConfig(HttpSecurity http) {
+        return http
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .csrf(AbstractHttpConfigurer::disable)
+            .formLogin(FormLoginConfigurer::disable)
+            .logout(LogoutConfigurer::disable);
+    }
 }
