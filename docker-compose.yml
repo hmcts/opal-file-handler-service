@@ -1,7 +1,7 @@
 version: '2.1'
 
 services:
-  spring-boot-template:
+  opal-filehandling:
     build:
       context: .
       args:
@@ -14,10 +14,6 @@ services:
       - ROOT_APPENDER
       - JSON_CONSOLE_PRETTY_PRINT
       - ROOT_LOGGING_LEVEL
-      - REFORM_SERVICE_TYPE
-      - REFORM_SERVICE_NAME
-      - REFORM_TEAM
-      - REFORM_ENVIRONMENT
       - LOGBACK_DATE_FORMAT
       - LOGBACK_REQUIRE_THREAD
       - LOGBACK_REQUIRE_ALERT_LEVEL=false
