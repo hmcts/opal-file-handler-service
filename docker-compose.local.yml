@@ -1,0 +1,9 @@
+services:
+  opal-fines-service:
+    image: file-handling-service:local
+    build:
+      context: ../opal-file-handler-service
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy

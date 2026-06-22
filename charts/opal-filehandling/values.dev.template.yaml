@@ -44,4 +44,4 @@ java:
     auth:
       username: javapostgres
       password: javapassword
-      database: opal-fines-db
+      database: opal-file-handling-db
