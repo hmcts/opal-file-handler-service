@@ -14,6 +14,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import uk.gov.hmcts.opal.filehandling.Application;
 import uk.hmcts.zephyr.automation.junit5.extension.ZephyrAutomationExtension;
 
@@ -58,5 +60,14 @@ public class AbstractIntegrationTest {
 
     protected UserStateStub createUserStateStub() {
         return new UserStateStub();
+    }
+
+    // Dynamically register properties to configure the datasource
+    @DynamicPropertySource
+    static void databaseProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", TestContainerConfig.POSTGRES_CONTAINER::getJdbcUrl);
+        registry.add("spring.datasource.username", TestContainerConfig.POSTGRES_CONTAINER::getUsername);
+        registry.add("spring.datasource.password", TestContainerConfig.POSTGRES_CONTAINER::getPassword);
+        registry.add("spring.data.redis.url", TestContainerConfig.REDIS_CONTAINER::getRedisURI);
     }
 }
