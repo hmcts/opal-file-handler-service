@@ -13,12 +13,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import uk.gov.hmcts.opal.filehandling.Application;
 import uk.hmcts.zephyr.automation.junit5.extension.ZephyrAutomationExtension;
 
 @SpringBootTest(classes = Application.class)
 @ActiveProfiles("integration")
-//@ContextConfiguration(classes = {TestContainerConfig.class})
+@ContextConfiguration(classes = {TestContainerConfig.class})
 @AutoConfigureMockMvc(htmlUnit = @AutoConfigureMockMvc.HtmlUnit(webClient = false, webDriver = false))
 @ExtendWith(ZephyrAutomationExtension.class)
 @Slf4j
