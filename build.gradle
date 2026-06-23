@@ -206,6 +206,12 @@ dependencies {
   testAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
   integrationTestCompileOnly 'org.projectlombok:lombok:1.18.46'
   integrationTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
+  functionalTestCompileOnly 'org.projectlombok:lombok:1.18.46'
+  functionalTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
+  smokeTestCompileOnly 'org.projectlombok:lombok:1.18.46'
+  smokeTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
+
+
 
   annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.1.Final'
 

@@ -8,4 +8,11 @@ def type = "java"
 def product = "opal"
 def component = "file-handler-service"
 
-withPipeline(type, product, component) {}
+withPipeline(type, product, component) {
+    before('akschartsinstall') {
+        onPR {
+            env.TEST_URL = "https://opal-fines-service-pr-${env.CHANGE_ID}.dev.platform.hmcts.net"
+        }
+    }
+
+}
