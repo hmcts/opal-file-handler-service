@@ -152,7 +152,6 @@ dependencyManagement {
   }
 }
 dependencies {
-
   //HMCTS
   implementation 'uk.gov.hmcts:opal-common-lib:0.3.20'
   implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: '6.1.9'
