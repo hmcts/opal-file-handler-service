@@ -22,7 +22,7 @@ java:
     OPAL_REDIS_ENABLED: true
     REDIS_CONNECTION_STRING: redis://${SERVICE_NAME}-hmcts-redis-master:6379
     OPAL_FILE_HANDLING_DB_HOST: "{{ .Release.Name }}-postgresql"
-    OPAL_FILE_HANDLING_DB_NAME: "opal-file-handling-db"
+    OPAL_FILE_HANDLING_DB_NAME: "opal-file-handler-db"
     OPAL_FILE_HANDLING_DB_USERNAME: "{{ .Values.global.postgresUsername}}"
     OPAL_FILE_HANDLING_DB_PASSWORD: "{{ .Values.global.postgresPassword}}"
     OPAL_FILE_HANDLING_DB_OPTIONS: "{{ .Values.global.postgresOptions}}"
@@ -31,7 +31,7 @@ java:
     TESTING_SUPPORT_ENDPOINTS_ENABLED: true
     LAUNCH_DARKLY_ENABLED: false
     FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/dev
-    APPLICATIONINSIGHTS_ROLE_NAME: "opal-file-handling-service-pr-${CHANGE_ID}"
+    APPLICATIONINSIGHTS_ROLE_NAME: "opal-file-handler-service-pr-${CHANGE_ID}"
     DEFAULT_APP_MODE: ${APP_MODE}
   postgresql:
     enabled: true
@@ -44,4 +44,4 @@ java:
     auth:
       username: javapostgres
       password: javapassword
-      database: opal-file-handling-db
+      database: opal-file-handler-db

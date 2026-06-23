@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandling.config;
+package uk.gov.hmcts.opal.filehandler.config;
 
 import feign.codec.Decoder;
 import org.springframework.beans.factory.ObjectProvider;

@@ -1,8 +1,8 @@
 apiVersion: v2
 appVersion: "1.0"
-description: A Helm chart for opal-file-handling App
-name: opal-file-handling
-home: https://github.com/hmcts/opal-file-handling
+description: A Helm chart for opal-file-handler App
+name: opal-file-handler
+home: https://github.com/hmcts/opal-file-handler
 version: 0.0.18
 maintainers:
   - name: HMCTS opal team

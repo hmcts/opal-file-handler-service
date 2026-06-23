@@ -1,7 +1,7 @@
 java:
   applicationPort: 4075
-  image: 'hmctspublic.azurecr.io/opal/file-handling:latest'
-  ingressHost: opal-file-handling-service.{{ .Values.global.environment }}.platform.hmcts.net
+  image: 'hmctspublic.azurecr.io/opal/file-handler:latest'
+  ingressHost: opal-file-handler-service.{{ .Values.global.environment }}.platform.hmcts.net
   aadIdentityName: opal
 #  Uncomment once the vault containing the app insights key has been set up
   keyVaults:
@@ -11,15 +11,15 @@ java:
           alias: app-insights-connection-string
         - name: launch-darkly-sdk-key
           alias: LAUNCH_DARKLY_SDK_KEY
-        - name: file-handling-service-POSTGRES-HOST
+        - name: file-handler-service-POSTGRES-HOST
           alias: OPAL_FILE_HANDLING_DB_HOST
-        - name: file-handling-service-POSTGRES-PASS
+        - name: file-handler-service-POSTGRES-PASS
           alias: OPAL_FILE_HANDLING_DB_PASSWORD
-        - name: file-handling-service-POSTGRES-PORT
+        - name: file-handler-service-POSTGRES-PORT
           alias: OPAL_FILE_HANDLING_DB_PORT
-        - name: file-handling-service-POSTGRES-USER
+        - name: file-handler-service-POSTGRES-USER
           alias: OPAL_FILE_HANDLING_DB_USERNAME
-        - name: file-handling-service-POSTGRES-DATABASE
+        - name: file-handler-service-POSTGRES-DATABASE
           alias: OPAL_FILE_HANDLING_DB_NAME
         - name: AzureADTenantId
           alias: AAD_TENANT_ID

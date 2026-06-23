@@ -19,7 +19,7 @@ plugins {
 }
 
 application {
-  mainClass = 'uk.gov.hmcts.opal.filehandling.Application'
+  mainClass = 'uk.gov.hmcts.opal.filehandler.Application'
   group = 'uk.gov.hmcts.opal'
   version = '0.0.1'
 }
@@ -110,8 +110,8 @@ tasks.check.dependsOn(integration)
 
 sonarqube {
   properties {
-    property "sonar.projectName", "Opal :: file-handling"
-    property "sonar.projectKey", "uk.gov.hmcts.opal:file-handling"
+    property "sonar.projectName", "Opal :: file-handler"
+    property "sonar.projectKey", "uk.gov.hmcts.opal:file-handler"
   }
 }
 
@@ -228,7 +228,7 @@ dependencies {
 }
 
 bootJar {
-  archiveFileName = "opal-file-handling.jar"
+  archiveFileName = "opal-file-handler.jar"
 
   manifest {
     attributes('Implementation-Version': project.version.toString())
@@ -265,7 +265,7 @@ var zephyrBaseArgs = [
         "jira-default-user=OPAL.Zephyr.automation",
         "jira-auth-token=${System.getenv('JIRA_AUTH_TOKEN')}",
         "jira-epic-link-custom-field-id=customfield_10008",
-        "jira-default-components=opal-file-handling-service",
+        "jira-default-components=opal-file-handler-service",
         "execution-environment=${System.getenv('EXECUTION_ENVIRONMENT') ?: ''}",
         "execution-build=${System.getenv('EXECUTION_BUILD') ?: ''}",
         "execution-test-cycle-description=${System.getenv('EXECUTION_CYCLE_DESCRIPTION') ?: ''}"

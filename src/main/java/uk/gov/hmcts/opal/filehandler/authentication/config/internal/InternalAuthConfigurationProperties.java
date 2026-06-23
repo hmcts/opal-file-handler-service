@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandling.authentication.config.internal;
+package uk.gov.hmcts.opal.filehandler.authentication.config.internal;
 
 import lombok.Getter;
 import lombok.Setter;

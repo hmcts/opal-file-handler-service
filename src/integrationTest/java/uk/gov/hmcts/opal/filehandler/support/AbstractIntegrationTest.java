@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandling.support;
+package uk.gov.hmcts.opal.filehandler.support;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 
@@ -16,7 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import uk.gov.hmcts.opal.filehandling.Application;
+import uk.gov.hmcts.opal.filehandler.Application;
 import uk.hmcts.zephyr.automation.junit5.extension.ZephyrAutomationExtension;
 
 @SpringBootTest(classes = Application.class)

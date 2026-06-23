@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandling.openapi;
+package uk.gov.hmcts.opal.filehandler.openapi;
 
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -11,7 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
-import uk.gov.hmcts.opal.filehandling.support.AbstractIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
 /**
  * Built-in feature which saves service's swagger specs in temporary directory. Each CI run on master should

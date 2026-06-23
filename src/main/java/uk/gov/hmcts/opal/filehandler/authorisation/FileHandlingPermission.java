@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandling.authorisation;
+package uk.gov.hmcts.opal.filehandler.authorisation;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

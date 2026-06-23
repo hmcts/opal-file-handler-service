@@ -2,7 +2,7 @@ include:
   - path: ../opal-shared-infrastructure/docker-compose.yml
 
 services:
-  opal-file-handling:
+  opal-file-handler:
     env_file:
       - ../opal-shared-infrastructure/docker-files/.env.shared
     environment:
@@ -18,7 +18,7 @@ services:
       - LOGBACK_REQUIRE_THREAD
       - LOGBACK_REQUIRE_ALERT_LEVEL=false
       - LOGBACK_REQUIRE_ERROR_CODE=false
-      - OPAL_FILE_HANDLING_DB_HOST=opal-file-handling-db
+      - OPAL_FILE_HANDLING_DB_HOST=opal-file-handler-db
       - OPAL_FILE_HANDLING_DB_USERNAME=opal-db-user
       - OPAL_FILE_HANDLING_DB_PASSWORD=opal-db-password
       - OPAL_USER_SERVICE_API_URL=http://host.docker.internal:4555/

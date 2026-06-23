@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandling.controllers;
+package uk.gov.hmcts.opal.filehandler.controllers;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;

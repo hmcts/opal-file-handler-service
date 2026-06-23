@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandling.authentication.config;
+package uk.gov.hmcts.opal.filehandler.authentication.config;
 
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -27,8 +27,8 @@ import uk.gov.hmcts.opal.common.user.authentication.exception.CustomAuthenticati
 import uk.gov.hmcts.opal.common.user.authentication.exception.CustomOauth2AuthenticationEntryPoint;
 import uk.gov.hmcts.opal.common.user.authorisation.client.service.UserStateClientService;
 import uk.gov.hmcts.opal.common.user.authorisation.model.Domain;
-import uk.gov.hmcts.opal.filehandling.authentication.config.internal.InternalAuthConfigurationProperties;
-import uk.gov.hmcts.opal.filehandling.authentication.config.internal.InternalAuthProviderConfigurationProperties;
+import uk.gov.hmcts.opal.filehandler.authentication.config.internal.InternalAuthConfigurationProperties;
+import uk.gov.hmcts.opal.filehandler.authentication.config.internal.InternalAuthProviderConfigurationProperties;
 
 
 @Configuration

@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandling.config;
+package uk.gov.hmcts.opal.filehandler.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

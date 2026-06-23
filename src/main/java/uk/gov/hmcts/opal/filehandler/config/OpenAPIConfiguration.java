@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandling.config;
+package uk.gov.hmcts.opal.filehandler.config;
 
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;

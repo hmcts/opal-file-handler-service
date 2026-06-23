@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandling.support;
+package uk.gov.hmcts.opal.filehandler.support;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,7 +29,7 @@ import uk.gov.hmcts.opal.common.user.authorisation.model.PermissionDescriptor;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2.UserStateV2Builder;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStatus;
-import uk.gov.hmcts.opal.filehandling.authorisation.FileHandlingPermission;
+import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlingPermission;
 
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;

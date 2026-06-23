@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandling.support;
+package uk.gov.hmcts.opal.filehandler.support;
 
 import com.redis.testcontainers.RedisContainer;
 import lombok.AccessLevel;

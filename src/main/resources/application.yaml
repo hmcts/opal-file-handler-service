@@ -52,7 +52,7 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://${OPAL_FILE_HANDLING_DB_HOST:localhost}:${OPAL_FILE_HANDLING_DB_PORT:5432}/${OPAL_FILE_HANDLING_DB_NAME:opal-file-handling-db}${OPAL_FILE_HANDLING_DB_OPTIONS:}
+    url: jdbc:postgresql://${OPAL_FILE_HANDLING_DB_HOST:localhost}:${OPAL_FILE_HANDLING_DB_PORT:5432}/${OPAL_FILE_HANDLING_DB_NAME:opal-file-handler-db}${OPAL_FILE_HANDLING_DB_OPTIONS:}
     username: ${OPAL_FILE_HANDLING_DB_USERNAME:opal-db-user}
     password: ${OPAL_FILE_HANDLING_DB_PASSWORD:opal-db-password}
     properties:
@@ -78,7 +78,7 @@ spring:
           # Following setting is 'generally' suggested to be false, or a lot of work otherwise
           provider_disables_autocommit: false
           # The following mode is advised against? Used only with a JTA Datasource.
-          # handling_mode: DELAYED_ACQUISITION_AND_RELEASE_AFTER_STATEMENT
+          # handler_mode: DELAYED_ACQUISITION_AND_RELEASE_AFTER_STATEMENT
         jdbc:
           lob:
             # silence the 'wall-of-text' - unnecessary exception throw about blob types
@@ -105,7 +105,7 @@ opal:
   testing-support-endpoints:
     enabled: ${TESTING_SUPPORT_ENDPOINTS_ENABLED:true}
   common:
-    domain: file-handling
+    domain: file-handler
     content-digest:
       request:
         enforce: ${OPAL_COMMON_CONTENT_DIGEST_REQUEST_ENFORCE:false}

@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandling.controllers;
+package uk.gov.hmcts.opal.filehandler.controllers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import uk.gov.hmcts.opal.filehandling.support.AbstractIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
 @Slf4j(topic = "opal.GetWelcomeTest")
 @DisplayName("Get Welcome Test Integration Tests")

@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandling;
+package uk.gov.hmcts.opal.filehandler;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
@@ -8,7 +8,7 @@ import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import uk.gov.hmcts.opal.filehandling.config.FeignConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.FeignConfiguration;
 
 @SpringBootApplication(scanBasePackages = "uk.gov.hmcts.opal")
 @EnableJpaRepositories("uk.gov.hmcts.opal.*")
