@@ -1,7 +1,7 @@
 {
   "connectionString": "${file:/mnt/secrets/opal/app-insights-connection-string}",
   "role": {
-    "name": "opal-file-handling"
+    "name": "opal-file-handler-service"
   },
   "sampling": {
     "overrides": [

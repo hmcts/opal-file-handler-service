@@ -1,4 +1,4 @@
-# opal-filehandling
+# opal-filehandler
 
 ## Building and deploying the application
 
@@ -30,7 +30,7 @@ Create docker image:
   docker compose build
 ```
 
-Run the distribution (created in `build/install/opal-filehandling` directory)
+Run the distribution (created in `build/install/opal-filehandler` directory)
 by executing the following command:
 
 ```bash
