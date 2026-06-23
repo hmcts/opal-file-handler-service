@@ -3,7 +3,6 @@ java:
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   ingressHost: opal-file-handler-service.{{ .Values.global.environment }}.platform.hmcts.net
   aadIdentityName: opal
-#  Uncomment once the vault containing the app insights key has been set up
   keyVaults:
     opal:
       secrets:
