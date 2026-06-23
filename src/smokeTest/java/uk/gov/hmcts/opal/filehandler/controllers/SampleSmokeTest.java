@@ -1,37 +1,27 @@
 package uk.gov.hmcts.opal.filehandler.controllers;
 
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
-import io.restassured.response.Response;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
+import uk.gov.hmcts.opal.filehandler.TestUtil;
 
-import static io.restassured.RestAssured.given;
-
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 class SampleSmokeTest {
-    @Value("${TEST_URL:http://localhost:4550}")
-    private String testUrl;
-
-    @BeforeEach
-    public void setUp() {
-        RestAssured.useRelaxedHTTPSValidation();
-    }
 
     @Test
-    void smokeTest() {
-        Response response = given()
-            .baseUri(testUrl)
-            .contentType(ContentType.JSON)
-            .when()
-            .get()
-            .then()
-            .extract().response();
+    void smokeTest() throws Exception {
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(TestUtil.getTestUrl()))
+                .GET()
+                .build();
 
-        Assertions.assertEquals(200, response.statusCode());
-        Assertions.assertTrue(response.asString().startsWith("Welcome"));
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            Assertions.assertEquals(200, response.statusCode());
+            Assertions.assertTrue(response.body().startsWith("Welcome"));
+        }
     }
 }

@@ -152,7 +152,6 @@ dependencyManagement {
   }
 }
 dependencies {
-
   //HMCTS
   implementation 'uk.gov.hmcts:opal-common-lib:0.3.22'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
@@ -207,6 +206,12 @@ dependencies {
   testAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
   integrationTestCompileOnly 'org.projectlombok:lombok:1.18.46'
   integrationTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
+  functionalTestCompileOnly 'org.projectlombok:lombok:1.18.46'
+  functionalTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
+  smokeTestCompileOnly 'org.projectlombok:lombok:1.18.46'
+  smokeTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
+
+
 
   annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.1.Final'
 
@@ -249,6 +254,7 @@ tasks.register('runAllStyleChecks') {
   dependsOn 'checkstyleTest'
   dependsOn 'checkstyleIntegrationTest'
   dependsOn 'checkstyleFunctionalTest'
+  dependsOn 'checkstyleSmokeTest'
 //  dependsOn 'checkstyleOpenapi'
 }
 tasks.register('copySmokeCucumberJson', Copy) {
