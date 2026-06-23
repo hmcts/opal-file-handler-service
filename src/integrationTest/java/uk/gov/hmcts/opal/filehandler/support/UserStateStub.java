@@ -29,7 +29,7 @@ import uk.gov.hmcts.opal.common.user.authorisation.model.PermissionDescriptor;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2.UserStateV2Builder;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStatus;
-import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlingPermission;
+import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
@@ -247,7 +247,7 @@ public class UserStateStub {
     }
 
     private Set<Permission> createAllPermissions() {
-        return Arrays.stream(FileHandlingPermission.values())
+        return Arrays.stream(FileHandlerPermission.values())
             .map(this::createPermission)
             .collect(Collectors.toSet());
     }
@@ -282,7 +282,7 @@ public class UserStateStub {
     }
 
 
-    public void addPermissions(short businessUnitId, FileHandlingPermission... values) {
+    public void addPermissions(short businessUnitId, FileHandlerPermission... values) {
         Set<Permission> permissions = Arrays.stream(values)
             .map(this::createPermission)
             .collect(Collectors.toSet());

@@ -24,7 +24,7 @@ spring:
   config:
     import: "optional:configtree:/mnt/secrets/opal/"
   application:
-    name: Opal File Handling Service
+    name: Opal File Handler Service
   security:
     oauth2:
       client:

@@ -6,7 +6,7 @@ import uk.gov.hmcts.opal.common.user.authorisation.model.PermissionDescriptor;
 
 @AllArgsConstructor
 @Getter
-public enum FileHandlingPermission implements PermissionDescriptor {
+public enum FileHandlerPermission implements PermissionDescriptor {
     ;
 
 

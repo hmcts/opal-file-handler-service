@@ -13,8 +13,8 @@ public class OpenAPIConfiguration {
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
-            .info(new Info().title("Opal File Handling Service")
-                      .description("Opal File Handling Service")
+            .info(new Info().title("Opal File Handler Service")
+                      .description("Opal File Handler Service")
                       .version("v0.0.1")
                       .license(new License().name("MIT").url("https://opensource.org/licenses/MIT")))
             .externalDocs(new ExternalDocumentation()
