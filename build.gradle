@@ -141,7 +141,7 @@ repositories {
 }
 
 ext {
-  log4JVersion = "2.25.1"
+  log4JVersion = "2.26.0"
   logbackVersion = "1.5.18"
 }
 
@@ -153,14 +153,14 @@ dependencyManagement {
 }
 dependencies {
   //HMCTS
-  implementation 'uk.gov.hmcts:opal-common-lib:0.3.20'
-  implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: '6.1.9'
+  implementation 'uk.gov.hmcts:opal-common-lib:0.3.22'
+  implementation 'com.github.hmcts.java-logging:logging:8.0.0'
   zephyrCucumberReportProcessor 'uk.gov.hmcts:zephyr-automation:1.1.0'
   testImplementation 'uk.gov.hmcts:zephyr-automation:1.1.0'
   testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.14.0'
 
   //Spring Boot
-  implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.14'
+  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.14'
 
   implementation 'org.springframework.boot:spring-boot-flyway'
   implementation "org.springframework.boot:spring-boot-starter-web"
@@ -180,7 +180,7 @@ dependencies {
   }
   //Other
 
-  implementation 'com.microsoft.azure:applicationinsights-web:3.7.8'
+  implementation 'com.microsoft.azure:applicationinsights-web:3.7.9'
 
   implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: log4JVersion
   implementation group: 'org.apache.logging.log4j', name: 'log4j-to-slf4j', version: log4JVersion
