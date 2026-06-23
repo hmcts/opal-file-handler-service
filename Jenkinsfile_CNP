@@ -11,10 +11,10 @@ def component = "file-handler-service"
 withPipeline(type, product, component) {
     before('akschartsinstall') {
         onPR {
-            env.TEST_URL = "https://file-handler-service-pr-${env.CHANGE_ID}.dev.platform.hmcts.net"
+            env.TEST_URL = "https://opal-file-handler-service-pr-${env.CHANGE_ID}.dev.platform.hmcts.net"
         }
         onMaster {
-            env.TEST_URL = "https://file-handler-service.staging.staging.platform.hmcts.net"
+            env.TEST_URL = "https://opal-file-handler-service-staging.staging.platform.hmcts.net"
         }
     }
 
