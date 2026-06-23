@@ -52,9 +52,9 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://${OPAL_FILE_HANDLING_DB_HOST:localhost}:${OPAL_FILE_HANDLING_DB_PORT:5432}/${OPAL_FILE_HANDLING_DB_NAME:opal-file-handler-db}${OPAL_FILE_HANDLING_DB_OPTIONS:}
-    username: ${OPAL_FILE_HANDLING_DB_USERNAME:opal-db-user}
-    password: ${OPAL_FILE_HANDLING_DB_PASSWORD:opal-db-password}
+    url: jdbc:postgresql://${OPAL_FILE_HANDLER_DB_HOST:localhost}:${OPAL_FILE_HANDLER_DB_PORT:5432}/${OPAL_FILE_HANDLER_DB_NAME:opal-file-handler-db}${OPAL_FILE_HANDLER_DB_OPTIONS:}
+    username: ${OPAL_FILE_HANDLER_DB_USERNAME:opal-db-user}
+    password: ${OPAL_FILE_HANDLER_DB_PASSWORD:opal-db-password}
     properties:
       charSet: UTF-8
     hikari:

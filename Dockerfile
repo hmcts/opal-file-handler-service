@@ -3,7 +3,7 @@ ARG APP_INSIGHTS_AGENT_VERSION=3.7.6
 FROM hmctspublic.azurecr.io/base/java:21-distroless
 
 COPY lib/applicationinsights.json /opt/app/
-COPY build/libs/opal-file-handler.jar /opt/app/
+COPY build/libs/opal-file-handler-service.jar /opt/app/
 
 EXPOSE 4075
-CMD [ "opal-file-handler.jar" ]
+CMD [ "opal-file-handler-service.jar" ]

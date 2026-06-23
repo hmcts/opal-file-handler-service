@@ -21,11 +21,11 @@ java:
   environment:
     OPAL_REDIS_ENABLED: true
     REDIS_CONNECTION_STRING: redis://${SERVICE_NAME}-hmcts-redis-master:6379
-    OPAL_FILE_HANDLING_DB_HOST: "{{ .Release.Name }}-postgresql"
-    OPAL_FILE_HANDLING_DB_NAME: "opal-file-handler-db"
-    OPAL_FILE_HANDLING_DB_USERNAME: "{{ .Values.global.postgresUsername}}"
-    OPAL_FILE_HANDLING_DB_PASSWORD: "{{ .Values.global.postgresPassword}}"
-    OPAL_FILE_HANDLING_DB_OPTIONS: "{{ .Values.global.postgresOptions}}"
+    OPAL_FILE_HANDLER_DB_HOST: "{{ .Release.Name }}-postgresql"
+    OPAL_FILE_HANDLER_DB_NAME: "opal-file-handler-db"
+    OPAL_FILE_HANDLER_DB_USERNAME: "{{ .Values.global.postgresUsername}}"
+    OPAL_FILE_HANDLER_DB_PASSWORD: "{{ .Values.global.postgresPassword}}"
+    OPAL_FILE_HANDLER_DB_OPTIONS: "{{ .Values.global.postgresOptions}}"
     RUN_DB_MIGRATION_ON_STARTUP: true
     OPAL_USER_SERVICE_API_URL: "https://opal-user-service.staging.platform.hmcts.net/"
     TESTING_SUPPORT_ENDPOINTS_ENABLED: true

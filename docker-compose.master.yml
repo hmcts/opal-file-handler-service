@@ -1,3 +1,3 @@
 services:
-  opal-file-handler:
-    image: hmctsprod.azurecr.io/opal/file-handler:latest
+  opal-file-handler-service-service:
+    image: hmctsprod.azurecr.io/opal/file-handler-service:latest
