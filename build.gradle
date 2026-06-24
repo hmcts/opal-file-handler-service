@@ -245,9 +245,7 @@ dependencies {
   implementation "org.springframework.boot:spring-boot-starter-oauth2-client"
   implementation 'org.springframework.boot:spring-boot-starter-data-redis'
   implementation 'org.springframework.boot:spring-boot-starter-cache'
-  implementation "org.springframework.boot:spring-boot-starter-security"
   implementation 'org.springframework.boot:spring-boot-starter-integration'
-  implementation "org.springframework.boot:spring-boot-starter-oauth2-client"
   implementation 'org.springframework.security:spring-security-oauth2-authorization-server'
   implementation 'org.springframework.cloud:spring-cloud-starter-openfeign', {
     exclude group: 'commons-fileupload', module: 'commons-fileupload'
@@ -377,7 +375,7 @@ def zephyrArgs = { String processType, String actionType, String testFolder, Str
           "action-type=${actionType}",
           "base-path=${file("src/${testFolder}").absolutePath}",
           "report-path=${reportPath}",
-          "github-repo-base-src-dir=https://github.com/hmcts/opal-fines-service/tree/master/src/${testFolder}",
+          "github-repo-base-src-dir=https://github.com/hmcts/opal-file-handler-service/tree/master/src/${testFolder}",
   ]
 }
 
