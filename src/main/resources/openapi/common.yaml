@@ -9,7 +9,7 @@ info:
 components:
   headers:
     ETag:
-      description: Version of the account.
+      description: Version of the record.
       schema:
         $ref: "./types.yaml#/components/schemas/BigInt"
       required: true
