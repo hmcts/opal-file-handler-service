@@ -83,15 +83,15 @@ public class SecurityConfig {
     @Bean
     JwtIssuerAuthenticationManagerResolver jwtIssuerAuthenticationManagerResolver(
         InternalAuthConfigurationProperties authProps,
-        OpalJwtAuthenticationProvider finesJwtAuthenticationProvider) {
+        OpalJwtAuthenticationProvider fileHandlerJwtAuthenticationProvider) {
 
-        AuthenticationManager manager = finesJwtAuthenticationProvider::authenticate;
+        AuthenticationManager manager = fileHandlerJwtAuthenticationProvider::authenticate;
         Map<String, AuthenticationManager> managers = Map.of(authProps.getIssuerUri(), manager);
         return new JwtIssuerAuthenticationManagerResolver(managers::get);
     }
 
     @Bean
-    OpalJwtAuthenticationProvider finesJwtAuthenticationProvider(
+    OpalJwtAuthenticationProvider fileHandlerJwtAuthenticationProvider(
         NimbusJwtDecoder internalJwtDecoder,
         UserStateClientService userStateClientService,
         JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter,

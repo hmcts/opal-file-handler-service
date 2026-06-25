@@ -25,7 +25,7 @@ services:
       - TESTING_SUPPORT_ENDPOINTS_ENABLED=true
       - LAUNCH_DARKLY_ENABLED=true
     ports:
-      - "${FINES_PORT:-4075}:4075"
+      - "${FILE_HANDLER_PORT:-4075}:4075"
     depends_on:
       - opal-db
       - redis

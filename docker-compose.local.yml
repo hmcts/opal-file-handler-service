@@ -1,5 +1,5 @@
 services:
-  opal-fines-service:
+  opal-file-handler-service:
     image: file-handler-service:local
     build:
       context: ../opal-file-handler-service

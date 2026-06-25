@@ -121,7 +121,7 @@ public class UserStateStub {
     }
 
     public OpalJwtAuthenticationToken getOpalJwtAuthenticationToken() {
-        return new OpalJwtAuthenticationToken(getUserState(), Domain.FINES,
+        return new OpalJwtAuthenticationToken(getUserState(), Domain.FILE_HANDLING,
             parseJwt(jwtStr),
             new ArrayList<>(),
             getUserState());
@@ -231,7 +231,7 @@ public class UserStateStub {
 
         Map<Domain, DomainBusinessUnitUsers> domains = new EnumMap<>(Domain.class);
         domains.put(
-            Domain.FINES,
+            Domain.FILE_HANDLING,
             DomainBusinessUnitUsers.builder()
                 .businessUnitUsers(businessUnitUsers)
                 .build()
@@ -278,7 +278,7 @@ public class UserStateStub {
     }
 
     private DomainBusinessUnitUsers getDomainBusinessUnitUsers() {
-        return userState.getDomains().get(Domain.FINES);
+        return userState.getDomains().get(Domain.FILE_HANDLING);
     }
 
 

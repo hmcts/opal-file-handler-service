@@ -1,0 +1,76 @@
+configurations {
+  zephyrCucumberReportProcessor
+}
+
+dependencies {
+  zephyrCucumberReportProcessor 'uk.gov.hmcts:zephyr-automation:1.1.0'
+  testImplementation 'uk.gov.hmcts:zephyr-automation:1.1.0'
+}
+
+tasks.register('copySmokeCucumberJson', Copy) {
+  from("target/cucumber.json")
+  into("${rootDir}/smoke-output/zephyr")
+  rename { "cucumber-smoke.json" }
+  outputs.upToDateWhen { false }
+}
+
+var zephyrBaseArgs = [
+        // Jira config shared by all Zephyr automation actions.
+        "jira-base-url=https://tools.hmcts.net/jira/rest/api/latest",
+        "jira-project-id=28500",
+        "jira-default-user=OPAL.Zephyr.automation",
+        "jira-auth-token=${System.getenv('JIRA_AUTH_TOKEN')}",
+        "jira-epic-link-custom-field-id=customfield_10008",
+        "jira-default-components=opal-file-handler-service",
+        "execution-environment=${System.getenv('EXECUTION_ENVIRONMENT') ?: ''}",
+        "execution-build=${System.getenv('EXECUTION_BUILD') ?: ''}",
+        "execution-test-cycle-description=${System.getenv('EXECUTION_CYCLE_DESCRIPTION') ?: ''}"
+]
+
+// Return a fresh list every call so task args are isolated.
+def zephyrArgs = { String processType, String actionType, String testFolder, String reportPath ->
+  zephyrBaseArgs + [
+          "process-type=${processType}",
+          "action-type=${actionType}",
+          "base-path=${file("src/${testFolder}").absolutePath}",
+          "report-path=${reportPath}",
+          "github-repo-base-src-dir=https://github.com/hmcts/opal-file-handler-service/tree/master/src/${testFolder}",
+  ]
+}
+
+tasks.register('createJiraTicketsFromJUnit5ReportIntegrationTest', JavaExec) {
+  group = "Zephyr Reporting - JUnit5"
+  description = "Processes Junit5Report-IntegrationTest.json to create and link Jira tickets to each test"
+  def junit5ReportJson = file("integration-output/zephyr/Junit5Report-IntegrationTest.json")
+
+  inputs.file(junit5ReportJson)
+
+  classpath = configurations.zephyrCucumberReportProcessor
+  mainClass = "uk.hmcts.zephyr.automation.ZephyrAutomation"
+  args = zephyrArgs("JUNIT5_JSON_REPORT", "CREATE_TICKETS", "integrationTest/java", junit5ReportJson.absolutePath)
+}
+
+tasks.register('updateJiraTicketsFromJUnit5ReportIntegrationTest', JavaExec) {
+  group = "Zephyr Reporting - JUnit5"
+  description = "Processes Junit5Report-IntegrationTest.json to update Jira tickets"
+  def junit5ReportJson = file("integration-output/zephyr/Junit5Report-IntegrationTest.json")
+
+  inputs.file(junit5ReportJson)
+
+  classpath = configurations.zephyrCucumberReportProcessor
+  mainClass = "uk.hmcts.zephyr.automation.ZephyrAutomation"
+  args = zephyrArgs("JUNIT5_JSON_REPORT", "UPDATE_TICKETS", "integrationTest/java", junit5ReportJson.absolutePath)
+}
+
+tasks.register('createJiraExecutionFromJUnit5ReportIntegrationTest', JavaExec) {
+  group = "Zephyr Reporting - JUnit5"
+  description = "Processes Junit5Report-IntegrationTest.json to create Zephyr executions"
+  def junit5ReportJson = file("integration-output/zephyr/Junit5Report-IntegrationTest.json")
+
+  inputs.file(junit5ReportJson)
+
+  classpath = configurations.zephyrCucumberReportProcessor
+  mainClass = "uk.hmcts.zephyr.automation.ZephyrAutomation"
+  args = zephyrArgs("JUNIT5_JSON_REPORT", "CREATE_EXECUTION", "integrationTest/java", junit5ReportJson.absolutePath)
+}
+
