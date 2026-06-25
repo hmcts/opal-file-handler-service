@@ -1,6 +1,6 @@
 buildscript {
   dependencies {
-    classpath("org.flywaydb:flyway-database-postgresql:12.8.1")
+    classpath("org.flywaydb:flyway-database-postgresql:12.9.0")
   }
 }
 plugins {
@@ -16,7 +16,7 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'org.flywaydb.flyway' version '12.8.1'
+  id 'org.flywaydb.flyway' version '12.9.0'
 }
 
 application {
@@ -256,8 +256,8 @@ dependencies {
   implementation group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
   implementation group: 'ch.qos.logback', name: 'logback-core', version: logbackVersion
 
-  implementation 'org.flywaydb:flyway-core:12.8.1'
-  runtimeOnly 'org.flywaydb:flyway-database-postgresql:12.8.1', {
+  implementation 'org.flywaydb:flyway-core:12.9.0'
+  runtimeOnly 'org.flywaydb:flyway-database-postgresql:12.9.0', {
     exclude group: 'org.flywaydb', module: 'flyway-core'
   }
   implementation 'org.postgresql:postgresql'
