@@ -27,7 +27,7 @@ public class TestContainerConfig {
             .withCommand("postgres -c max_connections=200 -c log_connections=on -c log_disconnections=on");
 
         // Uncomment the following to enable connection to the Test Containers DB whilst debugging.
-        //POSTGRES_CONTAINER.setPortBindings(List.of("55432:5432"));
+        //POSTGRES_CONTAINER.setPortBindings(List.of("5432:5432"));
 
         POSTGRES_CONTAINER.start();
 
