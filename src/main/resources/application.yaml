@@ -97,9 +97,6 @@ spring:
 opal:
   frontend:
     url: ${OPAL_FRONTEND_URL:http://localhost:4200}
-  redis:
-    enabled: ${OPAL_REDIS_ENABLED:true}
-    ttl-duration: ${OPAL_REDIS_TTL_DURATION:8H}
   azure:
     active-directory-justice-auth-uri: https://login.microsoftonline.com
   testing-support-endpoints:
