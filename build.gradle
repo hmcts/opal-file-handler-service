@@ -222,7 +222,7 @@ dependencies {
   //OpenAPI
   openapiImplementation "io.swagger.parser.v3:swagger-parser:2.1.44"
   openapiImplementation "io.swagger.core.v3:swagger-models:2.2.51"
-  openapiImplementation "io.swagger.core.v3:swagger-core:2.2.51"
+  openapiImplementation "io.swagger.core.v3:swagger-core:2.2.52"
   openapiImplementation "tools.jackson.dataformat:jackson-dataformat-yaml"
   //HMCTS
   implementation 'uk.gov.hmcts:opal-common-lib:0.3.22'
