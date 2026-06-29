@@ -281,7 +281,7 @@ dependencies {
 
 
 
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.2.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.3.Final'
 
 
 
