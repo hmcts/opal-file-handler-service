@@ -3,8 +3,8 @@ configurations {
 }
 
 dependencies {
-  zephyrCucumberReportProcessor 'uk.gov.hmcts:zephyr-automation:1.1.0'
-  testImplementation 'uk.gov.hmcts:zephyr-automation:1.1.0'
+  zephyrCucumberReportProcessor 'uk.gov.hmcts:zephyr-automation:1.2.0'
+  testImplementation 'uk.gov.hmcts:zephyr-automation:1.2.0'
 }
 
 tasks.register('copySmokeCucumberJson', Copy) {
