@@ -66,13 +66,11 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(AUTH_WHITELIST)
                     .permitAll()
-                    .anyRequest().authenticated()
-            )
+                    .anyRequest().authenticated())
             .exceptionHandling(exceptionHandling ->
                 exceptionHandling
                     .authenticationEntryPoint(customAuthenticationExceptions)
-                    .accessDeniedHandler(customAuthenticationExceptions)
-            )
+                    .accessDeniedHandler(customAuthenticationExceptions))
             .oauth2ResourceServer(oauth2 -> {
                 oauth2.authenticationManagerResolver(jwtIssuerAuthenticationManagerResolver);
                 oauth2.authenticationEntryPoint(customOauth2AuthenticationEntryPoint);
@@ -103,8 +101,7 @@ public class SecurityConfig {
             internalJwtDecoder,
             userStateClientService,
             jwtGrantedAuthoritiesConverter,
-            domain
-        );
+            domain);
     }
 
     @Bean
@@ -127,9 +124,11 @@ public class SecurityConfig {
         return new JwtGrantedAuthoritiesConverter();
     }
 
+    @SuppressWarnings("java:S4502")
     private HttpSecurity applyCommonConfig(HttpSecurity http) {
         return http
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // Safe for this API: authentication is via bearer JWTs, not browser cookies.
             .csrf(AbstractHttpConfigurer::disable)
             .formLogin(FormLoginConfigurer::disable)
             .logout(LogoutConfigurer::disable);
