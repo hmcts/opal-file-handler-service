@@ -67,15 +67,6 @@ bt-eckoh-report:
 
 caps-report:
   image: ${IMAGE_NAME}
-  devmemoryRequests: "1Gi"
-  devcpuRequests: "250m"
-  devmemoryLimits: "2Gi"
-  devcpuLimits: "2500m"
-  postgresql:
-    auth:
-      username: javapostgres
-      password: javapassword
-      database: javadatabase
   environment:
     REDIS_CONNECTION_STRING: redis://${SERVICE_NAME}-hmcts-redis-master:6379
     OPAL_USER_DB_HOST: "{{ .Release.Name }}-postgresql"
