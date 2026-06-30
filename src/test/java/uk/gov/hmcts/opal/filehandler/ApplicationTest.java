@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.springframework.boot.SpringApplication;
@@ -30,9 +32,9 @@ public class ApplicationTest {
         var exception = assertThrows(
             IllegalArgumentException.class,
             () -> Application.isAutomatedTask(new String[] {
-                "AutomatedTask:",
+                "AutomatedTask:BTEckohReport",
                 "someRandomArgument",
-                "AutomatedTask:"
+                "AutomatedTask:CAPSReport"
             })
         );
 
@@ -51,10 +53,11 @@ public class ApplicationTest {
         }
     }
 
-    @Test
-    void runAutomatedTaskShouldDisableWebLayerAndExit() {
+    @ParameterizedTest
+    @ValueSource(strings = { "AutomatedTask:BTEckohReport", "AutomatedTask:CAPSReport" })
+    void runAutomatedTaskShouldDisableWebLayerAndExit(final String task) {
         var context = mock(ConfigurableApplicationContext.class);
-        String[] args = new String[] { "AutomatedTask:" };
+        String[] args = new String[] { task };
 
         try (MockedConstruction<SpringApplicationBuilder> construction =
                 mockConstruction(SpringApplicationBuilder.class, (mock, mockContext) -> {
