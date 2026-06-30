@@ -288,7 +288,7 @@ dependencies {
 
   //Test
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
-  testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '5.5.7'
+  testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '6.0.0'
   testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 
   integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.1'
