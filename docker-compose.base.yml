@@ -2,7 +2,7 @@ include:
   - path: ../opal-shared-infrastructure/docker-compose.yml
 
 services:
-  opal-file-handler:
+  opal-file-handler-service:
     env_file:
       - ../opal-shared-infrastructure/docker-files/.env.shared
     environment:
