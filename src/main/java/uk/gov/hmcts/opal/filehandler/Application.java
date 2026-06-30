@@ -1,6 +1,7 @@
 package uk.gov.hmcts.opal.filehandler;
 
 import java.util.Arrays;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -24,6 +25,7 @@ import uk.gov.hmcts.opal.filehandler.config.FeignConfiguration;
 public class Application {
 
     static final String AUTOMATED_TASK_PREFIX = "AutomatedTask:";
+    static final String AUTOMATED_TASK_PROPERTY = "opal.automated-task";
 
     public static void main(final String[] args) {
         if (isAutomatedTask(args)) {
@@ -36,6 +38,7 @@ public class Application {
     static int runAutomatedTask(final String[] args) {
         var ctx = new SpringApplicationBuilder(Application.class)
             .web(WebApplicationType.NONE)
+            .properties(Map.of(AUTOMATED_TASK_PROPERTY, "true"))
             .run(args);
 
         return SpringApplication.exit(ctx);

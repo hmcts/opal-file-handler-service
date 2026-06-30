@@ -3,12 +3,14 @@ package uk.gov.hmcts.opal.filehandler;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
@@ -57,6 +59,7 @@ public class ApplicationTest {
         try (MockedConstruction<SpringApplicationBuilder> construction =
                 mockConstruction(SpringApplicationBuilder.class, (mock, mockContext) -> {
                     when(mock.web(WebApplicationType.NONE)).thenReturn(mock);
+                    when(mock.properties(anyMap())).thenReturn(mock);
                     when(mock.run(any(String[].class))).thenReturn(context);
                 });
 
@@ -71,6 +74,7 @@ public class ApplicationTest {
             var builder = construction.constructed().get(0);
 
             verify(builder).web(WebApplicationType.NONE);
+            verify(builder).properties(Map.of(Application.AUTOMATED_TASK_PROPERTY, "true"));
             verify(builder).run(args);
 
             app.verify(() -> SpringApplication.exit(context));
