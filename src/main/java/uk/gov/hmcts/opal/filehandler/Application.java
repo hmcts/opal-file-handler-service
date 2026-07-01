@@ -38,7 +38,7 @@ public class Application {
     static int runAutomatedTask(final String[] args) {
         var ctx = new SpringApplicationBuilder(Application.class)
             .web(WebApplicationType.NONE)
-            .properties(Map.of(AUTOMATED_TASK_PROPERTY, "true"))
+            .properties(Map.of(AUTOMATED_TASK_PROPERTY, getAutomatedTaskName(args)))
             .run(args);
 
         return SpringApplication.exit(ctx);
@@ -58,5 +58,13 @@ public class Application {
         }
 
         return true;
+    }
+
+    static String getAutomatedTaskName(final String[] args) {
+        return Arrays.stream(args)
+            .filter(arg -> arg.startsWith(AUTOMATED_TASK_PREFIX))
+            .findFirst()
+            .get()
+            .substring(AUTOMATED_TASK_PREFIX.length());
     }
 }

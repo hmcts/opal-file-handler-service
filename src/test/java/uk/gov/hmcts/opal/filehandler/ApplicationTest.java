@@ -28,6 +28,12 @@ public class ApplicationTest {
     }
 
     @Test
+    void getAutomatedTaskNameReturnsTaskName() {
+        assertThat(Application.getAutomatedTaskName(new String[] { "AutomatedTask:CAPSReport"  }))
+            .isEqualTo("CAPSReport");
+    }
+
+    @Test
     void isAutomatedTaskShouldThrowExceptionWhenMultipleTasksFound() {
         var exception = assertThrows(
             IllegalArgumentException.class,
@@ -54,10 +60,10 @@ public class ApplicationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = { "AutomatedTask:BTEckohReport", "AutomatedTask:CAPSReport" })
+    @ValueSource(strings = { "BTEckohReport", "CAPSReport" })
     void runAutomatedTaskShouldDisableWebLayerAndExit(final String task) {
         var context = mock(ConfigurableApplicationContext.class);
-        String[] args = new String[] { task };
+        String[] args = new String[] { "AutomatedTask:" + task };
 
         try (MockedConstruction<SpringApplicationBuilder> construction =
                 mockConstruction(SpringApplicationBuilder.class, (mock, mockContext) -> {
@@ -77,7 +83,7 @@ public class ApplicationTest {
             var builder = construction.constructed().get(0);
 
             verify(builder).web(WebApplicationType.NONE);
-            verify(builder).properties(Map.of(Application.AUTOMATED_TASK_PROPERTY, "true"));
+            verify(builder).properties(Map.of(Application.AUTOMATED_TASK_PROPERTY, task));
             verify(builder).run(args);
 
             app.verify(() -> SpringApplication.exit(context));
