@@ -64,7 +64,7 @@ public class Application {
         return Arrays.stream(args)
             .filter(arg -> arg.startsWith(AUTOMATED_TASK_PREFIX))
             .findFirst()
-            .get()
+            .orElse("")
             .substring(AUTOMATED_TASK_PREFIX.length());
     }
 }
