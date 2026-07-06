@@ -263,6 +263,7 @@ dependencies {
   }
   implementation 'org.postgresql:postgresql'
 
+  // temporary update until CVEs are patched out
   implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:11.0.23'
   implementation 'org.apache.tomcat.embed:tomcat-embed-core:11.0.23'
   implementation 'org.apache.tomcat.embed:tomcat-embed-el:11.0.23'
