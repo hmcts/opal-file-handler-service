@@ -26,6 +26,7 @@ public class AutomatedTaskBTEckohReportIntegrationTest extends AbstractIntegrati
     @Autowired
     private ApplicationContext applicationContext;
 
+    // placeholder mock until the actual service is implemented formally
     @MockitoBean(enforceOverride = true, reset = MockReset.NONE)
     private AutomatedBTEckohReport automatedBTEckohReport;
 
