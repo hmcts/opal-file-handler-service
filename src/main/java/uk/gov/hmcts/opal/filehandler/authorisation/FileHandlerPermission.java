@@ -7,8 +7,7 @@ import uk.gov.hmcts.opal.common.user.authorisation.model.PermissionDescriptor;
 @AllArgsConstructor
 @Getter
 public enum FileHandlerPermission implements PermissionDescriptor {
-    ;
-
+    ViewInterfacesFile(1L, "Can view interface files");
 
     private final long id;
     private final String description;
