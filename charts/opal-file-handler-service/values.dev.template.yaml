@@ -47,6 +47,11 @@ java:
 
 bt-eckoh-report:
   image: ${IMAGE_NAME}
+  postgresql:
+    auth:
+      username: javapostgres
+      password: javapassword
+      database: opal-file-handler-db
   environment:
     REDIS_CONNECTION_STRING: redis://${SERVICE_NAME}-hmcts-redis-master:6379
     OPAL_USER_DB_HOST: "{{ .Release.Name }}-postgresql"
