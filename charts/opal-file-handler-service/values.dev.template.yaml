@@ -51,7 +51,6 @@ bt-eckoh-report:
     OPAL_FILE_HANDLER_DB_USERNAME: "{{ .Values.global.postgresUsername}}"
     OPAL_FILE_HANDLER_DB_PASSWORD: "{{ .Values.global.postgresPassword}}"
     OPAL_FILE_HANDLER_DB_OPTIONS: "{{ .Values.global.postgresOptions}}"
-    OPAL_USER_DB_PORT: 5432
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.staging.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
