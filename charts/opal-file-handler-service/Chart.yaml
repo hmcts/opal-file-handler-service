@@ -34,3 +34,8 @@ dependencies:
     version: 2.2.1
     repository: 'oci://hmctsprod.azurecr.io/helm'
     condition: allpay-file-transfer.enabled
+  - name: job
+    alias: barclaycard-transfer
+    version: 2.2.1
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: barclaycard-transfer.enabled
