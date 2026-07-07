@@ -46,7 +46,7 @@ java:
       password: javapassword
       database: opal-file-handler-db
 
-barclaycard-file-transfer:
+barclaycard-transfer:
   image: ${IMAGE_NAME}
   environment:
     REDIS_CONNECTION_STRING: redis://${SERVICE_NAME}-hmcts-redis-master:6379

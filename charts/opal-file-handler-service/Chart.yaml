@@ -15,7 +15,7 @@ dependencies:
     repository: "oci://hmctsprod.azurecr.io/helm"
     condition: hmcts-redis.enabled
   - name: job
-    alias: barclaycard-file-transfer
+    alias: barclaycard-transfer
     version: 2.2.1
     repository: 'oci://hmctsprod.azurecr.io/helm'
-    condition: barclaycard-file-transfer.enabled
+    condition: barclaycard-transfer.enabled
