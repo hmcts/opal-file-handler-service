@@ -48,7 +48,7 @@ global:
   security:
     allowInsecureImages: true
 
-natwest-file-transfer:
+natwest-transfer:
   enabled: true
   kind: CronJob
   image: 'hmcts.azurecr.io/opal/file-handler-service:latest'

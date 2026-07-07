@@ -15,7 +15,7 @@ dependencies:
     repository: "oci://hmctsprod.azurecr.io/helm"
     condition: hmcts-redis.enabled
   - name: job
-    alias: natwest-file-transfer
+    alias: natwest-transfer
     version: 2.2.1
     repository: 'oci://hmctsprod.azurecr.io/helm'
-    condition: natwest-file-transfer.enabled
+    condition: natwest-transfer.enabled
