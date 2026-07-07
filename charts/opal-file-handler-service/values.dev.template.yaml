@@ -41,6 +41,10 @@ java:
           init.sql: |-
             CREATE DATABASE "opal-logging-db" OWNER javapostgres ENCODING = 'UTF-8' CONNECTION LIMIT = -1;
             CREATE DATABASE "opal-user-db" OWNER javapostgres ENCODING = 'UTF-8' CONNECTION LIMIT = -1;
+    auth:
+      username: javapostgres
+      password: javapassword
+      database: opal-file-handler-db
 
 bt-eckoh-report:
   image: ${IMAGE_NAME}
