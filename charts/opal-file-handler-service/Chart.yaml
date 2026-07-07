@@ -24,3 +24,8 @@ dependencies:
     version: 2.2.1
     repository: 'oci://hmctsprod.azurecr.io/helm'
     condition: caps-report.enabled
+  - name: job
+    alias: natwest-transfer
+    version: 2.2.1
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: natwest-transfer.enabled
