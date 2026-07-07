@@ -1,4 +1,5 @@
 global:
+  postgresDatabase: "opal-file-handler-db"
   postgresUsername: "javapostgres"
   postgresOptions: "?stringtype=unspecified"
   postgresPassword: "javapassword"
@@ -21,7 +22,7 @@ java:
   environment:
     REDIS_CONNECTION_STRING: redis://${SERVICE_NAME}-hmcts-redis-master:6379
     OPAL_FILE_HANDLER_DB_HOST: "{{ .Release.Name }}-postgresql"
-    OPAL_FILE_HANDLER_DB_NAME: "opal-file-handler-db"
+    OPAL_FILE_HANDLER_DB_NAME: "{{ .Values.global.postgresDatabase}}"
     OPAL_FILE_HANDLER_DB_USERNAME: "{{ .Values.global.postgresUsername}}"
     OPAL_FILE_HANDLER_DB_PASSWORD: "{{ .Values.global.postgresPassword}}"
     OPAL_FILE_HANDLER_DB_OPTIONS: "{{ .Values.global.postgresOptions}}"
@@ -40,25 +41,16 @@ java:
           init.sql: |-
             CREATE DATABASE "opal-logging-db" OWNER javapostgres ENCODING = 'UTF-8' CONNECTION LIMIT = -1;
             CREATE DATABASE "opal-user-db" OWNER javapostgres ENCODING = 'UTF-8' CONNECTION LIMIT = -1;
-    auth:
-      username: javapostgres
-      password: javapassword
-      database: opal-file-handler-db
 
 bt-eckoh-report:
   image: ${IMAGE_NAME}
-  postgresql:
-    auth:
-      username: javapostgres
-      password: javapassword
-      database: opal-file-handler-db
   environment:
     REDIS_CONNECTION_STRING: redis://${SERVICE_NAME}-hmcts-redis-master:6379
     OPAL_USER_DB_HOST: "{{ .Release.Name }}-postgresql"
-    OPAL_USER_DB_NAME: "{{ .Values.postgresql.auth.database}}"
-    OPAL_USER_DB_USERNAME: "{{ .Values.postgresql.auth.username}}"
-    OPAL_USER_DB_PASSWORD: "{{ .Values.postgresql.auth.password}}"
-    OPAL_USER_DB_OPTIONS: "?stringtype=unspecified"
+    OPAL_USER_DB_NAME: "{{ .Values.global.postgresDatabase}}"
+    OPAL_USER_DB_USERNAME: "{{ .Values.global.postgresUsername}}"
+    OPAL_USER_DB_PASSWORD: "{{ .Values.global.postgresPassword}}"
+    OPAL_USER_DB_OPTIONS: "{{ .Values.global.postgresOptions}}"
     OPAL_USER_DB_PORT: 5432
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.staging.apps.hmcts.net
