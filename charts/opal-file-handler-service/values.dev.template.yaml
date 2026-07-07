@@ -69,12 +69,11 @@ caps-report:
   image: ${IMAGE_NAME}
   environment:
     REDIS_CONNECTION_STRING: redis://${SERVICE_NAME}-hmcts-redis-master:6379
-    OPAL_USER_DB_HOST: "{{ .Release.Name }}-postgresql"
-    OPAL_USER_DB_NAME: "{{ .Values.postgresql.auth.database}}"
-    OPAL_USER_DB_USERNAME: "{{ .Values.postgresql.auth.username}}"
-    OPAL_USER_DB_PASSWORD: "{{ .Values.postgresql.auth.password}}"
-    OPAL_USER_DB_OPTIONS: "?stringtype=unspecified"
-    OPAL_USER_DB_PORT: 5432
+    OPAL_FILE_HANDLER_DB_HOST: "{{ .Release.Name }}-postgresql"
+    OPAL_FILE_HANDLER_DB_NAME: "{{ .Values.global.postgresDatabase}}"
+    OPAL_FILE_HANDLER_DB_USERNAME: "{{ .Values.global.postgresUsername}}"
+    OPAL_FILE_HANDLER_DB_PASSWORD: "{{ .Values.global.postgresPassword}}"
+    OPAL_FILE_HANDLER_DB_OPTIONS: "{{ .Values.global.postgresOptions}}"
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.staging.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
