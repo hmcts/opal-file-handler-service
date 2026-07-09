@@ -63,3 +63,8 @@ dependencies:
     version: 2.2.1
     repository: 'oci://hmctsprod.azurecr.io/helm'
     condition: cder-transfer.enabled
+  - name: job
+    alias: marston-transfer
+    version: 2.2.1
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: marston-transfer.enabled
