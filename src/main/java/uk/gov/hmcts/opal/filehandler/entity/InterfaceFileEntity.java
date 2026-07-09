@@ -7,7 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.Date;
-
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,8 +15,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "interface_files")
@@ -25,36 +23,52 @@ import org.hibernate.type.SqlTypes;
 @Builder
 @Getter
 @Setter
-public class InterfaceFilesEntity {
+public class InterfaceFileEntity {
 
     @Id
     @Column(nullable = false)
     private Long interfaceFileId;
 
     @Column(nullable = false)
-    private long interfaceJobId;
+    @Enumerated(EnumType.STRING)
+    @NonNull
+    private Interface source;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @NonNull
+    private Interface target;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @NonNull
+    private Type type;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @NonNull
+    private Domain opalDomain;
 
     @Column(nullable = false)
     @NonNull
     private String fileName;
 
     @Column
+    private UUID filestoreUuid;
+
+    @Column
+    private String checksum;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @NonNull
+    private Status status;
+
+    @Column(nullable = false)
+    @NonNull
     private Date createdDatetime;
 
     @Column
-    private String records;
-
-    @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    private InterfaceFileSource source;
-
-    @Column(nullable = false)
-    private boolean overrideInhibits;
-
-    @Column
-    private short recordCount;
-
-    @Column
-    private double totalAmount;
+    private String errors;
 
 }
