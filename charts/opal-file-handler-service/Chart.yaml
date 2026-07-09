@@ -53,3 +53,8 @@ dependencies:
     version: 2.2.1
     repository: 'oci://hmctsprod.azurecr.io/helm'
     condition: dwp-transfer.enabled
+  - name: job
+    alias: jacobs-transfer
+    version: 2.2.1
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: jacobs-transfer.enabled
