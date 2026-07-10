@@ -8,6 +8,13 @@ info:
   version: v0.0.1
 components:
   schemas:
+    domainEnum:
+      type: string
+      enum:
+        - FINES
+        - MAINTENANCE
+        - FILE_HANDLER
+        - CONFISCATION
     BigInt:
       type: integer
       format: int64
