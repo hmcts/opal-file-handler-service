@@ -36,7 +36,6 @@ public class InterfaceFilesService {
     }
 
     private void checkPermissions() {
-        // Needs the "View Interface File" permission
         if (!SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser()
             .hasPermission(FileHandlerPermission.ViewInterfacesFile)) {
             throw new PermissionNotAllowedException(FileHandlerPermission.ViewInterfacesFile);
