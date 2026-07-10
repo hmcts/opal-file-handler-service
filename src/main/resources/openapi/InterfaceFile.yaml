@@ -36,7 +36,7 @@ paths:
           name: domain
           description: DB Mapping - interface_files.domain
           schema:
-            $ref: '#/components/schemas/domainEnum'
+            $ref: './types.yaml#/components/schemas/domainEnum'
         - in: query
           name: status
           description: DB Mapping - interface_files.status
@@ -62,9 +62,13 @@ paths:
               schema:
                 additionalProperties: false
                 type: object
+                required:
+                  - number_of_results
+                  - interface_files
                 properties:
                   number_of_results:
                     type: integer
+                    min: 0
                     description: The number of results returned in the response
                   interface_files:
                     type: array
@@ -176,6 +180,15 @@ components:
     interfaceFileObject:
       additionalProperties: false
       type: object
+      required:
+        - interface_file_id
+        - source
+        - target
+        - type
+        - domain
+        - status
+        - file_name
+        - created_datetime
       properties:
         interface_file_id:
           $ref: './types.yaml/#/components/schemas/BigInt'
@@ -199,7 +212,7 @@ components:
         type:
           $ref: '#/components/schemas/interfaceFileTypeEnum'
         domain:
-          $ref: '#/components/schemas/domainEnum'
+          $ref: './types.yaml/#/components/schemas/domainEnum'
         status:
           $ref: '#/components/schemas/statusEnum'
         created_datetime:
@@ -221,12 +234,6 @@ components:
         - SOURCE
         - SOURCE_JSON
         - TRANSFORMED_JSON
-    domainEnum:
-      type: string
-      enum:
-        - FINES
-        - MAINTENANCE
-        - FILE_HANDLER
     statusEnum:
       type: string
       enum:
