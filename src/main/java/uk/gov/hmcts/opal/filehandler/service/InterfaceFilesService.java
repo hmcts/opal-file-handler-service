@@ -8,23 +8,26 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
+import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecs;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
+import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 
 @RequiredArgsConstructor
 @Service
 public class InterfaceFilesService {
     private final InterfaceFilesRepository repository;
     private final InterfaceFileSpecs specBuilder;
+    private final InterfaceFileMapper mapper;
 
     @Transactional(readOnly = true)
-    void searchInterfaceFiles(SearchInterfaceFilesDto request) {
+    public List<InterfaceFileObjectInterfaceFile> searchInterfaceFiles(SearchInterfaceFilesDto request) {
         List<InterfaceFileEntity> interfacesFiles = repository.findAll(
             specBuilder.findBySearchCriteria(request),
             Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime))
         );
 
-
+        return mapper.toInterfaceFileObjects(interfacesFiles);
     }
 }
