@@ -7,6 +7,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
+import uk.gov.hmcts.opal.common.util.SecurityUtil;
+import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
@@ -23,11 +26,20 @@ public class InterfaceFilesService {
 
     @Transactional(readOnly = true)
     public List<InterfaceFileObjectInterfaceFile> searchInterfaceFiles(SearchInterfaceFilesDto request) {
+        checkPermissions();
+
         List<InterfaceFileEntity> interfacesFiles = repository.findAll(
             specBuilder.findBySearchCriteria(request),
             Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime))
         );
-
         return mapper.toInterfaceFileObjects(interfacesFiles);
+    }
+
+    private void checkPermissions() {
+        // Needs the "View Interface File" permission
+        if (!SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser()
+            .hasPermission(FileHandlerPermission.ViewInterfacesFile)) {
+            throw new PermissionNotAllowedException(FileHandlerPermission.ViewInterfacesFile);
+        }
     }
 }
