@@ -261,7 +261,7 @@ dependencies {
   runtimeOnly 'org.flywaydb:flyway-database-postgresql:12.10.0', {
     exclude group: 'org.flywaydb', module: 'flyway-core'
   }
-  implementation 'org.postgresql:postgresql'
+  implementation 'org.postgresql:postgresql:42.7.13'
 
   // temporary update until CVEs are patched out
   implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:11.0.24'
