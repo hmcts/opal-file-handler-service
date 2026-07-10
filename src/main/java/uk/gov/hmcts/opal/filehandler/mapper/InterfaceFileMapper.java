@@ -1,0 +1,13 @@
+package uk.gov.hmcts.opal.filehandler.mapper;
+
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
+import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
+
+@Mapper(componentModel = "spring")
+public interface InterfaceFileMapper {
+
+    @Mapping(target = "domain", source = "opalDomain")
+    InterfaceFileObjectInterfaceFile toInterfaceFileObject(InterfaceFileEntity interfaceFile);
+}

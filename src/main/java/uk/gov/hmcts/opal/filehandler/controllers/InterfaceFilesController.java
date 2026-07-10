@@ -1,10 +1,18 @@
 package uk.gov.hmcts.opal.filehandler.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.opal.generated.http.api.InterfaceFilesApi;
+import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
+import uk.gov.hmcts.opal.generated.model.GetInterfaceFiles200Response;
+import uk.gov.hmcts.opal.generated.model.InterfaceFileEnumInterfaceFile;
+import uk.gov.hmcts.opal.generated.model.InterfaceFileTypeEnumInterfaceFile;
+import uk.gov.hmcts.opal.generated.model.StatusEnumInterfaceFile;
 
 @RestController
 @Slf4j(topic = "opal.InterfaceFilesController")
@@ -12,4 +20,27 @@ import uk.gov.hmcts.opal.generated.http.api.InterfaceFilesApi;
 @Tag(name = "Interface Files Controller")
 public class InterfaceFilesController implements InterfaceFilesApi {
 
+    @Override
+    public ResponseEntity<GetInterfaceFiles200Response> getInterfaceFiles(
+        @Nullable InterfaceFileEnumInterfaceFile source,
+        @Nullable InterfaceFileEnumInterfaceFile target,
+        @Nullable InterfaceFileTypeEnumInterfaceFile type,
+        @Nullable DomainEnumTypes domain,
+        @Nullable StatusEnumInterfaceFile status,
+        @Nullable LocalDateTime fromDate,
+        @Nullable LocalDateTime toDate) {
+        return InterfaceFilesApi.super.getInterfaceFiles(source, target, type, domain, status, fromDate, toDate);
+    }
+
+//    @Override
+//    public ResponseEntity<GetInterfaceFiles200Response> getInterfaceFiles(
+//        @Nullable InterfaceFileEnumInterfaceFile source,
+//        @Nullable InterfaceFileEnumInterfaceFile target,
+//        @Nullable InterfaceFileTypeEnumInterfaceFile type,
+//        @Nullable DomainEnumInterfaceFile domain,
+//        @Nullable StatusEnumInterfaceFile status,
+//        @Nullable LocalDateTime fromDate,
+//        @Nullable LocalDateTime toDate) {
+//        return InterfaceFilesApi.super.getInterfaceFiles(source, target, type, domain, status, fromDate, toDate);
+//    }
 }
