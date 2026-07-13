@@ -88,7 +88,8 @@ caps-report:
   enabled: true
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
-  schedule: '0 7 * * 4-5'
+#  schedule: '0 7 * * 4-5'
+  schedule: '* * * * *'
   command: ["java", "-jar", "/opt/app/opal-file-handler-service.jar"]
   concurrencyPolicy: Forbid
   args:
