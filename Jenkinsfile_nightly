@@ -1,14 +1,346 @@
 #!groovy
 
 properties([
-  // H allow predefined but random minute see https://en.wikipedia.org/wiki/Cron#Non-standard_characters
-  pipelineTriggers([cron('H 07 * * 1-5')])
+  pipelineTriggers([cron('H 07 * * 1-5')]),
+  parameters([
+    booleanParam(name: 'Integration', defaultValue: true, description: 'Run integration tests'),
+    booleanParam(name: 'Functional', defaultValue: true, description: 'Run functional tests'),
+    booleanParam(name: 'Smoke', defaultValue: true, description: 'Run smoke tests'),
+    booleanParam(name: 'ZephyrExecution', defaultValue: false, description: 'Create Zephyr Execution'),
+  ])
 ])
 
-@Library("Infrastructure")
+import uk.gov.hmcts.contino.GradleBuilder
+
+@Library("Infrastructure@master")
 
 def type = "java"
 def product = "opal"
 def component = "file-handler-service"
 
-withNightlyPipeline(type, product, component) {}
+GradleBuilder builder = new GradleBuilder(this, product)
+
+def testEnvironments = [
+  staging: [
+    name                : 'staging',
+    testUrl             : 'https://opal-file-handler-service-staging.staging.platform.hmcts.net',
+    userServiceApiUrl   : 'https://opal-user-service.staging.platform.hmcts.net',
+    loggingServiceApiUrl: 'https://opal-logging-service.staging.platform.hmcts.net',
+    reportNameSuffix    : ' (Staging)',
+    outputSuffix        : 'staging',
+  ],
+  demo   : [
+    name                : 'demo',
+    testUrl             : 'https://opal-file-handler-service.demo.platform.hmcts.net',
+    userServiceApiUrl   : 'https://opal-user-service.demo.platform.hmcts.net',
+    loggingServiceApiUrl: 'https://opal-logging-service.demo.platform.hmcts.net',
+    reportNameSuffix    : ' (Demo)',
+    outputSuffix        : 'demo',
+  ],
+]
+
+def secrets = [
+  'opal-${env}': [
+    secret('jiraAuthToken', 'JIRA_AUTH_TOKEN'),
+  ],
+]
+
+def stageFailures = []
+
+static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
+  [$class     : 'AzureKeyVaultSecret',
+   secretType : 'Secret',
+   name       : secretName,
+   version    : '',
+   envVariable: envVar
+  ]
+}
+
+def configureTestEnvironment = { testEnvironment ->
+  env.ENVIRONMENT_NAME = testEnvironment.name
+  env.TEST_URL = testEnvironment.testUrl
+  env.OPAL_USER_SERVICE_API_URL = testEnvironment.userServiceApiUrl
+  env.OPAL_LOGGING_SERVICE_API_URL = testEnvironment.loggingServiceApiUrl
+
+  echo "Configured ${testEnvironment.name} test environment: TEST_URL=${env.TEST_URL}"
+}
+
+def configureZephyrExecution = { testEnvironment ->
+  env.EXECUTION_BUILD = env.GIT_COMMIT
+  env.EXECUTION_ENVIRONMENT = testEnvironment.name
+  env.EXECUTION_CYCLE_DESCRIPTION = "Nightly execution for commit ${env.GIT_COMMIT} on environment ${testEnvironment.name}.\n" +
+    "https://sds-build.hmcts.net/job/HMCTS_Nightly/job/opal-file-handler-service/job/master/${env.BUILD_NUMBER}/"
+}
+
+def recordStageFailure = { stageName, reason ->
+  def message = "${stageName}: ${reason}"
+  stageFailures << message
+  steps.echo message
+}
+
+def deleteStageOutputs = { List<String> paths ->
+  if (paths == null || paths.isEmpty()) {
+    return
+  }
+
+  def script = paths.collect { "rm -rf '${it}'" }.join('\n')
+  steps.sh script
+}
+
+def copyReportOutputIfPresent = { targetDirectory, sourceDirectory ->
+  steps.sh """
+    mkdir -p ${targetDirectory}
+    rm -rf ${targetDirectory}/report
+    cp -R ${sourceDirectory} ${targetDirectory}/report
+  """
+}
+
+def ensureReportOutputExists = { reportLabel, targetDirectory, candidateDirectories ->
+  steps.sh """
+    mkdir -p ${targetDirectory}
+    rm -rf ${targetDirectory}/report
+  """
+
+  for (String candidateDirectory : candidateDirectories) {
+    if (steps.fileExists("${candidateDirectory}/index.html")
+      || steps.fileExists("${candidateDirectory}/htmlReport/test-summary.html")) {
+      copyReportOutputIfPresent(targetDirectory, candidateDirectory)
+      return
+    }
+  }
+
+  throw new RuntimeException(
+    "${reportLabel} was not generated in any expected report location: ${candidateDirectories.join(', ')}"
+  )
+}
+
+def ensureFunctionalReportOutputExists = { outputDirectory ->
+  ensureReportOutputExists(
+    'Functional Tests Report',
+    outputDirectory,
+    ['build/reports/tests/functional']
+  )
+}
+
+def ensureIntegrationReportOutputExists = { outputDirectory ->
+  ensureReportOutputExists(
+    'Integration Tests Report',
+    outputDirectory,
+    ['build/reports/tests/integration']
+  )
+}
+
+def ensureSmokeReportOutputExists = { outputDirectory ->
+  ensureReportOutputExists(
+    'Smoke Tests Report',
+    outputDirectory,
+    ['build/reports/tests/smoke']
+  )
+}
+
+def copyJunitResultsIfPresent = { targetDirectory, sourceDirectory ->
+  steps.sh """
+    mkdir -p ${targetDirectory}/test-results
+    rm -rf ${targetDirectory}/test-results/*
+    if [ -d "${sourceDirectory}" ]; then
+      cp -R ${sourceDirectory}/. ${targetDirectory}/test-results/
+    fi
+  """
+}
+
+def publishFunctionalResults = { outputDirectory, reportNameSuffix ->
+  ensureFunctionalReportOutputExists(outputDirectory)
+  copyJunitResultsIfPresent(outputDirectory, 'build/test-results/functional')
+
+  steps.junit allowEmptyResults: true, testResults: "${outputDirectory}/test-results/*.xml"
+  steps.archiveArtifacts allowEmptyArchive: true, artifacts: "${outputDirectory}/**/*"
+  publishHTML target: [
+    allowMissing         : true,
+    alwaysLinkToLastBuild: true,
+    keepAll              : true,
+    reportDir            : "${outputDirectory}/report",
+    reportFiles          : 'index.html',
+    reportName           : "Functional Tests Report${reportNameSuffix}"
+  ]
+}
+
+def publishIntegrationResults = { outputDirectory, reportNameSuffix ->
+  ensureIntegrationReportOutputExists(outputDirectory)
+  copyJunitResultsIfPresent(outputDirectory, 'build/test-results/integration')
+
+  steps.junit allowEmptyResults: true, testResults: "${outputDirectory}/test-results/*.xml"
+  steps.archiveArtifacts allowEmptyArchive: true, artifacts: "${outputDirectory}/**/*"
+  publishHTML target: [
+    allowMissing         : true,
+    alwaysLinkToLastBuild: true,
+    keepAll              : true,
+    reportDir            : "${outputDirectory}/report",
+    reportFiles          : 'index.html',
+    reportName           : "Integration Tests Report${reportNameSuffix}"
+  ]
+}
+
+def publishSmokeResults = { outputDirectory, reportNameSuffix ->
+  ensureSmokeReportOutputExists(outputDirectory)
+  copyJunitResultsIfPresent(outputDirectory, 'build/test-results/smoke')
+
+  steps.junit allowEmptyResults: true, testResults: "${outputDirectory}/test-results/*.xml"
+  steps.archiveArtifacts allowEmptyArchive: true, artifacts: "${outputDirectory}/**/*"
+  publishHTML target: [
+    allowMissing         : true,
+    alwaysLinkToLastBuild: true,
+    keepAll              : true,
+    reportDir            : "${outputDirectory}/report",
+    reportFiles          : 'index.html',
+    reportName           : "Smoke Tests Report${reportNameSuffix}"
+  ]
+}
+
+def runIntegrationZephyrExecution = { stageName ->
+  try {
+    builder.gradle('createJiraExecutionFromJUnit5ReportIntegrationTest')
+  } catch (error) {
+    recordStageFailure(stageName, "Zephyr execution failed. Error: ${error.message}")
+  }
+}
+
+def runFunctionalZephyrExecution = { stageName, stageKey, outputDirectory ->
+  try {
+    builder.gradle("-PzephyrFunctionalStage=${stageKey} -PzephyrOutputDir=${outputDirectory} createJiraExecutionFromFunctionalReport")
+  } catch (error) {
+    recordStageFailure(stageName, "Zephyr execution failed. Error: ${error.message}")
+  }
+}
+
+def runIntegrationStage = { testEnvironment ->
+  if (!params.Integration) {
+    return
+  }
+
+  def stageName = "Integration Tests${testEnvironment.reportNameSuffix}"
+  def outputDirectory = "integration-output-${testEnvironment.outputSuffix}"
+
+  stage(stageName) {
+    configureTestEnvironment(testEnvironment)
+    if (params.ZephyrExecution) {
+      configureZephyrExecution(testEnvironment)
+    }
+
+    deleteStageOutputs([
+      outputDirectory,
+      'build/reports/tests/integration',
+      'build/test-results/integration',
+      'integration-output',
+    ])
+
+    try {
+      builder.gradle('integration')
+    } catch (error) {
+      recordStageFailure(stageName, "failed. Error: ${error.message}")
+    } finally {
+      try {
+        publishIntegrationResults(outputDirectory, testEnvironment.reportNameSuffix)
+      } catch (publishError) {
+        recordStageFailure(stageName, "result publication failed. Error: ${publishError.message}")
+      }
+      if (params.ZephyrExecution) {
+        runIntegrationZephyrExecution(stageName)
+      }
+    }
+  }
+}
+
+def runFunctionalStage = { testEnvironment ->
+  if (!params.Functional) {
+    return
+  }
+
+  def stageName = "Functional Tests${testEnvironment.reportNameSuffix}"
+  def outputDirectory = "functional-output-${testEnvironment.outputSuffix}"
+
+  stage(stageName) {
+    configureTestEnvironment(testEnvironment)
+
+    deleteStageOutputs([
+      outputDirectory,
+      'build/reports/tests/functional',
+      'build/test-results/functional',
+      'functional-output',
+    ])
+
+    try {
+      builder.gradle('functional')
+    } catch (error) {
+      recordStageFailure(stageName, "failed. Error: ${error.message}")
+    } finally {
+      try {
+        publishFunctionalResults(outputDirectory, testEnvironment.reportNameSuffix)
+      } catch (publishError) {
+        recordStageFailure(stageName, "result publication failed. Error: ${publishError.message}")
+      }
+      if (params.ZephyrExecution) {
+        runFunctionalZephyrExecution(stageName, 'functional', outputDirectory)
+      }
+    }
+  }
+}
+
+def runSmokeStage = { testEnvironment ->
+  if (!params.Smoke) {
+    return
+  }
+
+  def stageName = "Smoke Tests${testEnvironment.reportNameSuffix}"
+  def outputDirectory = "smoke-output-${testEnvironment.outputSuffix}"
+
+  stage(stageName) {
+    configureTestEnvironment(testEnvironment)
+
+    deleteStageOutputs([
+      outputDirectory,
+      'build/reports/tests/smoke',
+      'build/test-results/smoke',
+      'smoke-output',
+    ])
+
+    try {
+      builder.gradle('smoke')
+    } catch (error) {
+      recordStageFailure(stageName, "failed. Error: ${error.message}")
+    } finally {
+      try {
+        publishSmokeResults(outputDirectory, testEnvironment.reportNameSuffix)
+      } catch (publishError) {
+        recordStageFailure(stageName, "result publication failed. Error: ${publishError.message}")
+      }
+      if (params.ZephyrExecution) {
+        runFunctionalZephyrExecution(stageName, 'smoke', outputDirectory)
+      }
+    }
+  }
+}
+
+withNightlyPipeline(type, product, component) {
+  loadVaultSecrets(secrets)
+  configureTestEnvironment(testEnvironments.staging)
+
+  afterAlways('DependencyCheckNightly') {
+    echo 'Integration:' + params.Integration
+    echo 'Functional:' + params.Functional
+    echo 'Smoke:' + params.Smoke
+    echo 'ZephyrExecution:' + params.ZephyrExecution
+
+    runIntegrationStage(testEnvironments.staging)
+    runFunctionalStage(testEnvironments.staging)
+    runSmokeStage(testEnvironments.staging)
+
+    runIntegrationStage(testEnvironments.demo)
+    runFunctionalStage(testEnvironments.demo)
+    runSmokeStage(testEnvironments.demo)
+
+    if (!stageFailures.isEmpty()) {
+      currentBuild.result = 'FAILURE'
+      error("One or more selected test stages failed:\n - ${stageFailures.join('\n - ')}")
+    }
+  }
+}
