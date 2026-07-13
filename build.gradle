@@ -169,6 +169,14 @@ tasks.register('smoke', Test) {
   include '**/SmokeTestRunner.class'
 }
 
+tasks.register('printVersionInit') {
+  description = "Prints the project version for Jenkins init-script metadata generation"
+  group = "Help"
+  doLast {
+    println project.version
+  }
+}
+
 jacocoTestReport {
   executionData(test, integration)
   reports {
@@ -289,7 +297,7 @@ dependencies {
 
 
   //Test
-  testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
   testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '6.0.0'
   testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
   testImplementation 'org.junit.platform:junit-platform-suite'
