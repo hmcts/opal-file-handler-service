@@ -37,7 +37,7 @@ public class InterfaceFilesController implements InterfaceFilesApi {
         @Nullable LocalDateTime fromDate,
         @Nullable LocalDateTime toDate) {
 
-        SearchInterfaceFilesDto searchDto = searchMapper.searchInterfaceFilesDto(
+        SearchInterfaceFilesDto searchDto = searchMapper.toSearchInterfaceFilesDto(
             source, target, type, domain, status, fromDate, toDate
         );
         List<InterfaceFileObjectInterfaceFile> interfaceFileObjects = service.searchInterfaceFiles(searchDto);
