@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.config.task;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -17,12 +16,6 @@ public class AutomatedCapsReport implements ApplicationRunner {
         log.info("Starting automated CAPS report");
 
         // TODO
-
-        try {
-            TimeUnit.MINUTES.sleep(5);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
 
         log.info("Completed automated CAPS report");
     }
