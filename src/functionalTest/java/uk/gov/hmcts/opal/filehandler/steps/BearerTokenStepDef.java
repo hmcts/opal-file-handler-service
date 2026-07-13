@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.steps;
 
 import io.cucumber.java.Before;
-import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 import uk.gov.hmcts.opal.filehandler.support.TestHttpClient;
@@ -109,7 +108,6 @@ public class BearerTokenStepDef extends BaseStepDef {
      *
      * @param user user alias or email used to resolve the bearer token.
      */
-    @Given("I am testing as the {string} user")
     @When("I am testing as the {string} user")
     public void setTokenWithUser(String user) {
         setTokenOverride(getAccessTokenForUser(user));
