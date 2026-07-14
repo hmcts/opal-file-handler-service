@@ -13,7 +13,6 @@ bt-eckoh-report:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
     RELEASE_1A_ENABLED: true
-    OPAL_COMMON_CONTENT_DIGEST_REQUEST_AUTO_GENERATE: true
     FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
 
 caps-report:
@@ -23,7 +22,6 @@ caps-report:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
     RELEASE_1A_ENABLED: true
-    OPAL_COMMON_CONTENT_DIGEST_REQUEST_AUTO_GENERATE: true
     FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
 
 natwest-transfer:
@@ -33,7 +31,6 @@ natwest-transfer:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
     RELEASE_1A_ENABLED: true
-    OPAL_COMMON_CONTENT_DIGEST_REQUEST_AUTO_GENERATE: true
     FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
 
 allpay-file-transfer:
@@ -43,7 +40,6 @@ allpay-file-transfer:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
     RELEASE_1A_ENABLED: true
-    OPAL_COMMON_CONTENT_DIGEST_REQUEST_AUTO_GENERATE: true
     FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
 
 barclaycard-transfer:
@@ -53,7 +49,6 @@ barclaycard-transfer:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
     RELEASE_1A_ENABLED: true
-    OPAL_COMMON_CONTENT_DIGEST_REQUEST_AUTO_GENERATE: true
     FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
 
 bt-eckoh-transfer:
@@ -62,8 +57,7 @@ bt-eckoh-transfer:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
     RELEASE_1A_ENABLED: true
-    OPAL_COMMON_CONTENT_DIGEST_REQUEST_AUTO_GENERATE: true
-    FLYWAY_LOCATIONS: classpath:db/migration/dd
+    FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
 
 dwp-transfer:
   image: ${IMAGE_NAME}
@@ -71,8 +65,7 @@ dwp-transfer:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
     RELEASE_1A_ENABLED: true
-    OPAL_COMMON_CONTENT_DIGEST_REQUEST_AUTO_GENERATE: true
-    FLYWAY_LOCATIONS: classpath:db/migration/dd
+    FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
 
 jacobs-transfer:
   image: ${IMAGE_NAME}
@@ -80,8 +73,7 @@ jacobs-transfer:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
     RELEASE_1A_ENABLED: true
-    OPAL_COMMON_CONTENT_DIGEST_REQUEST_AUTO_GENERATE: true
-    FLYWAY_LOCATIONS: classpath:db/migration/dd
+    FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
 
 cder-transfer:
   image: ${IMAGE_NAME}
@@ -89,8 +81,7 @@ cder-transfer:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
     RELEASE_1A_ENABLED: true
-    OPAL_COMMON_CONTENT_DIGEST_REQUEST_AUTO_GENERATE: true
-    FLYWAY_LOCATIONS: classpath:db/migration/dd
+    FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
 
 marston-transfer:
   image: ${IMAGE_NAME}
@@ -98,5 +89,4 @@ marston-transfer:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
     RELEASE_1A_ENABLED: true
-    OPAL_COMMON_CONTENT_DIGEST_REQUEST_AUTO_GENERATE: true
-    FLYWAY_LOCATIONS: classpath:db/migration/dd
+    FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
