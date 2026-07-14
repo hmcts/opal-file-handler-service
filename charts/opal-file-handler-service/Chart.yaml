@@ -3,7 +3,7 @@ appVersion: "1.0"
 description: A Helm chart for opal-file-handler-service App
 name: opal-file-handler-service
 home: https://github.com/hmcts/opal-file-handler-service
-version: 0.0.6
+version: 0.0.7
 maintainers:
   - name: HMCTS opal team
 dependencies:
@@ -24,3 +24,18 @@ dependencies:
     version: 2.2.1
     repository: 'oci://hmctsprod.azurecr.io/helm'
     condition: caps-report.enabled
+  - name: job
+    alias: natwest-transfer
+    version: 2.2.1
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: natwest-transfer.enabled
+  - name: job
+    alias: allpay-file-transfer
+    version: 2.2.1
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: allpay-file-transfer.enabled
+  - name: job
+    alias: barclaycard-transfer
+    version: 2.2.1
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: barclaycard-transfer.enabled
