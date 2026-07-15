@@ -308,7 +308,7 @@ dependencies {
   testImplementation "net.serenity-bdd:serenity-report-resources:${serenityVersion}"
   testImplementation "net.serenity-bdd:serenity-cucumber:${serenityVersion}"
   testImplementation "net.serenity-bdd:serenity-ensure:${serenityVersion}"
-  testImplementation 'com.hierynomus:sshj:0.39.0'
+  testImplementation 'com.hierynomus:sshj:0.40.0'
 
   integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.1'
   integrationTestImplementation 'org.springframework.security:spring-security-test'
