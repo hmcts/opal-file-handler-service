@@ -55,9 +55,9 @@ java:
       username: javapostgres
       password: javapassword
       database: opal-file-handler-db
-servicebus:
+blobstorage:
   enabled: true
-  releaseNameOverride: ${SERVICE_NAME}-servicebus
+  releaseNameOverride: ${SERVICE_NAME}-blobstorage
   resourceGroup: "opal-aso-dev-rg"
   setup:
     containers:
