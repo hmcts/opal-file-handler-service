@@ -33,7 +33,7 @@ java {
 
 ext {
   serenityVersion = "5.3.10"
-  cucumberVersion = "7.23.0"
+  cucumberVersion = "7.34.4"
   log4JVersion = "2.26.1"
   logbackVersion = "1.5.38"
 }
