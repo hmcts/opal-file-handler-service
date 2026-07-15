@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -105,7 +106,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @DisplayName("PO-3947 - Filters interface files correctly")
         @JiraStory("PO-3947")
         @JiraEpic("PO-3495")
-        void filtersFiltersInterfaceFilesCorrectly_200() throws Exception {
+        void filtersInterfaceFilesCorrectly_200() throws Exception {
             //            UUID failedFilestoreUuid = UUID.fromString("a5695e1e-bd9f-4a5b-ae15-9deeed2d1384");
             setupAuthorisedUser();
             ResultActions result = mockMvc.perform(
@@ -131,8 +132,46 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
                 () -> assertEquals(InterfaceFileTypeEnumInterfaceFile.SOURCE, interfaceFile.getType()),
                 () -> assertEquals(DomainEnumTypes.MAINTENANCE, interfaceFile.getDomain()),
                 () -> assertEquals("CAPS-2.xml", interfaceFile.getFileName()),
+                () -> assertEquals(
+                    UUID.fromString("1b1ef8a3-f722-41de-95b0-fe9cfc3b0922"), interfaceFile.getFilestoreUuid()
+                ),
                 () -> assertNull(interfaceFile.getErrors()),
                 () -> assertNull(interfaceFile.getChecksum())
+            );
+        }
+
+        @Test
+        @DisplayName("PO-3947 - Filters interface files correctly by to and from dates")
+        @JiraStory("PO-3947")
+        @JiraEpic("PO-3495")
+        void filtersInterfaceFilesCorrectlyByDates_200() throws Exception {
+            setupAuthorisedUser();
+            ResultActions result = mockMvc.perform(
+                get(URL)
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
+                    .param("from_date", LocalDateTime.of(
+                        2025, Month.DECEMBER, 30, 0, 0).toString()
+                    )
+                    .param("to_date", LocalDateTime.of(
+                        2026, Month.JANUARY, 4, 12, 30).toString()
+                    )
+            );
+
+            String body = result.andReturn().getResponse().getContentAsString();
+            result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+            GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {});
+
+            assertEquals(1, response.getNumberOfResults());
+            assertEquals(1, response.getInterfaceFiles().size());
+            InterfaceFileObjectInterfaceFile interfaceFile = response.getInterfaceFiles().getFirst();
+            assertAll(
+                () -> assertEquals("2500-Payments-Report-Daily.xlsx", interfaceFile.getFileName()),
+                () -> assertEquals(LocalDateTime.of(
+                    2026, 1, 4, 12, 30, 0
+                ), interfaceFile.getCreatedDatetime())
             );
         }
     }
