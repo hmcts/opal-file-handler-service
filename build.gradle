@@ -298,7 +298,7 @@ dependencies {
 
   //Test
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
-  testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '6.0.0'
+  testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '6.0.1'
   testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
   testImplementation 'org.junit.platform:junit-platform-suite'
   testImplementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
@@ -310,7 +310,7 @@ dependencies {
   testImplementation "net.serenity-bdd:serenity-ensure:${serenityVersion}"
   testImplementation 'com.hierynomus:sshj:0.39.0'
 
-  integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.1'
+  integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.2'
   integrationTestImplementation 'org.springframework.security:spring-security-test'
   integrationTestImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 
