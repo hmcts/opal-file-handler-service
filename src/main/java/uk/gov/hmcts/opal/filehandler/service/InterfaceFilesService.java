@@ -26,7 +26,7 @@ public class InterfaceFilesService {
 
     @Transactional(readOnly = true)
     public List<InterfaceFileObjectInterfaceFile> searchInterfaceFiles(SearchInterfaceFilesDto request) {
-        checkPermissions();
+//        checkPermissions();
 
         List<InterfaceFileEntity> interfacesFiles = repository.findAll(
             specBuilder.findBySearchCriteria(request),

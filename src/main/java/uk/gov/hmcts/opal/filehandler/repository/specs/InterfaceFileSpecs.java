@@ -30,27 +30,27 @@ public class InterfaceFileSpecs extends EntitySpecs<InterfaceFileEntity> {
 
     static Specification<InterfaceFileEntity> equalsSource(Interface source) {
         return (root, query, builder)
-            -> builder.equal(root.get(InterfaceFileEntity_.source), source);
+            -> builder.equal(root.get(InterfaceFileEntity_.source).cast(String.class), source.toString());
     }
 
     static Specification<InterfaceFileEntity> equalsTarget(Interface target) {
         return (root, query, builder)
-            -> builder.equal(root.get(InterfaceFileEntity_.target), target);
+            -> builder.equal(root.get(InterfaceFileEntity_.target).cast(String.class), target.toString());
     }
 
     static Specification<InterfaceFileEntity> equalsType(Type type) {
         return (root, query, builder)
-            -> builder.equal(root.get(InterfaceFileEntity_.type), type);
+            -> builder.equal(root.get(InterfaceFileEntity_.type).cast(String.class), type.toString());
     }
 
     static Specification<InterfaceFileEntity> equalsOpalDomain(Domain domain) {
         return (root, query, builder)
-            -> builder.equal(root.get(InterfaceFileEntity_.opalDomain), domain);
+            -> builder.equal(root.get(InterfaceFileEntity_.opalDomain).cast(String.class), domain.toString());
     }
 
     static Specification<InterfaceFileEntity> equalsStatus(Status status) {
         return (root, query, builder)
-            -> builder.equal(root.get(InterfaceFileEntity_.status), status);
+            -> builder.equal(root.get(InterfaceFileEntity_.status).cast(String.class), status.toString());
     }
 
     static Specification<InterfaceFileEntity> fromDate(LocalDateTime fromDate) {

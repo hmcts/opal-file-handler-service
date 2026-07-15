@@ -351,4 +351,8 @@ tasks.named("compileJava") {
   dependsOn 'openApiGenerate'
 }
 
+rootProject.tasks.named("processIntegrationTestResources") {
+  duplicatesStrategy = 'include'
+}
+
 apply from: "${rootDir}/gradle/zephyr.gradle"
