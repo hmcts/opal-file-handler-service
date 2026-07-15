@@ -57,13 +57,13 @@ java:
       database: opal-file-handler-db
 blobstorage:
   enabled: true
+  azureName: "opalsapr${CHANGE_ID}"
   releaseNameOverride: ${SERVICE_NAME}-blobstorage
   resourceGroup: "opal-aso-dev-rg"
   setup:
     containers:
       - bteckoh-report
       - caps-report
-
 bt-eckoh-report:
   image: ${IMAGE_NAME}
   environment:
