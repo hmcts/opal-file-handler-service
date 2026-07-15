@@ -47,7 +47,8 @@ redis:
 global:
   security:
     allowInsecureImages: true
-
+blobstorage:
+  enabled: false
 bt-eckoh-report:
   enabled: true
   kind: CronJob
