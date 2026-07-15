@@ -292,7 +292,7 @@ dependencies {
   integrationTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
   functionalTestCompileOnly 'org.projectlombok:lombok:1.18.46'
   functionalTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.4.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.5.Final'
 
 
 
