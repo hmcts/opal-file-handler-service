@@ -6,6 +6,16 @@ global:
 java:
   image: ${IMAGE_NAME}
   ingressHost: ${SERVICE_FQDN}
+  secrets:
+    FILE_STORE_STORAGE_ACCOUNT_NAME:
+      secretRef: storage-account-{{ .Release.Name }}-blobstorage
+      key: storage_account_name
+    FILE_STORE_STORAGE_URL:
+      secretRef: storage-secret-{{ .Release.Name }}-blobstorage
+      key: blobEndpoint
+    FILE_STORE_STORAGE_KEY:
+      secretRef: storage-secret-{{ .Release.Name }}-blobstorage
+      key: accessKey
   keyVaults:
     opal:
       secrets:
