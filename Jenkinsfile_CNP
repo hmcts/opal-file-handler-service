@@ -1,5 +1,5 @@
 #!groovy
-@Library("Infrastructure@2.4.4")
+@Library("Infrastructure")
 
 def type = "java"
 def product = "opal"
@@ -115,72 +115,66 @@ def publishSmokeResults() {
 
 
 def blobStorageResourceGroup = "opal-aso-dev-rg"
-def blobStorageAccountNamePrefix = "opalfilehandlerbaissapr"
+def blobStorageAccountNamePrefix = "opalfilebaisapr"
 def blobStorageSftpUsers = [
         [container_name: "bteckoh-report", user_name: "bteckohreport"],
         [container_name: "caps-report", user_name: "capsreport"]
 ]
 
-def setupAzure() {
-    // Create SFTP local users only when missing; each user maps to its container and shares one SSH key.
-    steps.sh """
+def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, List<Map<String, String>> storageSftpUsers) {
+    // Keep the orchestration in Groovy and use shell only for az CLI calls.
+    String storageAccount = "${storageAccountNamePrefix}${env.CHANGE_ID}"
+    String resourceGroup = storageResourceGroup
+    String sshPublicKey = env.BAIS_EMULATOR_PUBLIC_KEY?.trim()
+
+    if (!sshPublicKey) {
+        throw new RuntimeException('BAIS_EMULATOR_PUBLIC_KEY must be set')
+    }
+
+    storageSftpUsers.each { Map<String, String> mapping ->
+        String container = mapping.container_name
+        String localUser = mapping.user_name
+
+        if (!container || !localUser) {
+            throw new RuntimeException("Each blobStorageSftpUsers entry must include container_name and user_name: ${mapping}")
+        }
+
+        int status = steps.sh(
+                script: """
+                  az storage account local-user show --account-name '${storageAccount}' --resource-group '${resourceGroup}' --username '${localUser}' --only-show-errors --query name --output tsv
+                """,
+                returnStatus: true
+        )
+        echo "Create Account ${status}"
+
+
+        steps.sh """
+          set -euo pipefail
+          az storage account local-user create \
+            --account-name '${storageAccount}' \
+            --resource-group '${resourceGroup}' \
+            --username '${localUser}' \
+            --home-directory '${container}' \
+            --permission-scope permissions=rwdl service=blob resource-name='${container}' \
+            --has-ssh-key true \
+            --has-ssh-password false \
+            --only-show-errors \
+            --output none
+        """
+
+        steps.withEnv(["SSH_PUBLIC_KEY=${sshPublicKey}"]) {
+            steps.sh """
               set -euo pipefail
-
-              storage_account=\"${blobStorageAccountNamePrefix}${env.CHANGE_ID}\"
-              resource_group=\"${blobStorageResourceGroup}\"
-              ssh_public_key=\"${env.BAIS_EMULATOR_PUBLIC_KEY}\"
-              if [ -z \"$ssh_public_key\" ]; then
-                echo \"BAIS_EMULATOR_PUBLIC_KEY must be set\" >&2
-                exit 1
-              fi
-
-              echo \"Waiting for storage account \\\"$storage_account\\\" in resource group \\\"$resource_group\\\"...\"
-              for attempt in {1..30}; do
-                if az storage account show --name \"$storage_account\" --resource-group \"$resource_group\" --only-show-errors --output none 2>/dev/null; then
-                  break
-                fi
-
-                if [ \"$attempt\" -eq 30 ]; then
-                  echo \"Storage account \\\"$storage_account\\\" was not found after waiting.\" >&2
-                  exit 1
-                fi
-
-                sleep 10
-              done
-
-              for mapping in ${blobStorageSftpUsers.collect { "\"${it.container_name}:${it.user_name}\"" }.join(' ')}; do
-                container="\$(echo "$mapping" | cut -d: -f1)"
-                local_user="\$(echo "$mapping" | cut -d: -f2-)"
-
-                if az storage account local-user show \\
-                  --account-name \"$storage_account\" \\
-                  --resource-group \"$resource_group\" \\
-                  --username \"$local_user\" \\
-                  --only-show-errors \\
-                  --output none 2>/dev/null; then
-                  echo \"Local user '$local_user' already exists; skipping create.\"
-                else
-                  az storage account local-user create \\
-                    --account-name \"$storage_account\" \\
-                    --resource-group \"$resource_group\" \\
-                    --username \"$local_user\" \\
-                    --home-directory \"$container\" \\
-                    --permission-scope permissions=rwdl service=blob resource-name=\"$container\" \\
-                    --has-ssh-key true \\
-                    --has-ssh-password false \\
-                    --only-show-errors \\
-                    --output none
-
-                  az storage account local-user update \\
-                    --account-name \"$storage_account\" \\
-                    --resource-group \"$resource_group\" \\
-                    --username \"$local_user\" \\
-                    --ssh-authorized-key key=\"$ssh_public_key\" \\
-                    --only-show-errors \\
-                    --output none
-                fi
-              done
+              az storage account local-user update \
+                --account-name '${storageAccount}' \
+                --resource-group '${resourceGroup}' \
+                --username '${localUser}' \
+                --ssh-authorized-key key="\$SSH_PUBLIC_KEY" \
+                --only-show-errors \
+                --output none
             """
+        }
+    }
 }
 
 def secrets = [
@@ -212,9 +206,9 @@ withPipeline(type, product, component) {
         }
     }
 
-    after('akschartsinstall') {
+    afterSuccess('akschartsinstall') {
         onPR {
-            setupAzure()
+            setupAzure(blobStorageAccountNamePrefix, blobStorageResourceGroup, blobStorageSftpUsers)
         }
     }
 
