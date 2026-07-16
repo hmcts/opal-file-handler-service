@@ -47,7 +47,7 @@ java:
       database: opal-file-handler-db
 bais-emulator:
   enabled: true
-  azureName: "opalfilehandlerbaissapr${CHANGE_ID}"
+  azureName: "opalfilebaisapr${CHANGE_ID}"
   releaseNameOverride: ${SERVICE_NAME}-bais-blobstorage
   resourceGroup: "opal-aso-dev-rg"
   setup:
