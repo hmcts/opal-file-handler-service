@@ -282,8 +282,7 @@ dependencies {
   implementation 'org.apache.tomcat:tomcat-annotations-api:11.0.24'
 
   //Annotation
-  implementation 'org.mapstruct:mapstruct:1.6.3'
-  annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.5.Final'
 
   compileOnly 'org.projectlombok:lombok:1.18.46'
   annotationProcessor 'org.projectlombok:lombok:1.18.46'
@@ -293,7 +292,6 @@ dependencies {
   integrationTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
   functionalTestCompileOnly 'org.projectlombok:lombok:1.18.46'
   functionalTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.5.Final'
   implementation 'org.mapstruct:mapstruct:1.6.3'
   annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
