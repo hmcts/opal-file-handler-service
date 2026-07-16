@@ -140,7 +140,7 @@ def blobStorageSftpUsers = [
         [container_name: "caps-report", user_name: "capsreport"]
 ]
 
-setupAzure() {
+def setupAzure() {
     // Create SFTP local users only when missing; each user maps to its container and shares one SSH key.
     steps.sh """
               set -euo pipefail
