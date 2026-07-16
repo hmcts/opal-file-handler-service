@@ -226,6 +226,7 @@ ext['snakeyaml.version'] = '2.0'
 dependencyManagement {
   imports {
     mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2025.1.2'
+    mavenBom "com.fasterxml.jackson:jackson-bom:2.22.1"
   }
 }
 dependencies {
@@ -281,6 +282,9 @@ dependencies {
   implementation 'org.apache.tomcat:tomcat-annotations-api:11.0.24'
 
   //Annotation
+  implementation 'org.mapstruct:mapstruct:1.6.3'
+  annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
   compileOnly 'org.projectlombok:lombok:1.18.46'
   annotationProcessor 'org.projectlombok:lombok:1.18.46'
   testCompileOnly 'org.projectlombok:lombok:1.18.46'
