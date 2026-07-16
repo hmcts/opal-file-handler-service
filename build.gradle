@@ -235,7 +235,7 @@ dependencies {
   openapiImplementation "io.swagger.core.v3:swagger-core:2.2.52"
   openapiImplementation "tools.jackson.dataformat:jackson-dataformat-yaml"
   //HMCTS
-  implementation 'uk.gov.hmcts:opal-common-lib:0.3.25'
+  implementation 'uk.gov.hmcts:opal-common-lib:0.3.27'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
   testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.14.0'
 
@@ -290,15 +290,8 @@ dependencies {
   functionalTestCompileOnly 'org.projectlombok:lombok:1.18.46'
   functionalTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
   annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.5.Final'
-  smokeTestCompileOnly 'org.projectlombok:lombok:1.18.46'
-  smokeTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
-
   implementation 'org.mapstruct:mapstruct:1.6.3'
   annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
-
-
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.4.Final'
-
 
 
   //Test

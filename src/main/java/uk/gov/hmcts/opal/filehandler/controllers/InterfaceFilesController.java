@@ -1,5 +1,8 @@
 package uk.gov.hmcts.opal.filehandler.controllers;
 
+import static uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags.RELEASE_1C_AUTO_ENFORCEMENT_CONFIG;
+import static uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags.RELEASE_1C_AUTO_ENFORCEMENT_CONFIG_ENABLED_PROPERTY;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -8,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import uk.gov.hmcts.opal.common.launchdarkly.FeatureToggle;
 import uk.gov.hmcts.opal.filehandler.mapper.SearchInterfaceFilesDtoMapper;
 import uk.gov.hmcts.opal.filehandler.service.InterfaceFilesService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
@@ -27,6 +31,10 @@ public class InterfaceFilesController implements InterfaceFilesApi {
     private final SearchInterfaceFilesDtoMapper searchMapper;
     private final InterfaceFilesService service;
 
+    @FeatureToggle(
+        feature = RELEASE_1C_AUTO_ENFORCEMENT_CONFIG,
+        defaultValueProperty = RELEASE_1C_AUTO_ENFORCEMENT_CONFIG_ENABLED_PROPERTY
+    )
     @Override
     public ResponseEntity<GetInterfaceFiles200Response> getInterfaceFiles(
         @Nullable InterfaceFileEnumInterfaceFile source,

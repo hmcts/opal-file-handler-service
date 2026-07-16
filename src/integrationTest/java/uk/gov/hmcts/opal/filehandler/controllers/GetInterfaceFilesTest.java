@@ -52,7 +52,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
 
     @TestPropertySource(properties = {
         "launchdarkly.enabled=false",
-        "launchdarkly.default-flag-values.xxxx-TODO-xxxx=true"
+        "launchdarkly.default-flag-values.release-1c-auto-enforcement-config=true"
     })
     @Sql(scripts = "classpath:db/insertData/insert_into_interface_files.sql", executionPhase = BEFORE_TEST_CLASS)
     @Sql(scripts = "classpath:db/deleteData/delete_from_interface_files.sql", executionPhase = AFTER_TEST_CLASS)
@@ -188,6 +188,29 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             );
 
             result.andExpect(status().isForbidden());
+        }
+    }
+
+    @TestPropertySource(properties = {
+        "launchdarkly.enabled=false",
+        "launchdarkly.default-flag-values.release-1c-auto-enforcement-config=false"
+    })
+    @Nested
+    class FeatureOff {
+
+        @Test
+        @DisplayName("PO-3947 - Feature flag off test")
+        @JiraStory("PO-3947")
+        @JiraEpic("PO-3495")
+        void getInterfaceFiles_FeatureOff_404() throws Exception {
+            setupAuthorisedUser();
+            ResultActions result = mockMvc.perform(
+                get(URL)
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
+            );
+
+            result.andExpect(status().isNotFound());
         }
     }
 
