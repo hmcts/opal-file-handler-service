@@ -45,7 +45,7 @@ java:
       username: javapostgres
       password: javapassword
       database: opal-file-handler-db
-blobstorage:
+bais-emulator:
   enabled: true
   azureName: "opalfilehandlerbaissapr${CHANGE_ID}"
   releaseNameOverride: ${SERVICE_NAME}-bais-blobstorage
