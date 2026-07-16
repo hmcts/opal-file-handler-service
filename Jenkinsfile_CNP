@@ -141,19 +141,19 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
 
         int status = steps.sh(
                 script: """
-                  az storage account local-user show --account-name '${storageAccount}' --resource-group '${resourceGroup}' --username '${localUser}' --only-show-errors --query name --output tsv
+                  az storage account local-user show --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}' --only-show-errors --query name --output tsv
                 """,
                 returnStatus: true
         )
         echo "Create Account ${status}"
-
+        az storage account local-user show --account-name opalfilebaisapr69 --resource-group opal-aso-dev-rg --username bteckohreport --only-show-errors --query name --output tsv
 
         steps.sh """
           set -euo pipefail
           az storage account local-user create \
             --account-name '${storageAccount}' \
             --resource-group '${resourceGroup}' \
-            --username '${localUser}' \
+            --user-name '${localUser}' \
             --home-directory '${container}' \
             --permission-scope permissions=rwdl service=blob resource-name='${container}' \
             --has-ssh-key true \
@@ -161,7 +161,6 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
             --only-show-errors \
             --output none
         """
-
         steps.withEnv(["SSH_PUBLIC_KEY=${sshPublicKey}"]) {
             steps.sh """
               set -euo pipefail
