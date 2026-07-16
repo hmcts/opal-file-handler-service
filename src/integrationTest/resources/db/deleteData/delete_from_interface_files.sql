@@ -1,0 +1,1 @@
+DELETE FROM interface_files WHERE interface_file_id IN (1, 2, 3, 4);

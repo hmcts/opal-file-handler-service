@@ -156,6 +156,11 @@ tasks.register('integration', Test) {
   failFast = true
 }
 
+rootProject.tasks.named("processIntegrationTestResources") {
+  duplicatesStrategy = 'include'
+}
+
+
 tasks.register('smoke', Test) {
   description = "Runs Smoke Tests"
   group = "Verification"
@@ -226,7 +231,7 @@ dependencies {
   openapiImplementation "io.swagger.core.v3:swagger-core:2.2.52"
   openapiImplementation "tools.jackson.dataformat:jackson-dataformat-yaml"
   //HMCTS
-  implementation 'uk.gov.hmcts:opal-common-lib:0.3.22'
+  implementation 'uk.gov.hmcts:opal-common-lib:0.3.27'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
   testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.14.0'
 
@@ -249,6 +254,7 @@ dependencies {
   }
   //Other
 
+  implementation 'com.azure:azure-storage-blob:12.35.0'
   implementation 'com.microsoft.azure:applicationinsights-web:3.7.9'
 
   implementation 'commons-logging:commons-logging:1.4.0'
@@ -305,6 +311,7 @@ dependencies {
   testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
   testImplementation 'org.testcontainers:testcontainers-postgresql'
   testImplementation 'com.redis:testcontainers-redis'
+  testImplementation 'org.testcontainers:testcontainers-azure' // TODO: check this is ok.
 
 }
 

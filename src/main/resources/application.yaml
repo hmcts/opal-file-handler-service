@@ -112,6 +112,12 @@ opal:
         algorithm: ${OPAL_COMMON_CONTENT_DIGEST_RESPONSE_ALGORITHM:SHA-512}
       supported-algorithms:
         sha-512: SHA-512
+  blob-storage:
+    connection-string: ${AZURE_STORAGE_CONNECTION_STRING:UseDevelopmentStorage=true}
+    container-names:
+      BTEckoh: ${REPORT_AZURE_STORAGE_CONTAINER:bteckoh-reports}
+      CAPS:  ${REPORT_AZURE_STORAGE_CONTAINER:caps-reports}
+      Opal:  ${REPORT_AZURE_STORAGE_CONTAINER:reports}
 
 logging:
   level:
@@ -151,3 +157,4 @@ dbMigration:
   # When true, the app will run DB migration on startup.
   # Otherwise, it will just check if all migrations have been applied (and fail to start if not).
   runOnStartup: ${RUN_DB_MIGRATION_ON_STARTUP:true}
+
