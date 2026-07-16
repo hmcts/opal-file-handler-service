@@ -23,7 +23,7 @@ public class InterfaceFileService {
     private InterfaceFilesRepository repository;
     private InterfaceFileBlobStoreService blobStoreService;
 
-    public InputStream GetInterfaceFilesContent(Long id) {
+    public InputStream getInterfaceFilesContent(Long id) {
         checkPermissions();
 
         InterfaceFileEntity entity = repository.findById(id)

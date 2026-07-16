@@ -58,13 +58,13 @@ public class InterfaceFileServiceTest {
     private BinaryData mockData;
 
     @BeforeEach
-    public void Setup() {
+    public void setup() {
         uuid = UUID.randomUUID();
         mockData = mock(BinaryData.class);
     }
 
     @Test
-    public void GetInterfaceFileContent_bteckohSourceReturnsData() {
+    public void getInterfaceFileContent_bteckohSourceReturnsData() {
         try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
             MockedStatic<BaisFileProcessorConfig> configMock = mockStatic(BaisFileProcessorConfig.class)) {
             configMock.when(BaisFileProcessorConfig::getBTEckohContainerName).thenReturn("bteckoh-report");
@@ -77,7 +77,7 @@ public class InterfaceFileServiceTest {
             );
             when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report"))).thenReturn(mockData);
 
-            InputStream response = interfaceFileService.GetInterfaceFilesContent(1L);
+            InputStream response = interfaceFileService.getInterfaceFilesContent(1L);
 
             verify(repository).findById(eq(1L));
             verify(blobStoreService).fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report"));
@@ -86,7 +86,7 @@ public class InterfaceFileServiceTest {
     }
 
     @Test
-    public void GetInterfaceFileContent_capsSourceReturnsData() {
+    public void getInterfaceFileContent_capsSourceReturnsData() {
         try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
             MockedStatic<BaisFileProcessorConfig> configMock = mockStatic(BaisFileProcessorConfig.class)) {
             configMock.when(BaisFileProcessorConfig::getCAPSContainerName).thenReturn("caps-report");
@@ -99,7 +99,7 @@ public class InterfaceFileServiceTest {
             );
             when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("caps-report"))).thenReturn(mockData);
 
-            InputStream response = interfaceFileService.GetInterfaceFilesContent(1L);
+            InputStream response = interfaceFileService.getInterfaceFilesContent(1L);
 
             verify(repository).findById(eq(1L));
             verify(blobStoreService).fetchInterfaceFile(eq(1L), eq(uuid), eq("caps-report"));
@@ -108,7 +108,7 @@ public class InterfaceFileServiceTest {
     }
 
     @Test
-    public void GetInterfaceFileContent_opalSourceReturnsData() {
+    public void getInterfaceFileContent_opalSourceReturnsData() {
         try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
             MockedStatic<BaisFileProcessorConfig> configMock = mockStatic(BaisFileProcessorConfig.class)) {
             configMock.when(BaisFileProcessorConfig::getOpalContainerName).thenReturn("opal-report");
@@ -121,7 +121,7 @@ public class InterfaceFileServiceTest {
             );
             when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("opal-report"))).thenReturn(mockData);
 
-            InputStream response = interfaceFileService.GetInterfaceFilesContent(1L);
+            InputStream response = interfaceFileService.getInterfaceFilesContent(1L);
 
             verify(repository).findById(eq(1L));
             verify(blobStoreService).fetchInterfaceFile(eq(1L), eq(uuid), eq("opal-report"));
@@ -130,7 +130,7 @@ public class InterfaceFileServiceTest {
     }
 
     @Test
-    public void GetInterfaceFileContent_missingPermissionsThrowsError() {
+    public void getInterfaceFileContent_missingPermissionsThrowsError() {
         try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
             MockedStatic<BaisFileProcessorConfig> configMock = mockStatic(BaisFileProcessorConfig.class)) {
             configMock.when(BaisFileProcessorConfig::getBTEckohContainerName).thenReturn("bteckoh-report");
@@ -140,13 +140,13 @@ public class InterfaceFileServiceTest {
 
             assertThrows(
                 PermissionNotAllowedException.class,
-                () -> interfaceFileService.GetInterfaceFilesContent(1L)
+                () -> interfaceFileService.getInterfaceFilesContent(1L)
             );
         }
     }
 
     @Test
-    public void GetInterfaceFileContent_EntityNotFoundThrowsError() {
+    public void getInterfaceFileContent_EntityNotFoundThrowsError() {
         try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
             MockedStatic<BaisFileProcessorConfig> configMock = mockStatic(BaisFileProcessorConfig.class)) {
             configMock.when(BaisFileProcessorConfig::getBTEckohContainerName).thenReturn("bteckoh-report");
@@ -158,7 +158,7 @@ public class InterfaceFileServiceTest {
                 Optional.ofNullable(null)
             );
 
-            assertThrows(EntityNotFoundException.class, () -> interfaceFileService.GetInterfaceFilesContent(1L));
+            assertThrows(EntityNotFoundException.class, () -> interfaceFileService.getInterfaceFilesContent(1L));
 
             verify(repository).findById(1L);
             verifyNoMoreInteractions(repository);
@@ -168,7 +168,7 @@ public class InterfaceFileServiceTest {
 
 
     @Test
-    public void GetInterfaceFileContent_invalidStatusThrowsError() {
+    public void getInterfaceFileContent_invalidStatusThrowsError() {
         try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
             MockedStatic<BaisFileProcessorConfig> configMock = mockStatic(BaisFileProcessorConfig.class)) {
             configMock.when(BaisFileProcessorConfig::getBTEckohContainerName).thenReturn("bteckoh-report");
@@ -182,7 +182,7 @@ public class InterfaceFileServiceTest {
 
             assertThrows(
                 InvalidInterfaceFileStatusException.class,
-                () -> interfaceFileService.GetInterfaceFilesContent(1L)
+                () -> interfaceFileService.getInterfaceFilesContent(1L)
             );
 
             verify(repository).findById(1L);
@@ -192,7 +192,7 @@ public class InterfaceFileServiceTest {
     }
 
     @Test
-    public void GetInterfaceFileContent_missingBlobThrowsError() {
+    public void getInterfaceFileContent_missingBlobThrowsError() {
         try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
             MockedStatic<BaisFileProcessorConfig> configMock = mockStatic(BaisFileProcessorConfig.class)) {
             configMock.when(BaisFileProcessorConfig::getBTEckohContainerName).thenReturn("bteckoh-report");
@@ -206,7 +206,7 @@ public class InterfaceFileServiceTest {
             when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report")))
                 .thenThrow(BlobNotFoundException.class);
 
-            assertThrows(BlobNotFoundException.class, () -> interfaceFileService.GetInterfaceFilesContent(1L));
+            assertThrows(BlobNotFoundException.class, () -> interfaceFileService.getInterfaceFilesContent(1L));
 
             verify(repository).findById(1L);
             verifyNoMoreInteractions(repository);

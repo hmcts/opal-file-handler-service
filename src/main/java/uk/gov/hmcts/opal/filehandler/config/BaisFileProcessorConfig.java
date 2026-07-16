@@ -9,15 +9,15 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class BaisFileProcessorConfig {
 
-//    @Value("opal.blob-storage.container-names.BTEckoh")
+    @Value("opal.blob-storage.container-names.BTEckoh")
     @Getter
     private static String BTEckohContainerName = "bteckoh-report";
 
-//    @Value("opal.blob-storage.container-names.CAPS")
+    @Value("opal.blob-storage.container-names.CAPS")
     @Getter
     private static String CAPSContainerName = "caps-report";
 
-//    @Value("opal.blob-storage.container-names.Opal")
+    @Value("opal.blob-storage.container-names.Opal")
     @Getter
     private static String OpalContainerName = "opal-report";
 

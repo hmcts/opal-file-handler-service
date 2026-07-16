@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.testcontainers.azure.AzuriteContainer;
-import org.testcontainers.containers.BindMode;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -40,7 +39,6 @@ public class TestContainerConfig {
         REDIS_CONTAINER.start();
 
         AZURITE_CONTAINER = new AzuriteContainer(DockerImageName.parse(DEFAULT_AZURITE_IMAGE))
-//            .withClasspathResourceMapping("azure/data", "/data", BindMode.READ_ONLY)
             .withCommand("azurite --loose --blobHost 0.0.0.0 --blobPort 10000 --location /data --skipApiVersionCheck");
         AZURITE_CONTAINER.start();
     }

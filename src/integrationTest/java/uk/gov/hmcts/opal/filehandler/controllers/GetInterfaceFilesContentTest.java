@@ -2,7 +2,6 @@ package uk.gov.hmcts.opal.filehandler.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -16,6 +15,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -23,6 +23,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import uk.gov.hmcts.opal.common.user.authentication.service.AccessTokenService;
 import uk.gov.hmcts.opal.common.user.authorisation.client.service.UserStateClientService;
@@ -46,6 +47,8 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
     @MockitoBean
     protected AccessTokenService accessTokenService;
 
+    @Autowired
+    protected MockMvc mockMvc;
 
     private static UtilBlobStoreService utilBlobStoreService;
 
@@ -79,11 +82,13 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         URL url = Resources.getResource(
             "azure/data/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-Daily-2026-07-06-06-00-18.xlsx");
         String resource = Resources.toString(url, StandardCharsets.UTF_8);
-        bteckohReportOriginalVersion = utilBlobStoreService.storeReport(resource, "bteckoh-report", "0f664b85-a5df-4600-9bb3-3b7092ab8718");
+        bteckohReportOriginalVersion = utilBlobStoreService.storeReport(
+            resource, "bteckoh-report", "0f664b85-a5df-4600-9bb3-3b7092ab8718");
 
         url = Resources.getResource("azure/data/caps-report/CapFa.GB.20260701.173024.xml");
         resource = Resources.toString(url, StandardCharsets.UTF_8);
-        capsReportOriginalVersion = utilBlobStoreService.storeReport(resource, "caps-report", "73c21773-6f49-438d-a760-78f0ffbedf0d");
+        capsReportOriginalVersion = utilBlobStoreService.storeReport(
+            resource, "caps-report", "73c21773-6f49-438d-a760-78f0ffbedf0d");
     }
 
     @Sql(
@@ -197,8 +202,8 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             res.andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.detail")
                     .value("Expected interface file id: 4 to exist in blobstore "
-                        + "container: \"bteckoh-report\" with name \"b5fed320-1ad1-47f5-8786-91ba31f1604d\" but this could "
-                        + "not be located."));
+                        + "container: \"bteckoh-report\" with name \"b5fed320-1ad1-47f5-8786-91ba31f1604d\" but "
+                        + "this could not be located."));
 
             assertBlobStorageUnchanged();
         }

@@ -1,13 +1,11 @@
 package uk.gov.hmcts.opal.filehandler.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import jakarta.persistence.EntityNotFoundException;
 import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,15 +28,13 @@ public class InterfaceFilesControllerTest {
 
     @Test
     public void getInterfaceFileContent_returns200() {
-        when(interfaceFileService.GetInterfaceFilesContent(eq(1L))).thenReturn(
+        when(interfaceFileService.getInterfaceFilesContent(eq(1L))).thenReturn(
             mock(InputStream.class)
         );
 
         ResponseEntity<Resource> response = interfaceFilesController.getInterfaceFileContent(1L);
 
-        verify(interfaceFileService).GetInterfaceFilesContent(eq(1L));
+        verify(interfaceFileService).getInterfaceFilesContent(eq(1L));
         assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
     }
-
-    // TODO: unit tests for the other statuses
 }

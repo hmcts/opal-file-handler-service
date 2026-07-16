@@ -115,9 +115,9 @@ opal:
   blob-storage:
     connection-string: ${AZURE_STORAGE_CONNECTION_STRING:UseDevelopmentStorage=true}
     container-names:
-      BTEckoh: ${REPORT_AZURE_STORAGE_CONTAINER:bteckoh-reports}
-      CAPS:  ${REPORT_AZURE_STORAGE_CONTAINER:caps-reports}
-      Opal:  ${REPORT_AZURE_STORAGE_CONTAINER:reports}
+      BTEckoh: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-reports}
+      CAPS:  ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-reports}
+      Opal:  ${OPAL_REPORT_AZURE_STORAGE_CONTAINER:reports}
 
 logging:
   level:
@@ -146,6 +146,7 @@ launchdarkly:
     release-1a: ${RELEASE_1A_ENABLED:true}
     release-1b: ${RELEASE_1B_ENABLED:false}
     release-1c: ${RELEASE_1C_ENABLED:false}
+    release-1c-banking-interfaces: ${RELEASE_1C_BANKING_INTERFACES_ENABLED:false}
 
 user:
   service:

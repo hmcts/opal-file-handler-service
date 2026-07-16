@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AzureStorageConfig {
 
-    @Value("${opal.blob-storage.connection-string}") //TODO: Update these configs
+    @Value("${opal.blob-storage.connection-string}")
     private String connectionString;
 
     @Bean

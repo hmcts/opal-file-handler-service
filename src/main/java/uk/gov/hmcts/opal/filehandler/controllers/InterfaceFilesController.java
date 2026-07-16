@@ -25,7 +25,7 @@ public class InterfaceFilesController implements InterfaceFilesApi {
         defaultValueProperty = FeatureFlags.RELEASE_1C_BANKING_INTERFACES_ENABLED_PROPERTY)
     @Override
     public ResponseEntity<Resource> getInterfaceFileContent(Long id) {
-        InputStream stream = interfaceFilesService.GetInterfaceFilesContent(id);
+        InputStream stream = interfaceFilesService.getInterfaceFilesContent(id);
 
         return ResponseEntity.ok(new InputStreamResource(stream));
     }

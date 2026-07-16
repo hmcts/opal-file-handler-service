@@ -4,7 +4,6 @@ import com.azure.core.util.BinaryData;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
-import jakarta.persistence.EntityNotFoundException;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,9 @@ public class InterfaceFileBlobStoreService {
     public BinaryData fetchInterfaceFile(long interfaceFileId,UUID fileUUID, String containerName) {
         BlobContainerClient container = blobServiceClient.getBlobContainerClient(containerName);
         if (!container.exists()) {
-            throw new BlobStorageContainerNotFoundException(String.format("Blob container \"%s\"does not exist", containerName));
+            throw new BlobStorageContainerNotFoundException(
+                String.format("Blob container \"%s\"does not exist", containerName)
+            );
         }
 
         BlobClient blob = container.getBlobClient(fileUUID.toString());
