@@ -8,6 +8,22 @@ def type = "java"
 def product = "opal"
 def component = "file-handler-service"
 
+def secrets = [
+        'opal-${env}': [
+                secret('bais-emulator-public-key', 'BAIS_EMULATOR_PUBLIC_KEY')
+        ],
+]
+
+static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
+    [$class     : 'AzureKeyVaultSecret',
+     secretType : 'Secret',
+     name       : secretName,
+     version    : '',
+     envVariable: envVar
+    ]
+}
+
+
 def failBuildOnUnstableResults() {
     if (currentBuild.result == 'UNSTABLE') {
         currentBuild.result = 'FAILURE'
@@ -30,38 +46,38 @@ def ensureReportOutputExists(String reportLabel, String targetDirectory, List<St
 
     for (String candidateDirectory : candidateDirectories) {
         if (steps.fileExists("${candidateDirectory}/index.html")
-            || steps.fileExists("${candidateDirectory}/htmlReport/test-summary.html")) {
+                || steps.fileExists("${candidateDirectory}/htmlReport/test-summary.html")) {
             copyReportOutputIfPresent(targetDirectory, candidateDirectory)
             return
         }
     }
 
     throw new RuntimeException(
-        "${reportLabel} was not generated in any expected report location: ${candidateDirectories.join(', ')}"
+            "${reportLabel} was not generated in any expected report location: ${candidateDirectories.join(', ')}"
     )
 }
 
 def ensureFunctionalReportOutputExists() {
     ensureReportOutputExists(
-        'Functional Tests Report',
-        'functional-output',
-        ['build/reports/tests/functional']
+            'Functional Tests Report',
+            'functional-output',
+            ['build/reports/tests/functional']
     )
 }
 
 def ensureIntegrationReportOutputExists() {
     ensureReportOutputExists(
-        'Integration Tests Report',
-        'integration-output',
-        ['build/reports/tests/integration']
+            'Integration Tests Report',
+            'integration-output',
+            ['build/reports/tests/integration']
     )
 }
 
 def ensureSmokeReportOutputExists() {
     ensureReportOutputExists(
-        'Smoke Tests Report',
-        'smoke-output',
-        ['build/reports/tests/smoke']
+            'Smoke Tests Report',
+            'smoke-output',
+            ['build/reports/tests/smoke']
     )
 }
 
@@ -73,12 +89,12 @@ def publishFunctionalResults() {
     steps.archiveArtifacts allowEmptyArchive: true, artifacts: 'functional-output/**/*,build/test-results/functional/**/*'
 
     publishHTML target: [
-        allowMissing         : true,
-        alwaysLinkToLastBuild: true,
-        keepAll              : true,
-        reportDir            : 'functional-output/report',
-        reportFiles          : 'index.html',
-        reportName           : 'Functional Tests Report'
+            allowMissing         : true,
+            alwaysLinkToLastBuild: true,
+            keepAll              : true,
+            reportDir            : 'functional-output/report',
+            reportFiles          : 'index.html',
+            reportName           : 'Functional Tests Report'
     ]
 }
 
@@ -90,12 +106,12 @@ def publishIntegrationResults() {
     steps.archiveArtifacts allowEmptyArchive: true, artifacts: 'integration-output/**/*,build/test-results/integration/**/*'
 
     publishHTML target: [
-        allowMissing         : true,
-        alwaysLinkToLastBuild: true,
-        keepAll              : true,
-        reportDir            : 'integration-output/report',
-        reportFiles          : 'index.html',
-        reportName           : 'Integration Tests Report'
+            allowMissing         : true,
+            alwaysLinkToLastBuild: true,
+            keepAll              : true,
+            reportDir            : 'integration-output/report',
+            reportFiles          : 'index.html',
+            reportName           : 'Integration Tests Report'
     ]
 }
 
@@ -107,22 +123,100 @@ def publishSmokeResults() {
     steps.archiveArtifacts allowEmptyArchive: true, artifacts: 'smoke-output/**/*,build/test-results/smoke/**/*'
 
     publishHTML target: [
-        allowMissing         : true,
-        alwaysLinkToLastBuild: true,
-        keepAll              : true,
-        reportDir            : 'smoke-output/report',
-        reportFiles          : 'index.html',
-        reportName           : 'Smoke Tests Report'
+            allowMissing         : true,
+            alwaysLinkToLastBuild: true,
+            keepAll              : true,
+            reportDir            : 'smoke-output/report',
+            reportFiles          : 'index.html',
+            reportName           : 'Smoke Tests Report'
     ]
 }
 
+
+def blobStorageResourceGroup = "opal-aso-dev-rg"
+def blobStorageAccountNamePrefix = "opalfilehandlerbaissapr"
+def blobStorageSftpUsers = [
+        [container_name: "bteckoh-report", user_name: "bteckohreport"],
+        [container_name: "caps-report", user_name: "capsreport"]
+]
+
+setupAzure() {
+    // Create SFTP local users only when missing; each user maps to its container and shares one SSH key.
+    steps.sh """
+              set -euo pipefail
+
+              storage_account=\"${blobStorageAccountNamePrefix}${env.CHANGE_ID}\"
+              resource_group=\"${blobStorageResourceGroup}\"
+              ssh_public_key=\"${env.BAIS_EMULATOR_PUBLIC_KEY}\"
+              if [ -z \"$ssh_public_key\" ]; then
+                echo \"BAIS_EMULATOR_PUBLIC_KEY must be set\" >&2
+                exit 1
+              fi
+
+              echo \"Waiting for storage account \\\"$storage_account\\\" in resource group \\\"$resource_group\\\"...\"
+              for attempt in {1..30}; do
+                if az storage account show --name \"$storage_account\" --resource-group \"$resource_group\" --only-show-errors --output none 2>/dev/null; then
+                  break
+                fi
+
+                if [ \"$attempt\" -eq 30 ]; then
+                  echo \"Storage account \\\"$storage_account\\\" was not found after waiting.\" >&2
+                  exit 1
+                fi
+
+                sleep 10
+              done
+
+              for mapping in ${blobStorageSftpUsers.collect { "\"${it.container_name}:${it.user_name}\"" }.join(' ')}; do
+                container="\$(echo "$mapping" | cut -d: -f1)"
+                local_user="\$(echo "$mapping" | cut -d: -f2-)"
+
+                if az storage account local-user show \\
+                  --account-name \"$storage_account\" \\
+                  --resource-group \"$resource_group\" \\
+                  --username \"$local_user\" \\
+                  --only-show-errors \\
+                  --output none 2>/dev/null; then
+                  echo \"Local user '$local_user' already exists; skipping create.\"
+                else
+                  az storage account local-user create \\
+                    --account-name \"$storage_account\" \\
+                    --resource-group \"$resource_group\" \\
+                    --username \"$local_user\" \\
+                    --home-directory \"$container\" \\
+                    --permission-scope permissions=rwdl service=blob resource-name=\"$container\" \\
+                    --has-ssh-key true \\
+                    --has-ssh-password false \\
+                    --only-show-errors \\
+                    --output none
+
+                  az storage account local-user update \\
+                    --account-name \"$storage_account\" \\
+                    --resource-group \"$resource_group\" \\
+                    --username \"$local_user\" \\
+                    --ssh-authorized-key key=\"$ssh_public_key\" \\
+                    --only-show-errors \\
+                    --output none
+                fi
+              done
+            """
+}
+
+
 withPipeline(type, product, component) {
+    loadVaultSecrets(secrets)
     before('akschartsinstall') {
         onPR {
             env.TEST_URL = "https://opal-file-handler-service-pr-${env.CHANGE_ID}.dev.platform.hmcts.net"
         }
         onMaster {
             env.TEST_URL = "https://opal-file-handler-service-staging.staging.platform.hmcts.net"
+        }
+    }
+
+    after('akschartsinstall') {
+        onPR {
+            setupAzure()
         }
     }
 
