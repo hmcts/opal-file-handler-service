@@ -28,6 +28,13 @@ java:
           alias: AAD_CLIENT_SECRET
         - name: redis-connection-string
           alias: REDIS_CONNECTION_STRING
+        - name: opal-file-handler-service-file-store-account-name
+          alias: FILE_STORE_STORAGE_ACCOUNT_NAME
+        - name: opal-file-handler-service-file-store-blob-endpoint
+          alias: FILE_STORE_STORAGE_URL
+        - name: opal-file-handler-service-file-store-access-key
+          alias: FILE_STORE_STORAGE_KEY
+
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: true
     TESTING_SUPPORT_ENDPOINTS_ENABLED: true
@@ -47,7 +54,8 @@ redis:
 global:
   security:
     allowInsecureImages: true
-
+blobstorage:
+  enabled: false
 bt-eckoh-report:
   enabled: true
   kind: CronJob
