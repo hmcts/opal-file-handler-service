@@ -205,6 +205,7 @@ def setupAzure() {
 
 withPipeline(type, product, component) {
     loadVaultSecrets(secrets)
+    enableDbMigration()
     before('akschartsinstall') {
         onPR {
             env.TEST_URL = "https://opal-file-handler-service-pr-${env.CHANGE_ID}.dev.platform.hmcts.net"
