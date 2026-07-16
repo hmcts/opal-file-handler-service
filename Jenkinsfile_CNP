@@ -203,7 +203,7 @@ static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
 
 withPipeline(type, product, component) {
     loadVaultSecrets(secrets)
-    enableDbMigration()
+    enableDbMigration(product)
     before('akschartsinstall') {
         onPR {
             env.TEST_URL = "https://opal-file-handler-service-pr-${env.CHANGE_ID}.dev.platform.hmcts.net"
