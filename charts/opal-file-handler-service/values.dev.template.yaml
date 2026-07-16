@@ -6,6 +6,16 @@ global:
 java:
   image: ${IMAGE_NAME}
   ingressHost: ${SERVICE_FQDN}
+  secrets:
+    FILE_STORE_STORAGE_ACCOUNT_NAME:
+      secretRef: storage-account-{{ .Release.Name }}-blobstorage
+      key: storage_account_name
+    FILE_STORE_STORAGE_URL:
+      secretRef: storage-secret-{{ .Release.Name }}-blobstorage
+      key: blobEndpoint
+    FILE_STORE_STORAGE_KEY:
+      secretRef: storage-secret-{{ .Release.Name }}-blobstorage
+      key: accessKey
   keyVaults:
     opal:
       secrets:
@@ -45,6 +55,15 @@ java:
       username: javapostgres
       password: javapassword
       database: opal-file-handler-db
+blobstorage:
+  enabled: true
+  azureName: "opalfilesapr${CHANGE_ID}"
+  releaseNameOverride: ${SERVICE_NAME}-blobstorage
+  resourceGroup: "opal-aso-dev-rg"
+  setup:
+    containers:
+      - bteckoh-report
+      - caps-report
 bais-emulator:
   enabled: true
   azureName: "opalfilebaisapr${CHANGE_ID}"

@@ -19,6 +19,10 @@ dependencies:
     version: 1.0.0
     repository: "oci://hmctsprod.azurecr.io/helm"
     condition: hmcts-redis.enabled
+  - name: blobstorage
+    version: 2.2.3-beta
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: blobstorage.enabled
   - name: job
     alias: bt-eckoh-report
     version: 2.2.1
