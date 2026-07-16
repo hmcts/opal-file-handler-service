@@ -25,7 +25,7 @@ import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
-import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecs;
+import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,7 +38,7 @@ public class InterfaceFilesServiceTest {
     private InterfaceFilesRepository repository;
 
     @Mock
-    private InterfaceFileSpecs specBuilder;
+    private InterfaceFileSpecsFactory specsFactory;
 
     @Mock
     private OpalJwtAuthenticationToken authToken;
@@ -59,7 +59,7 @@ public class InterfaceFilesServiceTest {
                 mock(InterfaceFileEntity.class)
             );
             SearchInterfaceFilesDto searchDto = new SearchInterfaceFilesDto();
-            when(specBuilder.findBySearchCriteria(searchDto)).thenReturn(specification);
+            when(specsFactory.createSearchSpecs(searchDto)).thenReturn(specification);
             when(repository.findAll(
                 specification, Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime)))
             ).thenReturn(interfaceFiles);
@@ -77,7 +77,7 @@ public class InterfaceFilesServiceTest {
             securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
 
             assertThrows(PermissionNotAllowedException.class, () -> service.searchInterfaceFiles(new SearchInterfaceFilesDto()));
-            verifyNoInteractions(specBuilder);
+            verifyNoInteractions(specsFactory);
             verifyNoInteractions(repository);
             verifyNoInteractions(mapper);
         }

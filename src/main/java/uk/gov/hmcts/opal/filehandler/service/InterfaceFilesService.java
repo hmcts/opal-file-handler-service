@@ -13,7 +13,7 @@ import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
-import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecs;
+import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 
@@ -21,7 +21,7 @@ import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 @Service
 public class InterfaceFilesService {
     private final InterfaceFilesRepository repository;
-    private final InterfaceFileSpecs specBuilder;
+    private final InterfaceFileSpecsFactory specsFactory;
     private final InterfaceFileMapper mapper;
 
     @Transactional(readOnly = true)
@@ -29,7 +29,7 @@ public class InterfaceFilesService {
         checkPermissions();
 
         List<InterfaceFileEntity> interfacesFiles = repository.findAll(
-            specBuilder.findBySearchCriteria(request),
+            specsFactory.createSearchSpecs(request),
             Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime))
         );
         return mapper.toInterfaceFileObjects(interfacesFiles);
