@@ -7,6 +7,7 @@ java:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
 
 bt-eckoh-report:
+  releaseNameOverride: opal-file-handler-service-stg-bt-eckoh-report
   image: ${IMAGE_NAME}
   environment:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
@@ -16,6 +17,7 @@ bt-eckoh-report:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
 
 caps-report:
+  releaseNameOverride: opal-file-handler-service-stg-caps-report
   image: ${IMAGE_NAME}
   environment:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
@@ -25,6 +27,7 @@ caps-report:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
 
 natwest-transfer:
+  releaseNameOverride: opal-file-handler-service-stg-natwest-transfer
   image: ${IMAGE_NAME}
   environment:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
@@ -34,6 +37,7 @@ natwest-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
 
 allpay-file-transfer:
+  releaseNameOverride: opal-file-handler-service-stg-allpay-file-transfer
   image: ${IMAGE_NAME}
   environment:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
@@ -43,6 +47,7 @@ allpay-file-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/stg
 
 barclaycard-transfer:
+  releaseNameOverride: opal-file-handler-service-stg-barclaycard-transfer
   image: ${IMAGE_NAME}
   environment:
     OPAL_FRONTEND_URL: https://opal-frontend-staging.staging.apps.hmcts.net
