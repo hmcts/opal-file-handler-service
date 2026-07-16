@@ -174,6 +174,21 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
                 ), interfaceFile.getCreatedDatetime())
             );
         }
+
+        @Test
+        @DisplayName("PO-3947 – Forbidden without View Interface Files permission")
+        @JiraStory("PO-3947")
+        @JiraEpic("PO-3495")
+        void forbiddenWithoutAutoEnforcementPermission() throws Exception {
+            userStateStub.setupWithNoPermissions();
+            ResultActions result = mockMvc.perform(
+                get(URL)
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
+            );
+
+            result.andExpect(status().isForbidden());
+        }
     }
 
     private void setupAuthorisedUser() {
