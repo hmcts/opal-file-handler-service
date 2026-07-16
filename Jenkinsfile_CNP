@@ -2,11 +2,119 @@
 // If this is new microservice built on the template and you want it to run in Jenkins, you 
 // will need to follow these steps: https://hmcts.github.io/cloud-native-platform/new-component/github-repo.html
 
-@Library("Infrastructure")
+@Library("Infrastructure@2.4.5")
 
 def type = "java"
 def product = "opal"
 def component = "file-handler-service"
+
+def failBuildOnUnstableResults() {
+    if (currentBuild.result == 'UNSTABLE') {
+        currentBuild.result = 'FAILURE'
+    }
+}
+
+def copyReportOutputIfPresent(String targetDirectory, String sourceDirectory) {
+    steps.sh """
+      mkdir -p ${targetDirectory}
+      rm -rf ${targetDirectory}/report
+      cp -R ${sourceDirectory} ${targetDirectory}/report
+    """
+}
+
+def ensureReportOutputExists(String reportLabel, String targetDirectory, List<String> candidateDirectories) {
+    steps.sh """
+      mkdir -p ${targetDirectory}
+      rm -rf ${targetDirectory}/report
+    """
+
+    for (String candidateDirectory : candidateDirectories) {
+        if (steps.fileExists("${candidateDirectory}/index.html")
+            || steps.fileExists("${candidateDirectory}/htmlReport/test-summary.html")) {
+            copyReportOutputIfPresent(targetDirectory, candidateDirectory)
+            return
+        }
+    }
+
+    throw new RuntimeException(
+        "${reportLabel} was not generated in any expected report location: ${candidateDirectories.join(', ')}"
+    )
+}
+
+def ensureFunctionalReportOutputExists() {
+    ensureReportOutputExists(
+        'Functional Tests Report',
+        'functional-output',
+        ['build/reports/tests/functional']
+    )
+}
+
+def ensureIntegrationReportOutputExists() {
+    ensureReportOutputExists(
+        'Integration Tests Report',
+        'integration-output',
+        ['build/reports/tests/integration']
+    )
+}
+
+def ensureSmokeReportOutputExists() {
+    ensureReportOutputExists(
+        'Smoke Tests Report',
+        'smoke-output',
+        ['build/reports/tests/smoke']
+    )
+}
+
+def publishFunctionalResults() {
+    ensureFunctionalReportOutputExists()
+
+    steps.junit allowEmptyResults: true, testResults: '**/test-results/functional/*.xml'
+    failBuildOnUnstableResults()
+    steps.archiveArtifacts allowEmptyArchive: true, artifacts: 'functional-output/**/*,build/test-results/functional/**/*'
+
+    publishHTML target: [
+        allowMissing         : true,
+        alwaysLinkToLastBuild: true,
+        keepAll              : true,
+        reportDir            : 'functional-output/report',
+        reportFiles          : 'index.html',
+        reportName           : 'Functional Tests Report'
+    ]
+}
+
+def publishIntegrationResults() {
+    ensureIntegrationReportOutputExists()
+
+    steps.junit allowEmptyResults: true, testResults: '**/test-results/integration/*.xml'
+    failBuildOnUnstableResults()
+    steps.archiveArtifacts allowEmptyArchive: true, artifacts: 'integration-output/**/*,build/test-results/integration/**/*'
+
+    publishHTML target: [
+        allowMissing         : true,
+        alwaysLinkToLastBuild: true,
+        keepAll              : true,
+        reportDir            : 'integration-output/report',
+        reportFiles          : 'index.html',
+        reportName           : 'Integration Tests Report'
+    ]
+}
+
+def publishSmokeResults() {
+    ensureSmokeReportOutputExists()
+
+    steps.junit allowEmptyResults: true, testResults: '**/test-results/smoke/*.xml'
+    failBuildOnUnstableResults()
+    steps.archiveArtifacts allowEmptyArchive: true, artifacts: 'smoke-output/**/*,build/test-results/smoke/**/*'
+
+    publishHTML target: [
+        allowMissing         : true,
+        alwaysLinkToLastBuild: true,
+        keepAll              : true,
+        reportDir            : 'smoke-output/report',
+        reportFiles          : 'index.html',
+        reportName           : 'Smoke Tests Report'
+    ]
+}
 
 withPipeline(type, product, component) {
     before('akschartsinstall') {
@@ -18,4 +126,23 @@ withPipeline(type, product, component) {
         }
     }
 
+    afterAlways('test') {
+        publishIntegrationResults()
+    }
+
+    afterAlways('functionalTest:dev') {
+        publishFunctionalResults()
+    }
+
+    afterAlways('smoketest:dev') {
+        publishSmokeResults()
+    }
+
+    afterAlways('functionalTest:stg') {
+        publishFunctionalResults()
+    }
+
+    afterAlways('smoketest:stg') {
+        publishSmokeResults()
+    }
 }

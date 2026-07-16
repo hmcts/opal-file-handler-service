@@ -1,6 +1,6 @@
 buildscript {
   dependencies {
-    classpath("org.flywaydb:flyway-database-postgresql:12.10.0")
+    classpath("org.flywaydb:flyway-database-postgresql:12.11.0")
   }
 }
 plugins {
@@ -16,7 +16,7 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'org.flywaydb.flyway' version '12.10.0'
+  id 'org.flywaydb.flyway' version '12.11.0'
 }
 
 application {
@@ -31,6 +31,13 @@ java {
   }
 }
 
+ext {
+  serenityVersion = "5.3.11"
+  cucumberVersion = "7.34.4"
+  log4JVersion = "2.26.1"
+  logbackVersion = "1.5.38"
+}
+
 sourceSets {
   openapi {
     java {
@@ -42,14 +49,6 @@ sourceSets {
     java {
       srcDir "$buildDir/generated/openapi/src/main/java"
     }
-  }
-  smokeTest {
-    java {
-      compileClasspath += main.output
-      runtimeClasspath += main.output
-      srcDir file('src/smokeTest/java')
-    }
-    resources.srcDir file('src/smokeTest/resources')
   }
   functionalTest {
     java {
@@ -80,9 +79,14 @@ configurations {
 
   integrationTestImplementation.extendsFrom testImplementation
   integrationTestRuntimeOnly.extendsFrom runtimeOnly
+}
 
-  smokeTestImplementation.extendsFrom testImplementation
-  smokeTestRuntimeOnly.extendsFrom runtimeOnly
+configurations.configureEach {
+  resolutionStrategy {
+    force "io.cucumber:cucumber-core:${cucumberVersion}"
+    force "io.cucumber:cucumber-java:${cucumberVersion}"
+    force "io.cucumber:cucumber-junit:${cucumberVersion}"
+  }
 }
 tasks.register("bundleOpenApi", JavaExec) {
   dependsOn 'compileOpenapiJava'
@@ -146,6 +150,7 @@ tasks.register('functional', Test) {
   group = "Verification"
   testClassesDirs = sourceSets.functionalTest.output.classesDirs
   classpath = sourceSets.functionalTest.runtimeClasspath
+  include '**/FunctionalTestRunner.class'
 }
 
 tasks.register('integration', Test) {
@@ -159,8 +164,17 @@ tasks.register('integration', Test) {
 tasks.register('smoke', Test) {
   description = "Runs Smoke Tests"
   group = "Verification"
-  testClassesDirs = sourceSets.smokeTest.output.classesDirs
-  classpath = sourceSets.smokeTest.runtimeClasspath
+  testClassesDirs = sourceSets.functionalTest.output.classesDirs
+  classpath = sourceSets.functionalTest.runtimeClasspath
+  include '**/SmokeTestRunner.class'
+}
+
+tasks.register('printVersionInit') {
+  description = "Prints the project version for Jenkins init-script metadata generation"
+  group = "Help"
+  doLast {
+    println project.version
+  }
 }
 
 jacocoTestReport {
@@ -208,11 +222,6 @@ repositories {
   }
 }
 
-ext {
-  log4JVersion = "2.26.1"
-  logbackVersion = "1.5.37"
-}
-
 ext['snakeyaml.version'] = '2.0'
 dependencyManagement {
   imports {
@@ -257,11 +266,13 @@ dependencies {
   implementation group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
   implementation group: 'ch.qos.logback', name: 'logback-core', version: logbackVersion
 
-  implementation 'org.flywaydb:flyway-core:12.10.0'
-  runtimeOnly 'org.flywaydb:flyway-database-postgresql:12.10.0', {
+  implementation 'org.flywaydb:flyway-core:12.11.0'
+  runtimeOnly 'org.flywaydb:flyway-database-postgresql:12.11.0', {
     exclude group: 'org.flywaydb', module: 'flyway-core'
   }
-  implementation 'org.postgresql:postgresql'
+
+  // temporary bump until spring-boot-dependencies updates (CVE-2026-54291)
+  implementation 'org.postgresql:postgresql:42.7.13'
 
   // temporary update until CVEs are patched out
   implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:11.0.24'
@@ -278,6 +289,7 @@ dependencies {
   integrationTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
   functionalTestCompileOnly 'org.projectlombok:lombok:1.18.46'
   functionalTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.5.Final'
   smokeTestCompileOnly 'org.projectlombok:lombok:1.18.46'
   smokeTestAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
 
@@ -290,11 +302,20 @@ dependencies {
 
 
   //Test
-  testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
-  testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '6.0.0'
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '6.0.1'
   testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+  testImplementation 'org.junit.platform:junit-platform-suite'
+  testImplementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
+  testImplementation "io.cucumber:cucumber-java:${cucumberVersion}"
+  testImplementation "net.serenity-bdd:serenity-core:${serenityVersion}"
+  testImplementation "net.serenity-bdd:serenity-rest-assured:${serenityVersion}"
+  testImplementation "net.serenity-bdd:serenity-report-resources:${serenityVersion}"
+  testImplementation "net.serenity-bdd:serenity-cucumber:${serenityVersion}"
+  testImplementation "net.serenity-bdd:serenity-ensure:${serenityVersion}"
+  testImplementation 'com.hierynomus:sshj:0.40.0'
 
-  integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.1'
+  integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.2'
   integrationTestImplementation 'org.springframework.security:spring-security-test'
   integrationTestImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 
@@ -313,8 +334,7 @@ bootJar {
   }
 }
 
-// Gradle 7.x issue, workaround from: https://github.com/gradle/gradle/issues/17236#issuecomment-894768083
-rootProject.tasks.named("processSmokeTestResources") {
+rootProject.tasks.named("processFunctionalTestResources") {
   duplicatesStrategy = 'include'
 }
 
