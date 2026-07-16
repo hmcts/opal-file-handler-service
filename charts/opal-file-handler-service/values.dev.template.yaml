@@ -45,7 +45,17 @@ java:
       username: javapostgres
       password: javapassword
       database: opal-file-handler-db
-
+blobstorage:
+  enabled: true
+  azureName: "opalfilehandlerbaissapr${CHANGE_ID}"
+  releaseNameOverride: ${SERVICE_NAME}-bais-blobstorage
+  resourceGroup: "opal-aso-dev-rg"
+  setup:
+    isSftpEnabled: true
+    isHnsEnabled: true
+    containers:
+      - bteckoh-report
+      - caps-report
 bt-eckoh-report:
   image: ${IMAGE_NAME}
   environment:
