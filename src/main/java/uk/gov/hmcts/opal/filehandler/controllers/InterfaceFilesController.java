@@ -1,7 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.controllers;
 
-import static uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags.RELEASE_1C_AUTO_ENFORCEMENT_CONFIG;
-import static uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags.RELEASE_1C_AUTO_ENFORCEMENT_CONFIG_ENABLED_PROPERTY;
+import static uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags.RELEASE_1C_BANKING_INTERFACES;
+import static uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags.RELEASE_1C_BANKING_INTERFACES_ENABLED_PROPERTY;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDateTime;
@@ -32,8 +32,8 @@ public class InterfaceFilesController implements InterfaceFilesApi {
     private final InterfaceFilesService service;
 
     @FeatureToggle(
-        feature = RELEASE_1C_AUTO_ENFORCEMENT_CONFIG,
-        defaultValueProperty = RELEASE_1C_AUTO_ENFORCEMENT_CONFIG_ENABLED_PROPERTY
+        feature = RELEASE_1C_BANKING_INTERFACES,
+        defaultValueProperty = RELEASE_1C_BANKING_INTERFACES_ENABLED_PROPERTY
     )
     @Override
     public ResponseEntity<GetInterfaceFiles200Response> getInterfaceFiles(

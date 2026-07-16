@@ -52,7 +52,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
 
     @TestPropertySource(properties = {
         "launchdarkly.enabled=false",
-        "launchdarkly.default-flag-values.release-1c-auto-enforcement-config=true"
+        "launchdarkly.default-flag-values.release-1c-banking-interfaces=true"
     })
     @Sql(scripts = "classpath:db/insertData/insert_into_interface_files.sql", executionPhase = BEFORE_TEST_CLASS)
     @Sql(scripts = "classpath:db/deleteData/delete_from_interface_files.sql", executionPhase = AFTER_TEST_CLASS)
@@ -193,7 +193,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
 
     @TestPropertySource(properties = {
         "launchdarkly.enabled=false",
-        "launchdarkly.default-flag-values.release-1c-auto-enforcement-config=false"
+        "launchdarkly.default-flag-values.release-1c-banking-interfaces=false"
     })
     @Nested
     class FeatureOff {
