@@ -138,17 +138,26 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
         if (!container || !localUser) {
             throw new RuntimeException("Each blobStorageSftpUsers entry must include container_name and user_name: ${mapping}")
         }
+        withSubscriptionLogin("DTS-SHAREDSERVICES-STG") {
 
-        int status = steps.sh(
-                script: """
+
+            if (loginResult.exitValue != 0) {
+                logger.warn(
+                        "Could not log in to hmctsprod ACR before integration tests. Continuing with any locally cached image. Azure CLI output: {}",
+                        loginResult.output
+                )
+                return
+            }
+            int status = steps.sh(
+                    script: """
                   az storage account local-user show --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}' --only-show-errors --query name --output tsv
                 """,
-                returnStatus: true
-        )
-        echo "Create Account ${status}"
-        az storage account local-user show --account-name opalfilebaisapr69 --resource-group opal-aso-dev-rg --username bteckohreport --only-show-errors --query name --output tsv
+                    returnStatus: true
+            )
+            echo "Create Account ${status}"
+            az storage account local - user show --account - name opalfilebaisapr69 --resource - group opal -aso - dev - rg-- username bteckohreport-- only -show - errors-- query name-- output tsv
 
-        steps.sh """
+            steps.sh """
           set -euo pipefail
           az storage account local-user create \
             --account-name '${storageAccount}' \
@@ -161,8 +170,8 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
             --only-show-errors \
             --output none
         """
-        steps.withEnv(["SSH_PUBLIC_KEY=${sshPublicKey}"]) {
-            steps.sh """
+            steps.withEnv(["SSH_PUBLIC_KEY=${sshPublicKey}"]) {
+                steps.sh """
               set -euo pipefail
               az storage account local-user update \
                 --account-name '${storageAccount}' \
@@ -172,6 +181,7 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
                 --only-show-errors \
                 --output none
             """
+            }
         }
     }
 }
