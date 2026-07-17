@@ -125,7 +125,7 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             );
 
             res.andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM)); // TODO: Is this correct
+                .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM));
 
             assertBlobStorageUnchanged();
         }
