@@ -138,7 +138,8 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
         if (!container || !localUser) {
             throw new RuntimeException("Each blobStorageSftpUsers entry must include container_name and user_name: ${mapping}")
         }
-        withSubscriptionLogin {
+        //Force Dev subscription login to ensure az cli commands are executed in the correct subscription context
+        withSubscriptionLogin('dev') {
             int status = steps.sh(
                     script: """
                   az storage account local-user show --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}' --only-show-errors --query name --output tsv
