@@ -76,7 +76,9 @@ public class InterfaceFilesServiceTest {
             when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(false);
             securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
 
-            assertThrows(PermissionNotAllowedException.class, () -> service.searchInterfaceFiles(new SearchInterfaceFilesDto()));
+            assertThrows(PermissionNotAllowedException.class, () ->
+                service.searchInterfaceFiles(new SearchInterfaceFilesDto())
+            );
             verifyNoInteractions(specsFactory);
             verifyNoInteractions(repository);
             verifyNoInteractions(mapper);

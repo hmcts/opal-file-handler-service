@@ -14,7 +14,7 @@ public interface InterfaceFileMapper {
     InterfaceFileObjectInterfaceFile toInterfaceFileObject(InterfaceFileEntity interfaceFile);
 
     default List<InterfaceFileObjectInterfaceFile> toInterfaceFileObjects(
-       Collection<InterfaceFileEntity> interfaceFiles) {
+        Collection<InterfaceFileEntity> interfaceFiles) {
         return interfaceFiles.stream()
             .map(this::toInterfaceFileObject)
             .toList();

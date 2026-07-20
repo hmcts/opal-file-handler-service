@@ -56,7 +56,9 @@ public class InterfaceFileMapperTest {
             () -> assertEquals(fileStoreUuid, mappedObject.getFilestoreUuid()),
             () -> assertEquals("A123", mappedObject.getChecksum()),
             () -> assertEquals("XXXX-ERROR-XXXX", mappedObject.getErrors()),
-            () -> assertEquals(created.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(), mappedObject.getCreatedDatetime())
+            () -> assertEquals(
+                created.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(), mappedObject.getCreatedDatetime()
+            )
         );
     }
 
@@ -88,7 +90,9 @@ public class InterfaceFileMapperTest {
             () -> assertNull(mappedObject.getFilestoreUuid()),
             () -> assertNull(mappedObject.getChecksum()),
             () -> assertNull(mappedObject.getErrors()),
-            () -> assertEquals(created.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(), mappedObject.getCreatedDatetime())
+            () -> assertEquals(
+                created.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(), mappedObject.getCreatedDatetime()
+            )
         );
     }
 }

@@ -16,27 +16,28 @@ import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 
 @Component
 public class InterfaceFileSpecsFactory {
+
     public Specification<InterfaceFileEntity> createSearchSpecs(SearchInterfaceFilesDto searchDto) {
         List<Specification<InterfaceFileEntity>> specs = new ArrayList<>();
-        if(searchDto.getSource() != null) {
+        if (searchDto.getSource() != null) {
             specs.add(equalsSource(searchDto.getSource()));
         }
-        if(searchDto.getTarget() != null) {
+        if (searchDto.getTarget() != null) {
             specs.add(equalsTarget(searchDto.getTarget()));
         }
-        if(searchDto.getType() != null) {
+        if (searchDto.getType() != null) {
             specs.add(equalsType(searchDto.getType()));
         }
-        if(searchDto.getDomain() != null) {
+        if (searchDto.getDomain() != null) {
             specs.add(equalsOpalDomain(searchDto.getDomain()));
         }
-        if(searchDto.getStatus() != null) {
+        if (searchDto.getStatus() != null) {
             specs.add(equalsStatus(searchDto.getStatus()));
         }
-        if(searchDto.getFromDate() != null) {
+        if (searchDto.getFromDate() != null) {
             specs.add(fromDate(searchDto.getToDate()));
         }
-        if(searchDto.getToDate() != null) {
+        if (searchDto.getToDate() != null) {
             specs.add(toDate(searchDto.getToDate()));
         }
 
