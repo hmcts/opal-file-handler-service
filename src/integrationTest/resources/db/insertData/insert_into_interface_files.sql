@@ -1,19 +1,3 @@
-/**
-* OPAL Program
-*
-* MODULE      : insert_into_interface_files.sql
-*
-* DESCRIPTION : Inserts rows of data into the INTERFACE_FILES table for the Integration Tests.
-*
-* VERSION HISTORY:
-*
-* Date        Author   Version  Nature of Change
-* ----------  -------  -------  -----------------------------------------------------------------------------------------
-* 15/07/2026  J MUSCOTT   1.0   PO-3947: Insert data into interface_files table for intgeration tests.
-*
-**/
-
-
 INSERT INTO public.interface_files
 (interface_file_id, source, target, type, opal_domain, file_name, filestore_uuid, checksum, status, created_datetime, errors)
 values
