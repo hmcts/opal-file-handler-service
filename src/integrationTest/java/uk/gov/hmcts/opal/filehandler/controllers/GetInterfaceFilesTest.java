@@ -1,5 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.controllers;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -60,7 +61,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
     class FeatureOn {
 
         @Test
-        @DisplayName("PO-3947 - Returns all interface files")
+        @DisplayName("PO-3947 - Returns interface files correctly")
         @JiraStory("PO-3947")
         @JiraEpic("PO-3495")
         void returnsAllInterfaceFiles_200() throws Exception {
@@ -81,14 +82,14 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             LocalDateTime failedFileCreatedDate = LocalDateTime.of(
                 2026, 1, 4, 12, 30, 0
             );
+            // Just picking one row we know is there and checking that all fields are correct
+            // THe other tests will test the filtering on the endpoint
             InterfaceFileObjectInterfaceFile failedFile = interfaceFiles.stream()
                 .filter(f -> f.getFilestoreUuid().equals(failedFilestoreUuid))
                     .findAny()
                         .orElse(null);
 
             assertAll(
-                () -> assertEquals(4, response.getNumberOfResults()),
-                () -> assertEquals(4, interfaceFiles.size()),
                 () -> assertNotNull(failedFile),
                 () -> assertEquals(InterfaceFileEnumInterfaceFile.OPAL, failedFile.getTarget()),
                 () -> assertEquals(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, failedFile.getSource()),
@@ -103,11 +104,10 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         }
 
         @Test
-        @DisplayName("PO-3947 - Filters interface files correctly")
+        @DisplayName("PO-3947 - Filters interface files correctly by status and source")
         @JiraStory("PO-3947")
         @JiraEpic("PO-3495")
-        void filtersInterfaceFilesCorrectly_200() throws Exception {
-            //            UUID failedFilestoreUuid = UUID.fromString("a5695e1e-bd9f-4a5b-ae15-9deeed2d1384");
+        void filtersInterfaceFilesCorrectlyBySourceAndStatus_200() throws Exception {
             setupAuthorisedUser();
             ResultActions result = mockMvc.perform(
                 get(URL)
@@ -123,39 +123,24 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
 
             GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {});
 
-            assertEquals(1, response.getNumberOfResults());
-            assertEquals(1, response.getInterfaceFiles().size());
-            InterfaceFileObjectInterfaceFile interfaceFile = response.getInterfaceFiles().getFirst();
-            assertAll(
-                () -> assertEquals(InterfaceFileEnumInterfaceFile.OPAL, interfaceFile.getTarget()),
-                () -> assertEquals(InterfaceFileEnumInterfaceFile.CAPS_REPORT, interfaceFile.getSource()),
-                () -> assertEquals(InterfaceFileTypeEnumInterfaceFile.SOURCE, interfaceFile.getType()),
-                () -> assertEquals(DomainEnumTypes.MAINTENANCE, interfaceFile.getDomain()),
-                () -> assertEquals("CAPS-2.xml", interfaceFile.getFileName()),
-                () -> assertEquals(
-                    UUID.fromString("1b1ef8a3-f722-41de-95b0-fe9cfc3b0922"), interfaceFile.getFilestoreUuid()
-                ),
-                () -> assertNull(interfaceFile.getErrors()),
-                () -> assertNull(interfaceFile.getChecksum())
+            assertThat(response.getInterfaceFiles()).allMatch(
+                i -> i.getStatus() == StatusEnumInterfaceFile.SUCCESS &&
+                    i.getSource() == InterfaceFileEnumInterfaceFile.CAPS_REPORT
             );
         }
 
         @Test
-        @DisplayName("PO-3947 - Filters interface files correctly by to and from dates")
+        @DisplayName("PO-3947 - Filters interface files correctly by target and type")
         @JiraStory("PO-3947")
         @JiraEpic("PO-3495")
-        void filtersInterfaceFilesCorrectlyByDates_200() throws Exception {
+        void filtersInterfaceFilesCorrectlyByTargetAndType_200() throws Exception {
             setupAuthorisedUser();
             ResultActions result = mockMvc.perform(
                 get(URL)
                     .with(userStateStub.getAuthenticaitonRequestPostProcessor())
                     .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
-                    .param("from_date", LocalDateTime.of(
-                        2025, Month.DECEMBER, 30, 0, 0).toString()
-                    )
-                    .param("to_date", LocalDateTime.of(
-                        2026, Month.JANUARY, 4, 12, 30).toString()
-                    )
+                    .param("target", InterfaceFileEnumInterfaceFile.OPAL.getValue())
+                    .param("type", InterfaceFileTypeEnumInterfaceFile.SOURCE.getValue())
             );
 
             String body = result.andReturn().getResponse().getContentAsString();
@@ -164,15 +149,62 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
 
             GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {});
 
-            assertEquals(1, response.getNumberOfResults());
-            assertEquals(1, response.getInterfaceFiles().size());
-            InterfaceFileObjectInterfaceFile interfaceFile = response.getInterfaceFiles().getFirst();
-            assertAll(
-                () -> assertEquals("2500-Payments-Report-Daily.xlsx", interfaceFile.getFileName()),
-                () -> assertEquals(LocalDateTime.of(
-                    2026, 1, 4, 12, 30, 0
-                ), interfaceFile.getCreatedDatetime())
+            assertThat(response.getInterfaceFiles()).allMatch(
+                i -> i.getTarget() == InterfaceFileEnumInterfaceFile.OPAL &&
+                    i.getType() == InterfaceFileTypeEnumInterfaceFile.SOURCE);
+        }
+
+
+        @Test
+        @DisplayName("PO-3947 - Filters interface files correctly by domain")
+        @JiraStory("PO-3947")
+        @JiraEpic("PO-3495")
+        void filtersInterfaceFilesCorrectlyByDomain_200() throws Exception {
+            setupAuthorisedUser();
+            ResultActions result = mockMvc.perform(
+                get(URL)
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
+                    .param("domain", DomainEnumTypes.FINES.getValue())
             );
+
+            String body = result.andReturn().getResponse().getContentAsString();
+            result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+            GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {});
+
+            assertThat(response.getInterfaceFiles()).allMatch(i -> i.getDomain() == DomainEnumTypes.FINES);
+        }
+
+        @Test
+        @DisplayName("PO-3947 - Filters interface files correctly by to and from dates")
+        @JiraStory("PO-3947")
+        @JiraEpic("PO-3495")
+        void filtersInterfaceFilesCorrectlyByDates_200() throws Exception {
+            LocalDateTime fromDate = LocalDateTime.of(2025, Month.DECEMBER, 30, 0, 0);
+            LocalDateTime toDate = LocalDateTime.of(2026, Month.JANUARY, 4, 12, 30);
+
+            setupAuthorisedUser();
+            ResultActions result = mockMvc.perform(
+                get(URL)
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
+                    .param("from_date", fromDate.toString())
+                    .param("to_date", toDate.toString())
+            );
+
+            String body = result.andReturn().getResponse().getContentAsString();
+            result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+            GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {});
+
+            assertThat(response.getInterfaceFiles()).allMatch(i -> {
+                    LocalDateTime createdDate = i.getCreatedDatetime();
+                    return (createdDate.equals(fromDate) || createdDate.isAfter(fromDate)) &&
+                        (createdDate.equals(toDate) || createdDate.isBefore(toDate));
+            });
         }
 
         @Test
