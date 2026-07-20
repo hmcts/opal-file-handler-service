@@ -131,22 +131,21 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
         throw new RuntimeException('BAIS_EMULATOR_PUBLIC_KEY must be set')
     }
 
-    storageSftpUsers.each { Map<String, String> mapping ->
+    for (Map<String, String> mapping : storageSftpUsers) {
         String container = mapping.container_name
         String localUser = mapping.user_name
 
         if (!container || !localUser) {
             throw new RuntimeException("Each blobStorageSftpUsers entry must include container_name and user_name: ${mapping}")
         }
-        withSubscriptionLogin() {
+        steps.withSubscriptionLogin {
             int status = steps.sh(
                     script: """
                   az storage account local-user show --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}' --only-show-errors --query name --output tsv
                 """,
                     returnStatus: true
             )
-            echo "Create Account ${status}"
-            az storage account local - user show --account - name opalfilebaisapr69 --resource - group opal -aso - dev - rg-- username bteckohreport-- only -show - errors-- query name-- output tsv
+            steps.echo "Create Account ${status}"
 
             steps.sh """
           set -euo pipefail
