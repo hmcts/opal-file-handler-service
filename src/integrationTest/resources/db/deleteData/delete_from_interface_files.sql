@@ -14,8 +14,5 @@
 **/
 
 delete from public.interface_files
-where filestore_uuid in
-('4fb23a4c-c218-4eb6-ac8b-554480ac9805',
-'1b1ef8a3-f722-41de-95b0-fe9cfc3b0922',
-'68b49e2d-74fb-4e26-b068-57efeb33a771',
-'a5695e1e-bd9f-4a5b-ae15-9deeed2d1384');
+where interface_file_id in
+(10,11,12,13);
