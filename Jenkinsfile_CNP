@@ -131,47 +131,27 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
         throw new RuntimeException('BAIS_EMULATOR_PUBLIC_KEY must be set')
     }
 
-    storageSftpUsers.each { Map<String, String> mapping ->
+    for (Map<String, String> mapping : storageSftpUsers) {
         String container = mapping.container_name
         String localUser = mapping.user_name
 
         if (!container || !localUser) {
             throw new RuntimeException("Each blobStorageSftpUsers entry must include container_name and user_name: ${mapping}")
         }
-        withSubscriptionLogin() {
-            int status = steps.sh(
-                    script: """
-                  az storage account local-user show --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}' --only-show-errors --query name --output tsv
-                """,
-                    returnStatus: true
-            )
-            echo "Create Account ${status}"
-            az storage account local - user show --account - name opalfilebaisapr69 --resource - group opal -aso - dev - rg-- username bteckohreport-- only -show - errors-- query name-- output tsv
+        //Force Dev subscription login to ensure az cli commands are executed in the correct subscription context
+        withSubscriptionLogin('dev') {
+            Closure az = { cmd -> return sh(script: "env AZURE_CONFIG_DIR=/opt/jenkins/.azure-stg az $cmd", returnStdout: true).trim() }
+            def status
+            try {
+                status = az "storage account local-user show --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}' --only-show-errors --query name --output tsv"
+            } catch (e) {
+                steps.echo "Create Account error ${e}"
+            }
 
-            steps.sh """
-          set -euo pipefail
-          az storage account local-user create \
-            --account-name '${storageAccount}' \
-            --resource-group '${resourceGroup}' \
-            --user-name '${localUser}' \
-            --home-directory '${container}' \
-            --permission-scope permissions=rwdl service=blob resource-name='${container}' \
-            --has-ssh-key true \
-            --has-ssh-password false \
-            --only-show-errors \
-            --output none
-        """
-            steps.withEnv(["SSH_PUBLIC_KEY=${sshPublicKey}"]) {
-                steps.sh """
-              set -euo pipefail
-              az storage account local-user update \
-                --account-name '${storageAccount}' \
-                --resource-group '${resourceGroup}' \
-                --username '${localUser}' \
-                --ssh-authorized-key key="\$SSH_PUBLIC_KEY" \
-                --only-show-errors \
-                --output none
-            """
+            if (!status) {
+                steps.echo "Create Account ${localUser} for ${container} in ${storageAccount}"
+                az "storage account local-user create --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}'  --home-directory '${container}' --permission-scope permissions=rwdl service=blob resource-name='${container}' --has-ssh-key true --has-ssh-password false --only-show-errors"
+                az "storage account local-user update --account-name '${storageAccount}' --resource-group '${resourceGroup}' --username '${localUser}' --ssh-authorized-key key='${sshPublicKey}' --only-show-errors --output none"
             }
         }
     }
