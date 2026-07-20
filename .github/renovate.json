@@ -6,23 +6,11 @@
   ],
   "packageRules": [
     {
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["postgres"],
-      "enabled": false
-    },
-    {
-      "matchManagers": ["helm"],
-      "matchPackageNames": ["postgresql"],
-      "enabled": false
-    },
-    {
       "matchManagers": ["gradle-wrapper"],
       "matchUpdateTypes": ["minor", "patch"]
     },
     {
-      "description": "opal-common-lib updates are coordinated manually across consuming services",
-      "matchManagers": ["gradle"],
-      "matchPackageNames": ["uk.gov.hmcts:opal-common-lib"],
+      "matchPackageNames": ["postgres"],
       "enabled": false
     },
     {

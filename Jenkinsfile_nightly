@@ -12,7 +12,7 @@ properties([
 
 import uk.gov.hmcts.contino.GradleBuilder
 
-@Library("Infrastructure@2.4.4")
+@Library("Infrastructure")
 
 def type = "java"
 def product = "opal"
