@@ -89,6 +89,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
                     .findAny()
                         .orElse(null);
 
+            assertThat(interfaceFiles).hasSizeGreaterThanOrEqualTo(4);
             assertAll(
                 () -> assertNotNull(failedFile),
                 () -> assertEquals(InterfaceFileEnumInterfaceFile.OPAL, failedFile.getTarget()),
@@ -123,6 +124,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
 
             GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {});
 
+            assertThat(response.getInterfaceFiles()).hasSizeGreaterThanOrEqualTo(1);
             assertThat(response.getInterfaceFiles()).allMatch(
                 i -> i.getStatus() == StatusEnumInterfaceFile.SUCCESS &&
                     i.getSource() == InterfaceFileEnumInterfaceFile.CAPS_REPORT
@@ -149,6 +151,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
 
             GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {});
 
+            assertThat(response.getInterfaceFiles()).hasSizeGreaterThanOrEqualTo(1);
             assertThat(response.getInterfaceFiles()).allMatch(
                 i -> i.getTarget() == InterfaceFileEnumInterfaceFile.OPAL &&
                     i.getType() == InterfaceFileTypeEnumInterfaceFile.SOURCE);
@@ -174,6 +177,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
 
             GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {});
 
+            assertThat(response.getInterfaceFiles()).hasSizeGreaterThanOrEqualTo(1);
             assertThat(response.getInterfaceFiles()).allMatch(i -> i.getDomain() == DomainEnumTypes.FINES);
         }
 
@@ -200,6 +204,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
 
             GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {});
 
+            assertThat(response.getInterfaceFiles()).hasSizeGreaterThanOrEqualTo(1);
             assertThat(response.getInterfaceFiles()).allMatch(i -> {
                     LocalDateTime createdDate = i.getCreatedDatetime();
                     return (createdDate.equals(fromDate) || createdDate.isAfter(fromDate)) &&
