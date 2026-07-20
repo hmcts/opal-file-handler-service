@@ -52,9 +52,9 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
     private static UtilBlobStoreService utilBlobStoreService;
 
-    protected void authorizeWithPermission(short businessUnitId) {
+    protected void authorizeWithPermission() {
         userStateStub.setupWithNoPermissions();
-        userStateStub.addPermissions(businessUnitId, FileHandlerPermission.ViewInterfacesFile);
+        userStateStub.addPermissions((short) 1, FileHandlerPermission.ViewInterfacesFile);
     }
 
     protected void authoriseNoPermissions() {
@@ -111,11 +111,10 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         @JiraStory("PO-3948")
         @JiraEpic("PO-3495")
         void get_respondsWith200AndFileContents() throws Exception {
-            authorizeWithPermission((short) 78); // Auto enforcement permission
+            authorizeWithPermission(); // Auto enforcement permission
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
-            headers.add("Business-Unit-Id", "78");
 
             ResultActions res = mockMvc.perform(
                 get(urlWithID(1L))
@@ -135,11 +134,10 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         @JiraStory("PO-3948")
         @JiraEpic("PO-3495")
         void get_respondsWith404WhenNotInDB() throws Exception {
-            authorizeWithPermission((short) 78);
+            authorizeWithPermission();
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
-            headers.add("Business-Unit-Id", "78");
 
             ResultActions res = mockMvc.perform(
                 get(urlWithID(1000L))
@@ -160,11 +158,10 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         @JiraStory("PO-3948")
         @JiraEpic("PO-3495")
         void get_respondsWith422WithInvalidStatus() throws Exception {
-            authorizeWithPermission((short) 78);
+            authorizeWithPermission();
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
-            headers.add("Business-Unit-Id", "78");
 
             ResultActions res = mockMvc.perform(
                 get(urlWithID(3L))
@@ -186,11 +183,10 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         @JiraStory("PO-3948")
         @JiraEpic("PO-3495")
         void get_respondsWith500WhenBlobNotFound() throws Exception {
-            authorizeWithPermission((short) 78);
+            authorizeWithPermission();
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
-            headers.add("Business-Unit-Id", "78");
 
             ResultActions res = mockMvc.perform(
                 get(urlWithID(4L))
@@ -217,7 +213,6 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
-            headers.add("Business-Unit-Id", "78");
 
             ResultActions res = mockMvc.perform(
                 get(urlWithID(4L))
@@ -243,11 +238,10 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         @JiraStory("PO-3948")
         @JiraEpic("PO-3495")
         void getAllEnforcementAccountTypes_FeatureOff_404() throws Exception {
-            authorizeWithPermission((short) 78); // Auto enforcement permission
+            authorizeWithPermission(); // Auto enforcement permission
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
-            headers.add("Business-Unit-Id", "78");
 
             ResultActions res = mockMvc.perform(
                 get(urlWithID(1L))

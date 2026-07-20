@@ -8,7 +8,8 @@ import org.springframework.stereotype.Service;
 import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfig;
+import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfig;
+import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
@@ -22,6 +23,9 @@ public class InterfaceFileService {
 
     private InterfaceFilesRepository repository;
     private InterfaceFileBlobStoreService blobStoreService;
+
+    private BTEckohReportBaisFileProcessorConfig bteckohConfig;
+    private CapsReportBaisFileProcessorConfig capsConfig;
 
     public InputStream getInterfaceFilesContent(Long id) {
         checkPermissions();
@@ -41,9 +45,8 @@ public class InterfaceFileService {
         Interface source = entity.getSource();
         String containerName = "";
         switch (source) {
-            case BTECKOH_REPORT -> containerName = BaisFileProcessorConfig.getBTEckohContainerName();
-            case CAPS_REPORT -> containerName = BaisFileProcessorConfig.getCAPSContainerName();
-            case OPAL -> containerName = BaisFileProcessorConfig.getOpalContainerName();
+            case BTECKOH_REPORT -> containerName = bteckohConfig.getContainerName();
+            case CAPS_REPORT -> containerName = capsConfig.getContainerName();
         }
 
         BinaryData file = blobStoreService.fetchInterfaceFile(id, entity.getFilestoreUuid(), containerName);

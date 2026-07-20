@@ -1,0 +1,7 @@
+opal:
+  file-handling-service:
+    file-types:
+      BTEckoh-report:
+        storage-container-name: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-report}
+      CAPS-report:
+        storage-container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}

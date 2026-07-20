@@ -112,12 +112,14 @@ opal:
         algorithm: ${OPAL_COMMON_CONTENT_DIGEST_RESPONSE_ALGORITHM:SHA-512}
       supported-algorithms:
         sha-512: SHA-512
+  file-handling-service:
+    file-types:
+      BTEckoh-report:
+        storage-container-name: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-report}
+      CAPS-report:
+        storage-container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}
   blob-storage:
     connection-string: ${AZURE_STORAGE_CONNECTION_STRING:UseDevelopmentStorage=true}
-    container-names:
-      BTEckoh: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-reports}
-      CAPS:  ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-reports}
-      Opal:  ${OPAL_REPORT_AZURE_STORAGE_CONTAINER:reports}
 
 logging:
   level:

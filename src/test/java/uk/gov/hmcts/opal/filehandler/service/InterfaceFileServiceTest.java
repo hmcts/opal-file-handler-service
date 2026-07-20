@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +28,8 @@ import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfig;
+import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfig;
+import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -48,6 +50,12 @@ public class InterfaceFileServiceTest {
     private InterfaceFileBlobStoreService blobStoreService;
 
     @Mock
+    private BTEckohReportBaisFileProcessorConfig bteckohConfig;
+
+    @Mock
+    private CapsReportBaisFileProcessorConfig capsConfig;
+
+    @Mock
     private OpalJwtAuthenticationToken authToken;
 
     @InjectMocks
@@ -56,162 +64,125 @@ public class InterfaceFileServiceTest {
     private UUID uuid;
 
     private BinaryData mockData;
+    private MockedStatic<SecurityUtil> securityUtil;
 
     @BeforeEach
     public void setup() {
         uuid = UUID.randomUUID();
         mockData = mock(BinaryData.class);
+        securityUtil = mockStatic(SecurityUtil.class);
+    }
+
+    public void withPermissions() {
+        securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
+        when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
+    }
+
+    public void withoutPermissions() {
+        securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
+        when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(false);
+    }
+
+    @AfterEach
+    public void teardown() {
+        securityUtil.close();
     }
 
     @Test
     public void getInterfaceFileContent_bteckohSourceReturnsData() {
-        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
-            MockedStatic<BaisFileProcessorConfig> configMock = mockStatic(BaisFileProcessorConfig.class)) {
-            configMock.when(BaisFileProcessorConfig::getBTEckohContainerName).thenReturn("bteckoh-report");
+        withPermissions();
+        when(bteckohConfig.getContainerName()).thenReturn("bteckoh-report");
 
-            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-            when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
+        when(repository.findById(eq(1L))).thenReturn(
+            Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.SUCCESS))
+        );
+        when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report"))).thenReturn(mockData);
 
-            when(repository.findById(eq(1L))).thenReturn(
-                Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.SUCCESS))
-            );
-            when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report"))).thenReturn(mockData);
+        InputStream response = interfaceFileService.getInterfaceFilesContent(1L);
 
-            InputStream response = interfaceFileService.getInterfaceFilesContent(1L);
-
-            verify(repository).findById(eq(1L));
-            verify(blobStoreService).fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report"));
-            configMock.verify(() -> BaisFileProcessorConfig.getBTEckohContainerName());
-        }
+        verify(repository).findById(eq(1L));
+        verify(blobStoreService).fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report"));
+        verify(bteckohConfig).getContainerName();
     }
 
     @Test
     public void getInterfaceFileContent_capsSourceReturnsData() {
-        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
-            MockedStatic<BaisFileProcessorConfig> configMock = mockStatic(BaisFileProcessorConfig.class)) {
-            configMock.when(BaisFileProcessorConfig::getCAPSContainerName).thenReturn("caps-report");
+        withPermissions();
+        when(capsConfig.getContainerName()).thenReturn("caps-report");
 
-            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-            when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
+        when(repository.findById(eq(1L))).thenReturn(
+            Optional.of(buildEntity(1L, uuid, Interface.CAPS_REPORT, Status.SUCCESS))
+        );
+        when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("caps-report"))).thenReturn(mockData);
 
-            when(repository.findById(eq(1L))).thenReturn(
-                Optional.of(buildEntity(1L, uuid, Interface.CAPS_REPORT, Status.SUCCESS))
-            );
-            when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("caps-report"))).thenReturn(mockData);
+        InputStream response = interfaceFileService.getInterfaceFilesContent(1L);
 
-            InputStream response = interfaceFileService.getInterfaceFilesContent(1L);
-
-            verify(repository).findById(eq(1L));
-            verify(blobStoreService).fetchInterfaceFile(eq(1L), eq(uuid), eq("caps-report"));
-            configMock.verify(() -> BaisFileProcessorConfig.getCAPSContainerName());
-        }
-    }
-
-    @Test
-    public void getInterfaceFileContent_opalSourceReturnsData() {
-        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
-            MockedStatic<BaisFileProcessorConfig> configMock = mockStatic(BaisFileProcessorConfig.class)) {
-            configMock.when(BaisFileProcessorConfig::getOpalContainerName).thenReturn("opal-report");
-
-            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-            when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
-
-            when(repository.findById(eq(1L))).thenReturn(
-                Optional.of(buildEntity(1L, uuid, Interface.OPAL, Status.SUCCESS))
-            );
-            when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("opal-report"))).thenReturn(mockData);
-
-            InputStream response = interfaceFileService.getInterfaceFilesContent(1L);
-
-            verify(repository).findById(eq(1L));
-            verify(blobStoreService).fetchInterfaceFile(eq(1L), eq(uuid), eq("opal-report"));
-            configMock.verify(() -> BaisFileProcessorConfig.getOpalContainerName());
-        }
+        verify(repository).findById(eq(1L));
+        verify(blobStoreService).fetchInterfaceFile(eq(1L), eq(uuid), eq("caps-report"));
+        verify(capsConfig).getContainerName();
     }
 
     @Test
     public void getInterfaceFileContent_missingPermissionsThrowsError() {
-        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
-            MockedStatic<BaisFileProcessorConfig> configMock = mockStatic(BaisFileProcessorConfig.class)) {
-            configMock.when(BaisFileProcessorConfig::getBTEckohContainerName).thenReturn("bteckoh-report");
+        withoutPermissions();
 
-            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-            when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(false);
-
-            assertThrows(
-                PermissionNotAllowedException.class,
-                () -> interfaceFileService.getInterfaceFilesContent(1L)
-            );
-        }
+        assertThrows(
+            PermissionNotAllowedException.class,
+            () -> interfaceFileService.getInterfaceFilesContent(1L)
+        );
     }
 
     @Test
     public void getInterfaceFileContent_EntityNotFoundThrowsError() {
-        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
-            MockedStatic<BaisFileProcessorConfig> configMock = mockStatic(BaisFileProcessorConfig.class)) {
-            configMock.when(BaisFileProcessorConfig::getBTEckohContainerName).thenReturn("bteckoh-report");
+        withPermissions();
 
-            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-            when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
+        when(repository.findById(eq(1L))).thenReturn(
+            Optional.ofNullable(null)
+        );
 
-            when(repository.findById(eq(1L))).thenReturn(
-                Optional.ofNullable(null)
-            );
+        assertThrows(EntityNotFoundException.class, () -> interfaceFileService.getInterfaceFilesContent(1L));
 
-            assertThrows(EntityNotFoundException.class, () -> interfaceFileService.getInterfaceFilesContent(1L));
-
-            verify(repository).findById(1L);
-            verifyNoMoreInteractions(repository);
-            verifyNoInteractions(blobStoreService);
-        }
+        verify(repository).findById(1L);
+        verifyNoMoreInteractions(repository);
+        verifyNoInteractions(blobStoreService);
     }
 
 
     @Test
     public void getInterfaceFileContent_invalidStatusThrowsError() {
-        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
-            MockedStatic<BaisFileProcessorConfig> configMock = mockStatic(BaisFileProcessorConfig.class)) {
-            configMock.when(BaisFileProcessorConfig::getBTEckohContainerName).thenReturn("bteckoh-report");
+        withPermissions();
 
-            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-            when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
+        when(repository.findById(eq(1L))).thenReturn(
+            Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.FAILED))
+        );
 
-            when(repository.findById(eq(1L))).thenReturn(
-                Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.FAILED))
-            );
+        assertThrows(
+            InvalidInterfaceFileStatusException.class,
+            () -> interfaceFileService.getInterfaceFilesContent(1L)
+        );
 
-            assertThrows(
-                InvalidInterfaceFileStatusException.class,
-                () -> interfaceFileService.getInterfaceFilesContent(1L)
-            );
-
-            verify(repository).findById(1L);
-            verifyNoMoreInteractions(repository);
-            verifyNoInteractions(blobStoreService);
-        }
+        verify(repository).findById(1L);
+        verifyNoMoreInteractions(repository);
+        verifyNoInteractions(blobStoreService);
     }
 
     @Test
     public void getInterfaceFileContent_missingBlobThrowsError() {
-        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
-            MockedStatic<BaisFileProcessorConfig> configMock = mockStatic(BaisFileProcessorConfig.class)) {
-            configMock.when(BaisFileProcessorConfig::getBTEckohContainerName).thenReturn("bteckoh-report");
+        withPermissions();
+        when(bteckohConfig.getContainerName()).thenReturn("bteckoh-report");
 
-            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-            when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
+        when(repository.findById(eq(1L))).thenReturn(
+            Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.SUCCESS))
+        );
+        when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report")))
+            .thenThrow(BlobNotFoundException.class);
 
-            when(repository.findById(eq(1L))).thenReturn(
-                Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.SUCCESS))
-            );
-            when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report")))
-                .thenThrow(BlobNotFoundException.class);
+        assertThrows(BlobNotFoundException.class, () -> interfaceFileService.getInterfaceFilesContent(1L));
 
-            assertThrows(BlobNotFoundException.class, () -> interfaceFileService.getInterfaceFilesContent(1L));
+        verify(repository).findById(1L);
+        verifyNoMoreInteractions(repository);
+        verify(bteckohConfig).getContainerName();
 
-            verify(repository).findById(1L);
-            verifyNoMoreInteractions(repository);
-
-        }
     }
 
     private InterfaceFileEntity buildEntity(long id, UUID fsuuid, Interface source, Status status) {
