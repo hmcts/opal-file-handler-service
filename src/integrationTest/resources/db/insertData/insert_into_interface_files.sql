@@ -12,7 +12,7 @@ VALUES -- valid bteckoh report
         NOW()),
     -- invalid report
        (3, 'CAPS_REPORT', 'CAPS_REPORT', 'SOURCE',
-        'FILE_HANDLER', '', '73c21773-6f49-438d-a760-78f0ffbedf0d', 'FAILED',
+        'FILE_HANDLER', '', 'cc4e81fe-364b-44c2-9d41-ca14fd50834f', 'FAILED',
         NOW()),
     -- report with missing blob
        (4, 'BTECKOH_REPORT', 'BTECKOH_REPORT', 'SOURCE',
