@@ -142,7 +142,7 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
         withSubscriptionLogin('dev') {
             int status = steps.sh(
                     script: """
-                  az storage account local-user show --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}' --only-show-errors --query name --output tsv
+                  env AZURE_CONFIG_DIR=/opt/jenkins/.azure-dev az storage account local-user show --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}' --only-show-errors --query name --output tsv
                 """,
                     returnStatus: true
             )
@@ -150,7 +150,7 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
 
             steps.sh """
           set -euo pipefail
-          az storage account local-user create \
+          env AZURE_CONFIG_DIR=/opt/jenkins/.azure-dev az storage account local-user create \
             --account-name '${storageAccount}' \
             --resource-group '${resourceGroup}' \
             --user-name '${localUser}' \
@@ -164,7 +164,7 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
             steps.withEnv(["SSH_PUBLIC_KEY=${sshPublicKey}"]) {
                 steps.sh """
               set -euo pipefail
-              az storage account local-user update \
+              env AZURE_CONFIG_DIR=/opt/jenkins/.azure-dev az storage account local-user update \
                 --account-name '${storageAccount}' \
                 --resource-group '${resourceGroup}' \
                 --username '${localUser}' \
