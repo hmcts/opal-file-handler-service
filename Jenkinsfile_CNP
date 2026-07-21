@@ -150,8 +150,7 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
 
             if (!status) {
                 steps.echo "Create Account ${localUser} for ${container} in ${storageAccount}"
-                az "storage account local-user create --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}'  --home-directory '${container}' --permission-scope permissions=rwdl service=blob resource-name='${container}' --has-ssh-key true --has-ssh-password false --only-show-errors"
-                az "storage account local-user update --account-name '${storageAccount}' --resource-group '${resourceGroup}' --username '${localUser}' --ssh-authorized-key key='${sshPublicKey}' --only-show-errors --output none"
+                az "storage account local-user create --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}'  --home-directory '${container}' --permission-scope permissions=rwdl service=blob resource-name='${container}' --has-ssh-key true --ssh-authorized-key key='${sshPublicKey}' --has-ssh-password false --only-show-errors"
             }
         }
     }
