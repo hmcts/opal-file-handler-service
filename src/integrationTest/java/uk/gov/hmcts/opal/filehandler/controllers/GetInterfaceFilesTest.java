@@ -221,7 +221,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @DisplayName("PO-3947 – Forbidden without View Interface Files permission")
         @JiraStory("PO-3947")
         @JiraEpic("PO-3495")
-        void forbiddenWithoutInterfaceFilesPermission() throws Exception {
+        void forbiddenWithoutInterfaceFilesPermission_403() throws Exception {
             userStateStub.setupWithNoPermissions();
             ResultActions result = mockMvc.perform(
                 get(URL)
