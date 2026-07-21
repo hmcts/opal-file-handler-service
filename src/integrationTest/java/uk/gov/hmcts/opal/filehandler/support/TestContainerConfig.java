@@ -46,8 +46,6 @@ public class TestContainerConfig {
         AZURITE_CONTAINER = new GenericContainer<>(DockerImageName.parse(DEFAULT_AZURITE_IMAGE))
             .withCommand(
                 "azurite-blob --blobHost 0.0.0.0 --blobPort " + AZURITE_BLOB_PORT + " --skipApiVersionCheck");
-//            .withExposedPorts(AZURITE_BLOB_PORT)
-//            .setPortBindings(List.of("10000:10000"));
         AZURITE_CONTAINER.setPortBindings(List.of(AZURITE_BLOB_PORT+":"+AZURITE_BLOB_PORT));
 
         AZURITE_CONTAINER.start();
