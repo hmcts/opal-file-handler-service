@@ -105,8 +105,8 @@ opal:
     domain: file-handler
     content-digest:
       request:
-        enforce: ${OPAL_COMMON_CONTENT_DIGEST_REQUEST_ENFORCE:false}
-        auto-generate: ${OPAL_COMMON_CONTENT_DIGEST_REQUEST_AUTO_GENERATE:false}
+        enforce: ${OPAL_COMMON_CONTENT_DIGEST_REQUEST_ENFORCE:true}
+        auto-generate: ${OPAL_COMMON_CONTENT_DIGEST_REQUEST_AUTO_GENERATE:true}
       response:
         enforce: ${OPAL_COMMON_CONTENT_DIGEST_RESPONSE_ENFORCE:false}
         algorithm: ${OPAL_COMMON_CONTENT_DIGEST_RESPONSE_ALGORITHM:SHA-512}
@@ -145,7 +145,7 @@ launchdarkly:
   file:
     - ${LAUNCH_DARKLY_FILE:bin/utils/launchdarkly-flags.json}
   default-flag-values:
-    release-1a: ${RELEASE_1A_ENABLED:true}
+    release-1a: ${RELEASE_1A_ENABLED:false}
     release-1b: ${RELEASE_1B_ENABLED:false}
     release-1c: ${RELEASE_1C_ENABLED:false}
     release-1c-banking-interfaces: ${RELEASE_1C_BANKING_INTERFACES_ENABLED:false}
