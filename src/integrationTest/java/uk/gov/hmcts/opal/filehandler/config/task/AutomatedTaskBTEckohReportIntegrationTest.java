@@ -40,4 +40,5 @@ public class AutomatedTaskBTEckohReportIntegrationTest extends AbstractIntegrati
     void shouldCallAutomatedTaskRun() throws IOException {
         verify(automatedBTEckohReport, times(1)).run(any());
     }
+
 }
