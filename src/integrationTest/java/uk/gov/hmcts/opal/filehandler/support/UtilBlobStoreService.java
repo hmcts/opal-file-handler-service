@@ -6,12 +6,9 @@ import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Service;
 
-@Service
-@AllArgsConstructor
 public class UtilBlobStoreService {
+
     private final BlobServiceClient blobServiceClient;
 
     public UtilBlobStoreService() {

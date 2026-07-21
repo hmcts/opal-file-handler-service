@@ -20,13 +20,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import uk.gov.hmcts.opal.common.user.authentication.service.AccessTokenService;
-import uk.gov.hmcts.opal.common.user.authorisation.client.service.UserStateClientService;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.support.UtilBlobStoreService;
@@ -40,12 +37,6 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
     private String urlWithID(long id) {
         return String.format("/interface-files/%d/content", id);
     }
-
-    @MockitoBean
-    UserStateClientService userStateClientService;
-
-    @MockitoBean
-    protected AccessTokenService accessTokenService;
 
     @Autowired
     protected MockMvc mockMvc;

@@ -5,7 +5,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.testcontainers.azure.AzuriteContainer;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -20,7 +20,7 @@ public class TestContainerConfig {
         System.getenv().getOrDefault("OPAL_POSTGRES_IMAGE", DEFAULT_POSTGRES_IMAGE);
     public static final PostgreSQLContainer POSTGRES_CONTAINER;
     public static final RedisContainer REDIS_CONTAINER;
-    public static final AzuriteContainer AZURITE_CONTAINER;
+    public static final GenericContainer<?> AZURITE_CONTAINER;
 
     static {
         POSTGRES_CONTAINER = new PostgreSQLContainer(DockerImageName.parse(POSTGRES_IMAGE))
@@ -38,8 +38,10 @@ public class TestContainerConfig {
             .withExposedPorts(6379);
         REDIS_CONTAINER.start();
 
-        AZURITE_CONTAINER = new AzuriteContainer(DockerImageName.parse(DEFAULT_AZURITE_IMAGE))
-            .withCommand("azurite --loose --blobHost 0.0.0.0 --blobPort 10000 --location /data --skipApiVersionCheck");
+        AZURITE_CONTAINER = new GenericContainer<>(DockerImageName.parse(DEFAULT_AZURITE_IMAGE))
+            .withCommand(
+                "azurite-blob --blobHost 0.0.0.0 --blobPort 10000 --skipApiVersionCheck")
+            .withExposedPorts(10000);
         AZURITE_CONTAINER.start();
     }
 }
