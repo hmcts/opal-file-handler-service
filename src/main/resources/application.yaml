@@ -114,9 +114,9 @@ opal:
         sha-512: SHA-512
   file-handling-service:
     file-types:
-      BTEckoh-report:
+      bteckoh-report:
         storage-container-name: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-report}
-      CAPS-report:
+      caps-report:
         storage-container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}
   blob-storage:
     connection-string: ${AZURE_STORAGE_CONNECTION_STRING:UseDevelopmentStorage=true}
