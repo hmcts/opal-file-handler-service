@@ -21,6 +21,10 @@ public class TestContainerConfig {
     public static final PostgreSQLContainer POSTGRES_CONTAINER;
     public static final RedisContainer REDIS_CONTAINER;
     public static final GenericContainer<?> AZURITE_CONTAINER;
+    private static final int AZURITE_BLOB_PORT = 10000;
+    private static final String AZURITE_ACCOUNT_NAME = "devstoreaccount1";
+    private static final String AZURITE_ACCOUNT_KEY =
+        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
     static {
         POSTGRES_CONTAINER = new PostgreSQLContainer(DockerImageName.parse(POSTGRES_IMAGE))
@@ -40,8 +44,16 @@ public class TestContainerConfig {
 
         AZURITE_CONTAINER = new GenericContainer<>(DockerImageName.parse(DEFAULT_AZURITE_IMAGE))
             .withCommand(
-                "azurite-blob --blobHost 0.0.0.0 --blobPort 10000 --skipApiVersionCheck")
-            .withExposedPorts(10000);
+                "azurite-blob --blobHost 0.0.0.0 --blobPort " + AZURITE_BLOB_PORT + " --skipApiVersionCheck")
+            .withExposedPorts(AZURITE_BLOB_PORT);
         AZURITE_CONTAINER.start();
+    }
+
+    public static String azuriteConnectionString() {
+        return "DefaultEndpointsProtocol=http;"
+            + "AccountName=" + AZURITE_ACCOUNT_NAME + ";"
+            + "AccountKey=" + AZURITE_ACCOUNT_KEY + ";"
+            + "BlobEndpoint=http://127.0.0.1:" + AZURITE_CONTAINER.getMappedPort(AZURITE_BLOB_PORT)
+            + "/" + AZURITE_ACCOUNT_NAME + ";";
     }
 }

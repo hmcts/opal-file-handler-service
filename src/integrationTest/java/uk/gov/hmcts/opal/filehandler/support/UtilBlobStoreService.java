@@ -13,12 +13,13 @@ public class UtilBlobStoreService {
 
     public UtilBlobStoreService() {
         blobServiceClient = new BlobServiceClientBuilder()
-            .connectionString("UseDevelopmentStorage=true")
+            .connectionString(TestContainerConfig.azuriteConnectionString())
             .buildClient();
     }
 
     public String storeReport(String report, String containerName, String uuid) {
         BlobContainerClient container = blobServiceClient.getBlobContainerClient(containerName);
+        container.createIfNotExists();
         if (!container.exists()) {
             throw new IllegalArgumentException("Blob container does not exist");
         }
