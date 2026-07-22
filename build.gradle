@@ -261,7 +261,6 @@ dependencies {
   //Other
 
   implementation 'com.azure:azure-storage-blob:12.35.0'
-  implementation 'com.azure:azure-security-keyvault-keys:4.10.6'
   implementation 'com.microsoft.azure:applicationinsights-web:3.7.9'
 
   implementation 'commons-logging:commons-logging:1.4.0'
