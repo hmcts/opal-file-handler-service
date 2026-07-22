@@ -54,6 +54,8 @@ redis:
 global:
   security:
     allowInsecureImages: true
+servicebus:
+  enabled: false
 blobstorage:
   enabled: false
 bt-eckoh-report:
