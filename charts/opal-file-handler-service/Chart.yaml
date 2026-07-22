@@ -48,3 +48,28 @@ dependencies:
     version: 2.2.1
     repository: 'oci://hmctsprod.azurecr.io/helm'
     condition: barclaycard-transfer.enabled
+  - name: job
+    alias: bt-eckoh-transfer
+    version: 2.2.1
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: bt-echko-transfer.enabled
+  - name: job
+    alias: dwp-transfer
+    version: 2.2.1
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: dwp-transfer.enabled
+  - name: job
+    alias: jacobs-transfer
+    version: 2.2.1
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: jacobs-transfer.enabled
+  - name: job
+    alias: cder-transfer
+    version: 2.2.1
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: cder-transfer.enabled
+  - name: job
+    alias: marston-transfer
+    version: 2.2.1
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: marston-transfer.enabled
