@@ -3,14 +3,13 @@ package uk.gov.hmcts.opal.filehandler.service;
 import com.azure.core.util.BinaryData;
 import jakarta.persistence.EntityNotFoundException;
 import java.io.InputStream;
+import java.util.Map;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
-import uk.gov.hmcts.opal.common.util.SecurityUtil;
+import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
-import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfig;
-import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfig;
-import uk.gov.hmcts.opal.filehandler.entity.Interface;
+import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.exception.InvalidInterfaceFileStatusException;
@@ -24,11 +23,11 @@ public class InterfaceFileService {
     private InterfaceFilesRepository repository;
     private InterfaceFileBlobStoreService blobStoreService;
 
-    private BTEckohReportBaisFileProcessorConfig bteckohConfig;
-    private CapsReportBaisFileProcessorConfig capsConfig;
+    @Autowired
+    private Map<String, BaisFileProcessorConfig> configs;
 
     public InputStream getInterfaceFilesContent(Long id) {
-        checkPermissions();
+        PermissionUtil.checkPermission(FileHandlerPermission.ViewInterfacesFile);
 
         InterfaceFileEntity entity = repository.findById(id)
             .orElseThrow(
@@ -42,23 +41,12 @@ public class InterfaceFileService {
                 id, entity.getStatus()));
         }
 
-        Interface source = entity.getSource();
-        String containerName = "";
-        switch (source) {
-            case BTECKOH_REPORT -> containerName = bteckohConfig.getContainerName();
-            case CAPS_REPORT -> containerName = capsConfig.getContainerName();
-        }
+        BaisFileProcessorConfig config = configs.get(entity.getSource().toString());
+        String containerName = config.getContainerName();
 
         BinaryData file = blobStoreService.fetchInterfaceFile(id, entity.getFilestoreUuid(), containerName);
 
         return file.toStream();
-    }
-
-    private void checkPermissions() {
-        if (!SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser()
-            .hasPermission(FileHandlerPermission.ViewInterfacesFile)) {
-            throw new PermissionNotAllowedException(FileHandlerPermission.ViewInterfacesFile);
-        }
     }
 
 }

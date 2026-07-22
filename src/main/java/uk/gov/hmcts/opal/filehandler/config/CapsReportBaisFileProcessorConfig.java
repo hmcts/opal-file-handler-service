@@ -1,18 +1,9 @@
 package uk.gov.hmcts.opal.filehandler.config;
 
-import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 @ConfigurationProperties(prefix = "opal.file-handling-service.file-types.caps-report")
-@Configuration
-public class CapsReportBaisFileProcessorConfig implements BaisFileProcessorConfig {
-
-    @Setter
-    private String storageContainerName;
-
-    public String getContainerName() {
-        return storageContainerName;
-    }
-
+@Component("CAPS_REPORT")
+public class CapsReportBaisFileProcessorConfig extends AbstractBaisFileProcessorConfig {
 }

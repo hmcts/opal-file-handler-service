@@ -18,21 +18,37 @@ public class InterfaceFileBlobStoreService {
 
     private final BlobServiceClient blobServiceClient;
 
-    public BinaryData fetchInterfaceFile(long interfaceFileId,UUID fileUUID, String containerName) {
+    private BlobContainerClient getBlobContainerClient(String containerName) {
         BlobContainerClient container = blobServiceClient.getBlobContainerClient(containerName);
         if (!container.exists()) {
             throw new BlobStorageContainerNotFoundException(
                 String.format("Blob container \"%s\"does not exist", containerName)
             );
         }
+        return container;
+    }
 
-        BlobClient blob = container.getBlobClient(fileUUID.toString());
+    private BlobClient getBlobClient(BlobContainerClient blobContainerClient, String file) {
+        BlobClient blob = blobContainerClient.getBlobClient(file);
         if (!blob.exists()) {
+            return null;
+        }
+        return blob;
+    }
+
+    private BinaryData getFileContents(BlobClient blob) {
+        return blob.downloadContent();
+    }
+
+    public BinaryData fetchInterfaceFile(long interfaceFileId,UUID fileUUID, String containerName) {
+        BlobContainerClient container = getBlobContainerClient(containerName);
+        BlobClient blob = getBlobClient(container, fileUUID.toString());
+        if (blob == null) {
             throw new BlobNotFoundException(String.format("Expected interface file id: %d to exist in blobstore "
-                + "container: \"%s\" with name \"%s\" but this could not be located.",
+                    + "container: \"%s\" with name \"%s\" but this could not be located.",
                 interfaceFileId, containerName, fileUUID));
         }
 
-        return blob.downloadContent();
+        return getFileContents(blob);
     }
 }

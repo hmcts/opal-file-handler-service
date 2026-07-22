@@ -14,6 +14,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -29,6 +30,7 @@ import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowe
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfig;
+import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -57,6 +59,9 @@ public class InterfaceFileServiceTest {
 
     @Mock
     private OpalJwtAuthenticationToken authToken;
+
+    @Mock
+    private Map<String, BaisFileProcessorConfig> configs;
 
     @InjectMocks
     private InterfaceFileService interfaceFileService;
@@ -91,6 +96,7 @@ public class InterfaceFileServiceTest {
     @Test
     public void getInterfaceFileContent_bteckohSourceReturnsData() {
         withPermissions();
+        when(configs.get(eq("BTECKOH_REPORT"))).thenReturn(bteckohConfig);
         when(bteckohConfig.getContainerName()).thenReturn("bteckoh-report");
 
         when(repository.findById(eq(1L))).thenReturn(
@@ -108,6 +114,7 @@ public class InterfaceFileServiceTest {
     @Test
     public void getInterfaceFileContent_capsSourceReturnsData() {
         withPermissions();
+        when(configs.get(eq("CAPS_REPORT"))).thenReturn(capsConfig);
         when(capsConfig.getContainerName()).thenReturn("caps-report");
 
         when(repository.findById(eq(1L))).thenReturn(
@@ -169,6 +176,7 @@ public class InterfaceFileServiceTest {
     @Test
     public void getInterfaceFileContent_missingBlobThrowsError() {
         withPermissions();
+        when(configs.get(eq("BTECKOH_REPORT"))).thenReturn(bteckohConfig);
         when(bteckohConfig.getContainerName()).thenReturn("bteckoh-report");
 
         when(repository.findById(eq(1L))).thenReturn(
