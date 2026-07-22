@@ -15,7 +15,7 @@ dependencies:
     repository: "oci://hmctsprod.azurecr.io/helm"
     condition: hmcts-redis.enabled
   - name: blobstorage
-    version: 2.2.3-beta
+    version: 2.2.3
     repository: 'oci://hmctsprod.azurecr.io/helm'
     condition: blobstorage.enabled
   - name: job
