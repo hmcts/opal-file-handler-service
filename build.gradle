@@ -161,6 +161,7 @@ tasks.register('integration', Test) {
   failFast = true
 }
 
+
 tasks.register('smoke', Test) {
   description = "Runs Smoke Tests"
   group = "Verification"
@@ -259,6 +260,7 @@ dependencies {
   }
   //Other
 
+  implementation 'com.azure:azure-storage-blob:12.35.0'
   implementation 'com.microsoft.azure:applicationinsights-web:3.7.9'
 
   implementation 'commons-logging:commons-logging:1.4.0'
@@ -330,7 +332,11 @@ bootJar {
   }
 }
 
+// Gradle 7.x issue, workaround from: https://github.com/gradle/gradle/issues/17236#issuecomment-894768083
 rootProject.tasks.named("processFunctionalTestResources") {
+  duplicatesStrategy = 'include'
+}
+rootProject.tasks.named("processIntegrationTestResources") {
   duplicatesStrategy = 'include'
 }
 
@@ -345,7 +351,6 @@ tasks.register('runAllStyleChecks') {
   dependsOn 'checkstyleTest'
   dependsOn 'checkstyleIntegrationTest'
   dependsOn 'checkstyleFunctionalTest'
-  dependsOn 'checkstyleSmokeTest'
   dependsOn 'checkstyleOpenapi'
 }
 

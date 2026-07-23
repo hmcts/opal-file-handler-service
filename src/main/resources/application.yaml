@@ -112,6 +112,14 @@ opal:
         algorithm: ${OPAL_COMMON_CONTENT_DIGEST_RESPONSE_ALGORITHM:SHA-512}
       supported-algorithms:
         sha-512: SHA-512
+  file-handling-service:
+    file-types:
+      bteckoh-report:
+        container-name: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-report}
+      caps-report:
+        container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}
+  blob-storage:
+    connection-string: ${AZURE_STORAGE_CONNECTION_STRING:UseDevelopmentStorage=true}
 
 logging:
   level:
@@ -140,6 +148,7 @@ launchdarkly:
     release-1a: ${RELEASE_1A_ENABLED:false}
     release-1b: ${RELEASE_1B_ENABLED:false}
     release-1c: ${RELEASE_1C_ENABLED:false}
+    release-1c-banking-interfaces: ${RELEASE_1C_BANKING_INTERFACES_ENABLED:true}
 
 user:
   service:
@@ -151,3 +160,4 @@ dbMigration:
   # When true, the app will run DB migration on startup.
   # Otherwise, it will just check if all migrations have been applied (and fail to start if not).
   runOnStartup: ${RUN_DB_MIGRATION_ON_STARTUP:true}
+

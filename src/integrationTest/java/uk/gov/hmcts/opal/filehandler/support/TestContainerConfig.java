@@ -1,10 +1,12 @@
 package uk.gov.hmcts.opal.filehandler.support;
 
 import com.redis.testcontainers.RedisContainer;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -14,10 +16,16 @@ import org.testcontainers.utility.DockerImageName;
 public class TestContainerConfig {
 
     private static final String DEFAULT_POSTGRES_IMAGE = "postgres:17.5";
+    private static final String DEFAULT_AZURITE_IMAGE = "mcr.microsoft.com/azure-storage/azurite:latest";
     private static final String POSTGRES_IMAGE =
         System.getenv().getOrDefault("OPAL_POSTGRES_IMAGE", DEFAULT_POSTGRES_IMAGE);
     public static final PostgreSQLContainer POSTGRES_CONTAINER;
     public static final RedisContainer REDIS_CONTAINER;
+    public static final GenericContainer<?> AZURITE_CONTAINER;
+    private static final int AZURITE_BLOB_PORT = 10000;
+    private static final String AZURITE_ACCOUNT_NAME = "devstoreaccount1";
+    private static final String AZURITE_ACCOUNT_KEY =
+        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
     static {
         POSTGRES_CONTAINER = new PostgreSQLContainer(DockerImageName.parse(POSTGRES_IMAGE))
@@ -34,5 +42,20 @@ public class TestContainerConfig {
         REDIS_CONTAINER = new RedisContainer(DockerImageName.parse("redis:6.2.6"))
             .withExposedPorts(6379);
         REDIS_CONTAINER.start();
+
+        AZURITE_CONTAINER = new GenericContainer<>(DockerImageName.parse(DEFAULT_AZURITE_IMAGE))
+            .withCommand(
+                "azurite-blob --blobHost 0.0.0.0 --blobPort " + AZURITE_BLOB_PORT + " --skipApiVersionCheck");
+        AZURITE_CONTAINER.setPortBindings(List.of(AZURITE_BLOB_PORT + ":" + AZURITE_BLOB_PORT));
+
+        AZURITE_CONTAINER.start();
+    }
+
+    public static String azuriteConnectionString() {
+        return "DefaultEndpointsProtocol=http;"
+            + "AccountName=" + AZURITE_ACCOUNT_NAME + ";"
+            + "AccountKey=" + AZURITE_ACCOUNT_KEY + ";"
+            + "BlobEndpoint=http://127.0.0.1:" + AZURITE_CONTAINER.getMappedPort(AZURITE_BLOB_PORT)
+            + "/" + AZURITE_ACCOUNT_NAME + ";";
     }
 }
