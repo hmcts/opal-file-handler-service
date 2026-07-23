@@ -1,18 +1,16 @@
 package uk.gov.hmcts.opal.filehandler.testdata;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.repository.BusinessUnitBankAccountRepository;
-import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class BusinessUnitBankAccountEntityTestData {
 
     private final BusinessUnitBankAccountRepository repository;
-
-    public BusinessUnitBankAccountEntityTestData(BusinessUnitBankAccountRepository repository) {
-        this.repository = repository;
-    }
 
     public BusinessUnitBankAccountEntity getTypicalBusinessUnitBankAccount(long id, String businessUnitCode) {
         return BusinessUnitBankAccountEntity.builder()
