@@ -9,7 +9,7 @@
 *
 * Date          Author         Version     Nature of Change
 * ----------    -----------    --------    ----------------------------------------------------------------------------
-* 23/07/2026    B Edwards      1.0         PO-6454 - Amend ENUM types for EI2 (NatWest/MMH/DWP)
+* 23/07/2026    B Edwards      1.0         PO-5769 - Amend ENUM types for EI2 (NatWest/MMH/DWP) and PO-5768 - Amend interface files table to include business unit code, payment type and related interface file id.
 *
 **/
 
