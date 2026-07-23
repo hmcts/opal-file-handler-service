@@ -1,10 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static uk.gov.hmcts.opal.filehandler.testdata.InterfaceFileEntityTestData.getMaximumInterfaceFile;
-import static uk.gov.hmcts.opal.filehandler.testdata.InterfaceFileEntityTestData.getTypicalRelatedChildInterfaceFile;
-import static uk.gov.hmcts.opal.filehandler.testdata.InterfaceFileEntityTestData.saveAndFlushInterfaceFile;
-import static uk.gov.hmcts.opal.filehandler.testdata.InterfaceFileEntityTestData.saveTypicalInterfaceFile;
 
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.testdata.InterfaceFileEntityTestData;
 
 class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
 
@@ -25,6 +22,9 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     private EntityManager entityManager;
 
+    @Autowired
+    private InterfaceFileEntityTestData interfaceFileEntityTestData;
+
     @BeforeEach
     void setUp() {
         repository.deleteAll();
@@ -33,15 +33,18 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
     @Test
     @Transactional
     void shouldPersistAndLoadRelatedInterfaceFileRelationship() {
-        InterfaceFileEntity parent = saveTypicalInterfaceFile(repository, PARENT_ID, "parent-source-file.dat");
+        InterfaceFileEntity parent = interfaceFileEntityTestData.saveTypicalInterfaceFile(
+            PARENT_ID,
+            "parent-source-file.dat"
+        );
 
-        InterfaceFileEntity child = getTypicalRelatedChildInterfaceFile(
+        InterfaceFileEntity child = interfaceFileEntityTestData.getTypicalRelatedChildInterfaceFile(
             CHILD_ID,
             "child-transformed-file.json",
             parent
         );
 
-        saveAndFlushInterfaceFile(repository, child);
+        interfaceFileEntityTestData.saveAndFlushInterfaceFile(child);
 
         entityManager.clear();
 
@@ -54,9 +57,9 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldPersistAndLoadEi2Columns() {
-        InterfaceFileEntity interfaceFile = getMaximumInterfaceFile(PARENT_ID);
+        InterfaceFileEntity interfaceFile = interfaceFileEntityTestData.getMaximumInterfaceFile(PARENT_ID);
 
-        saveAndFlushInterfaceFile(repository, interfaceFile);
+        interfaceFileEntityTestData.saveAndFlushInterfaceFile(interfaceFile);
         entityManager.clear();
 
         InterfaceFileEntity loaded = repository.findById(PARENT_ID).orElseThrow();
