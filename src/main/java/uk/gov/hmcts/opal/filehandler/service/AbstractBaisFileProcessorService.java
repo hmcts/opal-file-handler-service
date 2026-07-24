@@ -81,10 +81,11 @@ public abstract class AbstractBaisFileProcessorService {
             byte[] downloadedBytes = downloadStream.toByteArray();
 
             String fileChecksum = calculateChecksum(new ByteArrayInputStream(downloadedBytes));
+
+            supersedePreviousFailures(fileName, fileChecksum);
+
             Optional<InterfaceFileEntity> duplicate = interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
                 fileName, fileChecksum, Status.SUCCESS);
-            List<InterfaceFileEntity> previousFailures = interfaceFilesRepository
-                .findAllByFileNameAndChecksumAndStatus(fileName, fileChecksum, Status.FAILED);
 
             InterfaceFileEntity entity;
 
@@ -105,10 +106,10 @@ public abstract class AbstractBaisFileProcessorService {
                     "Blob upload failed for file '%s': %s".formatted(fileName, e.getMessage()));
             }
 
-            entity = saveInitialFile(entity, previousFailures);
+            entity = saveInitialFile(entity);
 
             if (entity.getStatus().equals(Status.INGESTED)) {
-                processIngestedFile(entity, new ByteArrayInputStream(downloadedBytes), previousFailures);
+                processIngestedFile(entity, new ByteArrayInputStream(downloadedBytes));
             }
 
             deleteRemoteFile(config, fileName, entity);
@@ -175,38 +176,22 @@ public abstract class AbstractBaisFileProcessorService {
             .build();
     }
 
-    private InterfaceFileEntity saveInitialFile(
-        InterfaceFileEntity entity,
-        List<InterfaceFileEntity> previousFailures
-    ) {
-        return transactionTemplate.execute(transactionStatus -> {
-            InterfaceFileEntity savedEntity = interfaceFilesRepository.save(entity);
-
-            if (savedEntity.getStatus().equals(Status.FAILED)) {
-                supersedePreviousFailures(previousFailures);
-            }
-
-            return savedEntity;
-        });
+    private InterfaceFileEntity saveInitialFile(InterfaceFileEntity entity) {
+        return transactionTemplate.execute(transactionStatus -> interfaceFilesRepository.save(entity));
     }
 
     private void processIngestedFile(
         InterfaceFileEntity entity,
-        InputStream inputStream,
-        List<InterfaceFileEntity> previousFailures
+        InputStream inputStream
     ) {
         try {
-            transactionTemplate.executeWithoutResult(transactionStatus -> {
-                processFile(entity, inputStream);
-                supersedePreviousFailures(previousFailures);
-            });
+            transactionTemplate.executeWithoutResult(transactionStatus -> processFile(entity, inputStream));
         } catch (RuntimeException e) {
             transactionTemplate.executeWithoutResult(transactionStatus -> {
                 entity.setStatus(Status.FAILED);
                 entity.setErrors(errorJson("File '%s' could not be processed: %s"
                     .formatted(entity.getFileName(), e.getMessage())));
                 interfaceFilesRepository.save(entity);
-                supersedePreviousFailures(previousFailures);
             });
             log.error("Error processing interfaceFileId={} for file {}",
                 entity.getInterfaceFileId(), entity.getFileName(), e);
@@ -237,10 +222,9 @@ public abstract class AbstractBaisFileProcessorService {
         }
     }
 
-    private void supersedePreviousFailures(List<InterfaceFileEntity> previousFailures) {
-        if (previousFailures.isEmpty()) {
-            return;
-        }
+    private void supersedePreviousFailures(String fileName, String fileChecksum) {
+        List<InterfaceFileEntity> previousFailures = interfaceFilesRepository
+            .findAllByFileNameAndChecksumAndStatus(fileName, fileChecksum, Status.FAILED);
 
         previousFailures.forEach(previousFailure -> previousFailure.setStatus(Status.FAILED_SUPERSEDED));
         interfaceFilesRepository.saveAll(previousFailures);
