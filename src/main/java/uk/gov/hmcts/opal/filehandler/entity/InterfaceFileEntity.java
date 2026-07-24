@@ -46,7 +46,6 @@ public class InterfaceFileEntity {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @NonNull
     private Domain opalDomain;
 
     @Column(nullable = false)
