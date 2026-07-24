@@ -4,9 +4,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties("opal.file-handling-service.sftp.bais")
 @Getter
 @Setter
+@ConfigurationProperties("opal.file-handler-service.sftp.bais")
 public class BaisSftpConfiguration {
 
     private String host;
