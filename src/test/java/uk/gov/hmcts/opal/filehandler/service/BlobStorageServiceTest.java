@@ -5,32 +5,25 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.azure.core.util.Context;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.models.BlobProperties;
-import com.azure.storage.blob.options.BlobUploadFromFileOptions;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HexFormat;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.io.TempDir;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,18 +46,15 @@ class BlobStorageServiceTest {
     @Mock
     private BlobProperties blobProperties;
 
-    @TempDir
-    private Path temporaryDirectory;
-
     private BlobStorageService service;
-    private Path file;
+    private InputStream stream;
 
     @BeforeEach
     void setUp() throws Exception {
         when(blobServiceClient.getBlobContainerClient(CONTAINER_NAME)).thenReturn(blobContainerClient);
         when(blobContainerClient.getBlobClient(anyString())).thenReturn(blobClient);
         service = new BlobStorageService(blobServiceClient);
-        file = Files.write(temporaryDirectory.resolve("report.xml"), FILE_CONTENT);
+        stream = new ByteArrayInputStream(FILE_CONTENT);
     }
 
     @Test
@@ -72,20 +62,12 @@ class BlobStorageServiceTest {
         when(blobClient.getProperties()).thenReturn(blobProperties);
         when(blobProperties.getContentMd5()).thenReturn(HexFormat.of().parseHex(CHECKSUM));
 
-        UUID filestoreUuid = service.upload(CONTAINER_NAME, file, CHECKSUM);
+        UUID filestoreUuid = service.upload(CONTAINER_NAME, stream, CHECKSUM);
 
         assertThat(filestoreUuid).isNotNull();
+
         verify(blobContainerClient).getBlobClient(filestoreUuid.toString());
-
-        ArgumentCaptor<BlobUploadFromFileOptions> optionsCaptor =
-            ArgumentCaptor.forClass(BlobUploadFromFileOptions.class);
-        verify(blobClient).uploadFromFileWithResponse(optionsCaptor.capture(), isNull(), eq(Context.NONE));
-
-        BlobUploadFromFileOptions options = optionsCaptor.getValue();
-        assertThat(options.getFilePath()).isEqualTo(file.toString());
-        assertThat(options.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-        assertThat(options.getHeaders().getContentMd5()).containsExactly(HexFormat.of().parseHex(CHECKSUM));
-        assertThat(options.getRequestConditions().getIfNoneMatch()).isEqualTo("*");
+        verify(blobClient).upload(stream);
         verify(blobClient, never()).deleteIfExists();
     }
 
@@ -96,7 +78,7 @@ class BlobStorageServiceTest {
 
         BlobChecksumValidationException exception = catchThrowableOfType(
             BlobChecksumValidationException.class,
-            () -> service.upload(CONTAINER_NAME, file, CHECKSUM));
+            () -> service.upload(CONTAINER_NAME, stream, CHECKSUM));
 
         assertThat(exception.getFilestoreUuid()).isNotNull();
         assertThat(exception.getExpectedChecksum()).isEqualTo(CHECKSUM);
@@ -111,10 +93,11 @@ class BlobStorageServiceTest {
     void uploadDeletesPartialBlobAndPropagatesUploadFailure() {
         IllegalStateException uploadFailure = new IllegalStateException("upload failed");
         doThrow(uploadFailure).when(blobClient)
-            .uploadFromFileWithResponse(any(BlobUploadFromFileOptions.class), isNull(), eq(Context.NONE));
+            .upload(any(InputStream.class));
 
-        assertThatThrownBy(() -> service.upload(CONTAINER_NAME, file, CHECKSUM))
+        assertThatThrownBy(() -> service.upload(CONTAINER_NAME, stream, CHECKSUM))
             .isSameAs(uploadFailure);
+
         verify(blobClient).deleteIfExists();
     }
 

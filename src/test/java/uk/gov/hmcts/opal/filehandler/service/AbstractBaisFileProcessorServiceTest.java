@@ -17,7 +17,6 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -175,7 +174,7 @@ public class AbstractBaisFileProcessorServiceTest {
         InterfaceFileEntity secondFailure = failedEntity(11L);
         when(interfaceFilesRepository.findAllByFileNameAndChecksumAndStatus(
             MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(firstFailure, secondFailure));
-        when(blobStorageService.upload(eq("test-container"), any(Path.class), eq(CHECKSUM)))
+        when(blobStorageService.upload(eq("test-container"), any(InputStream.class), eq(CHECKSUM)))
             .thenThrow(new IllegalStateException("storage said \"no\"\nretry later"));
 
         service.run(baisFileProcessorConfiguration);
@@ -254,7 +253,7 @@ public class AbstractBaisFileProcessorServiceTest {
             any(), eq(CHECKSUM), eq(Status.SUCCESS))).thenReturn(Optional.empty());
         lenient().when(interfaceFilesRepository.findAllByFileNameAndChecksumAndStatus(
             any(), eq(CHECKSUM), eq(Status.FAILED))).thenReturn(List.of());
-        lenient().when(blobStorageService.upload(eq("test-container"), any(Path.class), eq(CHECKSUM)))
+        lenient().when(blobStorageService.upload(eq("test-container"), any(InputStream.class), eq(CHECKSUM)))
             .thenReturn(FILESTORE_UUID);
         lenient().when(baisSftpClient.deleteFile(eq(SFTP_USERNAME), any())).thenReturn(true);
         lenient().when(interfaceFilesRepository.save(any())).thenAnswer(invocation -> {
