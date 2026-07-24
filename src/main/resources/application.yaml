@@ -112,6 +112,16 @@ opal:
         algorithm: ${OPAL_COMMON_CONTENT_DIGEST_RESPONSE_ALGORITHM:SHA-512}
       supported-algorithms:
         sha-512: SHA-512
+  file-handler-service:
+    file-store:
+      storage-account-name: ${FILE_STORE_STORAGE_ACCOUNT_NAME:devstoreaccount1}
+      storage-url: ${FILE_STORE_STORAGE_URL:http://127.0.0.1:10000/devstoreaccount1}
+      storage-key: ${FILE_STORE_STORAGE_KEY:Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==}
+    sftp:
+      bais:
+        host: ${BAIS_SFTP_CONNECTION_HOST:localhost}]
+        port: ${BAIS_SFTP_CONNECTION_PORT:2222}
+        private-key: ${BAIS_SFTP_PRIVATE_KEY:}
 
 logging:
   level:

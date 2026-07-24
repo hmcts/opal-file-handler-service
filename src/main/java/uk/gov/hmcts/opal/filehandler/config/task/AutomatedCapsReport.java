@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(name = "opal.automated-task", havingValue = "CAPSReport")
 @Slf4j
 public class AutomatedCapsReport implements ApplicationRunner {
+
     @Override
     public void run(ApplicationArguments args) throws IOException {
         log.info("Starting automated CAPS report");
