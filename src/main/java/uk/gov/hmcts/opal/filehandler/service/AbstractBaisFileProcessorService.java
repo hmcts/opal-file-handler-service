@@ -1,11 +1,10 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Date;
 import java.util.List;
@@ -76,14 +75,12 @@ public abstract class AbstractBaisFileProcessorService {
     }
 
     private void ingestFile(BaisFileProcessorConfiguration config, String fileName) throws IOException {
-        Path temporary = Files.createTempFile("bais-", ".tmp");
+        try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
+            baisSftpClient.downloadFile(config.getSftpUsername(), fileName, downloadStream);
 
-        try {
-            try (OutputStream outputStream = Files.newOutputStream(temporary)) {
-                baisSftpClient.downloadFile(config.getSftpUsername(), fileName, outputStream);
-            }
+            byte[] downloadedBytes = downloadStream.toByteArray();
 
-            String fileChecksum = calculateChecksum(temporary);
+            String fileChecksum = calculateChecksum(new ByteArrayInputStream(downloadedBytes));
             Optional<InterfaceFileEntity> duplicate = interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
                 fileName, fileChecksum, Status.SUCCESS);
             List<InterfaceFileEntity> previousFailures = interfaceFilesRepository
@@ -92,33 +89,33 @@ public abstract class AbstractBaisFileProcessorService {
             InterfaceFileEntity entity;
 
             try {
-                UUID fileStoreUuid = blobStorageService.upload(config.getContainerName(), temporary, fileChecksum);
+                UUID fileStoreUuid = blobStorageService.upload(
+                    config.getContainerName(), new ByteArrayInputStream(downloadedBytes), fileChecksum);
 
                 if (duplicate.isPresent()) {
-                    entity = ingestDuplicate(config, fileName, fileChecksum, fileStoreUuid, duplicate.get());
+                    entity = createDuplicateInterfaceFile(
+                        config, fileName, fileChecksum, fileStoreUuid, duplicate.get());
                 } else {
-                    entity = ingestNew(config, fileName, fileChecksum, fileStoreUuid);
+                    entity = createNewInterfaceFile(config, fileName, fileChecksum, fileStoreUuid);
                 }
             } catch (BlobChecksumValidationException e) {
-                entity = ingestFailure(config, fileName, fileChecksum, e.getMessage());
+                entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
             } catch (RuntimeException e) {
-                entity = ingestFailure(config, fileName, fileChecksum,
+                entity = createFailureInterfaceFile(config, fileName, fileChecksum,
                     "Blob upload failed for file '%s': %s".formatted(fileName, e.getMessage()));
             }
 
             entity = saveInitialFile(entity, previousFailures);
 
             if (entity.getStatus().equals(Status.INGESTED)) {
-                processIngestedFile(entity, temporary, previousFailures);
+                processIngestedFile(entity, new ByteArrayInputStream(downloadedBytes), previousFailures);
             }
 
             deleteRemoteFile(config, fileName, entity);
-        } finally {
-            Files.deleteIfExists(temporary);
         }
     }
 
-    private InterfaceFileEntity ingestDuplicate(
+    private InterfaceFileEntity createDuplicateInterfaceFile(
         BaisFileProcessorConfiguration config,
         String fileName,
         String fileChecksum,
@@ -132,7 +129,6 @@ public abstract class AbstractBaisFileProcessorService {
             .type(Type.SOURCE)
             .target(config.getTarget())
             .source(config.getSource())
-            .opalDomain(config.getDomain())
             .fileName(fileName)
             .checksum(fileChecksum)
             .status(Status.DUPLICATE)
@@ -143,7 +139,7 @@ public abstract class AbstractBaisFileProcessorService {
             .build();
     }
 
-    private InterfaceFileEntity ingestNew(
+    private InterfaceFileEntity createNewInterfaceFile(
         BaisFileProcessorConfiguration config,
         String fileName,
         String fileChecksum,
@@ -153,7 +149,6 @@ public abstract class AbstractBaisFileProcessorService {
             .type(Type.SOURCE)
             .target(config.getTarget())
             .source(config.getSource())
-            .opalDomain(config.getDomain())
             .fileName(fileName)
             .checksum(fileChecksum)
             .status(Status.INGESTED)
@@ -162,7 +157,7 @@ public abstract class AbstractBaisFileProcessorService {
             .build();
     }
 
-    private InterfaceFileEntity ingestFailure(
+    private InterfaceFileEntity createFailureInterfaceFile(
         BaisFileProcessorConfiguration config,
         String fileName,
         String fileChecksum,
@@ -172,7 +167,6 @@ public abstract class AbstractBaisFileProcessorService {
             .type(Type.SOURCE)
             .target(config.getTarget())
             .source(config.getSource())
-            .opalDomain(config.getDomain())
             .fileName(fileName)
             .checksum(fileChecksum)
             .status(Status.FAILED)
@@ -198,15 +192,15 @@ public abstract class AbstractBaisFileProcessorService {
 
     private void processIngestedFile(
         InterfaceFileEntity entity,
-        Path temporary,
+        InputStream inputStream,
         List<InterfaceFileEntity> previousFailures
     ) {
-        try (InputStream inputStream = Files.newInputStream(temporary)) {
+        try {
             transactionTemplate.executeWithoutResult(transactionStatus -> {
                 processFile(entity, inputStream);
                 supersedePreviousFailures(previousFailures);
             });
-        } catch (IOException | RuntimeException e) {
+        } catch (RuntimeException e) {
             transactionTemplate.executeWithoutResult(transactionStatus -> {
                 entity.setStatus(Status.FAILED);
                 entity.setErrors(errorJson("File '%s' could not be processed: %s"
@@ -256,9 +250,7 @@ public abstract class AbstractBaisFileProcessorService {
         return objectMapper.createObjectNode().put("message", message).toString();
     }
 
-    private static String calculateChecksum(Path file) throws IOException {
-        try (InputStream inputStream = Files.newInputStream(file)) {
-            return DigestUtils.md5DigestAsHex(inputStream);
-        }
+    private static String calculateChecksum(InputStream stream) throws IOException {
+        return DigestUtils.md5DigestAsHex(stream);
     }
 }
