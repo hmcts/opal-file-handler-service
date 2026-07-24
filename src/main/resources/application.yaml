@@ -150,7 +150,6 @@ launchdarkly:
     release-1a: ${RELEASE_1A_ENABLED:false}
     release-1b: ${RELEASE_1B_ENABLED:false}
     release-1c: ${RELEASE_1C_ENABLED:false}
-    automated-caps-report: ${AUTOMATED_CAPS_REPORT:true}
 
 user:
   service:
