@@ -11,7 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -75,7 +75,7 @@ public class InterfaceFileEntity {
 
     @Column(nullable = false)
     @NonNull
-    private Date createdDatetime;
+    private LocalDate createdDatetime;
 
     @Column
     @JdbcTypeCode(SqlTypes.JSON)

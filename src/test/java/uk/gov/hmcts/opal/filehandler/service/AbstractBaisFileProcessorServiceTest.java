@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -76,6 +77,7 @@ public class AbstractBaisFileProcessorServiceTest {
     private TransactionTemplate transactionTemplate;
 
     private TestBaisFileProcessorService service;
+    private Clock clock;
     private ObjectMapper objectMapper;
     private List<Status> savedStatuses;
 
@@ -84,6 +86,7 @@ public class AbstractBaisFileProcessorServiceTest {
 
     @BeforeEach
     void setUp() {
+        clock = Clock.systemUTC();
         objectMapper = JsonMapper.builder().build();
         savedStatuses = new ArrayList<>();
 
@@ -148,7 +151,7 @@ public class AbstractBaisFileProcessorServiceTest {
             .fileName(MATCHING_FILE)
             .checksum(CHECKSUM)
             .status(Status.SUCCESS)
-            .createdDatetime(java.util.Date.from(NOW))
+            .createdDatetime(LocalDate.now(clock))
             .build();
 
         when(interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
@@ -288,7 +291,7 @@ public class AbstractBaisFileProcessorServiceTest {
             .fileName(MATCHING_FILE)
             .checksum(CHECKSUM)
             .status(Status.FAILED)
-            .createdDatetime(java.util.Date.from(NOW))
+            .createdDatetime(LocalDate.now(clock))
             .build();
     }
 
