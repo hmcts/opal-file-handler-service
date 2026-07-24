@@ -21,7 +21,6 @@ import java.io.OutputStream;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -40,16 +39,13 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
-import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
-import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
-import uk.gov.hmcts.opal.common.launchdarkly.service.FeatureToggleApi;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
+import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @ExtendWith(MockitoExtension.class)
 public class AbstractBaisFileProcessorServiceTest {
@@ -64,7 +60,7 @@ public class AbstractBaisFileProcessorServiceTest {
     private static final Instant NOW = Instant.parse("2026-07-23T10:15:30Z");
 
     @Mock
-    private FeatureToggleApi featureToggleApi;
+    private FeatureFlagUtil featureFlagUtil;
 
     @Mock
     private BaisSftpClient baisSftpClient;
@@ -97,8 +93,8 @@ public class AbstractBaisFileProcessorServiceTest {
         logger.addAppender(logAppender);
 
         service = new TestBaisFileProcessorService(
-            Clock.fixed(NOW, ZoneOffset.UTC),
-            featureToggleApi,
+            Clock.systemUTC(),
+            featureFlagUtil,
             baisSftpClient,
             blobStorageService,
             interfaceFilesRepository,
@@ -114,28 +110,6 @@ public class AbstractBaisFileProcessorServiceTest {
     void tearDown() {
         logger.detachAppender(logAppender);
         logAppender.stop();
-    }
-
-    @Test
-    void configFlagDisabledThrowsException() {
-        when(featureToggleApi.isFeatureEnabled(TEST_FEATURE_FLAG)).thenReturn(false);
-
-        FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-            service.run(baisFileProcessorConfiguration));
-
-        assertThat(exception).hasMessage(TEST_FEATURE_FLAG + " is not enabled");
-        verify(baisSftpClient, never()).listRegularFiles(any());
-    }
-
-    @Test
-    void bankingInterfaceDeploymentPackageFlagThrowsException() {
-        when(featureToggleApi.isFeatureEnabled(FeatureFlags.RELEASE_1C_BANKING_INTERFACES)).thenReturn(false);
-
-        FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-            service.run(baisFileProcessorConfiguration));
-
-        assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
-        verify(baisSftpClient, never()).listRegularFiles(any());
     }
 
     @Test
@@ -273,9 +247,6 @@ public class AbstractBaisFileProcessorServiceTest {
         lenient().when(baisFileProcessorConfiguration.getContainerName()).thenReturn("test-container");
         lenient().when(baisFileProcessorConfiguration.getFileNameRegex())
             .thenReturn(Pattern.compile("matching-.*\\.dat"));
-        lenient().when(featureToggleApi.isFeatureEnabled(FeatureFlags.RELEASE_1C_BANKING_INTERFACES))
-            .thenReturn(true);
-        lenient().when(featureToggleApi.isFeatureEnabled(TEST_FEATURE_FLAG)).thenReturn(true);
         lenient().when(baisSftpClient.listRegularFiles(SFTP_USERNAME)).thenReturn(List.of(MATCHING_FILE));
         lenient().doAnswer(invocation -> {
             OutputStream outputStream = invocation.getArgument(2);
@@ -340,14 +311,14 @@ public class AbstractBaisFileProcessorServiceTest {
         private InterfaceFileEntity lastSavedEntity;
 
         TestBaisFileProcessorService(Clock clock,
-            FeatureToggleApi featureToggleApi,
+            FeatureFlagUtil featureFlagUtil,
             BaisSftpClient baisSftpClient,
             BlobStorageService blobStorageService,
             InterfaceFilesRepository interfaceFilesRepository,
             TransactionTemplate transactionTemplate,
             ObjectMapper objectMapper
         ) {
-            super(clock, featureToggleApi, baisSftpClient, blobStorageService, interfaceFilesRepository,
+            super(clock, featureFlagUtil, baisSftpClient, blobStorageService, interfaceFilesRepository,
                 transactionTemplate, objectMapper);
         }
 
