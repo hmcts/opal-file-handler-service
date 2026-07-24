@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -147,7 +146,6 @@ public class AbstractBaisFileProcessorServiceTest {
             .source(Interface.CAPS_REPORT)
             .target(Interface.OPAL)
             .type(uk.gov.hmcts.opal.filehandler.entity.Type.SOURCE)
-            .opalDomain(Domain.FILE_HANDLER)
             .fileName(MATCHING_FILE)
             .checksum(CHECKSUM)
             .status(Status.SUCCESS)
@@ -243,7 +241,6 @@ public class AbstractBaisFileProcessorServiceTest {
         lenient().when(baisFileProcessorConfiguration.getSftpUsername()).thenReturn(SFTP_USERNAME);
         lenient().when(baisFileProcessorConfiguration.getSource()).thenReturn(Interface.CAPS_REPORT);
         lenient().when(baisFileProcessorConfiguration.getTarget()).thenReturn(Interface.OPAL);
-        lenient().when(baisFileProcessorConfiguration.getDomain()).thenReturn(Domain.FILE_HANDLER);
         lenient().when(baisFileProcessorConfiguration.getContainerName()).thenReturn("test-container");
         lenient().when(baisFileProcessorConfiguration.getFileNameRegex())
             .thenReturn(Pattern.compile("matching-.*\\.dat"));
@@ -289,7 +286,6 @@ public class AbstractBaisFileProcessorServiceTest {
             .source(Interface.CAPS_REPORT)
             .target(Interface.OPAL)
             .type(uk.gov.hmcts.opal.filehandler.entity.Type.SOURCE)
-            .opalDomain(Domain.FILE_HANDLER)
             .fileName(MATCHING_FILE)
             .checksum(CHECKSUM)
             .status(Status.FAILED)
