@@ -55,7 +55,6 @@ public class InterfaceFileEntity {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @NonNull
     private Domain opalDomain;
 
     @Column(nullable = false)
