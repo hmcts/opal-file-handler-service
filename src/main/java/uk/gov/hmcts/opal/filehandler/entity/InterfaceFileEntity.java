@@ -6,7 +6,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -65,7 +65,7 @@ public class InterfaceFileEntity {
 
     @Column(nullable = false)
     @NonNull
-    private Date createdDatetime;
+    private LocalDate createdDatetime;
 
     @Column
     private String errors;
