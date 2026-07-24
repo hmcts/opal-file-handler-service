@@ -17,9 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.DigestUtils;
-import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
-import uk.gov.hmcts.opal.common.launchdarkly.service.FeatureToggleApi;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
@@ -27,13 +25,14 @@ import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
+import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @Slf4j
 @RequiredArgsConstructor
 public abstract class AbstractBaisFileProcessorService {
 
     private final Clock clock;
-    private final FeatureToggleApi featureToggleApi;
+    private final FeatureFlagUtil featureFlagUtil;
     private final BaisSftpClient baisSftpClient;
     private final BlobStorageService blobStorageService;
     private final InterfaceFilesRepository interfaceFilesRepository;
@@ -43,13 +42,8 @@ public abstract class AbstractBaisFileProcessorService {
     protected abstract void processFile(InterfaceFileEntity fileEntity, InputStream inputStream);
 
     public void run(BaisFileProcessorConfiguration config) {
-        if (!featureToggleApi.isFeatureEnabled(FeatureFlags.RELEASE_1C_BANKING_INTERFACES)) {
-            throw new FeatureDisabledException(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
-        }
-
-        if (!featureToggleApi.isFeatureEnabled(config.getFeatureFlag())) {
-            throw new FeatureDisabledException(config.getFeatureFlag() + " is not enabled");
-        }
+        featureFlagUtil.requireEnabledFeature(FeatureFlags.RELEASE_1C_BANKING_INTERFACES);
+        featureFlagUtil.requireEnabledFeature(config.getFeatureFlag());
 
         List<String> baisFiles = baisSftpClient.listRegularFiles(config.getSftpUsername());
 
