@@ -14,12 +14,6 @@
       "enabled": false
     },
     {
-      "description": "opal-common-lib updates are coordinated manually across consuming services",
-      "matchManagers": ["gradle"],
-      "matchPackageNames": ["uk.gov.hmcts:opal-common-lib"],
-      "enabled": false
-    },
-    {
       "description": "Group all Gradle plugins - Minor/Patch",
       "matchManagers": ["gradle"],
       "matchUpdateTypes": ["minor", "patch"],
@@ -160,6 +154,18 @@
       ]
     }
   ],
-  "description": "Schedule for Wednesdays only.",
-  "schedule": ["* * * * 3"]
+  "description": "Run Renovate out of hours only (UK time).",
+  "timezone": "Europe/London",
+  "updateNotScheduled": false,
+  "platformAutomerge": false,
+  "schedule": [
+    "* 19-23 * * 1-5",
+    "* 0-7 * * 1-5",
+    "* * * * 0,6"
+  ],
+  "automergeSchedule": [
+    "* 19-23 * * 1-5",
+    "* 0-7 * * 1-5",
+    "* * * * 0,6"
+  ]
 }
