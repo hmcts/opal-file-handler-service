@@ -44,7 +44,7 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 
 @ExtendWith(MockitoExtension.class)
-public class InterfaceFileServiceTest {
+class InterfaceFileServiceTest {
 
     @Mock
     private InterfaceFilesRepository repository;
@@ -73,29 +73,29 @@ public class InterfaceFileServiceTest {
     private MockedStatic<SecurityUtil> securityUtil;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         uuid = UUID.randomUUID();
         mockData = mock(BinaryData.class);
         securityUtil = mockStatic(SecurityUtil.class);
     }
 
-    public void withPermissions() {
+    void withPermissions() {
         securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
         when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
     }
 
-    public void withoutPermissions() {
+    void withoutPermissions() {
         securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
         when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(false);
     }
 
     @AfterEach
-    public void teardown() {
+    void teardown() {
         securityUtil.close();
     }
 
     @Test
-    public void getInterfaceFileContent_bteckohSourceReturnsData() {
+    void getInterfaceFileContent_bteckohSourceReturnsData() {
         withPermissions();
         when(configs.get(eq("BTEckohReportBaisFileProcessorConfig"))).thenReturn(bteckohConfig);
         when(bteckohConfig.getContainerName()).thenReturn("bteckoh-report");
@@ -113,7 +113,7 @@ public class InterfaceFileServiceTest {
     }
 
     @Test
-    public void getInterfaceFileContent_capsSourceReturnsData() {
+    void getInterfaceFileContent_capsSourceReturnsData() {
         withPermissions();
         when(configs.get(eq("capsReportBaisFileProcessorConfig"))).thenReturn(capsConfig);
         when(capsConfig.getContainerName()).thenReturn("caps-report");
@@ -131,7 +131,7 @@ public class InterfaceFileServiceTest {
     }
 
     @Test
-    public void getInterfaceFileContent_missingPermissionsThrowsError() {
+    void getInterfaceFileContent_missingPermissionsThrowsError() {
         withoutPermissions();
 
         Exception e = assertThrows(
@@ -142,7 +142,7 @@ public class InterfaceFileServiceTest {
     }
 
     @Test
-    public void getInterfaceFileContent_EntityNotFoundThrowsError() {
+    void getInterfaceFileContent_EntityNotFoundThrowsError() {
         withPermissions();
 
         when(repository.findById(eq(1L))).thenReturn(
@@ -162,7 +162,7 @@ public class InterfaceFileServiceTest {
 
 
     @Test
-    public void getInterfaceFileContent_invalidStatusThrowsError() {
+    void getInterfaceFileContent_invalidStatusThrowsError() {
         withPermissions();
 
         when(repository.findById(eq(1L))).thenReturn(
@@ -185,7 +185,7 @@ public class InterfaceFileServiceTest {
     }
 
     @Test
-    public void getInterfaceFileContent_missingBlobThrowsError() {
+    void getInterfaceFileContent_missingBlobThrowsError() {
         withPermissions();
         when(configs.get(eq("BTEckohReportBaisFileProcessorConfig"))).thenReturn(bteckohConfig);
         when(bteckohConfig.getContainerName()).thenReturn("bteckoh-report");

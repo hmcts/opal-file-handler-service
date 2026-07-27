@@ -21,7 +21,7 @@ import uk.gov.hmcts.opal.filehandler.exception.BlobNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobStorageContainerNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
-public class InterfaceFileBlobStoreServiceTest {
+class InterfaceFileBlobStoreServiceTest {
 
     @Mock
     private FileHandlerAzureStorageConfig config;
@@ -40,12 +40,12 @@ public class InterfaceFileBlobStoreServiceTest {
     private final UUID fileUUID = UUID.randomUUID();
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         interfaceFilesBlobStoreService = new InterfaceFileBlobStoreService(blobServiceClient);
     }
 
     @Test
-    public void fetchInterfaceFile() {
+    void fetchInterfaceFile() {
         when(blobServiceClient.getBlobContainerClient("container")).thenReturn(container);
         when(container.getBlobClient(eq(fileUUID.toString()))).thenReturn(blob);
         when(container.exists()).thenReturn(true);
@@ -61,8 +61,7 @@ public class InterfaceFileBlobStoreServiceTest {
     }
 
     @Test
-    public void fetchInterfaceFile_containerDoesNotExist_throwError() {
-        
+    void fetchInterfaceFile_containerDoesNotExist_throwError() {
         when(blobServiceClient.getBlobContainerClient("container")).thenReturn(container);
         when(container.exists()).thenReturn(false);
 
@@ -77,8 +76,7 @@ public class InterfaceFileBlobStoreServiceTest {
     }
 
     @Test
-    public void fetchInterfaceFile_blobDoesNotExist_throwError() {
-        
+    void fetchInterfaceFile_blobDoesNotExist_throwError() {
         when(blobServiceClient.getBlobContainerClient("container")).thenReturn(container);
         when(container.exists()).thenReturn(true);
         when(container.getBlobClient(eq(fileUUID.toString()))).thenReturn(blob);
@@ -98,7 +96,6 @@ public class InterfaceFileBlobStoreServiceTest {
 
     @Test
     public void getBlobContainerClient_returnsContainer() {
-        
         when(blobServiceClient.getBlobContainerClient("container")).thenReturn(container);
         when(container.exists()).thenReturn(true);
 
@@ -108,8 +105,7 @@ public class InterfaceFileBlobStoreServiceTest {
     }
 
     @Test
-    public void getBlobContainerClient_notFoundThrowsException() {
-        
+    void getBlobContainerClient_notFoundThrowsException() {
         when(blobServiceClient.getBlobContainerClient("container")).thenReturn(container);
         when(container.exists()).thenReturn(false);
 
@@ -124,8 +120,7 @@ public class InterfaceFileBlobStoreServiceTest {
     }
 
     @Test
-    public void getBlobClient_returnsBlob() {
-        
+    void getBlobClient_returnsBlob() {
         when(container.getBlobClient("filename")).thenReturn(blob);
         when(blob.exists()).thenReturn(true);
 
@@ -135,8 +130,7 @@ public class InterfaceFileBlobStoreServiceTest {
     }
 
     @Test
-    public void getBlobClient_returnsNull() {
-        
+    void getBlobClient_returnsNull() {
         when(container.getBlobClient("filename")).thenReturn(blob);
         when(blob.exists()).thenReturn(false);
 
@@ -146,8 +140,7 @@ public class InterfaceFileBlobStoreServiceTest {
     }
 
     @Test
-    public void getFileContents() {
-        
+    void getFileContents() {
         BinaryData mockResult = mock(BinaryData.class);
         when(blob.downloadContent()).thenReturn(mockResult);
 

@@ -28,11 +28,7 @@ public class InterfaceFileService {
     private Map<String, BaisFileProcessorConfig> configs;
 
     private BaisFileProcessorConfig getConfig(Interface source) {
-        return switch (source) {
-            case BTECKOH_REPORT -> configs.get("BTEckohReportBaisFileProcessorConfig");
-            case CAPS_REPORT -> configs.get("capsReportBaisFileProcessorConfig");
-            case OPAL -> null;
-        };
+        return configs.get(source.getConfigComponentName());
     }
 
     public InputStream getInterfaceFilesContent(Long id) {

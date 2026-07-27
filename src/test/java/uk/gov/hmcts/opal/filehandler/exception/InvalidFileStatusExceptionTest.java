@@ -9,10 +9,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
-public class InvalidFileStatusExceptionTest {
+class InvalidFileStatusExceptionTest {
 
     @Test
-    public void isCreatedCorrectly() {
+    void isCreatedCorrectly() {
         InvalidInterfaceFileStatusException e = new InvalidInterfaceFileStatusException("some detailed reason");
 
         assertAll(

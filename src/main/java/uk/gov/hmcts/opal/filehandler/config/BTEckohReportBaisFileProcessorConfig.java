@@ -4,6 +4,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @ConfigurationProperties(prefix = "opal.file-handling-service.file-types.bteckoh-report")
-@Component()
+@Component
 public class BTEckohReportBaisFileProcessorConfig extends AbstractBaisFileProcessorConfig {
 }

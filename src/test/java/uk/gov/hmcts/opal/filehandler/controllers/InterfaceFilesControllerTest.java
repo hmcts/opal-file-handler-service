@@ -18,7 +18,7 @@ import org.springframework.http.ResponseEntity;
 import uk.gov.hmcts.opal.filehandler.service.InterfaceFileService;
 
 @ExtendWith(MockitoExtension.class)
-public class InterfaceFilesControllerTest {
+class InterfaceFilesControllerTest {
 
     @Mock
     private InterfaceFileService interfaceFileService;
@@ -27,7 +27,7 @@ public class InterfaceFilesControllerTest {
     private InterfaceFilesController interfaceFilesController;
 
     @Test
-    public void getInterfaceFileContent_returns200() {
+    void getInterfaceFileContent_returns200() {
         when(interfaceFileService.getInterfaceFilesContent(eq(1L))).thenReturn(
             mock(InputStream.class)
         );

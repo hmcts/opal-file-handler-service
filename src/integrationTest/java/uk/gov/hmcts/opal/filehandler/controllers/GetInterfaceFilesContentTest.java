@@ -31,7 +31,7 @@ import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
 @Slf4j(topic = "opal.GetInterfaceFilesContentIntegrationTest")
 @ActiveProfiles(profiles = {"integration"})
-public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
+class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
     private String urlWithID(long id) {
         return String.format("/interface-files/%d/content", id);

@@ -30,7 +30,7 @@ public class InterfaceFileBlobStoreService {
 
     protected BlobClient getBlobClient(BlobContainerClient blobContainerClient, String file) {
         BlobClient blob = blobContainerClient.getBlobClient(file);
-        if (!blob.exists()) {
+        if (Boolean.FALSE.equals(blob.exists())) {
             return null;
         }
         return blob;

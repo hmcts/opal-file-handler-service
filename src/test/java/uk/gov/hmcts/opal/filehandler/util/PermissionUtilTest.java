@@ -18,7 +18,7 @@ import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 
 @ExtendWith(MockitoExtension.class)
-public class PermissionUtilTest {
+class PermissionUtilTest {
 
     @Mock
     private OpalJwtAuthenticationToken authToken;
@@ -26,18 +26,18 @@ public class PermissionUtilTest {
     private MockedStatic<SecurityUtil> securityUtil;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         securityUtil = mockStatic(SecurityUtil.class);
         securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
     }
 
     @AfterEach
-    public void teardown() {
+    void teardown() {
         securityUtil.close();
     }
 
     @Test
-    public void checkPermissionReturnsTrue() {
+    void checkPermissionReturnsTrue() {
         when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
 
         PermissionUtil.checkPermission(FileHandlerPermission.ViewInterfacesFile);
@@ -46,7 +46,7 @@ public class PermissionUtilTest {
     }
 
     @Test
-    public void checkPermissionFailedThrowsError() {
+    void checkPermissionFailedThrowsError() {
         when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(false);
 
         Exception e = assertThrows(

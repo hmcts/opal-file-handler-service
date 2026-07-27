@@ -9,10 +9,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
-public class BlobStorageContainerNotFoundExceptionTest {
+class BlobStorageContainerNotFoundExceptionTest {
 
     @Test
-    public void isCreatedCorrectly() {
+    void isCreatedCorrectly() {
         BlobStorageContainerNotFoundException e = new BlobStorageContainerNotFoundException("some detailed reason");
 
         assertAll(

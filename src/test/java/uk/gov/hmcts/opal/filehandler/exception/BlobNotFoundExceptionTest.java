@@ -9,10 +9,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 @ExtendWith(MockitoExtension.class)
-public class BlobNotFoundExceptionTest {
+class BlobNotFoundExceptionTest {
 
     @Test
-    public void isCreatedCorrectly() {
+    void isCreatedCorrectly() {
         BlobNotFoundException e = new BlobNotFoundException("some detailed reason");
 
         assertAll(
