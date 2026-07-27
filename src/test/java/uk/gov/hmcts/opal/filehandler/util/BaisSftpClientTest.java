@@ -76,8 +76,9 @@ class BaisSftpClientTest {
     void downloadFileFailsWhenRemoteFileCannotBeFinalised() {
         when(remoteFileTemplate.get(eq(FILE_NAME), any(InputStreamCallback.class))).thenReturn(false);
 
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         BaisSftpFileDownloadException exception = assertThrows(BaisSftpFileDownloadException.class, () ->
-            client.downloadFile(USERNAME, FILE_NAME, new ByteArrayOutputStream()));
+            client.downloadFile(USERNAME, FILE_NAME, outputStream));
 
         assertThat(exception).hasMessage("Unable to download BAIS file " + FILE_NAME);
     }
