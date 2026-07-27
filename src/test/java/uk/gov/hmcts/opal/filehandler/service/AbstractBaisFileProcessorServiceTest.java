@@ -179,8 +179,8 @@ public class AbstractBaisFileProcessorServiceTest {
         when(interfaceFilesRepository.findAllByFileNameAndChecksumAndStatus(
             MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(firstFailure, secondFailure));
 
-        doThrow(new RuntimeException("storage said \"no\"\nretry later")).when(interfaceFileBlobStoreService).uploadBaisFile(
-            any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
+        doThrow(new RuntimeException("storage said \"no\"\nretry later")).when(interfaceFileBlobStoreService)
+            .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
 
         service.run(baisFileProcessorConfiguration);
 
