@@ -24,6 +24,8 @@ public class TestContainerConfig {
     public static final GenericContainer<?> AZURITE_CONTAINER;
     private static final int AZURITE_BLOB_PORT = 10000;
     private static final String AZURITE_ACCOUNT_NAME = "devstoreaccount1";
+    // This is the default account key for azurite, used exclusively for local dev on our docker images. It is not
+    // a secret key, therefore safe to store here as config.
     private static final String AZURITE_ACCOUNT_KEY =
         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 

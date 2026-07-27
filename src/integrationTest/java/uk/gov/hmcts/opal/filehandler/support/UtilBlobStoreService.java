@@ -5,7 +5,6 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
 
 public class UtilBlobStoreService {
 
@@ -17,15 +16,14 @@ public class UtilBlobStoreService {
             .buildClient();
     }
 
-    public String storeReport(String report, String containerName, String uuid) {
+    public String storeBlob(byte[] file, String containerName, String uuid) {
         BlobContainerClient container = blobServiceClient.getBlobContainerClient(containerName);
         container.createIfNotExists();
         if (!container.exists()) {
             throw new IllegalArgumentException("Blob container does not exist");
         }
         BlobClient blob = container.getBlobClient(uuid);
-        byte[] bytes = report.getBytes(StandardCharsets.UTF_8);
-        blob.upload(new ByteArrayInputStream(bytes), bytes.length, true);
+        blob.upload(new ByteArrayInputStream(file), file.length, true);
         return blob.getVersionId();
     }
 

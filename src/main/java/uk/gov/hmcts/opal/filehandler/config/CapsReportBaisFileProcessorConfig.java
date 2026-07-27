@@ -4,6 +4,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @ConfigurationProperties(prefix = "opal.file-handling-service.file-types.caps-report")
-@Component("CAPS_REPORT")
+@Component()
 public class CapsReportBaisFileProcessorConfig extends AbstractBaisFileProcessorConfig {
 }

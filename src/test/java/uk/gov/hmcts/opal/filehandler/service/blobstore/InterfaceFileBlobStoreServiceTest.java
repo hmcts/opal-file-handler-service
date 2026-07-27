@@ -24,6 +24,9 @@ import uk.gov.hmcts.opal.filehandler.exception.BlobStorageContainerNotFoundExcep
 public class InterfaceFileBlobStoreServiceTest {
 
     @Mock
+    private FileHandlerAzureStorageConfig config;
+
+    @Mock
     private BlobServiceClient blobServiceClient;
 
     @Mock
@@ -58,27 +61,99 @@ public class InterfaceFileBlobStoreServiceTest {
     }
 
     @Test
-    public void storeReport_containerDoesNotExist_throwError() {
+    public void fetchInterfaceFile_containerDoesNotExist_throwError() {
+        
         when(blobServiceClient.getBlobContainerClient("container")).thenReturn(container);
         when(container.exists()).thenReturn(false);
 
-        assertThrows(
+        Exception e = assertThrows(
             BlobStorageContainerNotFoundException.class,
             () -> interfaceFilesBlobStoreService.fetchInterfaceFile(1L, fileUUID,"container")
+        );
+        assertEquals(
+            "500 INTERNAL_SERVER_ERROR \"Blob container \"container\" does not exist\"",
+            e.getMessage()
         );
     }
 
     @Test
-    public void storeReport_blobDoesNotExist_throwError() {
+    public void fetchInterfaceFile_blobDoesNotExist_throwError() {
+        
         when(blobServiceClient.getBlobContainerClient("container")).thenReturn(container);
         when(container.exists()).thenReturn(true);
         when(container.getBlobClient(eq(fileUUID.toString()))).thenReturn(blob);
         when(blob.exists()).thenReturn(false);
 
-        assertThrows(
+        Exception e = assertThrows(
             BlobNotFoundException.class,
             () -> interfaceFilesBlobStoreService.fetchInterfaceFile(1L, fileUUID,"container")
         );
+        assertEquals(
+            "500 INTERNAL_SERVER_ERROR \"Expected interface file id: 1 to exist in blobstore "
+            + "container: \"container\" with name \"" + fileUUID.toString() + "\" but this could "
+            + "not be located.\"",
+            e.getMessage()
+        );
+    }
+
+    @Test
+    public void getBlobContainerClient_returnsContainer() {
+        
+        when(blobServiceClient.getBlobContainerClient("container")).thenReturn(container);
+        when(container.exists()).thenReturn(true);
+
+        BlobContainerClient actual = interfaceFilesBlobStoreService.getBlobContainerClient("container");
+
+        assertEquals(container, actual);
+    }
+
+    @Test
+    public void getBlobContainerClient_notFoundThrowsException() {
+        
+        when(blobServiceClient.getBlobContainerClient("container")).thenReturn(container);
+        when(container.exists()).thenReturn(false);
+
+        Exception e = assertThrows(
+            BlobStorageContainerNotFoundException.class,
+            () -> interfaceFilesBlobStoreService.getBlobContainerClient("container")
+        );
+        assertEquals(
+            "500 INTERNAL_SERVER_ERROR \"Blob container \"container\" does not exist\"",
+            e.getMessage()
+        );
+    }
+
+    @Test
+    public void getBlobClient_returnsBlob() {
+        
+        when(container.getBlobClient("filename")).thenReturn(blob);
+        when(blob.exists()).thenReturn(true);
+
+        BlobClient actual = interfaceFilesBlobStoreService.getBlobClient(container, "filename");
+
+        assertEquals(blob, actual);
+    }
+
+    @Test
+    public void getBlobClient_returnsNull() {
+        
+        when(container.getBlobClient("filename")).thenReturn(blob);
+        when(blob.exists()).thenReturn(false);
+
+        BlobClient actual = interfaceFilesBlobStoreService.getBlobClient(container, "filename");
+
+        assertEquals(null, actual);
+    }
+
+    @Test
+    public void getFileContents() {
+        
+        BinaryData mockResult = mock(BinaryData.class);
+        when(blob.downloadContent()).thenReturn(mockResult);
+
+        BinaryData response = interfaceFilesBlobStoreService.getFileContents(blob);
+
+        assertEquals(response, mockResult);
     }
 
 }

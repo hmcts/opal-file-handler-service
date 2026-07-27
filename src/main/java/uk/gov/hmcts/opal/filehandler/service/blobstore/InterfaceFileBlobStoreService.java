@@ -18,17 +18,17 @@ public class InterfaceFileBlobStoreService {
 
     private final BlobServiceClient blobServiceClient;
 
-    private BlobContainerClient getBlobContainerClient(String containerName) {
+    protected BlobContainerClient getBlobContainerClient(String containerName) {
         BlobContainerClient container = blobServiceClient.getBlobContainerClient(containerName);
         if (!container.exists()) {
             throw new BlobStorageContainerNotFoundException(
-                String.format("Blob container \"%s\"does not exist", containerName)
+                String.format("Blob container \"%s\" does not exist", containerName)
             );
         }
         return container;
     }
 
-    private BlobClient getBlobClient(BlobContainerClient blobContainerClient, String file) {
+    protected BlobClient getBlobClient(BlobContainerClient blobContainerClient, String file) {
         BlobClient blob = blobContainerClient.getBlobClient(file);
         if (!blob.exists()) {
             return null;
@@ -36,7 +36,7 @@ public class InterfaceFileBlobStoreService {
         return blob;
     }
 
-    private BinaryData getFileContents(BlobClient blob) {
+    protected BinaryData getFileContents(BlobClient blob) {
         return blob.downloadContent();
     }
 

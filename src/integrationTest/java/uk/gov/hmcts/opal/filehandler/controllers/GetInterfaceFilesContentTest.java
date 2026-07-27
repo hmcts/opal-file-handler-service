@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -41,6 +40,10 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
     @Autowired
     protected MockMvc mockMvc;
 
+    private static final String bteckohResourcePath = "azure/data/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-Daily-"
+        + "2026-07-06-06-00-18.xlsx";
+    private static final String capsResourcePath = "azure/data/caps-report/CapFa.GB.20260701.173024.xml";
+
     private static UtilBlobStoreService utilBlobStoreService;
 
     protected void authorizeWithPermission() {
@@ -70,15 +73,14 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
     public static void setupAzureData() throws IOException {
         utilBlobStoreService = new UtilBlobStoreService();
 
-        URL url = Resources.getResource(
-            "azure/data/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-Daily-2026-07-06-06-00-18.xlsx");
-        String resource = Resources.toString(url, StandardCharsets.UTF_8);
-        bteckohReportOriginalVersion = utilBlobStoreService.storeReport(
+        URL url = Resources.getResource(bteckohResourcePath);
+        byte[] resource = Resources.toByteArray(url);
+        bteckohReportOriginalVersion = utilBlobStoreService.storeBlob(
             resource, "bteckoh-report", "0f664b85-a5df-4600-9bb3-3b7092ab8718");
 
-        url = Resources.getResource("azure/data/caps-report/CapFa.GB.20260701.173024.xml");
-        resource = Resources.toString(url, StandardCharsets.UTF_8);
-        capsReportOriginalVersion = utilBlobStoreService.storeReport(
+        url = Resources.getResource(capsResourcePath);
+        resource = Resources.toByteArray(url);
+        capsReportOriginalVersion = utilBlobStoreService.storeBlob(
             resource, "caps-report", "73c21773-6f49-438d-a760-78f0ffbedf0d");
     }
 
@@ -98,7 +100,7 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
     class FeatureOn {
 
         @Test
-        @DisplayName("OPAL: GET Interface File Content - Fetches file content")
+        @DisplayName("OPAL: GET Interface File Content - Fetches file content from BTECKOH")
         @JiraStory("PO-3948")
         @JiraEpic("PO-3495")
         void get_respondsWith200AndFileContents() throws Exception {
@@ -114,8 +116,39 @@ public class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                     .contentType(MediaType.APPLICATION_JSON)
             );
 
+            URL url = Resources.getResource(bteckohResourcePath);
+            byte[] expectedBody = Resources.toByteArray(url);
+
             res.andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM));
+                .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))
+                .andExpect(content().bytes(expectedBody));
+
+            assertBlobStorageUnchanged();
+        }
+
+        @Test
+        @DisplayName("OPAL: GET Interface File Content - Fetches file content from CAPS")
+        @JiraStory("PO-3948")
+        @JiraEpic("PO-3495")
+        void get_respondsWith200AndFileContents_CapsContainer() throws Exception {
+            authorizeWithPermission(); // Auto enforcement permission
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(userStateStub.getBearerToken());
+
+            ResultActions res = mockMvc.perform(
+                get(urlWithID(2L))
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_JSON)
+            );
+
+            URL url = Resources.getResource(capsResourcePath);
+            byte[] expectedBody = Resources.toByteArray(url);
+
+            res.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))
+                .andExpect(content().bytes(expectedBody));
 
             assertBlobStorageUnchanged();
         }

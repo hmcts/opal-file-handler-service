@@ -7,6 +7,7 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfig;
@@ -26,6 +27,14 @@ public class InterfaceFileService {
     @Autowired
     private Map<String, BaisFileProcessorConfig> configs;
 
+    private BaisFileProcessorConfig getConfig(Interface source) {
+        return switch (source) {
+            case BTECKOH_REPORT -> configs.get("BTEckohReportBaisFileProcessorConfig");
+            case CAPS_REPORT -> configs.get("capsReportBaisFileProcessorConfig");
+            case OPAL -> null;
+        };
+    }
+
     public InputStream getInterfaceFilesContent(Long id) {
         PermissionUtil.checkPermission(FileHandlerPermission.ViewInterfacesFile);
 
@@ -41,7 +50,7 @@ public class InterfaceFileService {
                 id, entity.getStatus()));
         }
 
-        BaisFileProcessorConfig config = configs.get(entity.getSource().toString());
+        BaisFileProcessorConfig config = getConfig(entity.getSource());
         String containerName = config.getContainerName();
 
         BinaryData file = blobStoreService.fetchInterfaceFile(id, entity.getFilestoreUuid(), containerName);

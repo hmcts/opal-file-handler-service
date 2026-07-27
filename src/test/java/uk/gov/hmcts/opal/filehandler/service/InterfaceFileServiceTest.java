@@ -1,6 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -96,7 +97,7 @@ public class InterfaceFileServiceTest {
     @Test
     public void getInterfaceFileContent_bteckohSourceReturnsData() {
         withPermissions();
-        when(configs.get(eq("BTECKOH_REPORT"))).thenReturn(bteckohConfig);
+        when(configs.get(eq("BTEckohReportBaisFileProcessorConfig"))).thenReturn(bteckohConfig);
         when(bteckohConfig.getContainerName()).thenReturn("bteckoh-report");
 
         when(repository.findById(eq(1L))).thenReturn(
@@ -114,7 +115,7 @@ public class InterfaceFileServiceTest {
     @Test
     public void getInterfaceFileContent_capsSourceReturnsData() {
         withPermissions();
-        when(configs.get(eq("CAPS_REPORT"))).thenReturn(capsConfig);
+        when(configs.get(eq("capsReportBaisFileProcessorConfig"))).thenReturn(capsConfig);
         when(capsConfig.getContainerName()).thenReturn("caps-report");
 
         when(repository.findById(eq(1L))).thenReturn(
@@ -133,10 +134,11 @@ public class InterfaceFileServiceTest {
     public void getInterfaceFileContent_missingPermissionsThrowsError() {
         withoutPermissions();
 
-        assertThrows(
+        Exception e = assertThrows(
             PermissionNotAllowedException.class,
             () -> interfaceFileService.getInterfaceFilesContent(1L)
         );
+        assertEquals("[ViewInterfacesFile] permission(s) are not enabled for the user.", e.getMessage());
     }
 
     @Test
@@ -147,7 +149,11 @@ public class InterfaceFileServiceTest {
             Optional.ofNullable(null)
         );
 
-        assertThrows(EntityNotFoundException.class, () -> interfaceFileService.getInterfaceFilesContent(1L));
+        Exception e = assertThrows(
+            EntityNotFoundException.class,
+            () -> interfaceFileService.getInterfaceFilesContent(1L)
+        );
+        assertEquals("Interface file with id 1 could not be located.", e.getMessage());
 
         verify(repository).findById(1L);
         verifyNoMoreInteractions(repository);
@@ -163,9 +169,14 @@ public class InterfaceFileServiceTest {
             Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.FAILED))
         );
 
-        assertThrows(
+        Exception e = assertThrows(
             InvalidInterfaceFileStatusException.class,
             () -> interfaceFileService.getInterfaceFilesContent(1L)
+        );
+        assertEquals(
+            "422 UNPROCESSABLE_CONTENT \"Interface file with id 1 could not be retrieved as it has "
+            + "an invalid status of: \"FAILED\" only files with status: \"SUCCESS\" can be returned.\"",
+            e.getMessage()
         );
 
         verify(repository).findById(1L);
@@ -176,16 +187,21 @@ public class InterfaceFileServiceTest {
     @Test
     public void getInterfaceFileContent_missingBlobThrowsError() {
         withPermissions();
-        when(configs.get(eq("BTECKOH_REPORT"))).thenReturn(bteckohConfig);
+        when(configs.get(eq("BTEckohReportBaisFileProcessorConfig"))).thenReturn(bteckohConfig);
         when(bteckohConfig.getContainerName()).thenReturn("bteckoh-report");
 
         when(repository.findById(eq(1L))).thenReturn(
             Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.SUCCESS))
         );
+
         when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report")))
             .thenThrow(BlobNotFoundException.class);
 
-        assertThrows(BlobNotFoundException.class, () -> interfaceFileService.getInterfaceFilesContent(1L));
+        Exception e = assertThrows(
+            BlobNotFoundException.class,
+            () -> interfaceFileService.getInterfaceFilesContent(1L)
+        );
+        assertEquals("null", e.getMessage());
 
         verify(repository).findById(1L);
         verifyNoMoreInteractions(repository);
