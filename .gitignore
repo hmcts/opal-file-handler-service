@@ -44,3 +44,6 @@ bruno/environments/*.env
 
 # But keep the template (example)
 !bruno/environments/env.template
+/.codex/
+superpowers/*
+docs/superpowers/*
