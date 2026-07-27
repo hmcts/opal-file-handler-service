@@ -17,6 +17,7 @@ public class BlobChecksumValidationException extends RuntimeException {
     ) {
         super("Blob checksum validation failed for filestore UUID '%s': expected '%s' but was '%s'"
             .formatted(filestoreUuid, expectedChecksum, actualChecksum == null ? "<missing>" : actualChecksum));
+
         this.filestoreUuid = filestoreUuid;
         this.expectedChecksum = expectedChecksum;
         this.actualChecksum = actualChecksum;

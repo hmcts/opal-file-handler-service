@@ -33,7 +33,7 @@ public abstract class AbstractBaisFileProcessorService {
     private final Clock clock;
     private final FeatureFlagUtil featureFlagUtil;
     private final BaisSftpClient baisSftpClient;
-    private final BlobStorageService blobStorageService;
+    private final InterfaceFileBlobStoreService interfaceFileBlobStoreService;
     private final InterfaceFilesRepository interfaceFilesRepository;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
@@ -78,11 +78,9 @@ public abstract class AbstractBaisFileProcessorService {
         try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
             baisSftpClient.downloadFile(config.getSftpUsername(), fileName, downloadStream);
 
-            byte[] downloadedBytes = downloadStream.toByteArray();
+            final byte[] downloadedBytes = downloadStream.toByteArray();
 
             String fileChecksum = calculateChecksum(new ByteArrayInputStream(downloadedBytes));
-
-            supersedePreviousFailures(fileName, fileChecksum);
 
             Optional<InterfaceFileEntity> duplicate = interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
                 fileName, fileChecksum, Status.SUCCESS);
@@ -90,8 +88,10 @@ public abstract class AbstractBaisFileProcessorService {
             InterfaceFileEntity entity;
 
             try {
-                UUID fileStoreUuid = blobStorageService.upload(
-                    config.getContainerName(), new ByteArrayInputStream(downloadedBytes), fileChecksum);
+                UUID fileStoreUuid = UUID.randomUUID();
+
+                interfaceFileBlobStoreService.uploadBaisFile(
+                    fileStoreUuid, config.getContainerName(), new ByteArrayInputStream(downloadedBytes), fileChecksum);
 
                 if (duplicate.isPresent()) {
                     entity = createDuplicateInterfaceFile(
@@ -177,13 +177,14 @@ public abstract class AbstractBaisFileProcessorService {
     }
 
     private InterfaceFileEntity saveInitialFile(InterfaceFileEntity entity) {
-        return transactionTemplate.execute(transactionStatus -> interfaceFilesRepository.save(entity));
+        return transactionTemplate.execute(transactionStatus -> {
+            InterfaceFileEntity savedEntity = interfaceFilesRepository.save(entity);
+            supersedePreviousFailures(entity.getFileName(), entity.getChecksum());
+            return savedEntity;
+        });
     }
 
-    private void processIngestedFile(
-        InterfaceFileEntity entity,
-        InputStream inputStream
-    ) {
+    private void processIngestedFile(InterfaceFileEntity entity, InputStream inputStream) {
         try {
             transactionTemplate.executeWithoutResult(transactionStatus -> processFile(entity, inputStream));
         } catch (RuntimeException e) {
@@ -198,11 +199,7 @@ public abstract class AbstractBaisFileProcessorService {
         }
     }
 
-    private void deleteRemoteFile(
-        BaisFileProcessorConfiguration config,
-        String fileName,
-        InterfaceFileEntity entity
-    ) {
+    private void deleteRemoteFile(BaisFileProcessorConfiguration config, String fileName, InterfaceFileEntity entity) {
         if (entity.getStatus().equals(Status.FAILED)) {
             return;
         }

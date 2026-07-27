@@ -27,12 +27,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
 
 @ExtendWith(MockitoExtension.class)
-class BlobStorageServiceTest {
+class InterfaceFileBlobStoreServiceTest {
 
     private static final String CONTAINER_NAME = "caps-report";
     private static final String CHECKSUM = "1fa7130130167122bb83decf6cb3bdb1";
     private static final String DIFFERENT_CHECKSUM = "00000000000000000000000000000000";
     private static final byte[] FILE_CONTENT = "CAPS report".getBytes(StandardCharsets.UTF_8);
+    private static final UUID FILE_UUID =  UUID.randomUUID();
 
     @Mock
     private BlobServiceClient blobServiceClient;
@@ -46,14 +47,15 @@ class BlobStorageServiceTest {
     @Mock
     private BlobProperties blobProperties;
 
-    private BlobStorageService service;
+    private InterfaceFileBlobStoreService service;
     private InputStream stream;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         when(blobServiceClient.getBlobContainerClient(CONTAINER_NAME)).thenReturn(blobContainerClient);
         when(blobContainerClient.getBlobClient(anyString())).thenReturn(blobClient);
-        service = new BlobStorageService(blobServiceClient);
+
+        service = new InterfaceFileBlobStoreService(blobServiceClient);
         stream = new ByteArrayInputStream(FILE_CONTENT);
     }
 
@@ -62,11 +64,9 @@ class BlobStorageServiceTest {
         when(blobClient.getProperties()).thenReturn(blobProperties);
         when(blobProperties.getContentMd5()).thenReturn(HexFormat.of().parseHex(CHECKSUM));
 
-        UUID filestoreUuid = service.upload(CONTAINER_NAME, stream, CHECKSUM);
+        service.uploadBaisFile(FILE_UUID, CONTAINER_NAME, stream, CHECKSUM);
 
-        assertThat(filestoreUuid).isNotNull();
-
-        verify(blobContainerClient).getBlobClient(filestoreUuid.toString());
+        verify(blobContainerClient).getBlobClient(FILE_UUID.toString());
         verify(blobClient).upload(stream);
         verify(blobClient, never()).deleteIfExists();
     }
@@ -78,7 +78,7 @@ class BlobStorageServiceTest {
 
         BlobChecksumValidationException exception = catchThrowableOfType(
             BlobChecksumValidationException.class,
-            () -> service.upload(CONTAINER_NAME, stream, CHECKSUM));
+            () -> service.uploadBaisFile(FILE_UUID, CONTAINER_NAME, stream, CHECKSUM));
 
         assertThat(exception.getFilestoreUuid()).isNotNull();
         assertThat(exception.getExpectedChecksum()).isEqualTo(CHECKSUM);
@@ -95,7 +95,7 @@ class BlobStorageServiceTest {
         doThrow(uploadFailure).when(blobClient)
             .upload(any(InputStream.class));
 
-        assertThatThrownBy(() -> service.upload(CONTAINER_NAME, stream, CHECKSUM))
+        assertThatThrownBy(() -> service.uploadBaisFile(FILE_UUID, CONTAINER_NAME, stream, CHECKSUM))
             .isSameAs(uploadFailure);
 
         verify(blobClient).deleteIfExists();

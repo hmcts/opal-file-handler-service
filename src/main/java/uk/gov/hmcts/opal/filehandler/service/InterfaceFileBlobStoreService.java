@@ -11,21 +11,18 @@ import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
 
 @Service
 @RequiredArgsConstructor
-public class BlobStorageService {
+public class InterfaceFileBlobStoreService {
 
     private final BlobServiceClient blobServiceClient;
 
-    public UUID upload(String containerName, InputStream stream, String expectedChecksum) {
-        UUID filestoreUuid = UUID.randomUUID();
+    public void uploadBaisFile(UUID fileUuid, String containerName, InputStream stream, String expectedChecksum) {
         BlobClient blobClient = blobServiceClient
             .getBlobContainerClient(containerName)
-            .getBlobClient(filestoreUuid.toString());
+            .getBlobClient(fileUuid.toString());
 
         try {
             blobClient.upload(stream);
-            validateChecksum(blobClient, filestoreUuid, expectedChecksum);
-
-            return filestoreUuid;
+            validateChecksum(blobClient, fileUuid, expectedChecksum);
         } catch (RuntimeException exception) {
             deleteFailedUpload(blobClient, exception);
             throw exception;

@@ -2,21 +2,22 @@ package uk.gov.hmcts.opal.filehandler.config;
 
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
-import com.azure.storage.common.StorageSharedKeyCredential;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
-@Configuration
+@Getter
+@Setter
+@ConfigurationProperties("opal.file-handler-service.file-store")
 public class BlobStorageBeanConfiguration {
 
-    @Bean
-    public BlobServiceClient blobServiceClient(BlobStorageConfiguration configuration) {
-        StorageSharedKeyCredential credential = new StorageSharedKeyCredential(
-            configuration.getStorageAccountName(), configuration.getStorageKey());
+    private String connectionString;
 
+    @Bean
+    public BlobServiceClient blobServiceClient() {
         return new BlobServiceClientBuilder()
-            .endpoint(configuration.getStorageUrl())
-            .credential(credential)
+            .connectionString(connectionString)
             .buildClient();
     }
 

@@ -55,7 +55,7 @@ public class AbstractBaisFileProcessorServiceTest {
     private static final String IGNORED_FILE = "ignored-file.txt";
     private static final String CHECKSUM = "3685d7f2b30e9b34b8d3e5496fb45506";
     private static final byte[] FILE_CONTENT = {0, 1, 13, 10, (byte) 255};
-    private static final UUID FILESTORE_UUID = UUID.fromString("e0b350e0-c845-4bf7-9fd0-18b3d1087cdf");
+    private static final UUID FILESTORE_UUID = UUID.randomUUID();
     private static final Instant NOW = Instant.parse("2026-07-23T10:15:30Z");
 
     @Mock
@@ -65,7 +65,7 @@ public class AbstractBaisFileProcessorServiceTest {
     private BaisSftpClient baisSftpClient;
 
     @Mock
-    private BlobStorageService  blobStorageService;
+    private InterfaceFileBlobStoreService interfaceFileBlobStoreService;
 
     @Mock
     private InterfaceFilesRepository interfaceFilesRepository;
@@ -97,7 +97,7 @@ public class AbstractBaisFileProcessorServiceTest {
             Clock.systemUTC(),
             featureFlagUtil,
             baisSftpClient,
-            blobStorageService,
+            interfaceFileBlobStoreService,
             interfaceFilesRepository,
             transactionTemplate,
             objectMapper
@@ -175,10 +175,12 @@ public class AbstractBaisFileProcessorServiceTest {
     void uploadFailureCreatesFailedFileAndSupersedesEveryPreviousFailure() {
         InterfaceFileEntity firstFailure = failedEntity(10L);
         InterfaceFileEntity secondFailure = failedEntity(11L);
+
         when(interfaceFilesRepository.findAllByFileNameAndChecksumAndStatus(
             MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(firstFailure, secondFailure));
-        when(blobStorageService.upload(eq("test-container"), any(InputStream.class), eq(CHECKSUM)))
-            .thenThrow(new IllegalStateException("storage said \"no\"\nretry later"));
+
+        doThrow(new RuntimeException("storage said \"no\"\nretry later")).when(interfaceFileBlobStoreService).uploadBaisFile(
+            any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
 
         service.run(baisFileProcessorConfiguration);
 
@@ -256,8 +258,6 @@ public class AbstractBaisFileProcessorServiceTest {
             any(), eq(CHECKSUM), eq(Status.SUCCESS))).thenReturn(Optional.empty());
         lenient().when(interfaceFilesRepository.findAllByFileNameAndChecksumAndStatus(
             any(), eq(CHECKSUM), eq(Status.FAILED))).thenReturn(List.of());
-        lenient().when(blobStorageService.upload(eq("test-container"), any(InputStream.class), eq(CHECKSUM)))
-            .thenReturn(FILESTORE_UUID);
         lenient().when(baisSftpClient.deleteFile(eq(SFTP_USERNAME), any())).thenReturn(true);
         lenient().when(interfaceFilesRepository.save(any())).thenAnswer(invocation -> {
             InterfaceFileEntity entity = invocation.getArgument(0);
@@ -311,12 +311,12 @@ public class AbstractBaisFileProcessorServiceTest {
         TestBaisFileProcessorService(Clock clock,
             FeatureFlagUtil featureFlagUtil,
             BaisSftpClient baisSftpClient,
-            BlobStorageService blobStorageService,
+            InterfaceFileBlobStoreService interfaceFileBlobStoreService,
             InterfaceFilesRepository interfaceFilesRepository,
             TransactionTemplate transactionTemplate,
             ObjectMapper objectMapper
         ) {
-            super(clock, featureFlagUtil, baisSftpClient, blobStorageService, interfaceFilesRepository,
+            super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
                 transactionTemplate, objectMapper);
         }
 
