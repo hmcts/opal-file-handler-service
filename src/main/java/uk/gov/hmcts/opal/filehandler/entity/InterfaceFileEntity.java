@@ -5,7 +5,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.util.Date;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -31,21 +36,25 @@ public class InterfaceFileEntity {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @NonNull
     private Interface source;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @NonNull
     private Interface target;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @NonNull
     private Type type;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @NonNull
     private Domain opalDomain;
 
@@ -61,6 +70,7 @@ public class InterfaceFileEntity {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @NonNull
     private Status status;
 
@@ -69,6 +79,20 @@ public class InterfaceFileEntity {
     private Date createdDatetime;
 
     @Column
+    @JdbcTypeCode(SqlTypes.JSON)
     private String errors;
+
+    @Column(columnDefinition = "VARCHAR(4)[]")
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    private String[] businessUnitCode;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    private PaymentType paymentType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "related_interface_file_id")
+    private InterfaceFileEntity relatedInterfaceFile;
 
 }
