@@ -38,6 +38,16 @@ ext {
   logbackVersion = "1.6.0"
 }
 
+def xjcGeneratedSourceDir = layout.buildDirectory.dir('generated/sources/xjc/main')
+// XJC is the JAXB XML-to-Java compiler. Add future third-party XML schemas here
+// to generate typed Java classes from XSD files at build time.
+def xmlSchemasToGenerate = [
+    pacsTtp: [
+        xsd        : 'src/main/resources/xsd/pacs-tpp-schedule-v0.0d.xsd',
+        packageName: 'uk.gov.hmcts.opal.filehandler.generated.pacs'
+    ]
+]
+
 sourceSets {
   openapi {
     java {
@@ -48,6 +58,7 @@ sourceSets {
   main {
     java {
       srcDir "$buildDir/generated/openapi/src/main/java"
+      srcDir xjcGeneratedSourceDir
     }
   }
   functionalTest {
@@ -71,6 +82,9 @@ sourceSets {
 
 
 configurations {
+  // JAXB XML-to-Java compiler dependencies used by schema generation tasks.
+  xjc
+
   openapiImplementation.extendsFrom implementation
   openapiRuntimeOnly.extendsFrom runtimeOnly
 
@@ -88,6 +102,32 @@ configurations.configureEach {
     force "io.cucumber:cucumber-junit:${cucumberVersion}"
   }
 }
+
+xmlSchemasToGenerate.each { schemaName, schemaConfig ->
+  def taskName = "generate${schemaName.toString().capitalize()}Jaxb"
+  def schemaGeneratedPackageDir = xjcGeneratedSourceDir.map {
+    it.dir(schemaConfig.packageName.replace('.', '/'))
+  }
+
+  tasks.register(taskName, JavaExec) {
+    group = 'build'
+    description = "Generates JAXB classes from the ${schemaName} XSD"
+    classpath = configurations.xjc
+    mainClass = 'com.sun.tools.xjc.XJCFacade'
+    inputs.file(schemaConfig.xsd)
+    outputs.dir(schemaGeneratedPackageDir)
+    args = [
+        '-d', xjcGeneratedSourceDir.get().asFile.absolutePath,
+        '-p', schemaConfig.packageName,
+        file(schemaConfig.xsd).absolutePath
+    ]
+    doFirst {
+      delete schemaGeneratedPackageDir
+      xjcGeneratedSourceDir.get().asFile.mkdirs()
+    }
+  }
+}
+
 tasks.register("bundleOpenApi", JavaExec) {
   dependsOn 'compileOpenapiJava'
   classpath = sourceSets.openapi.runtimeClasspath
@@ -231,6 +271,11 @@ dependencyManagement {
   }
 }
 dependencies {
+  implementation 'jakarta.xml.bind:jakarta.xml.bind-api'
+  implementation 'org.glassfish.jaxb:jaxb-runtime'
+  xjc 'org.glassfish.jaxb:jaxb-xjc'
+  xjc 'org.glassfish.jaxb:jaxb-runtime'
+
   //OpenAPI
   openapiImplementation "io.swagger.parser.v3:swagger-parser:2.1.45"
   openapiImplementation "io.swagger.core.v3:swagger-models:2.2.52"
@@ -339,7 +384,7 @@ wrapper {
     distributionType = Wrapper.DistributionType.ALL
 }
 checkstyle {
-  checkstyleMain.exclude '**uk/gov/hmcts/opal/generated/**'
+  checkstyleMain.exclude '**/generated/**'
 }
 tasks.register('runAllStyleChecks') {
   dependsOn 'checkstyleMain'
@@ -365,6 +410,9 @@ tasks.named("openApiGenerate") {
 }
 tasks.named("compileJava") {
   dependsOn 'openApiGenerate'
+  xmlSchemasToGenerate.each { schemaName, ignored ->
+    dependsOn tasks.named("generate${schemaName.toString().capitalize()}Jaxb")
+  }
 }
 
 apply from: "${rootDir}/gradle/zephyr.gradle"
