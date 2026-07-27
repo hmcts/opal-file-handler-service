@@ -95,7 +95,7 @@ class InterfaceFileBlobStoreServiceTest {
     }
 
     @Test
-    public void getBlobContainerClient_returnsContainer() {
+    void getBlobContainerClient_returnsContainer() {
         when(blobServiceClient.getBlobContainerClient("container")).thenReturn(container);
         when(container.exists()).thenReturn(true);
 
