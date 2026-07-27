@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandler.service;
+package uk.gov.hmcts.opal.filehandler.utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;

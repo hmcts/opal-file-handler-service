@@ -12,7 +12,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
-import uk.gov.hmcts.opal.filehandler.service.StreamUtil;
+import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.BankDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.DestinationDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
