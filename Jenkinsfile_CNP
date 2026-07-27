@@ -42,7 +42,7 @@ def ensureFunctionalReportOutputExists() {
     ensureReportOutputExists(
             'Functional Tests Report',
             'functional-output',
-            ['build/reports/tests/functional']
+            ['functional-test-report', 'build/reports/tests/functional']
     )
 }
 
@@ -58,7 +58,7 @@ def ensureSmokeReportOutputExists() {
     ensureReportOutputExists(
             'Smoke Tests Report',
             'smoke-output',
-            ['build/reports/tests/smoke']
+            ['smoke-test-report', 'build/reports/tests/smoke']
     )
 }
 
@@ -75,7 +75,7 @@ def publishFunctionalResults() {
             keepAll              : true,
             reportDir            : 'functional-output/report',
             reportFiles          : 'index.html',
-            reportName           : 'Functional Tests Report'
+            reportName           : 'Serenity Functional Test Report'
     ]
 }
 
@@ -109,7 +109,7 @@ def publishSmokeResults() {
             keepAll              : true,
             reportDir            : 'smoke-output/report',
             reportFiles          : 'index.html',
-            reportName           : 'Smoke Tests Report'
+            reportName           : 'Serenity Smoke Test Report'
     ]
 }
 

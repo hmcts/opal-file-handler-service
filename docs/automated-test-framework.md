@@ -68,6 +68,17 @@ The supplied file-handler design material and the current codebase point to a sm
 - test-support endpoints are treated as the preferred future control plane instead of direct DB
   assertions.
 
+## Serenity Reports
+
+`./gradlew functional` aggregates the Serenity results and copies the HTML report to
+`functional-test-report/index.html`.
+
+`./gradlew smoke` aggregates the Serenity results and copies the HTML report to
+`smoke-test-report/index.html`.
+
+Both tasks also retain their JUnit XML and standard Gradle HTML reports under `build/` for CI
+publication and diagnostics.
+
 ## Phased Plan
 
 ### Phase 1: Done in this change
