@@ -231,6 +231,7 @@ public abstract class AbstractBaisFileProcessorService {
         return objectMapper.createObjectNode().put("message", message).toString();
     }
 
+    @SuppressWarnings("java:S4790") // Used for checksum, not in a sensitive context
     private static String calculateChecksum(InputStream stream) throws IOException {
         return DigestUtils.md5DigestAsHex(stream);
     }

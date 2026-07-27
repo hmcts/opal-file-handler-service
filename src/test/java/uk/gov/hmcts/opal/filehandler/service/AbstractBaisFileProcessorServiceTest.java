@@ -18,7 +18,6 @@ import ch.qos.logback.core.read.ListAppender;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,12 +41,13 @@ import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
+import uk.gov.hmcts.opal.filehandler.exception.BaisSftpFileDownloadException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @ExtendWith(MockitoExtension.class)
-public class AbstractBaisFileProcessorServiceTest {
+class AbstractBaisFileProcessorServiceTest {
 
     private static final String TEST_FEATURE_FLAG = "test-feature-flag";
     private static final String SFTP_USERNAME = "sftp-username";
@@ -55,8 +55,6 @@ public class AbstractBaisFileProcessorServiceTest {
     private static final String IGNORED_FILE = "ignored-file.txt";
     private static final String CHECKSUM = "3685d7f2b30e9b34b8d3e5496fb45506";
     private static final byte[] FILE_CONTENT = {0, 1, 13, 10, (byte) 255};
-    private static final UUID FILESTORE_UUID = UUID.randomUUID();
-    private static final Instant NOW = Instant.parse("2026-07-23T10:15:30Z");
 
     @Mock
     private FeatureFlagUtil featureFlagUtil;
@@ -231,7 +229,7 @@ public class AbstractBaisFileProcessorServiceTest {
         String firstFile = "matching-first.dat";
         String secondFile = "matching-second.dat";
         when(baisSftpClient.listRegularFiles(SFTP_USERNAME)).thenReturn(List.of(firstFile, secondFile));
-        doThrow(new IllegalStateException("first download failed"))
+        doThrow(new BaisSftpFileDownloadException("first download failed"))
             .when(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(firstFile), any());
 
         service.run(baisFileProcessorConfiguration);

@@ -6,6 +6,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.sshd.sftp.client.SftpClient.DirEntry;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.opal.filehandler.exception.BaisSftpFileDownloadException;
 
 @Component
 @RequiredArgsConstructor
@@ -29,7 +30,7 @@ public class BaisSftpClient {
             .get(fileName, inputStream -> inputStream.transferTo(outputStream));
 
         if (!downloaded) {
-            throw new IllegalStateException("Unable to download BAIS file " + fileName);
+            throw new BaisSftpFileDownloadException("Unable to download BAIS file " + fileName);
         }
     }
 

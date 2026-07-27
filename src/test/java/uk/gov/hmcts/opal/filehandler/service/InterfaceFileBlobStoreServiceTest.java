@@ -1,8 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.catchThrowableOfType;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
@@ -22,6 +21,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
@@ -47,7 +47,9 @@ class InterfaceFileBlobStoreServiceTest {
     @Mock
     private BlobProperties blobProperties;
 
+    @InjectMocks
     private InterfaceFileBlobStoreService service;
+
     private InputStream stream;
 
     @BeforeEach
@@ -55,7 +57,6 @@ class InterfaceFileBlobStoreServiceTest {
         when(blobServiceClient.getBlobContainerClient(CONTAINER_NAME)).thenReturn(blobContainerClient);
         when(blobContainerClient.getBlobClient(anyString())).thenReturn(blobClient);
 
-        service = new InterfaceFileBlobStoreService(blobServiceClient);
         stream = new ByteArrayInputStream(FILE_CONTENT);
     }
 
@@ -76,7 +77,7 @@ class InterfaceFileBlobStoreServiceTest {
         when(blobClient.getProperties()).thenReturn(blobProperties);
         when(blobProperties.getContentMd5()).thenReturn(HexFormat.of().parseHex(DIFFERENT_CHECKSUM));
 
-        BlobChecksumValidationException exception = catchThrowableOfType(
+        BlobChecksumValidationException exception = assertThrows(
             BlobChecksumValidationException.class,
             () -> service.uploadBaisFile(FILE_UUID, CONTAINER_NAME, stream, CHECKSUM));
 
@@ -95,8 +96,10 @@ class InterfaceFileBlobStoreServiceTest {
         doThrow(uploadFailure).when(blobClient)
             .upload(any(InputStream.class));
 
-        assertThatThrownBy(() -> service.uploadBaisFile(FILE_UUID, CONTAINER_NAME, stream, CHECKSUM))
-            .isSameAs(uploadFailure);
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+            service.uploadBaisFile(FILE_UUID, CONTAINER_NAME, stream, CHECKSUM));
+
+        assertThat(exception).isSameAs(uploadFailure);
 
         verify(blobClient).deleteIfExists();
     }
