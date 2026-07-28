@@ -18,7 +18,7 @@ import ch.qos.logback.core.read.ListAppender;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Clock;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -149,7 +149,7 @@ class AbstractBaisFileProcessorServiceTest {
             .fileName(MATCHING_FILE)
             .checksum(CHECKSUM)
             .status(Status.SUCCESS)
-            .createdDatetime(LocalDate.now(clock))
+            .createdDatetime(LocalDateTime.now(clock))
             .build();
 
         when(interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
@@ -289,7 +289,7 @@ class AbstractBaisFileProcessorServiceTest {
             .fileName(MATCHING_FILE)
             .checksum(CHECKSUM)
             .status(Status.FAILED)
-            .createdDatetime(LocalDate.now(clock))
+            .createdDatetime(LocalDateTime.now(clock))
             .build();
     }
 

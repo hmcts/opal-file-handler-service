@@ -2,7 +2,7 @@ package uk.gov.hmcts.opal.filehandler.service;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
@@ -134,7 +134,7 @@ public abstract class AbstractBaisFileProcessorService {
             .checksum(fileChecksum)
             .status(Status.DUPLICATE)
             .filestoreUuid(fileStoreUuid)
-            .createdDatetime(LocalDate.now(clock))
+            .createdDatetime(LocalDateTime.now(clock))
             .errors(errorJson("File with name '%s' and checksum '%s' for source '%s' already processed skipping"
                 .formatted(fileName, fileChecksum, config.getSource())))
             .build();
@@ -154,7 +154,7 @@ public abstract class AbstractBaisFileProcessorService {
             .checksum(fileChecksum)
             .status(Status.INGESTED)
             .filestoreUuid(fileStoreUuid)
-            .createdDatetime(LocalDate.now(clock))
+            .createdDatetime(LocalDateTime.now(clock))
             .build();
     }
 
@@ -171,7 +171,7 @@ public abstract class AbstractBaisFileProcessorService {
             .fileName(fileName)
             .checksum(fileChecksum)
             .status(Status.FAILED)
-            .createdDatetime(LocalDate.now(clock))
+            .createdDatetime(LocalDateTime.now(clock))
             .errors(errorJson(failureMessage))
             .build();
     }

@@ -9,9 +9,9 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import java.time.LocalDate;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -75,7 +75,7 @@ public class InterfaceFileEntity {
 
     @Column(nullable = false)
     @NonNull
-    private LocalDate createdDatetime;
+    private LocalDateTime createdDatetime;
 
     @Column
     @JdbcTypeCode(SqlTypes.JSON)
