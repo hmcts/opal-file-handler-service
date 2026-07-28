@@ -33,7 +33,7 @@
     Keep this suppression only for the already-fixed Netty 4.2.16.Final artifacts
     until NVD/Dependency-Check metadata catches up or a newer fixed 4.2.x release is available.
     ]]></notes>
-    <packageUrl regex="true">^pkg:maven/io\.netty/netty\-[^@]+@4\.2\.16\.Final$</packageUrl>
+    <packageUrl regex="true">^pkg:maven/io\.netty/netty\-[^@]+@4\.2\.(15|16)\.Final$</packageUrl>
     <cve>CVE-2026-44891</cve>
     <cve>CVE-2026-55831</cve>
     <cve>CVE-2026-55833</cve>
