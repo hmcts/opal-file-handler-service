@@ -224,7 +224,6 @@ public abstract class AbstractBaisFileProcessorService {
             .findAllByFileNameAndChecksumAndStatus(fileName, fileChecksum, Status.FAILED);
 
         previousFailures.forEach(previousFailure -> previousFailure.setStatus(Status.FAILED_SUPERSEDED));
-        interfaceFilesRepository.saveAll(previousFailures);
     }
 
     private String errorJson(String message) {

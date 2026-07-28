@@ -188,7 +188,6 @@ class AbstractBaisFileProcessorServiceTest {
             .isEqualTo("Blob upload failed for file 'matching-file.dat': storage said \"no\"\nretry later");
         assertThat(firstFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
         assertThat(secondFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
-        verify(interfaceFilesRepository).saveAll(List.of(firstFailure, secondFailure));
         verify(baisSftpClient, never()).deleteFile(any(), any());
     }
 
@@ -205,7 +204,6 @@ class AbstractBaisFileProcessorServiceTest {
         assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
             .isEqualTo("File 'matching-file.dat' could not be processed: invalid \"record\"");
         assertThat(previousFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
-        verify(interfaceFilesRepository).saveAll(List.of(previousFailure));
         verify(baisSftpClient, never()).deleteFile(any(), any());
         verify(transactionTemplate, times(2)).executeWithoutResult(any());
     }
@@ -221,7 +219,6 @@ class AbstractBaisFileProcessorServiceTest {
 
         assertThat(firstFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
         assertThat(secondFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
-        verify(interfaceFilesRepository).saveAll(List.of(firstFailure, secondFailure));
     }
 
     @Test
