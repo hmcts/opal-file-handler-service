@@ -112,6 +112,14 @@ opal:
         algorithm: ${OPAL_COMMON_CONTENT_DIGEST_RESPONSE_ALGORITHM:SHA-512}
       supported-algorithms:
         sha-512: SHA-512
+  file-handler-service:
+    file-store:
+      connection-string: ${AZURE_STORAGE_CONNECTION_STRING:UseDevelopmentStorage=true}
+    sftp:
+      bais:
+        host: ${BAIS_SFTP_CONNECTION_HOST:localhost}
+        port: ${BAIS_SFTP_CONNECTION_PORT:2222}
+        private-key: ${BAIS_SFTP_PRIVATE_KEY:}
 
 logging:
   level:
