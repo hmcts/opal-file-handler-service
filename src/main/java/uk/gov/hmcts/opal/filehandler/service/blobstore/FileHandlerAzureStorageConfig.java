@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 public class FileHandlerAzureStorageConfig {
 
     @Getter
-    @Value("${opal.file-store.connection-string}")
+    @Value("${opal.file-handler-service.file-store.connection-string}")
     private String connectionString;
 
     @Bean
