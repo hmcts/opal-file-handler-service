@@ -170,7 +170,7 @@ tasks.register('smoke', Test) {
   include '**/SmokeTestRunner.class'
 }
 
-tasks.register('printVersionInit') {
+tasks.register('printProjectVersion') {
   description = "Prints the project version for Jenkins init-script metadata generation"
   group = "Help"
   doLast {
