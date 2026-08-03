@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
+import uk.gov.hmcts.opal.filehandler.entity.Type;
 
 @Repository
 public interface InterfaceFilesRepository extends JpaRepository<InterfaceFileEntity, Long>,
@@ -15,6 +16,22 @@ public interface InterfaceFilesRepository extends JpaRepository<InterfaceFileEnt
     Optional<InterfaceFileEntity> findByFileNameAndChecksumAndStatus(String fileName, String checksum, Status status);
 
     List<InterfaceFileEntity> findAllByFileNameAndChecksumAndStatus(
+        String fileName,
+        String checksum,
+        Status status
+    );
+
+    Optional<InterfaceFileEntity> findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
+        Long relatedInterfaceFileId,
+        Type type,
+        String fileName,
+        String checksum,
+        Status status
+    );
+
+    List<InterfaceFileEntity> findAllByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
+        Long relatedInterfaceFileId,
+        Type type,
         String fileName,
         String checksum,
         Status status
