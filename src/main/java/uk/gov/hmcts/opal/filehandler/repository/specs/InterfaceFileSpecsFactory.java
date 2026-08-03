@@ -34,7 +34,7 @@ public class InterfaceFileSpecsFactory {
             specs.add(equalsStatus(searchDto.getStatus()));
         }
         if (searchDto.getFromDate() != null) {
-            specs.add(fromDate(searchDto.getToDate()));
+            specs.add(fromDate(searchDto.getFromDate()));
         }
         if (searchDto.getToDate() != null) {
             specs.add(toDate(searchDto.getToDate()));
