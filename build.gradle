@@ -224,9 +224,9 @@ dependencyManagement {
 }
 dependencies {
   //OpenAPI
-  openapiImplementation "io.swagger.parser.v3:swagger-parser:2.1.45"
-  openapiImplementation "io.swagger.core.v3:swagger-models:2.2.52"
-  openapiImplementation "io.swagger.core.v3:swagger-core:2.2.52"
+  openapiImplementation "io.swagger.parser.v3:swagger-parser:2.1.46"
+  openapiImplementation "io.swagger.core.v3:swagger-models:2.2.53"
+  openapiImplementation "io.swagger.core.v3:swagger-core:2.2.53"
   openapiImplementation "tools.jackson.dataformat:jackson-dataformat-yaml"
   //HMCTS
   implementation 'uk.gov.hmcts:opal-common-lib:0.3.27'
@@ -234,7 +234,7 @@ dependencies {
   testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.15.0'
 
   //Spring Boot
-  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3'
+  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
 
   implementation 'org.springframework.boot:spring-boot-flyway'
   implementation "org.springframework.boot:spring-boot-starter-web"
