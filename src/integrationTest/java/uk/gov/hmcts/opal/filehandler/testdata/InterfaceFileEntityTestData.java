@@ -1,6 +1,9 @@
 package uk.gov.hmcts.opal.filehandler.testdata;
 
-import java.util.Date;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.TimeZone;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -17,6 +20,7 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 public class InterfaceFileEntityTestData {
 
     private final InterfaceFilesRepository repository;
+    private final Clock clock;
 
     public InterfaceFileEntity getTypicalInterfaceFile(long id, String fileName) {
         return InterfaceFileEntity.builder()
@@ -27,7 +31,7 @@ public class InterfaceFileEntityTestData {
             .opalDomain(Domain.FINES)
             .fileName(fileName)
             .status(Status.INGESTED)
-            .createdDatetime(new Date())
+            .createdDatetime(LocalDateTime.now(clock))
             .build();
     }
 
@@ -52,7 +56,8 @@ public class InterfaceFileEntityTestData {
         interfaceFile.setFilestoreUuid(UUID.fromString("12345678-1234-1234-1234-123456789abc"));
         interfaceFile.setChecksum("1234567890abcdef1234567890abcdef");
         interfaceFile.setStatus(Status.SUCCESS);
-        interfaceFile.setCreatedDatetime(new Date(1753279200000L));
+        interfaceFile.setCreatedDatetime(LocalDateTime.ofInstant(Instant.ofEpochMilli(1753279200000L),
+            TimeZone.getDefault().toZoneId()));
         interfaceFile.setErrors("[{\"errorCode\": \"E001\", \"errorMessage\": \"Sample error message\"}]");
         interfaceFile.setBusinessUnitCode(new String[] {"AB01", "CD02"});
         interfaceFile.setPaymentType(PaymentType.CHEQUE);
