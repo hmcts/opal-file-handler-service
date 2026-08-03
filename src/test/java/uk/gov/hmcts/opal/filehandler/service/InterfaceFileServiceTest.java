@@ -27,9 +27,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
-import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
-import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfig;
@@ -81,12 +79,12 @@ class InterfaceFileServiceTest {
 
     void withPermissions() {
         securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-        when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
+        // when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
     }
 
     void withoutPermissions() {
         securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-        when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(false);
+        // when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(false);
     }
 
     @AfterEach
@@ -130,6 +128,9 @@ class InterfaceFileServiceTest {
         verify(capsConfig).getContainerName();
     }
 
+    /*
+    TODO: This test is commented out due to the AC for permissions check being removed from PO-3948.
+    It will be re-added as part of PO-8686
     @Test
     void getInterfaceFileContent_missingPermissionsThrowsError() {
         withoutPermissions();
@@ -140,6 +141,7 @@ class InterfaceFileServiceTest {
         );
         assertEquals("[ViewInterfacesFile] permission(s) are not enabled for the user.", e.getMessage());
     }
+    */
 
     @Test
     void getInterfaceFileContent_EntityNotFoundThrowsError() {

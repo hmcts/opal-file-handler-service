@@ -8,8 +8,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
-import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
-import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
@@ -32,7 +30,8 @@ public class InterfaceFileService {
     }
 
     public InputStream getInterfaceFilesContent(Long id) {
-        PermissionUtil.checkPermission(FileHandlerPermission.ViewInterfacesFile);
+        // TODO: permission check is removed from this api, to be re-added in PO-8686
+        // PermissionUtil.checkPermission(FileHandlerPermission.ViewInterfacesFile);
 
         InterfaceFileEntity entity = repository.findById(id)
             .orElseThrow(

@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.support;
 
 import com.redis.testcontainers.RedisContainer;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,9 +46,8 @@ public class TestContainerConfig {
 
         AZURITE_CONTAINER = new GenericContainer<>(DockerImageName.parse(DEFAULT_AZURITE_IMAGE))
             .withCommand(
-                "azurite-blob --blobHost 0.0.0.0 --blobPort " + AZURITE_BLOB_PORT + " --skipApiVersionCheck");
-        AZURITE_CONTAINER.setPortBindings(List.of(AZURITE_BLOB_PORT + ":" + AZURITE_BLOB_PORT));
-
+                "azurite-blob --blobHost 0.0.0.0 --blobPort " + AZURITE_BLOB_PORT + " --skipApiVersionCheck")
+            .withExposedPorts(AZURITE_BLOB_PORT);
         AZURITE_CONTAINER.start();
     }
 

@@ -228,6 +228,9 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             assertBlobStorageUnchanged();
         }
 
+        /*
+        TODO: This test was removed due to the AC for permissions check being removed from PO-3948.
+        This requirement will be re-added as part of PO-8686
         @Test
         @DisplayName("OPAL: GET Interface File Content - Returns status 403 when permissions are missing")
         @JiraStory("PO-3948")
@@ -248,7 +251,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             res.andExpect(status().isForbidden());
 
             assertBlobStorageUnchanged();
-        }
+        } */
     }
 
     @TestPropertySource(properties = {
