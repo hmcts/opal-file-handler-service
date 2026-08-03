@@ -67,20 +67,21 @@ public class InterfaceFilesServiceTest {
         }
     }
 
-    // Removed pending https://tools.hmcts.net/jira/browse/PO-8686
-//    @Test
-//    public void getInterfaceFiles_unauthorisedUser_shouldThrowPermissionsException() {
-//        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class)) {
-//            when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(false);
-//            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-//
-//            assertThrows(PermissionNotAllowedException.class, () ->
-//                service.searchInterfaceFiles(new SearchInterfaceFilesDto())
-//            );
-//            verifyNoInteractions(specsFactory);
-//            verifyNoInteractions(repository);
-//            verifyNoInteractions(mapper);
-//        }
-//    }
+    /* Removed pending https://tools.hmcts.net/jira/browse/PO-8686
+    @Test
+    public void getInterfaceFiles_unauthorisedUser_shouldThrowPermissionsException() {
+        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class)) {
+            when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(false);
+            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
+
+            assertThrows(PermissionNotAllowedException.class, () ->
+                service.searchInterfaceFiles(new SearchInterfaceFilesDto())
+            );
+            verifyNoInteractions(specsFactory);
+            verifyNoInteractions(repository);
+            verifyNoInteractions(mapper);
+        }
+    }
+    */
 
 }
