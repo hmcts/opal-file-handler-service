@@ -2,11 +2,10 @@ package uk.gov.hmcts.opal.filehandler.service;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.time.LocalDateTime;
-import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -16,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.DigestUtils;
+import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -30,15 +30,19 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 @RequiredArgsConstructor
 public abstract class AbstractBaisFileProcessorService {
 
-    private final Clock clock;
+    protected final Clock clock;
     private final FeatureFlagUtil featureFlagUtil;
     private final BaisSftpClient baisSftpClient;
-    private final InterfaceFileBlobStoreService interfaceFileBlobStoreService;
-    private final InterfaceFilesRepository interfaceFilesRepository;
+    protected final InterfaceFileBlobStoreService interfaceFileBlobStoreService;
+    protected final InterfaceFilesRepository interfaceFilesRepository;
     private final TransactionTemplate transactionTemplate;
-    private final ObjectMapper objectMapper;
+    protected final ObjectMapper objectMapper;
 
-    protected abstract void processFile(InterfaceFileEntity fileEntity, InputStream inputStream);
+    protected abstract void processFile(
+        BaisFileProcessorConfiguration config,
+        InterfaceFileEntity fileEntity,
+        InputStream inputStream
+    );
 
     public void run(BaisFileProcessorConfiguration config) {
         featureFlagUtil.requireEnabledFeature(FeatureFlags.RELEASE_1C_BANKING_INTERFACES);
@@ -109,7 +113,7 @@ public abstract class AbstractBaisFileProcessorService {
             entity = saveInitialFile(entity);
 
             if (entity.getStatus().equals(Status.INGESTED)) {
-                processIngestedFile(entity, new ByteArrayInputStream(downloadedBytes));
+                processIngestedFile(config, entity, new ByteArrayInputStream(downloadedBytes));
             }
 
             deleteRemoteFile(config, fileName, entity);
@@ -184,9 +188,13 @@ public abstract class AbstractBaisFileProcessorService {
         });
     }
 
-    private void processIngestedFile(InterfaceFileEntity entity, InputStream inputStream) {
+    private void processIngestedFile(
+        BaisFileProcessorConfiguration config,
+        InterfaceFileEntity entity,
+        InputStream inputStream
+    ) {
         try {
-            transactionTemplate.executeWithoutResult(transactionStatus -> processFile(entity, inputStream));
+            transactionTemplate.executeWithoutResult(transactionStatus -> processFile(config, entity, inputStream));
         } catch (RuntimeException e) {
             transactionTemplate.executeWithoutResult(transactionStatus -> {
                 entity.setStatus(Status.FAILED);
@@ -226,12 +234,12 @@ public abstract class AbstractBaisFileProcessorService {
         previousFailures.forEach(previousFailure -> previousFailure.setStatus(Status.FAILED_SUPERSEDED));
     }
 
-    private String errorJson(String message) {
+    protected String errorJson(String message) {
         return objectMapper.createObjectNode().put("message", message).toString();
     }
 
     @SuppressWarnings("java:S4790") // Used for checksum, not in a sensitive context
-    private static String calculateChecksum(InputStream stream) throws IOException {
+    protected static String calculateChecksum(InputStream stream) throws IOException {
         return DigestUtils.md5DigestAsHex(stream);
     }
 }

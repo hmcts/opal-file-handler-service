@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
@@ -25,9 +26,5 @@ public class InterfaceFileCommonDataExtract {
     private List<Transaction> transactions;
     private String dwpCourtCode;
 
-    public enum PaymentType {
-        CASH,
-        CHEQUE
-    }
 }
 
