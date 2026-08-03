@@ -169,14 +169,6 @@ tasks.register('smoke', Test) {
   include '**/SmokeTestRunner.class'
 }
 
-tasks.register('printVersionInit') {
-  description = "Prints the project version for Jenkins init-script metadata generation"
-  group = "Help"
-  doLast {
-    println project.version
-  }
-}
-
 jacocoTestReport {
   executionData(test, integration)
   reports {
