@@ -2,7 +2,6 @@ package uk.gov.hmcts.opal.filehandler.repository.specs;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
@@ -70,14 +69,12 @@ public class InterfaceFileSpecsFactory {
     }
 
     private static Specification<InterfaceFileEntity> fromDate(LocalDateTime fromDate) {
-        Date date = java.sql.Timestamp.valueOf(fromDate);
         return (root, query, builder)
-            -> builder.greaterThanOrEqualTo(root.get(InterfaceFileEntity_.createdDatetime), date);
+            -> builder.greaterThanOrEqualTo(root.get(InterfaceFileEntity_.createdDatetime), fromDate);
     }
 
     private static Specification<InterfaceFileEntity> toDate(LocalDateTime toDate) {
-        Date date = java.sql.Timestamp.valueOf(toDate);
         return (root, query, builder)
-            -> builder.lessThanOrEqualTo(root.get(InterfaceFileEntity_.createdDatetime), date);
+            -> builder.lessThanOrEqualTo(root.get(InterfaceFileEntity_.createdDatetime), toDate);
     }
 }
