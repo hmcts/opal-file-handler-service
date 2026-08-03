@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 
 class InterfaceFileCommonDataExtractTest {
 
@@ -51,7 +52,7 @@ class InterfaceFileCommonDataExtractTest {
 
         assertThat(extract.getFileName()).isEqualTo("a121_00350005_300000.dat");
         assertThat(extract.getDestinationDetails().getBankDetails().getAccountNumber()).isEqualTo("27048527");
-        assertThat(extract.getPaymentType()).isEqualTo(InterfaceFileCommonDataExtract.PaymentType.CASH);
+        assertThat(extract.getPaymentType()).isEqualTo(PaymentType.CASH);
         assertThat(extract.getTransactions()).hasSize(1);
         assertThat(extract.getTransactions().getFirst().getOriginatorDetails().getAccountReference())
             .isEqualTo("08000066I");
@@ -62,7 +63,7 @@ class InterfaceFileCommonDataExtractTest {
         return InterfaceFileCommonDataExtract.builder()
             .fileName("a121_00350005_300000.dat")
             .destinationDetails(DestinationDetailsTest.getTypicalData())
-            .paymentType(InterfaceFileCommonDataExtract.PaymentType.CASH)
+            .paymentType(PaymentType.CASH)
             .transactions(List.of(TransactionTest.getTypicalData()))
             .dwpCourtCode("AB01")
             .build();
