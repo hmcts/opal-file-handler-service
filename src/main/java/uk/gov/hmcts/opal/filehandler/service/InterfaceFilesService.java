@@ -20,13 +20,15 @@ import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 @RequiredArgsConstructor
 @Service
 public class InterfaceFilesService {
+
     private final InterfaceFilesRepository repository;
     private final InterfaceFileSpecsFactory specsFactory;
     private final InterfaceFileMapper mapper;
 
     @Transactional(readOnly = true)
     public List<InterfaceFileObjectInterfaceFile> searchInterfaceFiles(SearchInterfaceFilesDto request) {
-        checkPermissions();
+        // Permissions to be dealt with by: https://tools.hmcts.net/jira/browse/PO-8686
+        // checkPermissions();
 
         List<InterfaceFileEntity> interfacesFiles = repository.findAll(
             specsFactory.createSearchSpecs(request),

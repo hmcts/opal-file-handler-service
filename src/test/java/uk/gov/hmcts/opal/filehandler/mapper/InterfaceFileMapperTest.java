@@ -4,10 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.time.ZoneId;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
+import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
@@ -23,12 +21,13 @@ import uk.gov.hmcts.opal.generated.model.InterfaceFileTypeEnumInterfaceFile;
 import uk.gov.hmcts.opal.generated.model.StatusEnumInterfaceFile;
 
 public class InterfaceFileMapperTest {
+
     private final InterfaceFileMapper mapper = Mappers.getMapper(InterfaceFileMapper.class);
 
     @Test
     void toInterfaceFileObject_allFields() {
         UUID fileStoreUuid = UUID.randomUUID();
-        Date created = new GregorianCalendar(2026, Calendar.FEBRUARY, 1).getTime();
+        LocalDateTime created = LocalDateTime.of(2026, Month.FEBRUARY, 1, 0, 0);
         InterfaceFileEntity entity = InterfaceFileEntity.builder()
             .interfaceFileId(200L)
             .source(Interface.CAPS_REPORT)
@@ -56,16 +55,14 @@ public class InterfaceFileMapperTest {
             () -> assertEquals(fileStoreUuid, mappedObject.getFilestoreUuid()),
             () -> assertEquals("A123", mappedObject.getChecksum()),
             () -> assertEquals("XXXX-ERROR-XXXX", mappedObject.getErrors()),
-            () -> assertEquals(
-                created.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(), mappedObject.getCreatedDatetime()
-            )
+            () -> assertEquals(created, mappedObject.getCreatedDatetime())
         );
     }
 
     @Test
     void toInterfaceFileObject_allMandatoryFields() {
         UUID fileStoreUuid = UUID.randomUUID();
-        Date created = new GregorianCalendar(2026, Calendar.MARCH, 10).getTime();
+        LocalDateTime created = LocalDateTime.of(2026, Month.MARCH, 10, 0, 0);
         InterfaceFileEntity entity = InterfaceFileEntity.builder()
             .interfaceFileId(300L)
             .source(Interface.BTECKOH_REPORT)
@@ -90,9 +87,7 @@ public class InterfaceFileMapperTest {
             () -> assertNull(mappedObject.getFilestoreUuid()),
             () -> assertNull(mappedObject.getChecksum()),
             () -> assertNull(mappedObject.getErrors()),
-            () -> assertEquals(
-                created.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(), mappedObject.getCreatedDatetime()
-            )
+            () -> assertEquals(created, mappedObject.getCreatedDatetime())
         );
     }
 }

@@ -1,10 +1,8 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -19,9 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.domain.Specification;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
-import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
-import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
@@ -53,7 +49,8 @@ public class InterfaceFilesServiceTest {
     @Test
     public void getInterfaceFiles_shouldOrchestrateCallsCorrectly() {
         try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class)) {
-            when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
+            // Removed pending https://tools.hmcts.net/jira/browse/PO-8686
+            //when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
             securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
             List<InterfaceFileEntity> interfaceFiles = List.of(
                 mock(InterfaceFileEntity.class)
@@ -70,19 +67,20 @@ public class InterfaceFilesServiceTest {
         }
     }
 
-    @Test
-    public void getInterfaceFiles_unauthorisedUser_shouldThrowPermissionsException() {
-        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class)) {
-            when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(false);
-            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-
-            assertThrows(PermissionNotAllowedException.class, () ->
-                service.searchInterfaceFiles(new SearchInterfaceFilesDto())
-            );
-            verifyNoInteractions(specsFactory);
-            verifyNoInteractions(repository);
-            verifyNoInteractions(mapper);
-        }
-    }
+    // Removed pending https://tools.hmcts.net/jira/browse/PO-8686
+//    @Test
+//    public void getInterfaceFiles_unauthorisedUser_shouldThrowPermissionsException() {
+//        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class)) {
+//            when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(false);
+//            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
+//
+//            assertThrows(PermissionNotAllowedException.class, () ->
+//                service.searchInterfaceFiles(new SearchInterfaceFilesDto())
+//            );
+//            verifyNoInteractions(specsFactory);
+//            verifyNoInteractions(repository);
+//            verifyNoInteractions(mapper);
+//        }
+//    }
 
 }
