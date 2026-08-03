@@ -33,7 +33,7 @@
     Keep this suppression only for the already-fixed Netty 4.2.16.Final artifacts
     until NVD/Dependency-Check metadata catches up or a newer fixed 4.2.x release is available.
     ]]></notes>
-    <packageUrl regex="true">^pkg:maven/io\.netty/netty\-[^@]+@4\.2\.(15|16)\.Final$</packageUrl>
+    <packageUrl regex="true">^pkg:maven/io\.netty/netty\-[^@]+@4\.2\.16\.Final$</packageUrl>
     <cve>CVE-2026-44891</cve>
     <cve>CVE-2026-55831</cve>
     <cve>CVE-2026-55833</cve>
@@ -46,6 +46,7 @@
     azure-keyvault-keys; it uses Azure Blob Storage via BlobServiceClientBuilder,
     BlobContainerClient, and BlobClient. Keep this suppression only for false-positive
     generic Azure SDK mappings against the Blob Storage dependency chain used by this service.
+    This suppression copied from opal-fines-service.
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/com\.azure/(azure\-core@1\.58\.(0|1)|azure\-core\-http\-netty@1\.16\.(4|5)|azure\-json@1\.5\.1|azure\-storage\-blob@12\.(34|35)\.0|azure\-storage\-common@12\.(33|34)\.0|azure\-storage\-internal\-avro@12\.(19|20)\.0|azure\-xml@1\.2\.1)$</packageUrl>
     <cve>CVE-2026-33117</cve>

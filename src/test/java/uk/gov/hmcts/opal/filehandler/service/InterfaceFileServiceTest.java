@@ -13,8 +13,7 @@ import static org.mockito.Mockito.when;
 import com.azure.core.util.BinaryData;
 import jakarta.persistence.EntityNotFoundException;
 import java.io.InputStream;
-import java.time.Instant;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,7 +28,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfig;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfig;
+import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -60,7 +59,7 @@ class InterfaceFileServiceTest {
     private OpalJwtAuthenticationToken authToken;
 
     @Mock
-    private Map<String, BaisFileProcessorConfig> configs;
+    private Map<String, BaisFileProcessorConfiguration> configs;
 
     @InjectMocks
     private InterfaceFileService interfaceFileService;
@@ -221,7 +220,7 @@ class InterfaceFileServiceTest {
             .opalDomain(Domain.FILE_HANDLER)
             .fileName("fileName")
             .status(status)
-            .createdDatetime(Date.from(Instant.now()))
+            .createdDatetime(LocalDateTime.now())
             .build();
     }
 }

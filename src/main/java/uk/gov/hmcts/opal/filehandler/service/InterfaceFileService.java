@@ -7,8 +7,8 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.exception.InvalidInterfaceFileStatusException;
@@ -23,9 +23,9 @@ public class InterfaceFileService {
     private InterfaceFileBlobStoreService blobStoreService;
 
     @Autowired
-    private Map<String, BaisFileProcessorConfig> configs;
+    private Map<String, BaisFileProcessorConfiguration> configs;
 
-    private BaisFileProcessorConfig getConfig(Interface source) {
+    private BaisFileProcessorConfiguration getConfig(Interface source) {
         return configs.get(source.getConfigComponentName());
     }
 
@@ -45,7 +45,7 @@ public class InterfaceFileService {
                 id, entity.getStatus()));
         }
 
-        BaisFileProcessorConfig config = getConfig(entity.getSource());
+        BaisFileProcessorConfiguration config = getConfig(entity.getSource());
         String containerName = config.getContainerName();
 
         BinaryData file = blobStoreService.fetchInterfaceFile(id, entity.getFilestoreUuid(), containerName);
