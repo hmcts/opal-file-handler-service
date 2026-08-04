@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
@@ -30,10 +31,9 @@ public class InterfaceFilesService {
         // Permissions to be dealt with by: https://tools.hmcts.net/jira/browse/PO-8686
         // checkPermissions();
 
-        List<InterfaceFileEntity> interfacesFiles = repository.findAll(
-            specsFactory.createSearchSpecs(request),
-            Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime))
-        );
+        Specification<InterfaceFileEntity> specs = specsFactory.createSearchSpecs(request);
+        Sort sort = Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime))
+        List<InterfaceFileEntity> interfacesFiles = repository.findAll(specs, sort);
         return mapper.toInterfaceFileObjects(interfacesFiles);
     }
 

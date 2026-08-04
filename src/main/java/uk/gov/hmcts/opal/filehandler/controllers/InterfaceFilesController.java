@@ -28,6 +28,7 @@ import uk.gov.hmcts.opal.generated.model.StatusEnumInterfaceFile;
 @RequiredArgsConstructor
 @Tag(name = "Interface Files Controller")
 public class InterfaceFilesController implements InterfaceFilesApi {
+
     private final SearchInterfaceFilesDtoMapper searchMapper;
     private final InterfaceFilesService service;
 
