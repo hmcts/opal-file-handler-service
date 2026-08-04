@@ -10,5 +10,4 @@ public class BlobNotFoundException extends ResponseStatusException {
     public BlobNotFoundException(String detailedReason) {
         super(HttpStatus.INTERNAL_SERVER_ERROR, detailedReason);
     }
-
 }

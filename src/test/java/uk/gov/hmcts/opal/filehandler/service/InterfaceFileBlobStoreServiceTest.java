@@ -25,6 +25,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
+import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 
 @ExtendWith(MockitoExtension.class)
 class InterfaceFileBlobStoreServiceTest {

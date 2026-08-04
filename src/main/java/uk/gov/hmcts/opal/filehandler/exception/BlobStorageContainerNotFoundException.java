@@ -10,5 +10,4 @@ public class BlobStorageContainerNotFoundException extends ResponseStatusExcepti
     public BlobStorageContainerNotFoundException(String detailedReason) {
         super(HttpStatus.INTERNAL_SERVER_ERROR, detailedReason);
     }
-
 }
