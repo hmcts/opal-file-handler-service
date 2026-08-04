@@ -11,7 +11,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.azure.core.util.BinaryData;
-import jakarta.persistence.EntityNotFoundException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -36,6 +35,7 @@ import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.exception.BlobNotFoundException;
+import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.InvalidInterfaceFileStatusException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
@@ -151,10 +151,10 @@ class InterfaceFileServiceTest {
         );
 
         Exception e = assertThrows(
-            EntityNotFoundException.class,
+            InterfaceFileNotFoundException.class,
             () -> interfaceFileService.getInterfaceFilesContent(1L)
         );
-        assertEquals("Interface file with id 1 could not be located.", e.getMessage());
+        assertEquals("404 NOT_FOUND \"Interface file with id 1 could not be located.\"", e.getMessage());
 
         verify(repository).findById(1L);
         verifyNoMoreInteractions(repository);

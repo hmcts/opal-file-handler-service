@@ -171,7 +171,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             );
 
             res.andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.reason")
+                .andExpect(jsonPath("$.detail")
                     .value("Interface file with id 1000 could not be located."));
 
             assertBlobStorageUnchanged();
@@ -256,7 +256,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
     @TestPropertySource(properties = {
         "launchdarkly.enabled=false",
-        "launchdarkly.default-flag-values.release-1c-auto-enforcement-config=false"
+        "launchdarkly.default-flag-values.release-1c-banking-interfaces=false"
     })
     @Nested
     class FeatureOff {

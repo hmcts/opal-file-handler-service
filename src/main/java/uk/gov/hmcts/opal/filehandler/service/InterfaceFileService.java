@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import com.azure.core.util.BinaryData;
-import jakarta.persistence.EntityNotFoundException;
 import java.io.InputStream;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -12,6 +11,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.exception.InvalidInterfaceFileStatusException;
+import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 
@@ -35,7 +35,9 @@ public class InterfaceFileService {
 
         InterfaceFileEntity entity = repository.findById(id)
             .orElseThrow(
-                () -> new EntityNotFoundException(String.format("Interface file with id %d could not be located.", id))
+                () -> new InterfaceFileNotFoundException(
+                    String.format("Interface file with id %d could not be located.", id)
+                )
             );
 
         if (entity.getStatus() != Status.SUCCESS) {
