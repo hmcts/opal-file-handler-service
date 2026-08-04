@@ -69,8 +69,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             ResultActions result = mockMvc.perform(
                 get(URL)
                     .with(userStateStub.getAuthenticaitonRequestPostProcessor())
-                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
-            );
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken()));
 
             String body = result.andReturn().getResponse().getContentAsString();
             result.andExpect(status().isOk())
@@ -80,9 +79,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             });
             List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
             UUID failedFilestoreUuid = UUID.fromString("a5695e1e-bd9f-4a5b-ae15-9deeed2d1384");
-            LocalDateTime failedFileCreatedDate = LocalDateTime.of(
-                2026, 1, 4, 12, 30, 0
-            );
+            LocalDateTime failedFileCreatedDate = LocalDateTime.of(2026, 1, 4, 12, 30, 0);
             // Just picking one row we know is there and checking that all fields are correct
             // THe other tests will test the filtering on the endpoint
             InterfaceFileObjectInterfaceFile failedFile = interfaceFiles.stream()
@@ -101,8 +98,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
                 () -> assertEquals("2500-Payments-Report-Daily.xlsx", failedFile.getFileName()),
                 () -> assertEquals("{\"error\":\"malformed xlsx\"}", failedFile.getErrors()),
                 () -> assertEquals(failedFileCreatedDate, failedFile.getCreatedDatetime()),
-                () -> assertNull(failedFile.getChecksum())
-            );
+                () -> assertNull(failedFile.getChecksum()));
         }
 
         @Test
@@ -116,8 +112,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
                     .with(userStateStub.getAuthenticaitonRequestPostProcessor())
                     .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
                     .param("source", InterfaceFileEnumInterfaceFile.CAPS_REPORT.getValue())
-                    .param("status", StatusEnumInterfaceFile.SUCCESS.getValue())
-            );
+                    .param("status", StatusEnumInterfaceFile.SUCCESS.getValue()));
 
             String body = result.andReturn().getResponse().getContentAsString();
             result.andExpect(status().isOk())
@@ -129,8 +124,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             assertThat(response.getInterfaceFiles()).hasSizeGreaterThanOrEqualTo(1);
             assertThat(response.getInterfaceFiles()).allMatch(
                 i -> i.getStatus() == StatusEnumInterfaceFile.SUCCESS
-                    && i.getSource() == InterfaceFileEnumInterfaceFile.CAPS_REPORT
-            );
+                    && i.getSource() == InterfaceFileEnumInterfaceFile.CAPS_REPORT);
         }
 
         @Test
@@ -144,8 +138,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
                     .with(userStateStub.getAuthenticaitonRequestPostProcessor())
                     .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
                     .param("target", InterfaceFileEnumInterfaceFile.OPAL.getValue())
-                    .param("type", InterfaceFileTypeEnumInterfaceFile.SOURCE.getValue())
-            );
+                    .param("type", InterfaceFileTypeEnumInterfaceFile.SOURCE.getValue()));
 
             String body = result.andReturn().getResponse().getContentAsString();
             result.andExpect(status().isOk())
@@ -171,8 +164,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
                 get(URL)
                     .with(userStateStub.getAuthenticaitonRequestPostProcessor())
                     .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
-                    .param("domain", DomainEnumTypes.FINES.getValue())
-            );
+                    .param("domain", DomainEnumTypes.FINES.getValue()));
 
             String body = result.andReturn().getResponse().getContentAsString();
             result.andExpect(status().isOk())
@@ -199,8 +191,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
                     .with(userStateStub.getAuthenticaitonRequestPostProcessor())
                     .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
                     .param("from_date", fromDate.toString())
-                    .param("to_date", toDate.toString())
-            );
+                    .param("to_date", toDate.toString()));
 
             String body = result.andReturn().getResponse().getContentAsString();
             result.andExpect(status().isOk())
@@ -251,8 +242,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             ResultActions result = mockMvc.perform(
                 get(URL)
                     .with(userStateStub.getAuthenticaitonRequestPostProcessor())
-                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
-            );
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken()));
 
             result.andExpect(status().isNotFound());
         }
