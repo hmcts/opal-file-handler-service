@@ -62,7 +62,7 @@ class InterfaceFileServiceTest {
     private Map<String, BaisFileProcessorConfiguration> configs;
 
     @InjectMocks
-    private InterfaceFileService interfaceFileService;
+    private InterfaceFilesService interfaceFileService;
 
     private UUID uuid;
 
