@@ -3,9 +3,12 @@ package uk.gov.hmcts.opal.filehandler.controllers;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.Collections;
@@ -15,7 +18,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import uk.gov.hmcts.opal.filehandler.mapper.SearchInterfaceFilesDtoMapper;
 import uk.gov.hmcts.opal.filehandler.service.InterfaceFilesService;
@@ -86,5 +91,17 @@ public class InterfaceFilesControllerTest {
             () -> assertSame(interfaceFiles, response.getBody().getInterfaceFiles()),
             () -> assertEquals(0, response.getBody().getNumberOfResults())
         );
+    }
+
+    @Test
+    void getInterfaceFileContent_returns200() {
+        when(service.getInterfaceFilesContent(eq(1L))).thenReturn(
+            mock(InputStream.class)
+        );
+
+        ResponseEntity<Resource> response = controller.getInterfaceFileContent(1L);
+
+        verify(service).getInterfaceFilesContent(eq(1L));
+        assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
     }
 }
