@@ -32,7 +32,7 @@ public class InterfaceFilesService {
         // checkPermissions();
 
         Specification<InterfaceFileEntity> specs = specsFactory.createSearchSpecs(request);
-        Sort sort = Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime))
+        Sort sort = Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime));
         List<InterfaceFileEntity> interfacesFiles = repository.findAll(specs, sort);
         return mapper.toInterfaceFileObjects(interfacesFiles);
     }
