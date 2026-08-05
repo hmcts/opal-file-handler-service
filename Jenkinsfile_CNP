@@ -213,6 +213,21 @@ def configureFunctionalTestBlobStorage(String valuesFile) {
     steps.echo "Configured functional-test blob storage account ${storageAccount}, container ${container}"
 }
 
+def configureFunctionalTestUserService(String valuesFile) {
+    Map devValues = steps.readYaml(file: valuesFile)
+    Map javaValues = devValues.java as Map
+    Map javaEnvironment = javaValues.environment as Map
+    String configuredUrl = javaEnvironment.OPAL_USER_SERVICE_API_URL?.toString()?.trim()
+    String userServiceUrl = configuredUrl?.replaceAll('/+$', '')
+
+    if (!userServiceUrl) {
+        throw new RuntimeException("Missing OPAL_USER_SERVICE_API_URL in ${valuesFile}")
+    }
+
+    env.OPAL_USER_SERVICE_API_URL = userServiceUrl
+    steps.echo "Configured functional-test user service ${userServiceUrl}"
+}
+
 def configureFunctionalTestDatabase(String valuesFile, String releaseName, String namespace) {
     Map devValues = steps.readYaml(file: valuesFile)
     Map globalValues = devValues.global as Map
@@ -309,6 +324,7 @@ withPipeline(type, product, component) {
             String releaseName = "opal-${component}-pr-${env.CHANGE_ID}"
             setupAzure(blobStorageAccountNamePrefix, blobStorageResourceGroup, blobStorageSftpUsers)
             configureFunctionalTestBlobStorage(devValuesFile)
+            configureFunctionalTestUserService(devValuesFile)
             configureFunctionalTestDatabase(
                     devValuesFile,
                     releaseName,
