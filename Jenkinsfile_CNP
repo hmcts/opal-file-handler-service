@@ -191,7 +191,7 @@ def configureFunctionalTestBlobStorage(String valuesFile) {
                         + "--query primaryEndpoints.blob --output tsv"
         )
         String accountKey = az(
-                "storage account keys list --name '${storageAccount}' "
+                "storage account keys list --account-name '${storageAccount}' "
                         + "--resource-group '${resourceGroup}' --only-show-errors "
                         + "--query '[0].value' --output tsv"
         )
