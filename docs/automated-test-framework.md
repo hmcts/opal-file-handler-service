@@ -81,6 +81,15 @@ The supplied file-handler design material and the current codebase point to a sm
 Both tasks also retain their JUnit XML and standard Gradle HTML reports under `build/` for CI
 publication and diagnostics.
 
+## Authentication dependency
+
+Authenticated scenarios obtain bearer tokens from the user-service test-support endpoint. Local
+runs default to `http://localhost:4555`; `OPAL_USER_SERVICE_API_URL` and then
+`DEV_OPAL_USER_SERVICE_API_URL` override that default. For pull-request deployments, Jenkins reads
+`java.environment.OPAL_USER_SERVICE_API_URL` from
+`charts/opal-file-handler-service/values.dev.template.yaml`, removes any trailing slash, and exports
+it to the functional-test process.
+
 ## Database-backed fixtures
 
 The interface-file content feature manages its own `interface_files` rows: local runs do so around
