@@ -87,8 +87,11 @@ The interface-file content feature creates and removes its own `interface_files`
 scenario. Local runs default to `FUNCTIONAL_TEST_DB_URL=http://localhost:5432`,
 `FUNCTIONAL_TEST_DB_USERNAME=opal-db-user`, and `FUNCTIONAL_TEST_DB_PASSWORD=opal-db-password`.
 The HTTP-style local URL is converted to `jdbc:postgresql://localhost:5432/opal-file-handler-db`
-before connecting. These values can still be overridden for deployed environments. Cleanup targets
-only the dedicated IDs reserved in the fixture SQL.
+before connecting. Explicit `FUNCTIONAL_TEST_DB_*` values still take precedence over all other
+settings. For pull-request deployments, Jenkins reads the database settings from
+`charts/opal-file-handler-service/values.dev.template.yaml`, resolves the Helm release database
+host in the `opal` namespace, and exports the corresponding `OPAL_FILE_HANDLER_DB_*` application
+variables. Cleanup targets only the dedicated IDs reserved in the fixture SQL.
 
 ## Blob-backed fixtures
 
