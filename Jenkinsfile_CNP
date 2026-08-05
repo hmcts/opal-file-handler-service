@@ -1,4 +1,6 @@
 #!groovy
+import uk.gov.hmcts.contino.Kubectl
+
 @Library("Infrastructure")
 
 def type = "java"
@@ -121,6 +123,8 @@ def blobStorageSftpUsers = [
         [container_name: "caps-report", user_name: "capsreport"]
 ]
 def devValuesFile = "charts/opal-file-handler-service/values.dev.template.yaml"
+def functionalTestDatabaseSetupScript = 'src/functionalTest/resources/db/interface-file-content/setup.sql'
+def functionalTestDatabaseCleanupScript = 'src/functionalTest/resources/db/interface-file-content/cleanup.sql'
 
 def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, List<Map<String, String>> storageSftpUsers) {
     // Keep the orchestration in Groovy and use shell only for az CLI calls.
@@ -243,6 +247,35 @@ def configureFunctionalTestDatabase(String valuesFile, String releaseName, Strin
     steps.echo "Configured functional-test database ${databaseName} on ${env.OPAL_FILE_HANDLER_DB_HOST}"
 }
 
+def executeFunctionalTestDatabaseScript(
+        String releaseName,
+        String namespace,
+        String scriptPath
+) {
+    String databasePod = "${releaseName}-postgresql-0"
+
+    if (!steps.fileExists(scriptPath)) {
+        throw new RuntimeException("Functional-test database script does not exist: ${scriptPath}")
+    }
+
+    steps.echo "Executing ${scriptPath} in database pod ${databasePod}"
+    steps.sh """
+      set -eu
+      kubectl --namespace '${namespace}' wait --for=condition=Ready \
+        'pod/${databasePod}' --timeout=120s
+
+      set +x
+      kubectl --namespace '${namespace}' exec --stdin 'pod/${databasePod}' -- \
+        env PGPASSWORD="\$OPAL_FILE_HANDLER_DB_PASSWORD" \
+        psql --set=ON_ERROR_STOP=1 \
+          --host=127.0.0.1 \
+          --port="\$OPAL_FILE_HANDLER_DB_PORT" \
+          --username="\$OPAL_FILE_HANDLER_DB_USERNAME" \
+          --dbname="\$OPAL_FILE_HANDLER_DB_NAME" \
+          --file=- < '${scriptPath}'
+    """
+}
+
 def secrets = [
         'opal-${env}': [
                 secret('bais-emulator-public-key', 'BAIS_EMULATOR_PUBLIC_KEY')
@@ -273,13 +306,20 @@ withPipeline(type, product, component) {
 
     afterSuccess('akschartsinstall') {
         onPR {
+            String releaseName = "opal-${component}-pr-${env.CHANGE_ID}"
             setupAzure(blobStorageAccountNamePrefix, blobStorageResourceGroup, blobStorageSftpUsers)
             configureFunctionalTestBlobStorage(devValuesFile)
             configureFunctionalTestDatabase(
                     devValuesFile,
-                    "opal-${component}-pr-${env.CHANGE_ID}",
+                    releaseName,
                     product
             )
+            executeFunctionalTestDatabaseScript(
+                    releaseName,
+                    product,
+                    functionalTestDatabaseSetupScript
+            )
+            env.FUNCTIONAL_TEST_DB_MANAGED_BY_PIPELINE = 'true'
         }
     }
 
@@ -288,7 +328,21 @@ withPipeline(type, product, component) {
     }
 
     afterAlways('functionalTest:dev') {
-        publishFunctionalResults()
+        try {
+            onPR {
+                withAksClient('dev', 'dev', product) {
+                    def kubectl = new Kubectl(this, 'dev', product)
+                    kubectl.login()
+                    executeFunctionalTestDatabaseScript(
+                            "opal-${component}-pr-${env.CHANGE_ID}",
+                            product,
+                            functionalTestDatabaseCleanupScript
+                    )
+                }
+            }
+        } finally {
+            publishFunctionalResults()
+        }
     }
 
     afterAlways('smoketest:dev') {

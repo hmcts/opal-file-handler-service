@@ -2,6 +2,7 @@ package uk.gov.hmcts.opal.filehandler.steps.hooks;
 
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
+import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 import uk.gov.hmcts.opal.filehandler.db.DatabaseClient;
 
 /**
@@ -13,19 +14,25 @@ public class InterfaceFileContentDataHooks {
     private static final String CLEANUP_SCRIPT = "db/interface-file-content/cleanup.sql";
 
     /**
-     * Replaces any stale test-owned rows with the fixtures required by the scenario.
+     * Replaces any stale test-owned rows with the fixtures required by a local scenario. Jenkins
+     * prepares the deployed database before the functional-test stage instead.
      */
     @Before("@InterfaceFileContentDbFixture")
     public void setUpInterfaceFileContentData() {
-        executeScript(SETUP_SCRIPT);
+        if (!TestEnvironment.isDatabaseManagedByPipeline()) {
+            executeScript(SETUP_SCRIPT);
+        }
     }
 
     /**
-     * Removes only the rows reserved for interface-file content functional tests.
+     * Removes only the rows reserved for local interface-file content functional tests. Jenkins
+     * cleans the deployed database after the functional-test stage instead.
      */
     @After("@InterfaceFileContentDbFixture")
     public void cleanUpInterfaceFileContentData() {
-        executeScript(CLEANUP_SCRIPT);
+        if (!TestEnvironment.isDatabaseManagedByPipeline()) {
+            executeScript(CLEANUP_SCRIPT);
+        }
     }
 
     private static void executeScript(String resourcePath) {
