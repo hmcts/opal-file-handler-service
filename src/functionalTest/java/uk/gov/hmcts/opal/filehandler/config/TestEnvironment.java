@@ -9,6 +9,16 @@ public final class TestEnvironment {
 
     private static final String DEFAULT_TEST_URL = "http://localhost:4075";
     private static final String DEFAULT_USER_SERVICE_URL = "http://localhost:4555";
+    private static final String DEFAULT_DATABASE_URL = "http://localhost:5432";
+    private static final String DEFAULT_DATABASE_NAME = "opal-file-handler-db";
+    private static final String DEFAULT_DATABASE_USERNAME = "opal-db-user";
+    private static final String DEFAULT_DATABASE_PASSWORD = "opal-db-password";
+    private static final String DEFAULT_BLOB_CONTAINER_NAME = "bteckoh-report";
+    private static final String DEFAULT_BLOB_ACCOUNT_NAME = "devstoreaccount1";
+    // Azurite's standard local-development account key; it is not a production secret.
+    private static final String DEFAULT_BLOB_ACCOUNT_KEY =
+        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
+    private static final String DEFAULT_BLOB_ENDPOINT = "http://127.0.0.1:10000/devstoreaccount1";
 
     private TestEnvironment() {
     }
@@ -35,30 +45,84 @@ public final class TestEnvironment {
     }
 
     /**
-     * Returns the database URL for optional functional-test database checks.
+     * Returns the database URL used by database-backed functional-test fixtures and checks.
      *
-     * @return configured functional-test database URL.
+     * @return configured functional-test database URL in PostgreSQL JDBC format.
      */
     public static String getDatabaseUrl() {
-        return getRequired("FUNCTIONAL_TEST_DB_URL");
+        return toPostgresJdbcUrl(get("FUNCTIONAL_TEST_DB_URL").orElse(DEFAULT_DATABASE_URL));
     }
 
     /**
-     * Returns the database username for optional functional-test database checks.
+     * Returns the database username used by database-backed functional-test fixtures and checks.
      *
-     * @return configured functional-test database username.
+     * @return configured functional-test database username, or the local default when none is set.
      */
     public static String getDatabaseUsername() {
-        return getRequired("FUNCTIONAL_TEST_DB_USERNAME");
+        return get("FUNCTIONAL_TEST_DB_USERNAME").orElse(DEFAULT_DATABASE_USERNAME);
     }
 
     /**
-     * Returns the database password for optional functional-test database checks.
+     * Returns the database password used by database-backed functional-test fixtures and checks.
      *
-     * @return configured functional-test database password.
+     * @return configured functional-test database password, or the local default when none is set.
      */
     public static String getDatabasePassword() {
-        return getRequired("FUNCTIONAL_TEST_DB_PASSWORD");
+        return get("FUNCTIONAL_TEST_DB_PASSWORD").orElse(DEFAULT_DATABASE_PASSWORD);
+    }
+
+    /**
+     * Converts the local HTTP-style host and port shorthand to the JDBC URL required by the
+     * PostgreSQL driver. Fully specified PostgreSQL JDBC URLs are returned unchanged.
+     *
+     * @param databaseUrl configured functional-test database URL.
+     * @return PostgreSQL JDBC URL.
+     */
+    private static String toPostgresJdbcUrl(String databaseUrl) {
+        if (databaseUrl.startsWith("jdbc:postgresql://")) {
+            return databaseUrl;
+        }
+        if (databaseUrl.startsWith("http://")) {
+            String hostAndPort = databaseUrl.substring("http://".length());
+            return "jdbc:postgresql://" + hostAndPort + "/" + DEFAULT_DATABASE_NAME;
+        }
+        throw new IllegalArgumentException("Unsupported functional-test database URL: " + databaseUrl);
+    }
+
+    /**
+     * Returns the blob container used by interface-file content fixtures.
+     *
+     * @return configured blob container name, or the local Azurite default when none is set.
+     */
+    public static String getBlobContainerName() {
+        return get("FUNCTIONAL_TEST_BLOB_CONTAINER_NAME").orElse(DEFAULT_BLOB_CONTAINER_NAME);
+    }
+
+    /**
+     * Returns the storage account used by interface-file content fixtures.
+     *
+     * @return configured storage account name, or the local Azurite default when none is set.
+     */
+    public static String getBlobAccountName() {
+        return get("FUNCTIONAL_TEST_BLOB_ACCOUNT_NAME").orElse(DEFAULT_BLOB_ACCOUNT_NAME);
+    }
+
+    /**
+     * Returns the storage account key used by interface-file content fixtures.
+     *
+     * @return configured storage account key, or the local Azurite default when none is set.
+     */
+    public static String getBlobAccountKey() {
+        return get("FUNCTIONAL_TEST_BLOB_ACCOUNT_KEY").orElse(DEFAULT_BLOB_ACCOUNT_KEY);
+    }
+
+    /**
+     * Returns the blob service endpoint used by interface-file content fixtures.
+     *
+     * @return configured blob endpoint, or the local Azurite default when none is set.
+     */
+    public static String getBlobEndpoint() {
+        return get("FUNCTIONAL_TEST_BLOB_ENDPOINT").orElse(DEFAULT_BLOB_ENDPOINT);
     }
 
     /**

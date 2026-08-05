@@ -29,6 +29,7 @@ plugins {
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
   id 'org.flywaydb.flyway' version '13.1.0'
+  id 'net.serenity-bdd.serenity-gradle-plugin' version '5.3.9'
 }
 
 application {
@@ -174,6 +175,10 @@ tasks.register('functional', Test) {
   outputs.upToDateWhen { false }
   reports.junitXml.getOutputLocation().set(layout.buildDirectory.dir("test-results/functional"))
   testLogging.showStandardStreams = true
+  def cucumberTags = System.getProperty('cucumber.filter.tags')
+  if (cucumberTags) {
+    systemProperty 'cucumber.filter.tags', cucumberTags
+  }
   include '**/FunctionalTestRunner.class'
   dependsOn 'clearReports'
   finalizedBy 'aggregate', 'copyFunctionalReport'
