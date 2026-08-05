@@ -144,14 +144,14 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
             Closure az = { cmd -> return sh(script: "env AZURE_CONFIG_DIR=/opt/jenkins/.azure-stg az $cmd", returnStdout: true).trim() }
             def status
             try {
-                status = az "storage account local-user show --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}' --only-show-errors --query name --output tsv"
+                status = az "storage account local-user show --name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}' --only-show-errors --query name --output tsv"
             } catch (e) {
                 steps.echo "Create Account error ${e}"
             }
 
             if (!status) {
                 steps.echo "Create Account ${localUser} for ${container} in ${storageAccount}"
-                az "storage account local-user create --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}'  --home-directory '${container}' --permission-scope permissions=rwdl service=blob resource-name='${container}' --has-ssh-key true --ssh-authorized-key key='${sshPublicKey}' --has-ssh-password false --only-show-errors"
+                az "storage account local-user create --name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}'  --home-directory '${container}' --permission-scope permissions=rwdl service=blob resource-name='${container}' --has-ssh-key true --ssh-authorized-key key='${sshPublicKey}' --has-ssh-password false --only-show-errors"
             }
         }
     }
@@ -186,12 +186,12 @@ def configureFunctionalTestBlobStorage(String valuesFile) {
             ).trim()
         }
         String endpoint = az(
-                "storage account show --account-name '${storageAccount}' "
+                "storage account show --name '${storageAccount}' "
                         + "--resource-group '${resourceGroup}' --only-show-errors "
                         + "--query primaryEndpoints.blob --output tsv"
         )
         String accountKey = az(
-                "storage account keys list --account-name '${storageAccount}' "
+                "storage account keys list --name '${storageAccount}' "
                         + "--resource-group '${resourceGroup}' --only-show-errors "
                         + "--query '[0].value' --output tsv"
         )
