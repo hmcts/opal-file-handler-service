@@ -1,4 +1,4 @@
-@foo @Opal @JIRA-LABEL:file-handler-service @InterfaceFileContentDbFixture @InterfaceFileContentBlobFixture
+@Opal @JIRA-LABEL:file-handler-service @InterfaceFileContentDbFixture @InterfaceFileContentBlobFixture
 Feature: Get Interface File Content
 
   # Database rows and blob content are recreated for every scenario by tagged fixture hooks.

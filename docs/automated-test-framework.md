@@ -99,6 +99,12 @@ account key is used locally. `FUNCTIONAL_TEST_BLOB_CONTAINER_NAME`,
 `FUNCTIONAL_TEST_BLOB_ACCOUNT_NAME`, `FUNCTIONAL_TEST_BLOB_ACCOUNT_KEY`, and
 `FUNCTIONAL_TEST_BLOB_ENDPOINT` override these values for other environments.
 
+For pull-request deployments, Jenkins reads the account name, resource group, and container from
+`charts/opal-file-handler-service/values.dev.template.yaml`, resolves the provisioned account's
+endpoint and key through Azure, and exports them as `FILE_STORE_STORAGE_ACCOUNT_NAME`,
+`FILE_STORE_STORAGE_URL`, and `FILE_STORE_STORAGE_KEY`. The functional tests use those application
+storage variables when their functional-test-specific overrides are not set.
+
 ## Phased Plan
 
 ### Phase 1: Done in this change
