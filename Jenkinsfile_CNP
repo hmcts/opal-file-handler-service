@@ -209,6 +209,40 @@ def configureFunctionalTestBlobStorage(String valuesFile) {
     steps.echo "Configured functional-test blob storage account ${storageAccount}, container ${container}"
 }
 
+def configureFunctionalTestDatabase(String valuesFile, String releaseName, String namespace) {
+    Map devValues = steps.readYaml(file: valuesFile)
+    Map globalValues = devValues.global as Map
+    Map javaValues = devValues.java as Map
+    Map javaEnvironment = javaValues.environment as Map
+    Map postgresql = javaValues.postgresql as Map
+
+    if (!postgresql?.enabled) {
+        throw new RuntimeException("PostgreSQL must be enabled in ${valuesFile}")
+    }
+
+    String databaseHost = javaEnvironment.OPAL_FILE_HANDLER_DB_HOST
+            ?.toString()
+            ?.replace('{{ .Release.Name }}', releaseName)
+    String databaseName = globalValues.postgresDatabase?.toString()?.trim()
+    String databaseUsername = globalValues.postgresUsername?.toString()?.trim()
+    String databasePassword = globalValues.postgresPassword?.toString()
+    String databaseOptions = globalValues.postgresOptions?.toString() ?: ''
+
+    if (!databaseHost || databaseHost.contains('{{') || !databaseName
+            || !databaseUsername || !databasePassword) {
+        throw new RuntimeException("Missing functional-test database values in ${valuesFile}")
+    }
+
+    env.OPAL_FILE_HANDLER_DB_HOST = "${databaseHost}.${namespace}.svc.cluster.local"
+    env.OPAL_FILE_HANDLER_DB_PORT = '5432'
+    env.OPAL_FILE_HANDLER_DB_NAME = databaseName
+    env.OPAL_FILE_HANDLER_DB_USERNAME = databaseUsername
+    env.OPAL_FILE_HANDLER_DB_PASSWORD = databasePassword
+    env.OPAL_FILE_HANDLER_DB_OPTIONS = databaseOptions
+
+    steps.echo "Configured functional-test database ${databaseName} on ${env.OPAL_FILE_HANDLER_DB_HOST}"
+}
+
 def secrets = [
         'opal-${env}': [
                 secret('bais-emulator-public-key', 'BAIS_EMULATOR_PUBLIC_KEY')
@@ -241,6 +275,11 @@ withPipeline(type, product, component) {
         onPR {
             setupAzure(blobStorageAccountNamePrefix, blobStorageResourceGroup, blobStorageSftpUsers)
             configureFunctionalTestBlobStorage(devValuesFile)
+            configureFunctionalTestDatabase(
+                    devValuesFile,
+                    "opal-${component}-pr-${env.CHANGE_ID}",
+                    product
+            )
         }
     }
 
