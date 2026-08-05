@@ -19,6 +19,9 @@ public final class TestEnvironment {
     private static final String DEFAULT_BLOB_ACCOUNT_KEY =
         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
     private static final String DEFAULT_BLOB_ENDPOINT = "http://127.0.0.1:10000/devstoreaccount1";
+    private static final String FILE_STORE_STORAGE_ACCOUNT_NAME = "FILE_STORE_STORAGE_ACCOUNT_NAME";
+    private static final String FILE_STORE_STORAGE_KEY = "FILE_STORE_STORAGE_KEY";
+    private static final String FILE_STORE_STORAGE_URL = "FILE_STORE_STORAGE_URL";
 
     private TestEnvironment() {
     }
@@ -101,28 +104,37 @@ public final class TestEnvironment {
     /**
      * Returns the storage account used by interface-file content fixtures.
      *
-     * @return configured storage account name, or the local Azurite default when none is set.
+     * @return configured storage account name, the deployed application's storage account name,
+     *     or the local Azurite default when neither is set.
      */
     public static String getBlobAccountName() {
-        return get("FUNCTIONAL_TEST_BLOB_ACCOUNT_NAME").orElse(DEFAULT_BLOB_ACCOUNT_NAME);
+        return get("FUNCTIONAL_TEST_BLOB_ACCOUNT_NAME")
+            .or(() -> get(FILE_STORE_STORAGE_ACCOUNT_NAME))
+            .orElse(DEFAULT_BLOB_ACCOUNT_NAME);
     }
 
     /**
      * Returns the storage account key used by interface-file content fixtures.
      *
-     * @return configured storage account key, or the local Azurite default when none is set.
+     * @return configured storage account key, the deployed application's storage account key,
+     *     or the local Azurite default when neither is set.
      */
     public static String getBlobAccountKey() {
-        return get("FUNCTIONAL_TEST_BLOB_ACCOUNT_KEY").orElse(DEFAULT_BLOB_ACCOUNT_KEY);
+        return get("FUNCTIONAL_TEST_BLOB_ACCOUNT_KEY")
+            .or(() -> get(FILE_STORE_STORAGE_KEY))
+            .orElse(DEFAULT_BLOB_ACCOUNT_KEY);
     }
 
     /**
      * Returns the blob service endpoint used by interface-file content fixtures.
      *
-     * @return configured blob endpoint, or the local Azurite default when none is set.
+     * @return configured blob endpoint, the deployed application's blob endpoint, or the local
+     *     Azurite default when neither is set.
      */
     public static String getBlobEndpoint() {
-        return get("FUNCTIONAL_TEST_BLOB_ENDPOINT").orElse(DEFAULT_BLOB_ENDPOINT);
+        return get("FUNCTIONAL_TEST_BLOB_ENDPOINT")
+            .or(() -> get(FILE_STORE_STORAGE_URL))
+            .orElse(DEFAULT_BLOB_ENDPOINT);
     }
 
     /**

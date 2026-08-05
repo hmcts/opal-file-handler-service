@@ -120,6 +120,7 @@ def blobStorageSftpUsers = [
         [container_name: "bteckoh-report", user_name: "bteckohreport"],
         [container_name: "caps-report", user_name: "capsreport"]
 ]
+def devValuesFile = "charts/opal-file-handler-service/values.dev.template.yaml"
 
 def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, List<Map<String, String>> storageSftpUsers) {
     // Keep the orchestration in Groovy and use shell only for az CLI calls.
@@ -156,6 +157,58 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
     }
 }
 
+def configureFunctionalTestBlobStorage(String valuesFile) {
+    Map devValues = steps.readYaml(file: valuesFile)
+    Map blobStorage = devValues.blobstorage as Map
+    String changeId = env.CHANGE_ID?.trim()
+
+    if (!changeId) {
+        throw new RuntimeException('CHANGE_ID must be set to configure the functional-test blob storage')
+    }
+    if (!blobStorage?.enabled) {
+        throw new RuntimeException("Blob storage must be enabled in ${valuesFile}")
+    }
+
+    String storageAccount = blobStorage.azureName?.toString()?.replace('${CHANGE_ID}', changeId)
+    String resourceGroup = blobStorage.resourceGroup?.toString()?.trim()
+    List containers = (blobStorage.setup as Map)?.containers as List
+    String container = containers?.find { it == 'bteckoh-report' }
+
+    if (!storageAccount || !resourceGroup || !container) {
+        throw new RuntimeException("Missing functional-test blob storage values in ${valuesFile}")
+    }
+
+    withSubscriptionLogin('dev') {
+        Closure az = { cmd ->
+            return sh(
+                    script: "env AZURE_CONFIG_DIR=/opt/jenkins/.azure-stg az $cmd",
+                    returnStdout: true
+            ).trim()
+        }
+        String endpoint = az(
+                "storage account show --account-name '${storageAccount}' "
+                        + "--resource-group '${resourceGroup}' --only-show-errors "
+                        + "--query primaryEndpoints.blob --output tsv"
+        )
+        String accountKey = az(
+                "storage account keys list --account-name '${storageAccount}' "
+                        + "--resource-group '${resourceGroup}' --only-show-errors "
+                        + "--query '[0].value' --output tsv"
+        )
+
+        if (!endpoint || !accountKey) {
+            throw new RuntimeException("Could not resolve functional-test blob storage account ${storageAccount}")
+        }
+
+        env.FILE_STORE_STORAGE_ACCOUNT_NAME = storageAccount
+        env.FILE_STORE_STORAGE_URL = endpoint
+        env.FILE_STORE_STORAGE_KEY = accountKey
+        env.FUNCTIONAL_TEST_BLOB_CONTAINER_NAME = container
+    }
+
+    steps.echo "Configured functional-test blob storage account ${storageAccount}, container ${container}"
+}
+
 def secrets = [
         'opal-${env}': [
                 secret('bais-emulator-public-key', 'BAIS_EMULATOR_PUBLIC_KEY')
@@ -187,6 +240,7 @@ withPipeline(type, product, component) {
     afterSuccess('akschartsinstall') {
         onPR {
             setupAzure(blobStorageAccountNamePrefix, blobStorageResourceGroup, blobStorageSftpUsers)
+            configureFunctionalTestBlobStorage(devValuesFile)
         }
     }
 

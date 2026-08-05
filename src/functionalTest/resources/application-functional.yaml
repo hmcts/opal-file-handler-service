@@ -7,9 +7,9 @@ test:
     password: ${FUNCTIONAL_TEST_DB_PASSWORD:opal-db-password}
   blob:
     container-name: ${FUNCTIONAL_TEST_BLOB_CONTAINER_NAME:bteckoh-report}
-    account-name: ${FUNCTIONAL_TEST_BLOB_ACCOUNT_NAME:devstoreaccount1}
-    account-key: ${FUNCTIONAL_TEST_BLOB_ACCOUNT_KEY:Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==}
-    endpoint: ${FUNCTIONAL_TEST_BLOB_ENDPOINT:http://127.0.0.1:10000/devstoreaccount1}
+    account-name: ${FUNCTIONAL_TEST_BLOB_ACCOUNT_NAME:${FILE_STORE_STORAGE_ACCOUNT_NAME:devstoreaccount1}}
+    account-key: ${FUNCTIONAL_TEST_BLOB_ACCOUNT_KEY:${FILE_STORE_STORAGE_KEY:Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==}}
+    endpoint: ${FUNCTIONAL_TEST_BLOB_ENDPOINT:${FILE_STORE_STORAGE_URL:http://127.0.0.1:10000/devstoreaccount1}}
   sftp:
     host: ${FUNCTIONAL_TEST_SFTP_HOST:}
     port: ${FUNCTIONAL_TEST_SFTP_PORT:22}
