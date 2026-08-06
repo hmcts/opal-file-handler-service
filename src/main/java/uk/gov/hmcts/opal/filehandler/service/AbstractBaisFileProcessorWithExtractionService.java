@@ -41,7 +41,7 @@ public abstract class AbstractBaisFileProcessorWithExtractionService<T extends I
 
     private static final String BUSINESS_UNIT_065 = "065";
 
-    @Value("opal.file-handler-service.extraction-service.max-retries")
+    @Value("${opal.file-handler-service.extraction-service.max-retries}")
     private int maxRetries;
 
     private final ExtractionService<T> extractionService;
@@ -70,11 +70,16 @@ public abstract class AbstractBaisFileProcessorWithExtractionService<T extends I
 
     @Override
     protected List<String> selectFilesToProcess(BaisFileProcessorConfiguration config) {
-        List<InterfaceFileEntity> entitesToRetry = interfaceFilesRepository.findSourceJsonFailuresWithinRetryLimit(
-            config.getSource(), maxRetries);
+        List<InterfaceFileEntity> sourceFilesToRetry =
+            interfaceFilesRepository.findSourceFilesWithJsonFailuresWithinRetryLimit(config.getSource(), maxRetries);
 
-        if (!entitesToRetry.isEmpty()) {
-            log.info("wowowow");
+        for (InterfaceFileEntity sourceFile : sourceFilesToRetry) {
+            InputStream sourceStream = interfaceFileBlobStoreService.fetchInterfaceFile(
+                sourceFile.getInterfaceFileId(),
+                sourceFile.getFilestoreUuid(),
+                config.getContainerName()).toStream();
+
+            processFile(config, sourceFile, sourceStream);
         }
 
         return super.selectFilesToProcess(config);
