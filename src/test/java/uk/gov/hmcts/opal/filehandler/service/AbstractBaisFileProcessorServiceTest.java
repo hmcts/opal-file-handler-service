@@ -18,7 +18,9 @@ import ch.qos.logback.core.read.ListAppender;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +29,7 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -58,9 +61,11 @@ class AbstractBaisFileProcessorServiceTest {
     private static final String SFTP_USERNAME = "sftp-username";
     private static final String MATCHING_FILE = "matching-file.dat";
     private static final String IGNORED_FILE = "ignored-file.txt";
+    private static final String CONTAINER = "test-container";
     private static final String CHECKSUM = "3685d7f2b30e9b34b8d3e5496fb45506";
     private static final byte[] FILE_CONTENT = {0, 1, 13, 10, (byte) 255};
     private static final UUID FILE_UUID = UUID.randomUUID();
+    private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-07-30T10:15:30Z"), ZoneOffset.UTC);
 
     @Mock
     private FeatureFlagUtil featureFlagUtil;
@@ -69,19 +74,18 @@ class AbstractBaisFileProcessorServiceTest {
     private BaisSftpClient baisSftpClient;
 
     @Mock
-    private InterfaceFileBlobStoreService interfaceFileBlobStoreService;
+    private InterfaceFileBlobStoreService blobStoreService;
 
     @Mock
-    private InterfaceFilesRepository interfaceFilesRepository;
+    private InterfaceFilesRepository repository;
 
     @Mock
-    private BaisFileProcessorConfiguration baisFileProcessorConfiguration;
+    private BaisFileProcessorConfiguration config;
 
     @Mock
     private TransactionTemplate transactionTemplate;
 
-    private TestBaisFileProcessorService service;
-    private Clock clock;
+    private TestProcessor service;
     private ObjectMapper objectMapper;
     private List<Status> savedStatuses;
 
@@ -90,25 +94,27 @@ class AbstractBaisFileProcessorServiceTest {
 
     @BeforeEach
     void setUp() {
-        clock = Clock.systemUTC();
         objectMapper = JsonMapper.builder().build();
         savedStatuses = new ArrayList<>();
 
         logAppender.start();
         logger.addAppender(logAppender);
 
-        service = new TestBaisFileProcessorService(
-            Clock.systemUTC(),
+        service = new TestProcessor(
             featureFlagUtil,
             baisSftpClient,
-            interfaceFileBlobStoreService,
-            interfaceFilesRepository,
+            blobStoreService,
+            repository,
             transactionTemplate,
             objectMapper
         );
 
-        executeTransactionsImmediately();
-        configureSuccessfulRun();
+        lenient().when(config.getFeatureFlag()).thenReturn(TEST_FEATURE_FLAG);
+        lenient().when(config.getSftpUsername()).thenReturn(SFTP_USERNAME);
+        lenient().when(config.getSource()).thenReturn(Interface.CAPS_REPORT);
+        lenient().when(config.getTarget()).thenReturn(Interface.OPAL);
+        lenient().when(config.getContainerName()).thenReturn(CONTAINER);
+        lenient().when(config.getFileNameRegex()).thenReturn(Pattern.compile("matching-.*\\.dat"));
     }
 
     @AfterEach
@@ -117,111 +123,124 @@ class AbstractBaisFileProcessorServiceTest {
         logAppender.stop();
     }
 
-    @Test
-    void selectFilesToProcess_returnsEmptyListWhenNoFilesExistInBais() {
-        service.useDefaultFileSelection();
-        when(baisSftpClient.listRegularFiles(SFTP_USERNAME)).thenReturn(List.of());
+    @Nested
+    class SelectFilesToProcess {
 
-        assertThat(service.selectFilesToProcess(baisFileProcessorConfiguration)).isEmpty();
+        @Test
+        void shouldReturnEmptyListWhenNoFilesExistInBais() {
+            service.useDefaultFileSelection();
+            when(baisSftpClient.listRegularFiles(SFTP_USERNAME)).thenReturn(List.of());
 
-        assertThat(logAppender.list)
-            .filteredOn(event -> event.getLevel() == Level.INFO)
-            .extracting(ILoggingEvent::getFormattedMessage)
-            .containsExactly("No files found in BAIS for user 'sftp-username' when processing source 'CAPS_REPORT'");
+            assertThat(service.selectFilesToProcess(config)).isEmpty();
+
+            assertThat(logAppender.list)
+                .filteredOn(event -> event.getLevel() == Level.INFO)
+                .extracting(ILoggingEvent::getFormattedMessage)
+                .containsExactly(
+                    "No files found in BAIS for user 'sftp-username' when processing source 'CAPS_REPORT'");
+        }
+
+        @Test
+        void shouldReturnMatchingFilesAndLogIgnoredFiles() {
+            service.useDefaultFileSelection();
+            when(baisSftpClient.listRegularFiles(SFTP_USERNAME)).thenReturn(List.of(IGNORED_FILE, MATCHING_FILE));
+
+            List<String> selectedFiles = service.selectFilesToProcess(config);
+
+            assertThat(selectedFiles).containsExactly(MATCHING_FILE);
+            assertThat(errorLogs()).contains(
+                "Found 1 additional files in BAIS for user 'sftp-username' that did not match the regex for source "
+                    + "'CAPS_REPORT' and were ignored: ignored-file.txt");
+        }
+
+        @Test
+        void shouldReturnAllFilesWhenEveryFileMatches() {
+            String secondMatchingFile = "matching-second.dat";
+            service.useDefaultFileSelection();
+            when(baisSftpClient.listRegularFiles(SFTP_USERNAME))
+                .thenReturn(List.of(MATCHING_FILE, secondMatchingFile));
+
+            List<String> selectedFiles = service.selectFilesToProcess(config);
+
+            assertThat(selectedFiles).containsExactly(MATCHING_FILE, secondMatchingFile);
+            assertThat(errorLogs()).isEmpty();
+        }
     }
 
-    @Test
-    void selectFilesToProcess_returnsMatchingFilesAndLogsIgnoredFiles() {
-        service.useDefaultFileSelection();
-        when(baisSftpClient.listRegularFiles(SFTP_USERNAME)).thenReturn(List.of(IGNORED_FILE, MATCHING_FILE));
+    @Nested
+    class Run {
 
-        List<String> selectedFiles = service.selectFilesToProcess(baisFileProcessorConfiguration);
+        @BeforeEach
+        void setUp() {
+            executeTransactionsImmediately();
+            configureSuccessfulRun();
+        }
 
-        assertThat(selectedFiles).containsExactly(MATCHING_FILE);
+        @Test
+        void shouldProcessFilesReturnedBySelectFilesToProcess() {
+            String selectedFile = "selected-by-override.txt";
+            service.stubFilesToProcess(selectedFile);
 
-        assertThat(errorLogs()).contains(
-            "Found 1 additional files in BAIS for user 'sftp-username' that did not match the regex for source "
-                + "'CAPS_REPORT' and were ignored: ignored-file.txt");
-    }
+            service.run(config);
 
-    @Test
-    void selectFilesToProcess_returnsAllFilesWhenEveryFileMatches() {
-        String secondMatchingFile = "matching-second.dat";
-        service.useDefaultFileSelection();
-        when(baisSftpClient.listRegularFiles(SFTP_USERNAME))
-            .thenReturn(List.of(MATCHING_FILE, secondMatchingFile));
+            verify(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(selectedFile), any());
+        }
 
-        List<String> selectedFiles = service.selectFilesToProcess(baisFileProcessorConfiguration);
-
-        assertThat(selectedFiles).containsExactly(MATCHING_FILE, secondMatchingFile);
-        assertThat(errorLogs()).isEmpty();
-    }
-
-    @Test
-    void run_processesFilesReturnedBySelectFilesToProcess() {
-        String selectedFile = "selected-by-override.txt";
-        service.stubFilesToProcess(selectedFile);
-
-        service.run(baisFileProcessorConfiguration);
-
-        verify(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(selectedFile), any());
-    }
-
-    @Test
-    void run_storesAndDeletesDuplicateWithoutProcessing() {
-        InterfaceFileEntity duplicate = InterfaceFileEntity.builder()
-            .interfaceFileId(123L)
-            .source(Interface.CAPS_REPORT)
-            .target(Interface.OPAL)
-            .type(uk.gov.hmcts.opal.filehandler.entity.Type.SOURCE)
-            .fileName(MATCHING_FILE)
-            .checksum(CHECKSUM)
-            .status(Status.SUCCESS)
-            .createdDatetime(LocalDateTime.now(clock))
-            .opalDomain(Domain.MAINTENANCE)
+        @Test
+        void shouldStoreAndDeleteDuplicateWithoutProcessing() {
+            InterfaceFileEntity duplicate = InterfaceFileEntity.builder()
+                .interfaceFileId(123L)
+                .source(Interface.CAPS_REPORT)
+                .target(Interface.OPAL)
+                .type(Type.SOURCE)
+                .fileName(MATCHING_FILE)
+                .checksum(CHECKSUM)
+                .status(Status.SUCCESS)
+                .createdDatetime(LocalDateTime.now(CLOCK))
+                .opalDomain(Domain.MAINTENANCE)
             .build();
 
-        when(interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
-            MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.of(duplicate));
+            when(repository.findByFileNameAndChecksumAndStatus(
+                MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.of(duplicate));
 
-        service.run(baisFileProcessorConfiguration);
+            service.run(config);
 
-        assertThat(service.processCount).isZero();
-        assertThat(savedStatuses).containsExactly(Status.DUPLICATE);
-        assertThat(errorLogs()).contains(
-            "File with name 'matching-file.dat' and checksum '3685d7f2b30e9b34b8d3e5496fb45506' for source "
-                + "'CAPS_REPORT' is a duplicate of 123");
+            assertThat(service.processCount).isZero();
+            assertThat(savedStatuses).containsExactly(Status.DUPLICATE);
+            assertThat(errorLogs()).contains(
+                "File with name 'matching-file.dat' and checksum '3685d7f2b30e9b34b8d3e5496fb45506' for source "
+                    + "'CAPS_REPORT' is a duplicate of 123");
+            assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
+                .isEqualTo("File with name 'matching-file.dat' and checksum '3685d7f2b30e9b34b8d3e5496fb45506' "
+                    + "for source 'CAPS_REPORT' already processed skipping");
+            verify(baisSftpClient).deleteFile(SFTP_USERNAME, MATCHING_FILE);
+        }
 
-        assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
-            .isEqualTo("File with name 'matching-file.dat' and checksum '3685d7f2b30e9b34b8d3e5496fb45506' "
-                + "for source 'CAPS_REPORT' already processed skipping");
+        @Test
+        void shouldRecordUploadFailureAndSupersedePreviousFailures() {
+            InterfaceFileEntity firstFailure = failedEntity(10L);
+            InterfaceFileEntity secondFailure = failedEntity(11L);
 
-        verify(baisSftpClient).deleteFile(SFTP_USERNAME, MATCHING_FILE);
-    }
+            when(repository.findAllByFileNameAndChecksumAndStatus(
+                MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(firstFailure, secondFailure));
+            doThrow(new RuntimeException("storage said \"no\"\nretry later")).when(blobStoreService)
+                .uploadBaisFile(any(UUID.class), eq(CONTAINER), any(InputStream.class), eq(CHECKSUM));
 
-    @Test
-    void run_recordsUploadFailureAndSupersedesPreviousFailures() {
-        InterfaceFileEntity firstFailure = failedEntity(10L);
-        InterfaceFileEntity secondFailure = failedEntity(11L);
+            doThrow(new BlobUploadException(
+                UUID.randomUUID(), "test-container", new RuntimeException("storage said \"no\"\nretry later")))
+                .when(interfaceFileBlobStoreService)
+                .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
 
-        when(interfaceFilesRepository.findAllByFileNameAndChecksumAndStatus(
-            MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(firstFailure, secondFailure));
+            service.run(baisFileProcessorConfiguration);
 
-        doThrow(new BlobUploadException(
-            UUID.randomUUID(), "test-container", new RuntimeException("storage said \"no\"\nretry later")))
-            .when(interfaceFileBlobStoreService)
-            .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
-
-        service.run(baisFileProcessorConfiguration);
-
-        assertThat(savedStatuses).containsExactly(Status.FAILED);
-        assertThat(service.lastSavedEntity.getFilestoreUuid()).isNull();
-        assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
-            .isEqualTo("Blob upload failed for file 'matching-file.dat': storage said \"no\"\nretry later");
-        assertThat(firstFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
-        assertThat(secondFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
-        verify(baisSftpClient, never()).deleteFile(any(), any());
-    }
+            assertThat(savedStatuses).containsExactly(Status.FAILED);
+            assertThat(service.lastSavedEntity.getFilestoreUuid()).isNull();
+            assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
+                .isEqualTo("Blob upload failed for file 'matching-file.dat': storage said \"no\"\nretry later");
+            assertThat(firstFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
+            assertThat(secondFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
+            verify(baisSftpClient, never()).deleteFile(any(), any());
+        }
 
     @Test
     void uploadFailureIsRetainedWhenDuplicateExists() {
@@ -253,51 +272,50 @@ class AbstractBaisFileProcessorServiceTest {
         verify(baisSftpClient, never()).deleteFile(any(), any());
     }
 
-    @Test
-    void run_recordsProcessingFailureAndDoesNotDeleteRemoteFile() {
-        InterfaceFileEntity previousFailure = failedEntity(10L);
-        when(interfaceFilesRepository.findAllByFileNameAndChecksumAndStatus(
-            MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(previousFailure));
-        service.processingFailure = new IllegalStateException("invalid \"record\"");
+        @Test
+        void shouldRecordProcessingFailureAndNotDeleteRemoteFile() {
+            InterfaceFileEntity previousFailure = failedEntity(10L);
+            when(repository.findAllByFileNameAndChecksumAndStatus(
+                MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(previousFailure));
+            service.processingFailure = new IllegalStateException("invalid \"record\"");
 
-        service.run(baisFileProcessorConfiguration);
+            service.run(config);
 
-        assertThat(savedStatuses).containsExactly(Status.INGESTED, Status.FAILED);
-        assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
-            .isEqualTo("File 'matching-file.dat' could not be processed: invalid \"record\"");
-        assertThat(previousFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
-        verify(baisSftpClient, never()).deleteFile(any(), any());
-        verify(transactionTemplate, times(2)).executeWithoutResult(any());
-    }
+            assertThat(savedStatuses).containsExactly(Status.INGESTED, Status.FAILED);
+            assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
+                .isEqualTo("File 'matching-file.dat' could not be processed: invalid \"record\"");
+            assertThat(previousFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
+            verify(baisSftpClient, never()).deleteFile(any(), any());
+            verify(transactionTemplate, times(2)).executeWithoutResult(any());
+        }
 
-    @Test
-    void run_supersedesPreviousFailuresAfterSuccessfulProcessing() {
-        InterfaceFileEntity firstFailure = failedEntity(10L);
-        InterfaceFileEntity secondFailure = failedEntity(11L);
-        when(interfaceFilesRepository.findAllByFileNameAndChecksumAndStatus(
-            MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(firstFailure, secondFailure));
+        @Test
+        void shouldSupersedePreviousFailuresAfterSuccessfulProcessing() {
+            InterfaceFileEntity firstFailure = failedEntity(10L);
+            InterfaceFileEntity secondFailure = failedEntity(11L);
+            when(repository.findAllByFileNameAndChecksumAndStatus(
+                MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(firstFailure, secondFailure));
 
-        service.run(baisFileProcessorConfiguration);
+            service.run(config);
 
-        assertThat(service.lastProcessConfig).isSameAs(baisFileProcessorConfiguration);
-        assertThat(firstFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
-        assertThat(secondFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
-    }
+            assertThat(service.lastProcessConfig).isSameAs(config);
+            assertThat(firstFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
+            assertThat(secondFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
+        }
 
-    @Test
-    void run_continuesWithNextSelectedFileAfterFailure() {
-        String firstFile = "matching-first.dat";
-        String secondFile = "matching-second.dat";
+        @Test
+        void shouldContinueWithNextSelectedFileAfterFailure() {
+            String firstFile = "matching-first.dat";
+            String secondFile = "matching-second.dat";
+            service.stubFilesToProcess(firstFile, secondFile);
+            doThrow(new BaisSftpFileDownloadException("first download failed"))
+                .when(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(firstFile), any());
 
-        service.stubFilesToProcess(firstFile, secondFile);
+            service.run(config);
 
-        doThrow(new BaisSftpFileDownloadException("first download failed"))
-            .when(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(firstFile), any());
-
-        service.run(baisFileProcessorConfiguration);
-
-        verify(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(secondFile), any());
-        assertThat(service.processCount).isOne();
+            verify(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(secondFile), any());
+            assertThat(service.processCount).isOne();
+        }
     }
 
     @Test
@@ -322,25 +340,18 @@ class AbstractBaisFileProcessorServiceTest {
 
 
     private void configureSuccessfulRun() {
-        lenient().when(baisFileProcessorConfiguration.getFeatureFlag()).thenReturn(TEST_FEATURE_FLAG);
-        lenient().when(baisFileProcessorConfiguration.getSftpUsername()).thenReturn(SFTP_USERNAME);
-        lenient().when(baisFileProcessorConfiguration.getSource()).thenReturn(Interface.CAPS_REPORT);
-        lenient().when(baisFileProcessorConfiguration.getTarget()).thenReturn(Interface.OPAL);
-        lenient().when(baisFileProcessorConfiguration.getContainerName()).thenReturn("test-container");
-        lenient().when(baisFileProcessorConfiguration.getFileNameRegex())
-            .thenReturn(Pattern.compile("matching-.*\\.dat"));
         service.stubFilesToProcess(MATCHING_FILE);
         lenient().doAnswer(invocation -> {
             OutputStream outputStream = invocation.getArgument(2);
             outputStream.write(FILE_CONTENT);
             return null;
         }).when(baisSftpClient).downloadFile(eq(SFTP_USERNAME), any(), any());
-        lenient().when(interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
+        lenient().when(repository.findByFileNameAndChecksumAndStatus(
             any(), eq(CHECKSUM), eq(Status.SUCCESS))).thenReturn(Optional.empty());
-        lenient().when(interfaceFilesRepository.findAllByFileNameAndChecksumAndStatus(
+        lenient().when(repository.findAllByFileNameAndChecksumAndStatus(
             any(), eq(CHECKSUM), eq(Status.FAILED))).thenReturn(List.of());
         lenient().when(baisSftpClient.deleteFile(eq(SFTP_USERNAME), any())).thenReturn(true);
-        lenient().when(interfaceFilesRepository.save(any())).thenAnswer(invocation -> {
+        lenient().when(repository.save(any())).thenAnswer(invocation -> {
             InterfaceFileEntity entity = invocation.getArgument(0);
             if (entity.getInterfaceFileId() == null) {
                 entity.setInterfaceFileId(1L);
@@ -372,7 +383,7 @@ class AbstractBaisFileProcessorServiceTest {
             .fileName(MATCHING_FILE)
             .checksum(CHECKSUM)
             .status(Status.FAILED)
-            .createdDatetime(LocalDateTime.now(clock))
+            .createdDatetime(LocalDateTime.now(CLOCK))
             .opalDomain(Domain.MAINTENANCE)
             .build();
     }
@@ -384,7 +395,7 @@ class AbstractBaisFileProcessorServiceTest {
             .toList();
     }
 
-    private static class TestBaisFileProcessorService extends AbstractBaisFileProcessorService {
+    private static class TestProcessor extends AbstractBaisFileProcessorService {
 
         private int processCount;
         private RuntimeException processingFailure;
@@ -392,15 +403,15 @@ class AbstractBaisFileProcessorServiceTest {
         private BaisFileProcessorConfiguration lastProcessConfig;
         private List<String> filesToProcess;
 
-        TestBaisFileProcessorService(Clock clock,
+        TestProcessor(
             FeatureFlagUtil featureFlagUtil,
             BaisSftpClient baisSftpClient,
-            InterfaceFileBlobStoreService interfaceFileBlobStoreService,
-            InterfaceFilesRepository interfaceFilesRepository,
+            InterfaceFileBlobStoreService blobStoreService,
+            InterfaceFilesRepository repository,
             TransactionTemplate transactionTemplate,
             ObjectMapper objectMapper
         ) {
-            super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
+            super(CLOCK, featureFlagUtil, baisSftpClient, blobStoreService, repository,
                 transactionTemplate, objectMapper);
         }
 
