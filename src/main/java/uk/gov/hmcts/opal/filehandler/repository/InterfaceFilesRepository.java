@@ -38,7 +38,7 @@ public interface InterfaceFilesRepository extends JpaRepository<InterfaceFileEnt
         Status status);
 
     @Query("""
-    SELECT failed
+    SELECT DISTINCT failed.relatedInterfaceFile
     FROM InterfaceFileEntity failed
     WHERE failed.source = :source
       AND failed.type = SOURCE_JSON
@@ -53,7 +53,7 @@ public interface InterfaceFilesRepository extends JpaRepository<InterfaceFileEnt
             AND superseded.fileName = failed.fileName
             AND superseded.checksum = failed.checksum
       ) <= :maxSuperseded""")
-    List<InterfaceFileEntity> findSourceJsonFailuresWithinRetryLimit(
+    List<InterfaceFileEntity> findSourceFilesWithJsonFailuresWithinRetryLimit(
         @Param("source") Interface source,
         @Param("maxSuperseded") long maxSuperseded);
 
