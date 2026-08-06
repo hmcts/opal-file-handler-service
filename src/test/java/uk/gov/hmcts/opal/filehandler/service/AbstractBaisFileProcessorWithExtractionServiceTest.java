@@ -54,6 +54,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
 import uk.gov.hmcts.opal.filehandler.exception.UnexpectedDomainException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
+import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.ExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.BankDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.DestinationDetails;
