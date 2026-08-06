@@ -118,35 +118,57 @@ class AbstractBaisFileProcessorServiceTest {
     }
 
     @Test
-    void whenNoFilesExistInBaisShouldLogAndExit() {
+    void selectFilesToProcess_returnsEmptyListWhenNoFilesExistInBais() {
+        service.useDefaultFileSelection();
         when(baisSftpClient.listRegularFiles(SFTP_USERNAME)).thenReturn(List.of());
 
-        service.run(baisFileProcessorConfiguration);
+        assertThat(service.selectFilesToProcess(baisFileProcessorConfiguration)).isEmpty();
 
         assertThat(logAppender.list)
             .filteredOn(event -> event.getLevel() == Level.INFO)
             .extracting(ILoggingEvent::getFormattedMessage)
             .containsExactly("No files found in BAIS for user 'sftp-username' when processing source 'CAPS_REPORT'");
-
-        verify(baisSftpClient, never()).downloadFile(any(), any(), any());
     }
 
     @Test
-    void ignoresNonMatchingFilesAndProcessesMatchingFiles() {
+    void selectFilesToProcess_returnsMatchingFilesAndLogsIgnoredFiles() {
+        service.useDefaultFileSelection();
         when(baisSftpClient.listRegularFiles(SFTP_USERNAME)).thenReturn(List.of(IGNORED_FILE, MATCHING_FILE));
+
+        List<String> selectedFiles = service.selectFilesToProcess(baisFileProcessorConfiguration);
+
+        assertThat(selectedFiles).containsExactly(MATCHING_FILE);
+
+        assertThat(errorLogs()).contains(
+            "Found 1 additional files in BAIS for user 'sftp-username' that did not match the regex for source "
+                + "'CAPS_REPORT' and were ignored: ignored-file.txt");
+    }
+
+    @Test
+    void selectFilesToProcess_returnsAllFilesWhenEveryFileMatches() {
+        String secondMatchingFile = "matching-second.dat";
+        service.useDefaultFileSelection();
+        when(baisSftpClient.listRegularFiles(SFTP_USERNAME))
+            .thenReturn(List.of(MATCHING_FILE, secondMatchingFile));
+
+        List<String> selectedFiles = service.selectFilesToProcess(baisFileProcessorConfiguration);
+
+        assertThat(selectedFiles).containsExactly(MATCHING_FILE, secondMatchingFile);
+        assertThat(errorLogs()).isEmpty();
+    }
+
+    @Test
+    void run_processesFilesReturnedBySelectFilesToProcess() {
+        String selectedFile = "selected-by-override.txt";
+        service.stubFilesToProcess(selectedFile);
 
         service.run(baisFileProcessorConfiguration);
 
-        verify(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(MATCHING_FILE), any());
-        verify(baisSftpClient, never()).downloadFile(eq(SFTP_USERNAME), eq(IGNORED_FILE), any());
-        assertThat(errorLogs()).contains(
-            "Found 1 additional files in BAIS for user 'sftp-username' that did not match the regex for source "
-                + "'CAPS_REPORT' and were ignored: ignored-file.txt"
-        );
+        verify(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(selectedFile), any());
     }
 
     @Test
-    void duplicateIsStoredReportedAndDeletedWithoutProcessing() {
+    void run_storesAndDeletesDuplicateWithoutProcessing() {
         InterfaceFileEntity duplicate = InterfaceFileEntity.builder()
             .interfaceFileId(123L)
             .source(Interface.CAPS_REPORT)
@@ -168,16 +190,17 @@ class AbstractBaisFileProcessorServiceTest {
         assertThat(savedStatuses).containsExactly(Status.DUPLICATE);
         assertThat(errorLogs()).contains(
             "File with name 'matching-file.dat' and checksum '3685d7f2b30e9b34b8d3e5496fb45506' for source "
-                + "'CAPS_REPORT' is a duplicate of 123"
-        );
+                + "'CAPS_REPORT' is a duplicate of 123");
+
         assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
             .isEqualTo("File with name 'matching-file.dat' and checksum '3685d7f2b30e9b34b8d3e5496fb45506' "
                 + "for source 'CAPS_REPORT' already processed skipping");
+
         verify(baisSftpClient).deleteFile(SFTP_USERNAME, MATCHING_FILE);
     }
 
     @Test
-    void uploadFailureCreatesFailedFileAndSupersedesEveryPreviousFailure() {
+    void run_recordsUploadFailureAndSupersedesPreviousFailures() {
         InterfaceFileEntity firstFailure = failedEntity(10L);
         InterfaceFileEntity secondFailure = failedEntity(11L);
 
@@ -231,7 +254,7 @@ class AbstractBaisFileProcessorServiceTest {
     }
 
     @Test
-    void processingFailureRollsBackThenPersistsFailureAndSupersedesPreviousFailures() {
+    void run_recordsProcessingFailureAndDoesNotDeleteRemoteFile() {
         InterfaceFileEntity previousFailure = failedEntity(10L);
         when(interfaceFilesRepository.findAllByFileNameAndChecksumAndStatus(
             MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(previousFailure));
@@ -248,7 +271,7 @@ class AbstractBaisFileProcessorServiceTest {
     }
 
     @Test
-    void successfulProcessingSupersedesEveryPreviousFailure() {
+    void run_supersedesPreviousFailuresAfterSuccessfulProcessing() {
         InterfaceFileEntity firstFailure = failedEntity(10L);
         InterfaceFileEntity secondFailure = failedEntity(11L);
         when(interfaceFilesRepository.findAllByFileNameAndChecksumAndStatus(
@@ -262,10 +285,12 @@ class AbstractBaisFileProcessorServiceTest {
     }
 
     @Test
-    void failureOnOneFileDoesNotPreventNextMatchingFileFromBeingProcessed() {
+    void run_continuesWithNextSelectedFileAfterFailure() {
         String firstFile = "matching-first.dat";
         String secondFile = "matching-second.dat";
-        when(baisSftpClient.listRegularFiles(SFTP_USERNAME)).thenReturn(List.of(firstFile, secondFile));
+
+        service.stubFilesToProcess(firstFile, secondFile);
+
         doThrow(new BaisSftpFileDownloadException("first download failed"))
             .when(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(firstFile), any());
 
@@ -304,7 +329,7 @@ class AbstractBaisFileProcessorServiceTest {
         lenient().when(baisFileProcessorConfiguration.getContainerName()).thenReturn("test-container");
         lenient().when(baisFileProcessorConfiguration.getFileNameRegex())
             .thenReturn(Pattern.compile("matching-.*\\.dat"));
-        lenient().when(baisSftpClient.listRegularFiles(SFTP_USERNAME)).thenReturn(List.of(MATCHING_FILE));
+        service.stubFilesToProcess(MATCHING_FILE);
         lenient().doAnswer(invocation -> {
             OutputStream outputStream = invocation.getArgument(2);
             outputStream.write(FILE_CONTENT);
@@ -365,6 +390,7 @@ class AbstractBaisFileProcessorServiceTest {
         private RuntimeException processingFailure;
         private InterfaceFileEntity lastSavedEntity;
         private BaisFileProcessorConfiguration lastProcessConfig;
+        private List<String> filesToProcess;
 
         TestBaisFileProcessorService(Clock clock,
             FeatureFlagUtil featureFlagUtil,
@@ -376,6 +402,19 @@ class AbstractBaisFileProcessorServiceTest {
         ) {
             super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
                 transactionTemplate, objectMapper);
+        }
+
+        void stubFilesToProcess(String... fileNames) {
+            filesToProcess = List.of(fileNames);
+        }
+
+        void useDefaultFileSelection() {
+            filesToProcess = null;
+        }
+
+        @Override
+        protected List<String> selectFilesToProcess(BaisFileProcessorConfiguration config) {
+            return filesToProcess == null ? super.selectFilesToProcess(config) : filesToProcess;
         }
 
         @Override
