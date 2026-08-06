@@ -69,5 +69,9 @@ public class AbstractIntegrationTest {
         registry.add("spring.datasource.username", TestContainerConfig.POSTGRES_CONTAINER::getUsername);
         registry.add("spring.datasource.password", TestContainerConfig.POSTGRES_CONTAINER::getPassword);
         registry.add("spring.data.redis.url", TestContainerConfig.REDIS_CONTAINER::getRedisURI);
+        registry.add(
+            "opal.file-handler-service.file-store.connection-string",
+            TestContainerConfig::azuriteConnectionString
+        );
     }
 }

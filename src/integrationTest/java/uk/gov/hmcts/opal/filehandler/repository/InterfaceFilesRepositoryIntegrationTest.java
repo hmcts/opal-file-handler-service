@@ -73,7 +73,7 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
         assertThat(loaded.getFilestoreUuid()).isEqualTo(interfaceFile.getFilestoreUuid());
         assertThat(loaded.getChecksum()).isEqualTo(interfaceFile.getChecksum());
         assertThat(loaded.getStatus()).isEqualTo(interfaceFile.getStatus());
-        assertThat(loaded.getCreatedDatetime().getTime()).isEqualTo(interfaceFile.getCreatedDatetime().getTime());
+        assertThat(loaded.getCreatedDatetime()).isEqualTo(interfaceFile.getCreatedDatetime());
         assertThat(loaded.getErrors()).isEqualTo(interfaceFile.getErrors());
         assertThat(loaded.getBusinessUnitCode()).containsExactly(interfaceFile.getBusinessUnitCode());
         assertThat(loaded.getPaymentType()).isEqualTo(interfaceFile.getPaymentType());

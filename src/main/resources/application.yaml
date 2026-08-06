@@ -112,6 +112,19 @@ opal:
         algorithm: ${OPAL_COMMON_CONTENT_DIGEST_RESPONSE_ALGORITHM:SHA-512}
       supported-algorithms:
         sha-512: SHA-512
+  file-handler-service:
+    file-store:
+      connection-string: ${AZURE_STORAGE_CONNECTION_STRING:UseDevelopmentStorage=true}
+    sftp:
+      bais:
+        host: ${BAIS_SFTP_CONNECTION_HOST:localhost}
+        port: ${BAIS_SFTP_CONNECTION_PORT:2222}
+        private-key: ${BAIS_SFTP_PRIVATE_KEY:}
+    file-types:
+      bteckoh-report:
+        container-name: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-report}
+      caps-report:
+        container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}
 
 logging:
   level:
@@ -140,6 +153,7 @@ launchdarkly:
     release-1a: ${RELEASE_1A_ENABLED:false}
     release-1b: ${RELEASE_1B_ENABLED:false}
     release-1c: ${RELEASE_1C_ENABLED:false}
+    release-1c-banking-interfaces: ${RELEASE_1C_BANKING_INTERFACES_ENABLED:false}
 
 user:
   service:
