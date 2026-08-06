@@ -3,7 +3,11 @@ package uk.gov.hmcts.opal.filehandler.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.assertj.core.api.InstanceOfAssertFactories.FILE;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doAnswer;
@@ -18,6 +22,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.azure.core.util.BinaryData;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +34,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.LongStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,6 +46,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -69,6 +76,7 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
     private static final String CONTAINER = "natwest-report";
     private static final String SOURCE_JSON_NAME = "typical.dat";
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-07-30T10:15:30Z"), ZoneOffset.UTC);
+    private static final UUID FILE_UUID = UUID.randomUUID();
 
     @Mock
     private FeatureFlagUtil featureFlagUtil;
@@ -623,6 +631,56 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
         }
     }
 
+    @Nested
+    @TestPropertySource("opal.file-handler-service.extraction-service.max-retries=5")
+    class SelectFilesToProcess {
+
+        @Test
+        void successfulSourceJsonShouldNotBeReprocessed() {
+            sourceJsonFile(200L, Status.SUCCESS);
+            service.selectFilesToProcess(config);
+
+            verify(blobStoreService, never()).fetchInterfaceFile(
+                sourceFile.getInterfaceFileId(), sourceFile.getFilestoreUuid(), CONTAINER);
+        }
+
+        @Test
+        void failedSourceJsonShouldBeReprocessed() {
+            sourceJsonFile(200L, Status.FAILED);
+
+            when(repository.findSourceFilesWithJsonFailuresWithinRetryLimit(eq(config.getSource()), anyInt()))
+                .thenReturn(List.of(sourceFile));
+
+            when(blobStoreService.fetchInterfaceFile(anyLong(), any(UUID.class), anyString()))
+                .thenReturn(BinaryData.fromBytes("hello world".getBytes()));
+
+            service.selectFilesToProcess(config);
+
+            verify(blobStoreService, times(1)).fetchInterfaceFile(
+                sourceFile.getInterfaceFileId(), sourceFile.getFilestoreUuid(), CONTAINER);
+        }
+
+        @Test
+        void failedSupersededSourceJsonWithNoFailuresShouldNotBeReprocessed() {
+            sourceJsonFile(200L, Status.FAILED_SUPERSEDED);
+            service.selectFilesToProcess(config);
+
+            verify(blobStoreService, never()).fetchInterfaceFile(anyLong(), any(UUID.class), anyString());
+        }
+
+        @Test
+        void tooManyFailuresShouldNotBeReprocessed() {
+            LongStream.range(200, 205).forEach(
+                id -> sourceJsonFile(id, Status.FAILED_SUPERSEDED));
+
+            sourceJsonFile(205L, Status.FAILED);
+
+            service.selectFilesToProcess(config);
+
+            verify(blobStoreService, never()).fetchInterfaceFile(anyLong(), any(UUID.class), anyString());
+        }
+    }
+
     private InterfaceFileEntity sourceFile() {
         return InterfaceFileEntity.builder()
             .interfaceFileId(100L)
@@ -633,6 +691,7 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
             .fileName("source.dat")
             .checksum("source-checksum")
             .status(Status.INGESTED)
+            .filestoreUuid(FILE_UUID)
             .createdDatetime(LocalDateTime.now(CLOCK))
             .build();
     }
