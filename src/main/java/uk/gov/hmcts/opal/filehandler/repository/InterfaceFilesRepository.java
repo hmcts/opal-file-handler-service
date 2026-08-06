@@ -55,6 +55,6 @@ public interface InterfaceFilesRepository extends JpaRepository<InterfaceFileEnt
       ) <= :maxSuperseded""")
     List<InterfaceFileEntity> findSourceFilesWithJsonFailuresWithinRetryLimit(
         @Param("source") Interface source,
-        @Param("maxSuperseded") long maxSuperseded);
+        @Param("maxSuperseded") int maxSuperseded);
 
 }
