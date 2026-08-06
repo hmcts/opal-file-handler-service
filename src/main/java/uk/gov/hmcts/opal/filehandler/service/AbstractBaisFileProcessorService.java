@@ -52,12 +52,24 @@ public abstract class AbstractBaisFileProcessorService {
         featureFlagUtil.requireEnabledFeature(FeatureFlags.RELEASE_1C_BANKING_INTERFACES);
         featureFlagUtil.requireEnabledFeature(config.getFeatureFlag());
 
+        List<String> baisFiles = selectFilesToProcess(config);
+
+        for (String fileName : baisFiles) {
+            try {
+                ingestFile(config, fileName);
+            } catch (IOException | RuntimeException e) {
+                log.error("Failed to ingest file '{}'", fileName, e);
+            }
+        }
+    }
+
+    protected List<String> selectFilesToProcess(BaisFileProcessorConfiguration config) {
         List<String> baisFiles = baisSftpClient.listRegularFiles(config.getSftpUsername());
 
         if (baisFiles.isEmpty()) {
             log.info("No files found in BAIS for user '{}' when processing source '{}'", config.getSftpUsername(),
                 config.getSource());
-            return;
+            return List.of();
         }
 
         Map<Boolean, List<String>> filesByMatch = baisFiles.stream()
@@ -73,13 +85,7 @@ public abstract class AbstractBaisFileProcessorService {
                 ignoringFiles.size(), config.getSftpUsername(), config.getSource(), String.join(", ", ignoringFiles));
         }
 
-        for (String fileName : matchingFiles) {
-            try {
-                ingestFile(config, fileName);
-            } catch (IOException | RuntimeException e) {
-                log.error("Failed to ingest file '{}'", fileName, e);
-            }
-        }
+        return matchingFiles;
     }
 
     private void ingestFile(BaisFileProcessorConfiguration config, String fileName) throws IOException {
