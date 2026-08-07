@@ -41,8 +41,8 @@ public abstract class AbstractBaisFileProcessorWithExtractionService<T extends I
 
     private static final String BUSINESS_UNIT_065 = "065";
 
-    @Value("${opal.file-handler-service.extraction-service.max-retries}")
-    private int maxRetries;
+    @Value("${opal.file-handler-service.extraction-service.max-retries:5}")
+    protected int maxRetries;
 
     private final ExtractionService<T> extractionService;
 
