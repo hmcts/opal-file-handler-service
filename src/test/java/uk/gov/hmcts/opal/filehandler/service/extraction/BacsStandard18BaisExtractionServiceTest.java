@@ -18,7 +18,7 @@ import static uk.gov.hmcts.opal.filehandler.testutil.StringTestUtil.leftPad;
 import static uk.gov.hmcts.opal.filehandler.testutil.StringTestUtil.put;
 import static uk.gov.hmcts.opal.filehandler.testutil.StringTestUtil.rightPad;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Nested;
@@ -32,12 +32,12 @@ import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
-import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.BankDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.OriginatorDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.Transaction;
 import uk.gov.hmcts.opal.filehandler.testutil.StreamTestUtil;
+import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
 
 class BacsStandard18BaisExtractionServiceTest {
 
@@ -150,6 +150,56 @@ class BacsStandard18BaisExtractionServiceTest {
             doNothing().when(extractionService).validateConsistentDestinationDetails(transactions, first);
             doNothing().when(extractionService).applyAllpayDdSourceUpdate(any(), eq(first.transaction()));
             doReturn(InterfaceFileCommonDataExtract.PaymentType.CASH).when(extractionService).paymentTypeFor("99");
+        }
+    }
+
+    @Nested
+    class FixtureValidation {
+
+        @Test
+        void shouldParseTypicalBacsStandard18FixtureFile() {
+            InterfaceFileEntity sourceFile = sourceFile(Interface.ALLPAY);
+
+            List<InterfaceFileCommonDataExtract> extracts = service.extractStandardData(
+                sourceFile,
+                StreamTestUtil.resourceStream("/fixtures/bacs-standard18/typical.dat")
+            );
+
+            assertThat(extracts).hasSize(1);
+            InterfaceFileCommonDataExtract extract = extracts.getFirst();
+            assertThat(extract.getFileName()).isEqualTo(FILE_NAME);
+            BankDetails destinationBankDetails = extract.getDestinationDetails().getBankDetails();
+            assertThat(destinationBankDetails.getSortCode()).isEqualTo("560033");
+            assertThat(destinationBankDetails.getAccountNumber()).isEqualTo("27048527");
+            assertThat(destinationBankDetails.getType()).isEqualTo("0");
+            assertThat(destinationBankDetails.getName()).isEqualTo("Beneficiary Name 1");
+            assertThat(extract.getPaymentType()).isEqualTo(InterfaceFileCommonDataExtract.PaymentType.CASH);
+            assertThat(extract.getTransactions()).hasSize(2);
+
+            Transaction firstTransaction = extract.getTransactions().getFirst();
+            assertThat(firstTransaction.getTransactionCode()).isEqualTo("99");
+            assertThat(firstTransaction.getAmount()).isEqualTo(1500L);
+            assertThat(firstTransaction.getDateEntryApplied()).isEqualTo("01/06/2026");
+            assertThat(firstTransaction.getOriginatorDetails().getName()).isEqualTo("Mrs D Richardson");
+            assertThat(firstTransaction.getOriginatorDetails().getAccountReference()).isEqualTo("08000066I");
+            assertThat(firstTransaction.getOriginatorDetails().getBankDetails().getSortCode()).isEqualTo("123456");
+            assertThat(firstTransaction.getOriginatorDetails().getBankDetails().getAccountNumber()).isEqualTo(
+                "99887766"
+            );
+
+            Transaction secondTransaction = extract.getTransactions().get(1);
+            assertThat(secondTransaction.getTransactionCode()).isEqualTo("99");
+            assertThat(secondTransaction.getAmount()).isEqualTo(500L);
+            assertThat(secondTransaction.getDateEntryApplied()).isEqualTo("01/06/2026");
+            assertThat(secondTransaction.getOriginatorDetails().getName()).isEqualTo("Mr A Waddams");
+            assertThat(secondTransaction.getOriginatorDetails().getAccountReference()).isEqualTo("08000067E");
+            assertThat(secondTransaction.getOriginatorDetails().getBankDetails().getSortCode()).isEqualTo("654321");
+            assertThat(secondTransaction.getOriginatorDetails().getBankDetails().getAccountNumber()).isEqualTo(
+                "55443322"
+            );
+
+            assertThat(sourceFile.getSource()).isEqualTo(Interface.ALLPAY);
+            verify(repository, never()).save(sourceFile);
         }
     }
 
@@ -268,7 +318,8 @@ class BacsStandard18BaisExtractionServiceTest {
             assertThat(parsed.transaction().getOriginatorDetails().getAccountReference()).isEqualTo("08000066I");
             assertThat(parsed.transaction().getOriginatorDetails().getBankDetails().getSortCode()).isEqualTo("123456");
             assertThat(parsed.transaction().getOriginatorDetails().getBankDetails().getAccountNumber()).isEqualTo(
-                "99887766");
+                "99887766"
+            );
         }
 
         @Test
@@ -579,7 +630,7 @@ class BacsStandard18BaisExtractionServiceTest {
             .opalDomain(Domain.FINES)
             .fileName(FILE_NAME)
             .status(Status.INGESTED)
-            .createdDatetime(new Date())
+            .createdDatetime(LocalDateTime.now())
             .build();
     }
 
