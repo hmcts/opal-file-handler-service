@@ -218,6 +218,7 @@ class AbstractBaisFileProcessorServiceTest {
 
         service.run(baisFileProcessorConfiguration);
 
+        assertThat(service.lastProcessConfig).isSameAs(baisFileProcessorConfiguration);
         assertThat(firstFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
         assertThat(secondFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
     }
@@ -303,6 +304,7 @@ class AbstractBaisFileProcessorServiceTest {
         private int processCount;
         private RuntimeException processingFailure;
         private InterfaceFileEntity lastSavedEntity;
+        private BaisFileProcessorConfiguration lastProcessConfig;
 
         TestBaisFileProcessorService(Clock clock,
             FeatureFlagUtil featureFlagUtil,
@@ -317,8 +319,13 @@ class AbstractBaisFileProcessorServiceTest {
         }
 
         @Override
-        protected void processFile(InterfaceFileEntity fileEntity, InputStream inputStream) {
+        protected void processFile(
+            BaisFileProcessorConfiguration config,
+            InterfaceFileEntity fileEntity,
+            InputStream inputStream
+        ) {
             processCount++;
+            lastProcessConfig = config;
 
             if (processingFailure != null) {
                 throw processingFailure;
