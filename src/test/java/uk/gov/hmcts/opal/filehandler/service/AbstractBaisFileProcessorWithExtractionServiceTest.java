@@ -43,9 +43,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.stereotype.Service;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
@@ -106,7 +108,10 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
     private InterfaceFilePreprocessQueueService maintenanceQueueService;
 
     private ObjectMapper objectMapper;
+
+    @InjectMocks
     private TestProcessor service;
+
     private InterfaceFileEntity sourceFile;
 
     @BeforeEach
@@ -632,7 +637,6 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
     }
 
     @Nested
-    @TestPropertySource("opal.file-handler-service.extraction-service.max-retries=5")
     class SelectFilesToProcess {
 
         @Test
@@ -728,6 +732,7 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
             .build();
     }
 
+    @Service
     private static class TestProcessor
         extends AbstractBaisFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
 
@@ -744,6 +749,8 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
         ) {
             super(CLOCK, featureFlagUtil, baisSftpClient, blobStoreService, repository, transactionTemplate,
                 objectMapper, extractionService, finesQueueService, maintenanceQueueService);
+
+            maxRetries = 5;
         }
     }
 }
