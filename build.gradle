@@ -1,4 +1,16 @@
 buildscript {
+  ext {
+    cucumberQueryVersion = "14.7.0"
+    cucumberMessagesVersion = "30.1.0"
+  }
+
+  configurations.classpath {
+    resolutionStrategy {
+      force "io.cucumber:query:${cucumberQueryVersion}"
+      force "io.cucumber:messages:${cucumberMessagesVersion}"
+    }
+  }
+
   dependencies {
     classpath("org.flywaydb:flyway-database-postgresql:13.1.0")
   }
@@ -17,6 +29,7 @@ plugins {
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
   id 'org.flywaydb.flyway' version '13.1.0'
+  id 'net.serenity-bdd.serenity-gradle-plugin' version '5.3.9'
 }
 
 application {
@@ -36,6 +49,15 @@ ext {
   cucumberVersion = "7.34.6"
   log4JVersion = "2.26.1"
   logbackVersion = "1.6.1"
+}
+
+def logPublishedHtmlReport = { String label, String reportDirectory ->
+  def indexFile = file("${reportDirectory}/index.html")
+  if (indexFile.exists()) {
+    logger.lifecycle("${label} available at - file://${indexFile.absolutePath}")
+  } else {
+    logger.lifecycle("${label} was not generated at ${reportDirectory}")
+  }
 }
 
 sourceSets {
@@ -150,7 +172,16 @@ tasks.register('functional', Test) {
   group = "Verification"
   testClassesDirs = sourceSets.functionalTest.output.classesDirs
   classpath = sourceSets.functionalTest.runtimeClasspath
+  outputs.upToDateWhen { false }
+  reports.junitXml.getOutputLocation().set(layout.buildDirectory.dir("test-results/functional"))
+  testLogging.showStandardStreams = true
+  def cucumberTags = System.getProperty('cucumber.filter.tags')
+  if (cucumberTags) {
+    systemProperty 'cucumber.filter.tags', cucumberTags
+  }
   include '**/FunctionalTestRunner.class'
+  dependsOn 'clearReports'
+  finalizedBy 'aggregate', 'copyFunctionalReport'
 }
 
 tasks.register('integration', Test) {
@@ -167,7 +198,52 @@ tasks.register('smoke', Test) {
   group = "Verification"
   testClassesDirs = sourceSets.functionalTest.output.classesDirs
   classpath = sourceSets.functionalTest.runtimeClasspath
+  outputs.upToDateWhen { false }
+  reports.junitXml.getOutputLocation().set(layout.buildDirectory.dir("test-results/smoke"))
+  testLogging.showStandardStreams = true
   include '**/SmokeTestRunner.class'
+  dependsOn 'clearReports'
+  finalizedBy 'aggregate', 'copySmokeReport'
+}
+
+tasks.register('copyFunctionalReport', Sync) {
+  dependsOn 'aggregate'
+  from("${rootDir}/target/site/serenity")
+  into("${rootDir}/functional-test-report")
+  doLast {
+    logPublishedHtmlReport("Serenity Functional Test Report", "${rootDir}/functional-test-report")
+  }
+}
+
+tasks.register('copySmokeReport', Sync) {
+  dependsOn 'aggregate'
+  from("${rootDir}/target/site/serenity")
+  into("${rootDir}/smoke-test-report")
+  doLast {
+    logPublishedHtmlReport("Serenity Smoke Test Report", "${rootDir}/smoke-test-report")
+  }
+}
+
+tasks.named('clearReports') {
+  doLast {
+    delete(
+      layout.buildDirectory.dir("test-results/functional"),
+      layout.buildDirectory.dir("test-results/smoke")
+    )
+  }
+}
+
+tasks.named('aggregate') {
+  testRoot = layout.buildDirectory.dir("test-results").get().asFile.absolutePath
+  mustRunAfter tasks.named('functional'), tasks.named('smoke')
+}
+
+tasks.named('copyFunctionalReport') {
+  mustRunAfter tasks.named('aggregate')
+}
+
+tasks.named('copySmokeReport') {
+  mustRunAfter tasks.named('aggregate')
 }
 
 jacocoTestReport {

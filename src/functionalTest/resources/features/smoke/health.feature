@@ -1,6 +1,6 @@
 @Smoke
-Feature: Service health
+Feature: Health API
 
-  Scenario: Health endpoint responds successfully
-    When I call the health endpoint
-    Then the response status code is 200
+  Scenario: The health endpoint reports that the service is up
+    When I request the file handler api health status
+    Then the file handler service reports as up
