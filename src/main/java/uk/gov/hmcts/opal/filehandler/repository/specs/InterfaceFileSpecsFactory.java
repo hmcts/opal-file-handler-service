@@ -64,8 +64,7 @@ public class InterfaceFileSpecsFactory {
                 builder.equal(superseded.get(InterfaceFileEntity_.fileName),
                     failed.get(InterfaceFileEntity_.fileName)),
                 builder.equal(superseded.get(InterfaceFileEntity_.checksum),
-                    failed.get(InterfaceFileEntity_.checksum))
-            );
+                    failed.get(InterfaceFileEntity_.checksum)));
 
             failedExists.select(failed.get(InterfaceFileEntity_.interfaceFileId));
             failedExists.where(
@@ -73,13 +72,11 @@ public class InterfaceFileSpecsFactory {
                 builder.equal(failed.get(InterfaceFileEntity_.source), source),
                 builder.equal(failed.get(InterfaceFileEntity_.type), Type.SOURCE_JSON),
                 builder.equal(failed.get(InterfaceFileEntity_.status), Status.FAILED),
-                builder.lessThanOrEqualTo(supersededCount, (long) maxSuperseded)
-            );
+                builder.lessThanOrEqualTo(supersededCount, (long) maxSuperseded));
 
             return builder.and(
                 builder.equal(sourceFile.get(InterfaceFileEntity_.type), Type.SOURCE),
-                builder.exists(failedExists)
-            );
+                builder.exists(failedExists));
         };
     }
 
