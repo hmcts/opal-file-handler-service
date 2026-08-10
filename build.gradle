@@ -12,7 +12,7 @@ buildscript {
   }
 
   dependencies {
-    classpath("org.flywaydb:flyway-database-postgresql:13.2.0")
+    classpath("org.flywaydb:flyway-database-postgresql:13.1.0")
   }
 }
 plugins {
@@ -20,7 +20,7 @@ plugins {
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
   id 'org.springframework.boot' version '4.1.0'
-  id 'com.github.ben-manes.versions' version '0.61.0'
+  id 'com.github.ben-manes.versions' version '0.59.0'
   id 'org.sonarqube' version '7.3.1.8318'
   id "org.openapi.generator" version "7.24.0"
   /*
@@ -28,7 +28,8 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'org.flywaydb.flyway' version '13.2.0'
+  id 'org.flywaydb.flyway' version '13.1.0'
+  id 'net.serenity-bdd.serenity-gradle-plugin' version '5.3.9'
 }
 
 application {
@@ -107,6 +108,8 @@ configurations.configureEach {
     force "io.cucumber:cucumber-core:${cucumberVersion}"
     force "io.cucumber:cucumber-java:${cucumberVersion}"
     force "io.cucumber:cucumber-junit:${cucumberVersion}"
+    force "io.cucumber:query:${cucumberQueryVersion}"
+    force "io.cucumber:messages:${cucumberMessagesVersion}"
   }
 }
 tasks.register("bundleOpenApi", JavaExec) {
@@ -339,8 +342,8 @@ dependencies {
   implementation group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
   implementation group: 'ch.qos.logback', name: 'logback-core', version: logbackVersion
 
-  implementation 'org.flywaydb:flyway-core:13.2.0'
-  runtimeOnly 'org.flywaydb:flyway-database-postgresql:13.2.0', {
+  implementation 'org.flywaydb:flyway-core:13.1.0'
+  runtimeOnly 'org.flywaydb:flyway-database-postgresql:13.1.0', {
     exclude group: 'org.flywaydb', module: 'flyway-core'
   }
 
