@@ -22,6 +22,20 @@
     <packageUrl regex="true">^pkg:maven/com\.microsoft\.azure/applicationinsights\-(core|web)@.*$</packageUrl>
     <cve>CVE-2025-21199</cve>
   </suppress>
+  <suppress until="2026-10-31Z">
+    <notes><![CDATA[
+    Reviewed 2026-08-10.
+    CVE-2025-7962 is reported against org.eclipse.angus:angus-activation:2.0.3
+    through the generic cpe:2.3:a:eclipse:angus_mail CPE. This service does not
+    use Angus Mail APIs. The flagged artifact is the Activation implementation
+    pulled transitively via JAXB/Hibernate/common-lib rather than direct mail
+    handling. Keep this suppression scoped to angus-activation 2.0.3 and revisit
+    when a stable non-vulnerable replacement is available through the managed
+    dependency chain.
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/angus\-activation@2\.0\.3$</packageUrl>
+    <cve>CVE-2025-7962</cve>
+  </suppress>
   <suppress until="2026-08-31Z">
     <notes><![CDATA[
     Reviewed 2026-07-23.
