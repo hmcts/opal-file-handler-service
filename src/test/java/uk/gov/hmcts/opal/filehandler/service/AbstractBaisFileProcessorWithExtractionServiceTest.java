@@ -3,9 +3,7 @@ package uk.gov.hmcts.opal.filehandler.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
-import static org.assertj.core.api.InstanceOfAssertFactories.FILE;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -43,12 +41,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -108,10 +106,7 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
     private InterfaceFilePreprocessQueueService maintenanceQueueService;
 
     private ObjectMapper objectMapper;
-
-    @InjectMocks
     private TestProcessor service;
-
     private InterfaceFileEntity sourceFile;
 
     @BeforeEach
@@ -652,7 +647,7 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
         void failedSourceJsonShouldBeReprocessed() {
             sourceJsonFile(200L, Status.FAILED);
 
-            when(repository.findSourceFilesWithJsonFailuresWithinRetryLimit(eq(config.getSource()), anyInt()))
+            when(repository.findAll(ArgumentMatchers.<Specification<InterfaceFileEntity>>any()))
                 .thenReturn(List.of(sourceFile));
 
             when(blobStoreService.fetchInterfaceFile(anyLong(), any(UUID.class), anyString()))
