@@ -1,7 +1,25 @@
 package uk.gov.hmcts.opal.filehandler.entity;
 
+import lombok.Getter;
+
+@Getter
 public enum Interface {
-    BTECKOH_REPORT,
-    CAPS_REPORT,
-    OPAL
+    NATWEST(null),
+    ALLPAY(null),
+    ALLPAY_DD(null),
+    BARCLAYCARD(null),
+    BTECKOH(null),
+    DWP(null),
+    CDER(null),
+    JACOBS(null),
+    MARSTON(null),
+    BTECKOH_REPORT("BTEckohReportBaisFileProcessorConfig"),
+    CAPS_REPORT("capsReportBaisFileProcessorConfig"),
+    OPAL(null);
+
+    private final String configComponentName;
+
+    Interface(String configComponentName) {
+        this.configComponentName = configComponentName;
+    }
 }
