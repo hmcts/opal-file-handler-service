@@ -49,6 +49,7 @@ java:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/dev
     APPLICATIONINSIGHTS_ROLE_NAME: "opal-file-handler-service-pr-${CHANGE_ID}"
     DEFAULT_APP_MODE: ${APP_MODE}
+    RELEASE_1C_BANKING_INTERFACES_ENABLED: true
   postgresql:
     enabled: true
     primary:
