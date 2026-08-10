@@ -1,5 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
+import static uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory.sourceFilesWithJsonFailuresWithinRetryLimit;
 import static uk.gov.hmcts.opal.filehandler.util.StringUtil.isBlank;
 
 import java.io.ByteArrayInputStream;
@@ -70,8 +71,8 @@ public abstract class AbstractBaisFileProcessorWithExtractionService<T extends I
 
     @Override
     protected List<String> selectFilesToProcess(BaisFileProcessorConfiguration config) {
-        List<InterfaceFileEntity> sourceFilesToRetry =
-            interfaceFilesRepository.findSourceFilesWithJsonFailuresWithinRetryLimit(config.getSource(), maxRetries);
+        List<InterfaceFileEntity> sourceFilesToRetry = interfaceFilesRepository.findAll(
+            sourceFilesWithJsonFailuresWithinRetryLimit(config.getSource(), maxRetries));
 
         for (InterfaceFileEntity sourceFile : sourceFilesToRetry) {
             InputStream sourceStream = interfaceFileBlobStoreService.fetchInterfaceFile(

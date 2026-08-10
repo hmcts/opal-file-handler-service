@@ -1,5 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.repository.specs;
 
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +43,44 @@ public class InterfaceFileSpecsFactory {
         }
 
         return Specification.allOf(specs);
+    }
+
+    public static Specification<InterfaceFileEntity> sourceFilesWithJsonFailuresWithinRetryLimit(
+        Interface source,
+        int maxSuperseded
+    ) {
+        return (sourceFile, query, builder) -> {
+            Subquery<Long> failedExists = query.subquery(Long.class);
+            Root<InterfaceFileEntity> failed = failedExists.from(InterfaceFileEntity.class);
+
+            Subquery<Long> supersededCount = failedExists.subquery(Long.class);
+            Root<InterfaceFileEntity> superseded = supersededCount.from(InterfaceFileEntity.class);
+
+            supersededCount.select(builder.count(superseded));
+            supersededCount.where(
+                builder.equal(superseded.get(InterfaceFileEntity_.relatedInterfaceFile), sourceFile),
+                builder.equal(superseded.get(InterfaceFileEntity_.type), Type.SOURCE_JSON),
+                builder.equal(superseded.get(InterfaceFileEntity_.status), Status.FAILED_SUPERSEDED),
+                builder.equal(superseded.get(InterfaceFileEntity_.fileName),
+                    failed.get(InterfaceFileEntity_.fileName)),
+                builder.equal(superseded.get(InterfaceFileEntity_.checksum),
+                    failed.get(InterfaceFileEntity_.checksum))
+            );
+
+            failedExists.select(failed.get(InterfaceFileEntity_.interfaceFileId));
+            failedExists.where(
+                builder.equal(failed.get(InterfaceFileEntity_.relatedInterfaceFile), sourceFile),
+                builder.equal(failed.get(InterfaceFileEntity_.source), source),
+                builder.equal(failed.get(InterfaceFileEntity_.type), Type.SOURCE_JSON),
+                builder.equal(failed.get(InterfaceFileEntity_.status), Status.FAILED),
+                builder.lessThanOrEqualTo(supersededCount, (long) maxSuperseded)
+            );
+
+            return builder.and(
+                builder.equal(sourceFile.get(InterfaceFileEntity_.type), Type.SOURCE),
+                builder.exists(failedExists)
+            );
+        };
     }
 
     private static Specification<InterfaceFileEntity> equalsSource(Interface source) {
