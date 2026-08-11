@@ -118,7 +118,7 @@ def ensureFunctionalReportOutputExists = { outputDirectory ->
   ensureReportOutputExists(
     'Functional Tests Report',
     outputDirectory,
-    ['build/reports/tests/functional']
+    ['functional-test-report', 'build/reports/tests/functional']
   )
 }
 
@@ -134,7 +134,7 @@ def ensureSmokeReportOutputExists = { outputDirectory ->
   ensureReportOutputExists(
     'Smoke Tests Report',
     outputDirectory,
-    ['build/reports/tests/smoke']
+    ['smoke-test-report', 'build/reports/tests/smoke']
   )
 }
 
@@ -160,7 +160,7 @@ def publishFunctionalResults = { outputDirectory, reportNameSuffix ->
     keepAll              : true,
     reportDir            : "${outputDirectory}/report",
     reportFiles          : 'index.html',
-    reportName           : "Functional Tests Report${reportNameSuffix}"
+    reportName           : "Serenity Functional Test Report${reportNameSuffix}"
   ]
 }
 
@@ -192,7 +192,7 @@ def publishSmokeResults = { outputDirectory, reportNameSuffix ->
     keepAll              : true,
     reportDir            : "${outputDirectory}/report",
     reportFiles          : 'index.html',
-    reportName           : "Smoke Tests Report${reportNameSuffix}"
+    reportName           : "Serenity Smoke Test Report${reportNameSuffix}"
   ]
 }
 

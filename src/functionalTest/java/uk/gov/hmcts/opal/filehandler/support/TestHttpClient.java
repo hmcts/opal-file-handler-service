@@ -72,10 +72,10 @@ public final class TestHttpClient {
             HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
             return new TestHttpResponse(response.statusCode(), response.body());
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to call endpoint", e);
+            throw new IllegalStateException("Failed to call endpoint: " + request.uri(), e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while calling endpoint", e);
+            throw new IllegalStateException("Interrupted while calling endpoint: " + request.uri(), e);
         }
     }
 

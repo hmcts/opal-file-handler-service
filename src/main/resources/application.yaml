@@ -115,6 +115,9 @@ opal:
   file-handler-service:
     file-store:
       connection-string: ${AZURE_STORAGE_CONNECTION_STRING:UseDevelopmentStorage=true}
+      account-name: ${FILE_STORE_STORAGE_ACCOUNT_NAME:}
+      endpoint: ${FILE_STORE_STORAGE_URL:}
+      account-key: ${FILE_STORE_STORAGE_KEY:}
     file-types:
       caps-report:
         container-name: caps-report
