@@ -118,16 +118,21 @@ opal:
       account-name: ${FILE_STORE_STORAGE_ACCOUNT_NAME:}
       endpoint: ${FILE_STORE_STORAGE_URL:}
       account-key: ${FILE_STORE_STORAGE_KEY:}
+    file-types:
+      caps-report:
+        container-name: caps-report
+        feature-flag: CAPS-Report-file-transfer-Job
+        file-name-regex: ^CapFa\.GB\.\d{8}\.\d{6}\.xml$
+        source: CAPS_REPORT
+        target: OPAL
+        sftp-username: ${BAIS_SFTP_CAPS_REPORT_USERNAME:}
+      bteckoh-report:
+        container-name: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-report}
     sftp:
       bais:
         host: ${BAIS_SFTP_CONNECTION_HOST:localhost}
         port: ${BAIS_SFTP_CONNECTION_PORT:2222}
         private-key: ${BAIS_SFTP_PRIVATE_KEY:}
-    file-types:
-      bteckoh-report:
-        container-name: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-report}
-      caps-report:
-        container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}
 
 logging:
   level:
