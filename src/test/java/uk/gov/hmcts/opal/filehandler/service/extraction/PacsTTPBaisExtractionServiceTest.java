@@ -140,6 +140,19 @@ class PacsTTPBaisExtractionServiceTest {
             assertThat(sourceFile.getStatus()).isEqualTo(Status.SUCCESS_NO_TRANSACTIONS);
             verify(repository).save(sourceFile);
         }
+
+        @Test
+        void shouldFailWhenXmlUnmarhsallingFails() {
+            when(xmlService.unmarshal(
+                any(),
+                eq(PacsTppSchedule.class),
+                eq(PacsTTPBaisExtractionService.PACS_SCHEMA),
+                eq(PacsTTPBaisExtractionService.PACS_SOURCE_DESCRIPTION)
+            )).thenThrow(IllegalArgumentException.class);
+
+            assertThatThrownBy(() -> service.extractStandardData(sourceFile(), StreamTestUtil.stream("ignored")))
+                .isInstanceOf(IllegalArgumentException.class);
+        }
     }
 
     @Nested
