@@ -8,7 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.DatatypeFactory;
@@ -260,7 +260,7 @@ class PacsTTPBaisExtractionServiceTest {
             .opalDomain(Domain.FINES)
             .fileName(FILE_NAME)
             .status(Status.INGESTED)
-            .createdDatetime(new Date())
+            .createdDatetime(LocalDateTime.now())
             .build();
     }
 }
