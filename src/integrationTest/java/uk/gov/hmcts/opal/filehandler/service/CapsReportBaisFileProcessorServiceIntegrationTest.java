@@ -27,7 +27,7 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceInt
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
     "opal.file-handler-service.file-types.caps-report.sftp-username=CAPS-report",
-    "launchdarkly.default-flag-values.CAPS-Report-file-transfer-job=true",
+    "launchdarkly.default-flag-values.CAPS-Report-file-transfer-Job=true",
 })
 @Slf4j
 public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
@@ -68,7 +68,7 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.CAPS-Report-file-transfer-job=true"
+        "launchdarkly.default-flag-values.CAPS-Report-file-transfer-Job=true"
     })
     public class BankingInterfacesDisabled {
 
@@ -86,17 +86,17 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
-        "launchdarkly.default-flag-values.CAPS-Report-file-transfer-job=false"
+        "launchdarkly.default-flag-values.CAPS-Report-file-transfer-Job=false"
     })
     public class CapsReportFileTransferJobDisabled {
 
         @Test
-        @DisplayName("AC1: Feature flag 'CAPS-Report-file-transfer-job' is false")
+        @DisplayName("AC1: Feature flag 'CAPS-Report-file-transfer-Job' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration));
 
-            assertThat(exception).hasMessage("CAPS-Report-file-transfer-job is not enabled");
+            assertThat(exception).hasMessage("CAPS-Report-file-transfer-Job is not enabled");
         }
 
     }
@@ -104,7 +104,7 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.CAPS-Report-file-transfer-job=false"
+        "launchdarkly.default-flag-values.CAPS-Report-file-transfer-Job=false"
     })
     public class BothFeatureFlagsDisabled {
 

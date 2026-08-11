@@ -118,7 +118,7 @@ opal:
     file-types:
       caps-report:
         container-name: caps-report
-        feature-flag: CAPS-Report-file-transfer-job
+        feature-flag: CAPS-Report-file-transfer-Job
         file-name-regex: ^CapFa\.GB\.\d{8}\.\d{6}\.xml$
         source: CAPS_REPORT
         target: OPAL
