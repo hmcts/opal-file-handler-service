@@ -123,6 +123,7 @@ def blobStorageSftpUsers = [
         [container_name: "caps-report", user_name: "capsreport"]
 ]
 def devValuesFile = "charts/opal-file-handler-service/values.dev.template.yaml"
+def stgValuesFile = "charts/opal-file-handler-service/values.stg.template.yaml"
 def functionalTestDatabaseSetupScript = 'src/functionalTest/resources/db/interface-file-content/setup.sql'
 def functionalTestDatabaseCleanupScript = 'src/functionalTest/resources/db/interface-file-content/cleanup.sql'
 
@@ -228,6 +229,42 @@ def configureFunctionalTestUserService(String valuesFile) {
     steps.echo "Configured functional-test user service ${userServiceUrl}"
 }
 
+def configureStagingFunctionalTestEnvironment(String valuesFile) {
+    Map stgValues = steps.readYaml(file: valuesFile)
+    Map functionalTestValues = stgValues.functionalTest as Map
+    Map blobValues = functionalTestValues?.blob as Map
+    String containerName = blobValues?.containerName?.toString()?.trim()
+
+    if (!containerName) {
+        throw new RuntimeException("Missing functional-test blob container in ${valuesFile}")
+    }
+
+    List<String> requiredVariables = [
+            'OPAL_FILE_HANDLER_DB_HOST',
+            'OPAL_FILE_HANDLER_DB_PORT',
+            'OPAL_FILE_HANDLER_DB_NAME',
+            'OPAL_FILE_HANDLER_DB_USERNAME',
+            'OPAL_FILE_HANDLER_DB_PASSWORD',
+            'FILE_STORE_STORAGE_ACCOUNT_NAME',
+            'FILE_STORE_STORAGE_URL',
+            'FILE_STORE_STORAGE_KEY'
+    ]
+    List<String> missingVariables = requiredVariables.findAll { variable ->
+        !env[variable]?.toString()?.trim()
+    }
+
+    if (!missingVariables.isEmpty()) {
+        throw new RuntimeException(
+                "Missing staging functional-test secrets: ${missingVariables.join(', ')}"
+        )
+    }
+
+    configureFunctionalTestUserService(valuesFile)
+    env.FUNCTIONAL_TEST_BLOB_CONTAINER_NAME = containerName
+    env.FUNCTIONAL_TEST_DB_MANAGED_BY_PIPELINE = 'false'
+    steps.echo "Configured staging functional-test database and blob container ${containerName}"
+}
+
 def configureFunctionalTestDatabase(String valuesFile, String releaseName, String namespace) {
     Map devValues = steps.readYaml(file: valuesFile)
     Map globalValues = devValues.global as Map
@@ -297,6 +334,28 @@ def secrets = [
         ]
 ]
 
+def stagingFunctionalTestSecrets = [
+        'opal-${env}': [
+                secret('file-handler-service-POSTGRES-HOST', 'OPAL_FILE_HANDLER_DB_HOST'),
+                secret('file-handler-service-POSTGRES-PORT', 'OPAL_FILE_HANDLER_DB_PORT'),
+                secret('file-handler-service-POSTGRES-DATABASE', 'OPAL_FILE_HANDLER_DB_NAME'),
+                secret('file-handler-service-POSTGRES-USER', 'OPAL_FILE_HANDLER_DB_USERNAME'),
+                secret('file-handler-service-POSTGRES-PASS', 'OPAL_FILE_HANDLER_DB_PASSWORD'),
+                secret(
+                        'opal-file-handler-service-file-store-account-name',
+                        'FILE_STORE_STORAGE_ACCOUNT_NAME'
+                ),
+                secret(
+                        'opal-file-handler-service-file-store-blob-endpoint',
+                        'FILE_STORE_STORAGE_URL'
+                ),
+                secret(
+                        'opal-file-handler-service-file-store-access-key',
+                        'FILE_STORE_STORAGE_KEY'
+                )
+        ]
+]
+
 static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
     [$class     : 'AzureKeyVaultSecret',
      secretType : 'Secret',
@@ -309,6 +368,9 @@ static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
 withPipeline(type, product, component) {
     onPR {
         loadVaultSecrets(secrets)
+    }
+    onMaster {
+        loadVaultSecrets(stagingFunctionalTestSecrets)
     }
     before('akschartsinstall') {
         onPR {
@@ -363,6 +425,12 @@ withPipeline(type, product, component) {
 
     afterAlways('smoketest:dev') {
         publishSmokeResults()
+    }
+
+    before('functionalTest:stg') {
+        onMaster {
+            configureStagingFunctionalTestEnvironment(stgValuesFile)
+        }
     }
 
     afterAlways('functionalTest:stg') {
