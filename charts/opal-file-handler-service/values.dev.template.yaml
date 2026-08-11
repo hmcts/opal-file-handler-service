@@ -7,6 +7,12 @@ java:
   image: ${IMAGE_NAME}
   ingressHost: ${SERVICE_FQDN}
   secrets:
+    SERVICEBUS_SHARED_ACCESS_KEY:
+      secretRef: opal-sb-dev
+      key: primaryKey
+    SERVICEBUS_CONNECTION_STRING:
+      secretRef: opal-sb-dev
+      key: connectionString
     FILE_STORE_STORAGE_ACCOUNT_NAME:
       secretRef: storage-account-{{ .Release.Name }}-blobstorage
       key: storage_account_name
@@ -55,6 +61,15 @@ java:
       username: javapostgres
       password: javapassword
       database: opal-file-handler-db
+servicebus:
+  enabled: ${DEV_ENABLE_OPAL_SERVICE_BUS}
+  releaseNameOverride: ${SERVICE_NAME}-servicebus
+  resourceGroup: "opal-aso-dev-rg"
+  sbNamespace: "opal-servicebus-dev"
+  setup:
+    queues:
+      - name: "banking-interfaces-preprocess-interface-file-fines"
+      - name: "banking-interfaces-preprocess-interface-file-maintenance"
 blobstorage:
   enabled: true
   azureName: "opalfilesapr${CHANGE_ID}"
@@ -127,6 +142,7 @@ natwest-transfer:
     RELEASE_1A_ENABLED: true
 
 allpay-file-transfer:
+  releaseNameOverride: opal-file-handler-service-pr-${CHANGE_ID}-allpay-file
   image: ${IMAGE_NAME}
   environment:
     REDIS_CONNECTION_STRING: redis://${SERVICE_NAME}-hmcts-redis-master:6379
@@ -144,6 +160,7 @@ allpay-file-transfer:
     RELEASE_1A_ENABLED: true
 
 barclaycard-transfer:
+  releaseNameOverride: opal-file-handler-service-pr-${CHANGE_ID}-barclaycard
   image: ${IMAGE_NAME}
   environment:
     REDIS_CONNECTION_STRING: redis://${SERVICE_NAME}-hmcts-redis-master:6379

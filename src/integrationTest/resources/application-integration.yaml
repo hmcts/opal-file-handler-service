@@ -1,0 +1,11 @@
+opal:
+  file-handling-service:
+    file-types:
+      bteckoh-report:
+        container-name: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-report}
+      caps-report:
+        container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}
+
+user:
+  service:
+    url: http://localhost:4553

@@ -1,0 +1,1 @@
+DELETE FROM interface_files;
