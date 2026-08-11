@@ -28,7 +28,7 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceInt
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
     "opal.file-handler-service.file-types.bteckoh-report.sftp-username=BTEckoh-report",
-    "launchdarkly.default-flag-values.BTEckoh-Report-file-transfer-job=true",
+    "launchdarkly.default-flag-values.BTEckoh-Report-file-transfer-Job=true",
 })
 @Slf4j
 public class BTEckohReportBaisFileProcessorServiceIntegrationTest
@@ -70,7 +70,7 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.BTEckoh-Report-file-transfer-job=true"
+        "launchdarkly.default-flag-values.BTEckoh-Report-file-transfer-Job=true"
     })
     public class BankingInterfacesDisabled {
 
@@ -88,17 +88,17 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
-        "launchdarkly.default-flag-values.BTEckoh-Report-file-transfer-job=false"
+        "launchdarkly.default-flag-values.BTEckoh-Report-file-transfer-Job=false"
     })
     public class BTEckohReportFileTransferJobDisabled {
 
         @Test
-        @DisplayName("AC1: Feature flag 'BTEckoh-Report-file-transfer-job' is false")
+        @DisplayName("AC1: Feature flag 'BTEckoh-Report-file-transfer-Job' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 service.run(config));
 
-            assertThat(exception).hasMessage("BTEckoh-Report-file-transfer-job is not enabled");
+            assertThat(exception).hasMessage("BTEckoh-Report-file-transfer-Job is not enabled");
         }
 
     }
@@ -106,7 +106,7 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.BTEckoh-Report-file-transfer-job=false"
+        "launchdarkly.default-flag-values.BTEckoh-Report-file-transfer-Job=false"
     })
     public class BothFeatureFlagsDisabled {
 
