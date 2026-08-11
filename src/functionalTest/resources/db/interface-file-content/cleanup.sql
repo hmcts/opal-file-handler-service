@@ -1,0 +1,7 @@
+DELETE FROM public.interface_files
+WHERE interface_file_id IN (
+    9000000000000001,
+    9000000000000002,
+    9000000000000003,
+    9000000000000004
+);
