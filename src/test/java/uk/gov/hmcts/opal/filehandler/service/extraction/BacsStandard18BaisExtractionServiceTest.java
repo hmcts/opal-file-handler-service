@@ -579,7 +579,7 @@ class BacsStandard18BaisExtractionServiceTest {
             assertThatThrownBy(() -> service.validateConsistentDestinationDetails(
                 List.of(
                     expected,
-                    parsedTransaction("99", destinationBankDetails("560033", "27048527", "Beneficiary Name 2"))
+                    parsedTransaction("99", destinationBankDetails("560033", "27048528", "Beneficiary Name 1"))
                 ),
                 expected
             )).isInstanceOf(IllegalArgumentException.class)
@@ -612,11 +612,35 @@ class BacsStandard18BaisExtractionServiceTest {
         }
 
         @Test
-        void shouldReturnFalseWhenDestinationDetailsDiffer() {
+        void shouldReturnFalseWhenDestinationAccountNumberDiffers() {
+            assertThat(service.hasExpectedDestinationDetails(
+                parsedTransaction("99", destinationBankDetails("560033", "87048528", "Beneficiary Name 1")),
+                destinationBankDetails("560033", "27048527", "Beneficiary Name 1")
+            )).isFalse();
+        }
+
+        @Test
+        void shouldReturnFalseWhenDestinationSortCodeDiffers() {
+            assertThat(service.hasExpectedDestinationDetails(
+                parsedTransaction("99", destinationBankDetails("460022", "27048527", "Beneficiary Name 1")),
+                destinationBankDetails("560033", "27048527", "Beneficiary Name 1")
+            )).isFalse();
+        }
+
+        @Test
+        void shouldReturnTrueWhenDestinationNameDiffers() {
             assertThat(service.hasExpectedDestinationDetails(
                 parsedTransaction("99", destinationBankDetails("560033", "27048527", "Beneficiary Name 2")),
                 destinationBankDetails("560033", "27048527", "Beneficiary Name 1")
-            )).isFalse();
+            )).isTrue();
+        }
+
+        @Test
+        void shouldReturnTrueWhenDestinationTypeDiffers() {
+            assertThat(service.hasExpectedDestinationDetails(
+                parsedTransaction("99", destinationBankDetails("560033", "27048527", "Beneficiary Name 1")),
+                destinationBankDetails("560033", "27048527", "Beneficiary Name 1")
+            )).isTrue();
         }
     }
 

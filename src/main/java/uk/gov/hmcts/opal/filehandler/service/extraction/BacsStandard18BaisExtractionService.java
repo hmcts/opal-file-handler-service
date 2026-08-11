@@ -12,12 +12,12 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
-import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.BankDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.DestinationDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.OriginatorDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.Transaction;
+import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
 
 @Service
 @RequiredArgsConstructor
@@ -248,9 +248,7 @@ public class BacsStandard18BaisExtractionService implements ExtractionService<In
     boolean hasExpectedDestinationDetails(ParsedTransaction transaction, BankDetails expected) {
         BankDetails destination = transaction.destinationBankDetails();
         return expected.getSortCode().equals(destination.getSortCode())
-            && expected.getAccountNumber().equals(destination.getAccountNumber())
-            && expected.getType().equals(destination.getType())
-            && expected.getName().equals(destination.getName());
+            && expected.getAccountNumber().equals(destination.getAccountNumber());
     }
 
     record ParsedTransaction(Transaction transaction, BankDetails destinationBankDetails) {
