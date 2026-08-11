@@ -1,6 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.support;
 
 import com.redis.testcontainers.RedisContainer;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -59,16 +60,19 @@ public class TestContainerConfig {
                 "bais-emulator/configure-sftp", EXECUTABLE_FILE_MODE), "/etc/sftp.d/configure-sftp");
 
         var uid = 1001;
+        List<String> command = new ArrayList<>();
+
         for (String username : SFTP_USERS) {
+            command.add(String.format("%s::%d", username, uid));
+            uid++;
+
             sftpContainerBuilder = sftpContainerBuilder
-                .withCommand(String.format("%s::%d", username, uid))
                 .withCopyToContainer(MountableFile.forClasspathResource(
                         "bais-emulator/keys/bais-sftp-key.pub"),
                     String.format("/home/%s/.ssh/keys/bais-sftp-key.pub", username));
-
-            uid++;
         }
 
+        sftpContainerBuilder.withCommand(command.toArray(new String[0]));
         sftpContainerBuilder.setPortBindings(List.of("2222:22"));
 
         SFTP_CONTAINER = sftpContainerBuilder;
