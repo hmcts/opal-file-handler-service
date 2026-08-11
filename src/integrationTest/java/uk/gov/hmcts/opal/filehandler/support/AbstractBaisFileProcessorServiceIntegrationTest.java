@@ -85,7 +85,16 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
         assertThat(entities.size()).isGreaterThan(0);
     }
 
-    public final void assertMostRecentEntityHasStatus(String fileName, String checksum, Status status) {
+    public final void assertNumberOfEntitiesWithStatus(String fileName, String checksum, Status status,
+        int numExpected) {
+        List<InterfaceFileEntity> entities = repository.findAllByFileNameAndChecksumAndStatus(
+            fileName, checksum, status);
+
+        assertThat(entities).hasSize(numExpected);
+    }
+
+    public final void assertMostRecentEntityHasStatus(String fileName, String checksum, Interface source,
+        Status status) {
         List<InterfaceFileEntity> allEntities = repository.findAll(Sort.by(Sort.Direction.ASC, "createdDatetime"));
         assertThat(allEntities.size()).isGreaterThan(0);
 
@@ -96,7 +105,7 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
         assertThat(mostRecent.getChecksum()).isEqualTo(checksum);
         assertThat(mostRecent.getType()).isEqualTo(Type.SOURCE);
         assertThat(mostRecent.getOpalDomain()).isEqualTo(Domain.MAINTENANCE);
-        assertThat(mostRecent.getSource()).isEqualTo(Interface.CAPS_REPORT);
+        assertThat(mostRecent.getSource()).isEqualTo(source);
         assertThat(mostRecent.getTarget()).isEqualTo(Interface.OPAL);
 
         if (status.equals(Status.SUCCESS)) {
@@ -127,12 +136,12 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
         assertThat(HexFormat.of().formatHex(properties.getContentMd5())).isEqualTo(fileChecksum);
     }
 
-    public final InterfaceFileEntity createFailedInterfaceFile(String fileName, String checksum) {
+    public final InterfaceFileEntity createFailedInterfaceFile(String fileName, String checksum, Interface source) {
         InterfaceFileEntity entity = InterfaceFileEntity.builder()
             .fileName(fileName)
             .checksum(checksum)
             .type(Type.SOURCE)
-            .source(Interface.CAPS_REPORT)
+            .source(source)
             .target(Interface.OPAL)
             .opalDomain(Domain.MAINTENANCE)
             .createdDatetime(LocalDateTime.now(clock))

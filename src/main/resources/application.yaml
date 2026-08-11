@@ -128,6 +128,11 @@ opal:
         sftp-username: ${BAIS_SFTP_CAPS_REPORT_USERNAME:}
       bteckoh-report:
         container-name: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-report}
+        feature-flag: BTEckoh-Report-file-transfer-job
+        file-name-regex: ^2498-MCPLDB-MOJ-Payments-Report-Daily-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.xlsx$
+        source: BTECKOH_REPORT
+        target: OPAL
+        sftp-username: ${BAIS_SFTP_BTECKOH_REPORT_USERNAME:}
     sftp:
       bais:
         host: ${BAIS_SFTP_CONNECTION_HOST:localhost}

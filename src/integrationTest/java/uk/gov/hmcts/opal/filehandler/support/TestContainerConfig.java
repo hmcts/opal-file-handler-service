@@ -32,7 +32,7 @@ public class TestContainerConfig {
     private static final String AZURITE_ACCOUNT_KEY =
         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
-    private static final List<String> SFTP_USERS = List.of("CAPS-report");
+    private static final List<String> SFTP_USERS = List.of("CAPS-report", "BTEckoh-report");
 
     static {
         POSTGRES_CONTAINER = new PostgreSQLContainer(DockerImageName.parse(POSTGRES_IMAGE))
@@ -59,11 +59,11 @@ public class TestContainerConfig {
                 "bais-emulator/configure-sftp", EXECUTABLE_FILE_MODE), "/etc/sftp.d/configure-sftp");
 
         var uid = 1001;
-        for (String username :  SFTP_USERS) {
+        for (String username : SFTP_USERS) {
             sftpContainerBuilder = sftpContainerBuilder
                 .withCommand(String.format("%s::%d", username, uid))
                 .withCopyToContainer(MountableFile.forClasspathResource(
-                    "bais-emulator/keys/bais-sftp-key.pub"),
+                        "bais-emulator/keys/bais-sftp-key.pub"),
                     String.format("/home/%s/.ssh/keys/bais-sftp-key.pub", username));
 
             uid++;
