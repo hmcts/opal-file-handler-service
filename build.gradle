@@ -160,6 +160,10 @@ tasks.withType(JavaExec).configureEach {
   javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
 }
 
+tasks.named('sonarResolver') {
+  dependsOn(processResources)
+}
+
 tasks.withType(Test).configureEach {
   useJUnitPlatform()
   failFast = true
@@ -298,7 +302,7 @@ dependencyManagement {
   imports {
     mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2025.1.2'
     mavenBom "com.fasterxml.jackson:jackson-bom:2.22.1"
-    mavenBom "io.netty:netty-bom:4.2.16.Final"
+    mavenBom "io.netty:netty-bom:4.2.17.Final"
   }
 }
 dependencies {
