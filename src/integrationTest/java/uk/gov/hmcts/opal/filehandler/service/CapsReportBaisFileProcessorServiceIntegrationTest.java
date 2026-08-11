@@ -153,7 +153,7 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
         uploadResourceToSftp(CAPS_FILE_RESOURCE_2, CAPS_FILE_CONTAINER_2);
         capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
 
-        assertMostRecentEntityHasStatus(CAPS_FILE_2, CAPS_FILE_CHECKSUM_2, Status.SUCCESS);
+        assertEntitiesWithStatus(CAPS_FILE_2, CAPS_FILE_CHECKSUM_2, Status.SUCCESS);
         assertEntitiesWithStatus(CAPS_FILE, CAPS_FILE_CHECKSUM, Status.DUPLICATE);
         assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
 
