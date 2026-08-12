@@ -2,9 +2,18 @@ test:
   url: ${TEST_URL:http://localhost:4075}
   user-service-url: ${OPAL_USER_SERVICE_API_URL:http://localhost:4555}
   db:
-    url: ${FUNCTIONAL_TEST_DB_URL:}
-    username: ${FUNCTIONAL_TEST_DB_USERNAME:}
-    password: ${FUNCTIONAL_TEST_DB_PASSWORD:}
+    url: ${FUNCTIONAL_TEST_DB_URL:http://localhost:5432}
+    host: ${OPAL_FILE_HANDLER_DB_HOST:localhost}
+    port: ${OPAL_FILE_HANDLER_DB_PORT:5432}
+    name: ${OPAL_FILE_HANDLER_DB_NAME:opal-file-handler-db}
+    options: ${OPAL_FILE_HANDLER_DB_OPTIONS:}
+    username: ${FUNCTIONAL_TEST_DB_USERNAME:${OPAL_FILE_HANDLER_DB_USERNAME:opal-db-user}}
+    password: ${FUNCTIONAL_TEST_DB_PASSWORD:${OPAL_FILE_HANDLER_DB_PASSWORD:opal-db-password}}
+  blob:
+    container-name: ${FUNCTIONAL_TEST_BLOB_CONTAINER_NAME:bteckoh-report}
+    account-name: ${FUNCTIONAL_TEST_BLOB_ACCOUNT_NAME:${FILE_STORE_STORAGE_ACCOUNT_NAME:devstoreaccount1}}
+    account-key: ${FUNCTIONAL_TEST_BLOB_ACCOUNT_KEY:${FILE_STORE_STORAGE_KEY:Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==}}
+    endpoint: ${FUNCTIONAL_TEST_BLOB_ENDPOINT:${FILE_STORE_STORAGE_URL:http://127.0.0.1:10000/devstoreaccount1}}
   sftp:
     host: ${FUNCTIONAL_TEST_SFTP_HOST:}
     port: ${FUNCTIONAL_TEST_SFTP_PORT:22}

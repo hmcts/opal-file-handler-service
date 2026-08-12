@@ -1,0 +1,20 @@
+DELETE FROM public.interface_files
+WHERE interface_file_id IN (
+    9000000000000001,
+    9000000000000002,
+    9000000000000003,
+    9000000000000004
+);
+
+INSERT INTO public.interface_files
+    (interface_file_id, source, target, type, opal_domain, file_name, filestore_uuid, checksum,
+     status, created_datetime, errors)
+VALUES
+    (9000000000000001, 'BTECKOH_REPORT', 'BTECKOH_REPORT', 'SOURCE', 'FILE_HANDLER',
+     'bteckoh-test-file.xlsx',
+     'f0000000-0000-0000-0000-000000000001', 'd553f8f289bd08e5c513de5c000c0374',
+     'SUCCESS', CURRENT_TIMESTAMP, NULL),
+    (9000000000000002, 'CAPS_REPORT', 'CAPS_REPORT', 'SOURCE', 'FILE_HANDLER', '',
+     'cc4e81fe-364b-44c2-9d41-ca14fd50834f', NULL, 'FAILED', CURRENT_TIMESTAMP, NULL),
+    (9000000000000003, 'BTECKOH_REPORT', 'BTECKOH_REPORT', 'SOURCE', 'FILE_HANDLER', '',
+     'f0000000-0000-0000-0000-000000000002', NULL, 'SUCCESS', CURRENT_TIMESTAMP, NULL);

@@ -10,7 +10,7 @@ The supplied file-handler design material and the current codebase point to a sm
 
 - REST endpoints exposed by the service.
 - authentication via the shared user-service test support flow.
-- optional database connectivity for future diagnostics.
+- database and blob-storage connectivity for controlled functional-test fixtures and diagnostics.
 - future SFTP checks and file-ingestion smoke coverage.
 - future `/testing-support/**` endpoints for scheduler and ingestion control.
 
@@ -30,7 +30,8 @@ The supplied file-handler design material and the current codebase point to a sm
 - scenario context reduced to generic request/response state instead of fines account-specific data.
 - generic REST steps support `GET`, `POST`, and `PATCH` only.
 - smoke coverage is limited to the current stable endpoints: `/` and `/health`.
-- reusable DB and SFTP utilities are present but intentionally not coupled into assertions yet.
+- reusable DB, blob-storage, and SFTP utilities are available; interface-file content scenarios use tagged
+  setup and cleanup hooks.
 - test-support access is exposed through a simple client rather than concrete endpoint steps.
 
 ## What Was Not Carried Over
@@ -47,7 +48,8 @@ The supplied file-handler design material and the current codebase point to a sm
 - `src/functionalTest/java/.../auth`: bearer-token support.
 - `src/functionalTest/java/.../steps`: reusable Cucumber glue.
 - `src/functionalTest/java/.../support`: raw HTTP helpers.
-- `src/functionalTest/java/.../db`: optional DB utilities.
+- `src/functionalTest/java/.../db`: DB fixture and diagnostic utilities.
+- `src/functionalTest/java/.../blob`: blob fixture utilities.
 - `src/functionalTest/java/.../sftp`: reusable SFTP utilities.
 - `src/functionalTest/java/.../testsupport`: future `/testing-support/**` client wrappers.
 - `src/functionalTest/resources/features`: service-level functional and smoke scenarios.
@@ -55,7 +57,6 @@ The supplied file-handler design material and the current codebase point to a sm
 
 ## Gaps Still Outside The Framework
 
-- concrete authenticated API scenarios for `/interface-files` once controller/service behavior is implemented.
 - SFTP smoke features once connection details and target paths are agreed.
 - file-upload and scheduler-trigger test-support endpoints in the application.
 - higher-level fixtures for Common Platform stubbing when those flows are added to tests.
@@ -64,9 +65,61 @@ The supplied file-handler design material and the current codebase point to a sm
 
 - the framework is intentionally generic and service-shaped instead of inheriting fines entities.
 - execution is kept small enough to be extended incrementally.
-- DB access remains opt-in and environment-gated, which matches the current delivery model.
+- DB access remains environment-gated and is limited to tagged scenarios that own dedicated fixture IDs.
+- blob access is limited to tagged scenarios and dedicated test-owned blob UUIDs.
 - test-support endpoints are treated as the preferred future control plane instead of direct DB
   assertions.
+
+## Serenity Reports
+
+`./gradlew functional` aggregates the Serenity results and copies the HTML report to
+`functional-test-report/index.html`.
+
+`./gradlew smoke` aggregates the Serenity results and copies the HTML report to
+`smoke-test-report/index.html`.
+
+Both tasks also retain their JUnit XML and standard Gradle HTML reports under `build/` for CI
+publication and diagnostics.
+
+## Authentication dependency
+
+Authenticated scenarios obtain bearer tokens from the user-service test-support endpoint. Local
+runs default to `http://localhost:4555`; `OPAL_USER_SERVICE_API_URL` and then
+`DEV_OPAL_USER_SERVICE_API_URL` override that default. For pull-request deployments, Jenkins reads
+`java.environment.OPAL_USER_SERVICE_API_URL` from
+`charts/opal-file-handler-service/values.dev.template.yaml`, removes any trailing slash, and exports
+it to the functional-test process.
+
+## Database-backed fixtures
+
+The interface-file content feature manages its own `interface_files` rows: local runs do so around
+every scenario, while deployed PR runs do so around the functional-test stage. Local runs default to
+`FUNCTIONAL_TEST_DB_URL=http://localhost:5432`,
+`FUNCTIONAL_TEST_DB_USERNAME=opal-db-user`, and `FUNCTIONAL_TEST_DB_PASSWORD=opal-db-password`.
+The HTTP-style local URL is converted to `jdbc:postgresql://localhost:5432/opal-file-handler-db`
+before connecting. Explicit `FUNCTIONAL_TEST_DB_*` values still take precedence over all other
+settings. For pull-request deployments, Jenkins reads the database settings from
+`charts/opal-file-handler-service/values.dev.template.yaml`, resolves the Helm release database
+pod in the `opal` namespace, and executes the fixture SQL there using `kubectl exec`. The Cucumber
+JDBC hooks remain enabled for local runs, but skip their direct connection when Jenkins has prepared
+the deployed database. Jenkins refreshes its AKS credentials and removes the fixtures after the
+functional-test stage, including when the tests fail. Cleanup targets only the dedicated IDs reserved
+in the fixture SQL.
+
+## Blob-backed fixtures
+
+The interface-file content feature uploads its BTECKOH workbook before every scenario and removes
+it afterward. Local runs default to the `bteckoh-report` container in Azurite account
+`devstoreaccount1` at `http://127.0.0.1:10000/devstoreaccount1`. The standard Azurite development
+account key is used locally. `FUNCTIONAL_TEST_BLOB_CONTAINER_NAME`,
+`FUNCTIONAL_TEST_BLOB_ACCOUNT_NAME`, `FUNCTIONAL_TEST_BLOB_ACCOUNT_KEY`, and
+`FUNCTIONAL_TEST_BLOB_ENDPOINT` override these values for other environments.
+
+For pull-request deployments, Jenkins reads the account name, resource group, and container from
+`charts/opal-file-handler-service/values.dev.template.yaml`, resolves the provisioned account's
+endpoint and key through Azure, and exports them as `FILE_STORE_STORAGE_ACCOUNT_NAME`,
+`FILE_STORE_STORAGE_URL`, and `FILE_STORE_STORAGE_KEY`. The functional tests use those application
+storage variables when their functional-test-specific overrides are not set.
 
 ## Phased Plan
 
