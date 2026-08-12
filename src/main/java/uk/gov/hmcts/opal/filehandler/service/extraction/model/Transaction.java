@@ -19,10 +19,10 @@ import lombok.Setter;
 @Builder
 public class Transaction {
 
-    private static final Set<String> TOTALS_CODES = Set.of("44", "54");
+    private static final Set<String> TOTAL_CODES = Set.of("44", "54");
 
     public static boolean isTotalCode(String transactionCode) {
-        return TOTALS_CODES.contains(transactionCode);
+        return TOTAL_CODES.contains(transactionCode);
     }
 
     private String transactionCode;
