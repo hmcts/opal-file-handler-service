@@ -150,6 +150,8 @@ class BacsStandard18BaisExtractionServiceTest {
             doNothing().when(extractionService).validateConsistentDestinationDetails(transactions, first);
             doNothing().when(extractionService).applyAllpayDdSourceUpdate(any(), eq(first.transaction()));
             doReturn(InterfaceFileCommonDataExtract.PaymentType.CASH).when(extractionService).paymentTypeFor("99");
+            doReturn(false).when(extractionService).isTotalRow("DATA1");
+            doReturn(false).when(extractionService).isTotalRow("DATA2");
         }
     }
 
@@ -294,6 +296,24 @@ class BacsStandard18BaisExtractionServiceTest {
     }
 
     @Nested
+    class IsTotalRow {
+
+        private final BacsStandard18BaisExtractionService service = new BacsStandard18BaisExtractionService(
+            mock(InterfaceFilesRepository.class)
+        );
+
+        @Test
+        void shouldCorrectlyMakeCallToIsTotalCodeMethod() {
+            try (MockedStatic<Transaction> transaction = mockStatic(Transaction.class)) {
+                String transactionTotalRow =
+                    transactionRow("44", "000000", "00000000", "2500", "", "", true);
+                service.isTotalRow(transactionTotalRow);
+                transaction.verify(() -> Transaction.isTotalCode("44"));
+            }
+        }
+    }
+
+    @Nested
     class ParseTransaction {
 
         private final BacsStandard18BaisExtractionService service = new BacsStandard18BaisExtractionService(
@@ -343,14 +363,6 @@ class BacsStandard18BaisExtractionServiceTest {
             assertThatThrownBy(() -> service.parseTransaction(transactionRowWithReplacement(14, "1")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("BACS Standard 18 destination account type was 1 but expected 0");
-        }
-
-        @Test
-        void shouldParseTotalsTransactionRowWithoutError() {
-            String transactionRow =
-                transactionRow("44", "000000", "00000000", "2500", "", "", true);
-            BacsStandard18BaisExtractionService.ParsedTransaction parsed = service.parseTransaction(transactionRow);
-            assertThat(parsed.shouldProcess()).isFalse();
         }
     }
 

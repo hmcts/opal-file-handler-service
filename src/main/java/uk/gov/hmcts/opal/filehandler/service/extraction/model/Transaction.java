@@ -29,9 +29,5 @@ public class Transaction {
     private OriginatorDetails originatorDetails;
     private Long amount;
     private String dateEntryApplied;
-
-    public boolean isTotal() {
-        return isTotalCode(transactionCode);
-    }
 }
 
