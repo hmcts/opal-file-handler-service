@@ -344,6 +344,14 @@ class BacsStandard18BaisExtractionServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("BACS Standard 18 destination account type was 1 but expected 0");
         }
+
+        @Test
+        void shouldParseTotalsTransactionRowWithoutError() {
+            String transactionRow =
+                transactionRow("44", "000000", "00000000", "2500", "", "", true);
+            BacsStandard18BaisExtractionService.ParsedTransaction parsed = service.parseTransaction(transactionRow);
+            assertThat(parsed.shouldProcess()).isFalse();
+        }
     }
 
     @Nested

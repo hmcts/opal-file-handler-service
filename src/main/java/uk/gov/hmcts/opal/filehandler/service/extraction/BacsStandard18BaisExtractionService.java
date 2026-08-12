@@ -44,6 +44,7 @@ public class BacsStandard18BaisExtractionService implements ExtractionService<In
             .filter(line -> !line.isBlank())
             .filter(line -> !isControlRow(line))
             .map(this::parseTransaction)
+            .filter(ParsedTransaction::shouldProcess)
             .toList();
 
         if (transactions.isEmpty()) {
@@ -112,7 +113,8 @@ public class BacsStandard18BaisExtractionService implements ExtractionService<In
         String originatorAccountNumber = numericIdentifier(line, 23, 31, "originator account number");
         long amount = parseAmount(paddedNumericText(line, 35, 46, "amount"));
         String originatorName = text(line, 46, 64);
-        String accountReference = requiredText(line, 64, 82, "originator account reference");
+        String accountReference = Transaction.isTotalCode(transactionCode) ? ""
+            : requiredText(line, 64, 82, "originator account reference");
         String destinationName = text(line, 82, 100);
 
         if (!"0".equals(accountType)) {
@@ -253,5 +255,8 @@ public class BacsStandard18BaisExtractionService implements ExtractionService<In
 
     record ParsedTransaction(Transaction transaction, BankDetails destinationBankDetails) {
 
+        public boolean shouldProcess() {
+            return !transaction().isTotal();
+        }
     }
 }
