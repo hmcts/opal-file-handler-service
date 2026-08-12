@@ -38,10 +38,14 @@ import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
+import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.exception.BaisSftpFileDownloadException;
+import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
+import uk.gov.hmcts.opal.filehandler.exception.BlobUploadException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
@@ -56,6 +60,7 @@ class AbstractBaisFileProcessorServiceTest {
     private static final String IGNORED_FILE = "ignored-file.txt";
     private static final String CHECKSUM = "3685d7f2b30e9b34b8d3e5496fb45506";
     private static final byte[] FILE_CONTENT = {0, 1, 13, 10, (byte) 255};
+    private static final UUID FILE_UUID = UUID.randomUUID();
 
     @Mock
     private FeatureFlagUtil featureFlagUtil;
@@ -151,6 +156,7 @@ class AbstractBaisFileProcessorServiceTest {
             .checksum(CHECKSUM)
             .status(Status.SUCCESS)
             .createdDatetime(LocalDateTime.now(clock))
+            .opalDomain(Domain.MAINTENANCE)
             .build();
 
         when(interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
@@ -178,7 +184,9 @@ class AbstractBaisFileProcessorServiceTest {
         when(interfaceFilesRepository.findAllByFileNameAndChecksumAndStatus(
             MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(firstFailure, secondFailure));
 
-        doThrow(new RuntimeException("storage said \"no\"\nretry later")).when(interfaceFileBlobStoreService)
+        doThrow(new BlobUploadException(
+            UUID.randomUUID(), "test-container", new RuntimeException("storage said \"no\"\nretry later")))
+            .when(interfaceFileBlobStoreService)
             .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
 
         service.run(baisFileProcessorConfiguration);
@@ -189,6 +197,36 @@ class AbstractBaisFileProcessorServiceTest {
             .isEqualTo("Blob upload failed for file 'matching-file.dat': storage said \"no\"\nretry later");
         assertThat(firstFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
         assertThat(secondFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
+        verify(baisSftpClient, never()).deleteFile(any(), any());
+    }
+
+    @Test
+    void uploadFailureIsRetainedWhenDuplicateExists() {
+        InterfaceFileEntity duplicate = InterfaceFileEntity.builder()
+            .interfaceFileId(123L)
+            .source(Interface.CAPS_REPORT)
+            .target(Interface.OPAL)
+            .type(Type.SOURCE)
+            .fileName(MATCHING_FILE)
+            .checksum(CHECKSUM)
+            .status(Status.SUCCESS)
+            .createdDatetime(LocalDateTime.now(clock))
+            .opalDomain(Domain.MAINTENANCE)
+            .build();
+
+        when(interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
+            MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.of(duplicate));
+        doThrow(new BlobUploadException(
+            UUID.randomUUID(), "test-container", new RuntimeException("storage unavailable")))
+            .when(interfaceFileBlobStoreService)
+            .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
+
+        service.run(baisFileProcessorConfiguration);
+
+        assertThat(savedStatuses).containsExactly(Status.FAILED);
+        assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
+            .isEqualTo("Blob upload failed for file 'matching-file.dat': storage unavailable");
+        assertThat(service.processCount).isZero();
         verify(baisSftpClient, never()).deleteFile(any(), any());
     }
 
@@ -237,6 +275,27 @@ class AbstractBaisFileProcessorServiceTest {
         assertThat(service.processCount).isOne();
     }
 
+    @Test
+    void uploadedFileHasChecksumFailureResultsInFailedEntity() {
+        when(interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
+            MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.empty());
+
+        doThrow(new BlobChecksumValidationException(
+            FILE_UUID, CHECKSUM, "00000000000000000000000000000000"))
+            .when(interfaceFileBlobStoreService)
+            .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
+
+        service.run(baisFileProcessorConfiguration);
+
+        assertThat(service.lastSavedEntity.getStatus()).isEqualTo(Status.FAILED);
+        assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
+            .isEqualTo("Blob checksum validation failed for filestore UUID '" + FILE_UUID + "': "
+                + "expected '3685d7f2b30e9b34b8d3e5496fb45506' but was '00000000000000000000000000000000'");
+        assertThat(service.processCount).isZero();
+        verify(baisSftpClient, never()).deleteFile(any(), any());
+    }
+
+
     private void configureSuccessfulRun() {
         lenient().when(baisFileProcessorConfiguration.getFeatureFlag()).thenReturn(TEST_FEATURE_FLAG);
         lenient().when(baisFileProcessorConfiguration.getSftpUsername()).thenReturn(SFTP_USERNAME);
@@ -284,11 +343,12 @@ class AbstractBaisFileProcessorServiceTest {
             .interfaceFileId(id)
             .source(Interface.CAPS_REPORT)
             .target(Interface.OPAL)
-            .type(uk.gov.hmcts.opal.filehandler.entity.Type.SOURCE)
+            .type(Type.SOURCE)
             .fileName(MATCHING_FILE)
             .checksum(CHECKSUM)
             .status(Status.FAILED)
             .createdDatetime(LocalDateTime.now(clock))
+            .opalDomain(Domain.MAINTENANCE)
             .build();
     }
 

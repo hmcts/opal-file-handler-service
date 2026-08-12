@@ -1,7 +1,5 @@
 package uk.gov.hmcts.opal.filehandler.db;
 
-import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -9,9 +7,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.datasource.init.ScriptException;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
+import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 
 /**
- * Lightweight JDBC helper for optional functional-test database checks.
+ * Lightweight JDBC helper for functional-test database fixtures and checks.
  */
 public class DatabaseClient implements AutoCloseable {
 
@@ -64,6 +66,19 @@ public class DatabaseClient implements AutoCloseable {
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to execute database query", e);
+        }
+    }
+
+    /**
+     * Executes a SQL script from the functional-test classpath.
+     *
+     * @param resourcePath classpath-relative SQL script path.
+     */
+    public void executeScript(String resourcePath) {
+        try {
+            ScriptUtils.executeSqlScript(connection, new ClassPathResource(resourcePath));
+        } catch (ScriptException e) {
+            throw new IllegalStateException("Failed to execute database script: " + resourcePath, e);
         }
     }
 

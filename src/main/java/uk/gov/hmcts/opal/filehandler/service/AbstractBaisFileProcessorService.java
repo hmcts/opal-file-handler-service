@@ -2,10 +2,11 @@ package uk.gov.hmcts.opal.filehandler.service;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.time.LocalDateTime;
+import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,10 +19,12 @@ import org.springframework.util.DigestUtils;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
+import uk.gov.hmcts.opal.filehandler.exception.BlobUploadException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
@@ -80,13 +83,13 @@ public abstract class AbstractBaisFileProcessorService {
     }
 
     private void ingestFile(BaisFileProcessorConfiguration config, String fileName) throws IOException {
+        final byte[] downloadedBytes;
+
         try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
             baisSftpClient.downloadFile(config.getSftpUsername(), fileName, downloadStream);
-
-            final byte[] downloadedBytes = downloadStream.toByteArray();
+            downloadedBytes = downloadStream.toByteArray();
 
             String fileChecksum = calculateChecksum(new ByteArrayInputStream(downloadedBytes));
-
             Optional<InterfaceFileEntity> duplicate = interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
                 fileName, fileChecksum, Status.SUCCESS);
 
@@ -99,6 +102,9 @@ public abstract class AbstractBaisFileProcessorService {
                     fileStoreUuid, config.getContainerName(), new ByteArrayInputStream(downloadedBytes), fileChecksum);
 
                 if (duplicate.isPresent()) {
+                    log.error("File with name '{}' and checksum '{}' for source '{}' is a duplicate of {}",
+                        fileName, fileChecksum, config.getSource(), duplicate.get().getInterfaceFileId());
+
                     entity = createDuplicateInterfaceFile(
                         config, fileName, fileChecksum, fileStoreUuid, duplicate.get());
                 } else {
@@ -106,7 +112,7 @@ public abstract class AbstractBaisFileProcessorService {
                 }
             } catch (BlobChecksumValidationException e) {
                 entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
-            } catch (RuntimeException e) {
+            } catch (BlobUploadException e) {
                 entity = createFailureInterfaceFile(config, fileName, fileChecksum,
                     "Blob upload failed for file '%s': %s".formatted(fileName, e.getMessage()));
             }
@@ -117,7 +123,7 @@ public abstract class AbstractBaisFileProcessorService {
                 processIngestedFile(config, entity, new ByteArrayInputStream(downloadedBytes));
             }
 
-            deleteRemoteFile(config, fileName, entity);
+            completeIngestion(config, fileName, entity);
         }
     }
 
@@ -140,6 +146,7 @@ public abstract class AbstractBaisFileProcessorService {
             .status(Status.DUPLICATE)
             .filestoreUuid(fileStoreUuid)
             .createdDatetime(LocalDateTime.now(clock))
+            .opalDomain(Domain.MAINTENANCE)
             .errors(errorJson("File with name '%s' and checksum '%s' for source '%s' already processed skipping"
                 .formatted(fileName, fileChecksum, config.getSource())))
             .build();
@@ -160,6 +167,7 @@ public abstract class AbstractBaisFileProcessorService {
             .status(Status.INGESTED)
             .filestoreUuid(fileStoreUuid)
             .createdDatetime(LocalDateTime.now(clock))
+            .opalDomain(Domain.MAINTENANCE)
             .build();
     }
 
@@ -177,6 +185,7 @@ public abstract class AbstractBaisFileProcessorService {
             .checksum(fileChecksum)
             .status(Status.FAILED)
             .createdDatetime(LocalDateTime.now(clock))
+            .opalDomain(Domain.MAINTENANCE)
             .errors(errorJson(failureMessage))
             .build();
     }
@@ -208,7 +217,7 @@ public abstract class AbstractBaisFileProcessorService {
         }
     }
 
-    private void deleteRemoteFile(BaisFileProcessorConfiguration config, String fileName, InterfaceFileEntity entity) {
+    private void completeIngestion(BaisFileProcessorConfiguration config, String fileName, InterfaceFileEntity entity) {
         if (entity.getStatus().equals(Status.FAILED)) {
             return;
         }
