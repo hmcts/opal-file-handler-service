@@ -14,8 +14,8 @@ public class InterfaceFileContentDataHooks {
     private static final String CLEANUP_SCRIPT = "db/interface-file-content/cleanup.sql";
 
     /**
-     * Replaces any stale test-owned rows with the fixtures required by a local scenario. Jenkins
-     * prepares the deployed database before the functional-test stage instead.
+     * Replaces any stale test-owned rows with the fixtures required by a local or staging scenario.
+     * Jenkins prepares the disposable PR database before the functional-test stage instead.
      */
     @Before("@InterfaceFileContentDbFixture")
     public void setUpInterfaceFileContentData() {
@@ -25,8 +25,8 @@ public class InterfaceFileContentDataHooks {
     }
 
     /**
-     * Removes only the rows reserved for local interface-file content functional tests. Jenkins
-     * cleans the deployed database after the functional-test stage instead.
+     * Removes only the rows reserved for local and staging interface-file content functional
+     * tests. Jenkins cleans the disposable PR database after the functional-test stage instead.
      */
     @After("@InterfaceFileContentDbFixture")
     public void cleanUpInterfaceFileContentData() {

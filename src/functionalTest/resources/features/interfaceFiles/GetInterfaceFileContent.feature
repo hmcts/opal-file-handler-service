@@ -1,7 +1,7 @@
 @Opal @JIRA-LABEL:file-handler-service @InterfaceFileContentDbFixture @InterfaceFileContentBlobFixture
 Feature: Get Interface File Content
 
-  # Tagged fixture hooks manage local data; Jenkins prepares deployed database data around the test stage.
+  # Tagged fixture hooks manage local and staging data; Jenkins prepares PR database data around the test stage.
   Background:
     Given I am testing as the "opal-test@dev.platform.hmcts.net" user
 
