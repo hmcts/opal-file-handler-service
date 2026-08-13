@@ -127,9 +127,8 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldFindParentSourceFileWhenSourceJsonHasNoSupersededFailures() {
-        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile(930001L, "source.dat"));
-        repository.saveAndFlush(sourceJsonFile(
-            930002L, "extract.json", "json-checksum", Status.FAILED, parent));
+        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
+        repository.saveAndFlush(sourceJsonFile("extract.json", "json-checksum", Status.FAILED, parent));
         entityManager.clear();
 
         List<InterfaceFileEntity> result = repository.findAll(
@@ -142,11 +141,9 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldFindParentSourceFileAtSupersededFailureLimit() {
-        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile(930011L, "source.dat"));
-        repository.saveAndFlush(sourceJsonFile(
-            930012L, "extract.json", "json-checksum", Status.FAILED, parent));
-        saveSourceJsonFiles(
-            930013L, 5, "extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
+        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
+        repository.saveAndFlush(sourceJsonFile("extract.json", "json-checksum", Status.FAILED, parent));
+        saveSourceJsonFiles(5, "extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
         entityManager.clear();
 
         List<InterfaceFileEntity> result = repository.findAll(
@@ -159,11 +156,9 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldExcludeParentSourceFileAboveSupersededFailureLimit() {
-        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile(930021L, "source.dat"));
-        repository.saveAndFlush(sourceJsonFile(
-            930022L, "extract.json", "json-checksum", Status.FAILED, parent));
-        saveSourceJsonFiles(
-            930023L, 6, "extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
+        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
+        repository.saveAndFlush(sourceJsonFile("extract.json", "json-checksum", Status.FAILED, parent));
+        saveSourceJsonFiles(6, "extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
         entityManager.clear();
 
         List<InterfaceFileEntity> result = repository.findAll(
@@ -174,13 +169,10 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldCountOnlySupersededFailuresForSameFileNameAndChecksum() {
-        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile(930031L, "source.dat"));
-        repository.saveAndFlush(sourceJsonFile(
-            930032L, "extract.json", "json-checksum", Status.FAILED, parent));
-        saveSourceJsonFiles(
-            930033L, 6, "other-extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
-        saveSourceJsonFiles(
-            930039L, 6, "extract.json", "other-checksum", Status.FAILED_SUPERSEDED, parent);
+        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
+        repository.saveAndFlush(sourceJsonFile("extract.json", "json-checksum", Status.FAILED, parent));
+        saveSourceJsonFiles(6, "other-extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
+        saveSourceJsonFiles(6, "extract.json", "other-checksum", Status.FAILED_SUPERSEDED, parent);
         entityManager.clear();
 
         List<InterfaceFileEntity> result = repository.findAll(
@@ -193,11 +185,9 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldReturnParentSourceFileOnlyOnceForMultipleFailedSourceJsonFiles() {
-        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile(930051L, "source.dat"));
-        repository.saveAndFlush(sourceJsonFile(
-            930052L, "first-extract.json", "first-checksum", Status.FAILED, parent));
-        repository.saveAndFlush(sourceJsonFile(
-            930053L, "second-extract.json", "second-checksum", Status.FAILED, parent));
+        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
+        repository.saveAndFlush(sourceJsonFile("first-extract.json", "first-checksum", Status.FAILED, parent));
+        repository.saveAndFlush(sourceJsonFile("second-extract.json", "second-checksum", Status.FAILED, parent));
         entityManager.clear();
 
         List<InterfaceFileEntity> result = repository.findAll(
@@ -210,14 +200,12 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldFindParentSourceFilesOnlyForRequestedSource() {
-        InterfaceFileEntity natwestParent = repository.saveAndFlush(sourceFile(
-            930061L, "natwest-source.dat", Interface.NATWEST));
-        InterfaceFileEntity dwpParent = repository.saveAndFlush(sourceFile(
-            930062L, "dwp-source.dat", Interface.DWP));
-        repository.saveAndFlush(sourceJsonFile(
-            930063L, "natwest-extract.json", "natwest-checksum", Status.FAILED, natwestParent));
-        repository.saveAndFlush(sourceJsonFile(
-            930064L, "dwp-extract.json", "dwp-checksum", Status.FAILED, dwpParent));
+        InterfaceFileEntity natwestParent = repository.saveAndFlush(
+            sourceFile("natwest-source.dat", Interface.NATWEST));
+        InterfaceFileEntity dwpParent = repository.saveAndFlush(sourceFile("dwp-source.dat", Interface.DWP));
+        repository.saveAndFlush(
+            sourceJsonFile("natwest-extract.json", "natwest-checksum", Status.FAILED, natwestParent));
+        repository.saveAndFlush(sourceJsonFile("dwp-extract.json", "dwp-checksum", Status.FAILED, dwpParent));
         entityManager.clear();
 
         List<InterfaceFileEntity> result = repository.findAll(
@@ -229,17 +217,17 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
     }
 
     private InterfaceFileEntity sourceFile(String fileName) {
-        return sourceFile(id, fileName, Interface.NATWEST);
+        return sourceFile(fileName, Interface.NATWEST);
     }
 
-    private InterfaceFileEntity sourceFile(long id, String fileName, Interface source) {
+    private InterfaceFileEntity sourceFile(String fileName, Interface source) {
         return InterfaceFileEntity.builder()
             .source(source)
             .target(Interface.OPAL)
             .type(Type.SOURCE)
             .opalDomain(Domain.FILE_HANDLER)
             .fileName(fileName)
-            .checksum("source-checksum-" + fileName)
+            .checksum("checksum-" + fileName)
             .status(Status.SUCCESS)
             .createdDatetime(LocalDateTime.now())
             .build();
@@ -266,15 +254,14 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
     }
 
     private void saveSourceJsonFiles(
-        long firstId,
         int count,
         String fileName,
         String checksum,
         Status status,
         InterfaceFileEntity sourceFile
     ) {
-        List<InterfaceFileEntity> sourceJsonFiles = LongStream.range(firstId, firstId + count)
-            .mapToObj(id -> sourceJsonFile(id, fileName, checksum, status, sourceFile))
+        List<InterfaceFileEntity> sourceJsonFiles = LongStream.range(0, count)
+            .mapToObj(id -> sourceJsonFile(fileName, checksum, status, sourceFile))
             .toList();
 
         repository.saveAllAndFlush(sourceJsonFiles);

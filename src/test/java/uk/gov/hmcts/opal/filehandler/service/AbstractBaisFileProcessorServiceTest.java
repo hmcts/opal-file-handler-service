@@ -198,7 +198,7 @@ class AbstractBaisFileProcessorServiceTest {
                 .status(Status.SUCCESS)
                 .createdDatetime(LocalDateTime.now(CLOCK))
                 .opalDomain(Domain.MAINTENANCE)
-            .build();
+                .build();
 
             when(repository.findByFileNameAndChecksumAndStatus(
                 MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.of(duplicate));
@@ -223,15 +223,13 @@ class AbstractBaisFileProcessorServiceTest {
 
             when(repository.findAllByFileNameAndChecksumAndStatus(
                 MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(firstFailure, secondFailure));
-            doThrow(new RuntimeException("storage said \"no\"\nretry later")).when(blobStoreService)
-                .uploadBaisFile(any(UUID.class), eq(CONTAINER), any(InputStream.class), eq(CHECKSUM));
 
             doThrow(new BlobUploadException(
                 UUID.randomUUID(), "test-container", new RuntimeException("storage said \"no\"\nretry later")))
-                .when(interfaceFileBlobStoreService)
+                .when(blobStoreService)
                 .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
 
-            service.run(baisFileProcessorConfiguration);
+            service.run(config);
 
             assertThat(savedStatuses).containsExactly(Status.FAILED);
             assertThat(service.lastSavedEntity.getFilestoreUuid()).isNull();
@@ -242,35 +240,35 @@ class AbstractBaisFileProcessorServiceTest {
             verify(baisSftpClient, never()).deleteFile(any(), any());
         }
 
-    @Test
-    void uploadFailureIsRetainedWhenDuplicateExists() {
-        InterfaceFileEntity duplicate = InterfaceFileEntity.builder()
-            .interfaceFileId(123L)
-            .source(Interface.CAPS_REPORT)
-            .target(Interface.OPAL)
-            .type(Type.SOURCE)
-            .fileName(MATCHING_FILE)
-            .checksum(CHECKSUM)
-            .status(Status.SUCCESS)
-            .createdDatetime(LocalDateTime.now(clock))
-            .opalDomain(Domain.MAINTENANCE)
-            .build();
+        @Test
+        void uploadFailureIsRetainedWhenDuplicateExists() {
+            InterfaceFileEntity duplicate = InterfaceFileEntity.builder()
+                .interfaceFileId(123L)
+                .source(Interface.CAPS_REPORT)
+                .target(Interface.OPAL)
+                .type(Type.SOURCE)
+                .fileName(MATCHING_FILE)
+                .checksum(CHECKSUM)
+                .status(Status.SUCCESS)
+                .createdDatetime(LocalDateTime.now(CLOCK))
+                .opalDomain(Domain.MAINTENANCE)
+                .build();
 
-        when(interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
-            MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.of(duplicate));
-        doThrow(new BlobUploadException(
-            UUID.randomUUID(), "test-container", new RuntimeException("storage unavailable")))
-            .when(interfaceFileBlobStoreService)
-            .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
+            when(repository.findByFileNameAndChecksumAndStatus(
+                MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.of(duplicate));
+            doThrow(new BlobUploadException(
+                UUID.randomUUID(), "test-container", new RuntimeException("storage unavailable")))
+                .when(blobStoreService)
+                .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
 
-        service.run(baisFileProcessorConfiguration);
+            service.run(config);
 
-        assertThat(savedStatuses).containsExactly(Status.FAILED);
-        assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
-            .isEqualTo("Blob upload failed for file 'matching-file.dat': storage unavailable");
-        assertThat(service.processCount).isZero();
-        verify(baisSftpClient, never()).deleteFile(any(), any());
-    }
+            assertThat(savedStatuses).containsExactly(Status.FAILED);
+            assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
+                .isEqualTo("Blob upload failed for file 'matching-file.dat': storage unavailable");
+            assertThat(service.processCount).isZero();
+            verify(baisSftpClient, never()).deleteFile(any(), any());
+        }
 
         @Test
         void shouldRecordProcessingFailureAndNotDeleteRemoteFile() {
@@ -316,28 +314,27 @@ class AbstractBaisFileProcessorServiceTest {
             verify(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(secondFile), any());
             assertThat(service.processCount).isOne();
         }
+
+        @Test
+        void uploadedFileHasChecksumFailureResultsInFailedEntity() {
+            when(repository.findByFileNameAndChecksumAndStatus(
+                MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.empty());
+
+            doThrow(new BlobChecksumValidationException(
+                FILE_UUID, CHECKSUM, "00000000000000000000000000000000"))
+                .when(blobStoreService)
+                .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
+
+            service.run(config);
+
+            assertThat(service.lastSavedEntity.getStatus()).isEqualTo(Status.FAILED);
+            assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
+                .isEqualTo("Blob checksum validation failed for filestore UUID '" + FILE_UUID + "': "
+                    + "expected '3685d7f2b30e9b34b8d3e5496fb45506' but was '00000000000000000000000000000000'");
+            assertThat(service.processCount).isZero();
+            verify(baisSftpClient, never()).deleteFile(any(), any());
+        }
     }
-
-    @Test
-    void uploadedFileHasChecksumFailureResultsInFailedEntity() {
-        when(interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
-            MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.empty());
-
-        doThrow(new BlobChecksumValidationException(
-            FILE_UUID, CHECKSUM, "00000000000000000000000000000000"))
-            .when(interfaceFileBlobStoreService)
-            .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
-
-        service.run(baisFileProcessorConfiguration);
-
-        assertThat(service.lastSavedEntity.getStatus()).isEqualTo(Status.FAILED);
-        assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
-            .isEqualTo("Blob checksum validation failed for filestore UUID '" + FILE_UUID + "': "
-                + "expected '3685d7f2b30e9b34b8d3e5496fb45506' but was '00000000000000000000000000000000'");
-        assertThat(service.processCount).isZero();
-        verify(baisSftpClient, never()).deleteFile(any(), any());
-    }
-
 
     private void configureSuccessfulRun() {
         service.stubFilesToProcess(MATCHING_FILE);
