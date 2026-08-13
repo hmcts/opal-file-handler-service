@@ -1,16 +1,4 @@
 buildscript {
-  ext {
-    cucumberQueryVersion = "14.7.0"
-    cucumberMessagesVersion = "30.1.0"
-  }
-
-  configurations.classpath {
-    resolutionStrategy {
-      force "io.cucumber:query:${cucumberQueryVersion}"
-      force "io.cucumber:messages:${cucumberMessagesVersion}"
-    }
-  }
-
   dependencies {
     classpath("org.flywaydb:flyway-database-postgresql:13.2.0")
   }
@@ -108,8 +96,6 @@ configurations.configureEach {
     force "io.cucumber:cucumber-core:${cucumberVersion}"
     force "io.cucumber:cucumber-java:${cucumberVersion}"
     force "io.cucumber:cucumber-junit:${cucumberVersion}"
-    force "io.cucumber:query:${cucumberQueryVersion}"
-    force "io.cucumber:messages:${cucumberMessagesVersion}"
   }
 }
 tasks.register("bundleOpenApi", JavaExec) {
