@@ -88,6 +88,45 @@ public class InterfaceFilesStepDef extends BaseStepDef {
     }
 
     /**
+     * Retrieves interface-file metadata using all supplied filters.
+     *
+     * @param filters query-parameter names and values.
+     */
+    @When("I request interface files with filters:")
+    public void requestInterfaceFilesWithFilters(DataTable filters) {
+        authorisedJsonRequest()
+            .queryParams(filters.asMap(String.class, String.class))
+            .when()
+            .get(getTestUrl() + "/interface-files");
+    }
+
+    /**
+     * Retrieves interface-file metadata filtered from an inclusive creation date.
+     *
+     * @param fromDate earliest creation date to include.
+     */
+    @When("I request interface files from date {string}")
+    public void requestInterfaceFilesFromDate(String fromDate) {
+        authorisedJsonRequest()
+            .queryParam("from_date", fromDate)
+            .when()
+            .get(getTestUrl() + "/interface-files");
+    }
+
+    /**
+     * Retrieves interface-file metadata filtered to an inclusive creation date.
+     *
+     * @param toDate latest creation date to include.
+     */
+    @When("I request interface files to date {string}")
+    public void requestInterfaceFilesToDate(String toDate) {
+        authorisedJsonRequest()
+            .queryParam("to_date", toDate)
+            .when()
+            .get(getTestUrl() + "/interface-files");
+    }
+
+    /**
      * Asserts that the response contains at least the expected number of interface files.
      *
      * @param minimumCount minimum expected number of files.
@@ -101,6 +140,32 @@ public class InterfaceFilesStepDef extends BaseStepDef {
             () -> assertTrue(interfaceFiles.size() >= minimumCount, "Too few interface files returned"),
             () -> assertEquals(interfaceFiles.size(), numberOfResults, "Unexpected number_of_results")
         );
+    }
+
+    /**
+     * Asserts that the response contains exactly the expected number of interface files.
+     *
+     * @param expectedCount expected number of files.
+     */
+    @Then("exactly {int} interface files are returned")
+    public void exactlyInterfaceFilesAreReturned(int expectedCount) {
+        List<Map<String, Object>> interfaceFiles = getInterfaceFiles();
+        int numberOfResults = lastResponse().jsonPath().getInt("number_of_results");
+
+        assertAll(
+            () -> assertEquals(expectedCount, interfaceFiles.size(), "Unexpected number of interface files"),
+            () -> assertEquals(expectedCount, numberOfResults, "Unexpected number_of_results")
+        );
+    }
+
+    /**
+     * Asserts that returned interface files are ordered by creation date, oldest first.
+     */
+    @Then("the returned interface files are ordered by created datetime ascending")
+    public void returnedInterfaceFilesAreOrderedByCreatedDatetimeAscending() {
+        List<LocalDateTime> createdDatetimes = getCreatedDatetimes();
+        List<LocalDateTime> sortedDatetimes = createdDatetimes.stream().sorted().toList();
+        assertEquals(sortedDatetimes, createdDatetimes, "Interface files were not ordered by created datetime");
     }
 
     /**
@@ -155,6 +220,44 @@ public class InterfaceFilesStepDef extends BaseStepDef {
         });
     }
 
+    /**
+     * Asserts that every returned interface file was created on or after the inclusive boundary.
+     *
+     * @param fromDate earliest expected creation date.
+     */
+    @Then("every returned interface file was created on or after date {string}")
+    public void everyReturnedInterfaceFileWasCreatedOnOrAfterDate(String fromDate) {
+        LocalDateTime expectedFromDate = LocalDateTime.parse(fromDate);
+        List<LocalDateTime> createdDatetimes = getCreatedDatetimes();
+
+        assertAll(
+            () -> assertTrue(!createdDatetimes.isEmpty(), "No interface files were returned"),
+            () -> assertTrue(
+                createdDatetimes.stream().allMatch(date -> !date.isBefore(expectedFromDate)),
+                "An interface file was created before " + expectedFromDate
+            )
+        );
+    }
+
+    /**
+     * Asserts that every returned interface file was created on or before the inclusive boundary.
+     *
+     * @param toDate latest expected creation date.
+     */
+    @Then("every returned interface file was created on or before date {string}")
+    public void everyReturnedInterfaceFileWasCreatedOnOrBeforeDate(String toDate) {
+        LocalDateTime expectedToDate = LocalDateTime.parse(toDate);
+        List<LocalDateTime> createdDatetimes = getCreatedDatetimes();
+
+        assertAll(
+            () -> assertTrue(!createdDatetimes.isEmpty(), "No interface files were returned"),
+            () -> assertTrue(
+                createdDatetimes.stream().allMatch(date -> !date.isAfter(expectedToDate)),
+                "An interface file was created after " + expectedToDate
+            )
+        );
+    }
+
     private static void assertExpectedDetails(
         Map<String, Object> interfaceFile,
         Map<String, String> expectedDetails
@@ -175,5 +278,11 @@ public class InterfaceFilesStepDef extends BaseStepDef {
 
     private static List<Map<String, Object>> getInterfaceFiles() {
         return lastResponse().jsonPath().getList("interface_files");
+    }
+
+    private static List<LocalDateTime> getCreatedDatetimes() {
+        return getInterfaceFiles().stream()
+            .map(interfaceFile -> LocalDateTime.parse(String.valueOf(interfaceFile.get("created_datetime"))))
+            .toList();
     }
 }
