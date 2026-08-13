@@ -6,6 +6,14 @@
   ],
   "packageRules": [
     {
+      "description": "Do not update Cucumber internal libraries independently of the Cucumber/Serenity stack.",
+      "matchPackageNames": [
+        "io.cucumber:messages",
+        "io.cucumber:query"
+      ],
+      "enabled": false
+    },
+    {
       "matchManagers": ["gradle-wrapper"],
       "matchUpdateTypes": ["minor", "patch"]
     },
