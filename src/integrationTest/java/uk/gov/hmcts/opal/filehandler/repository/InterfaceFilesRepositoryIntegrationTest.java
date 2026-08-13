@@ -22,6 +22,8 @@ import uk.gov.hmcts.opal.filehandler.testdata.InterfaceFileEntityTestData;
 
 class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
 
+    private static final int FAILURE_LIMIT = 5;
+
     @Autowired
     private InterfaceFilesRepository repository;
 
@@ -39,14 +41,10 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
     @Test
     @Transactional
     void shouldPersistAndLoadRelatedInterfaceFileRelationship() {
-        InterfaceFileEntity parent = interfaceFileEntityTestData.saveTypicalInterfaceFile(
-            "parent-source-file.dat"
-        );
+        InterfaceFileEntity parent = interfaceFileEntityTestData.saveTypicalInterfaceFile("parent-source-file.dat");
 
         InterfaceFileEntity child = interfaceFileEntityTestData.getTypicalRelatedChildInterfaceFile(
-            "child-transformed-file.json",
-            parent
-        );
+            "child-transformed-file.json", parent);
 
         interfaceFileEntityTestData.saveAndFlushInterfaceFile(child);
 
@@ -143,11 +141,11 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
     void shouldFindParentSourceFileAtSupersededFailureLimit() {
         InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
         repository.saveAndFlush(sourceJsonFile("extract.json", "json-checksum", Status.FAILED, parent));
-        saveSourceJsonFiles(5, "extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
+        saveSourceJsonFiles(FAILURE_LIMIT, "extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
         entityManager.clear();
 
         List<InterfaceFileEntity> result = repository.findAll(
-            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, 5));
+            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, FAILURE_LIMIT));
 
         assertThat(result)
             .extracting(InterfaceFileEntity::getInterfaceFileId)
@@ -158,11 +156,11 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
     void shouldExcludeParentSourceFileAboveSupersededFailureLimit() {
         InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
         repository.saveAndFlush(sourceJsonFile("extract.json", "json-checksum", Status.FAILED, parent));
-        saveSourceJsonFiles(6, "extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
+        saveSourceJsonFiles(FAILURE_LIMIT + 1, "extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
         entityManager.clear();
 
         List<InterfaceFileEntity> result = repository.findAll(
-            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, 5));
+            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, FAILURE_LIMIT));
 
         assertThat(result).isEmpty();
     }
@@ -171,12 +169,12 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
     void shouldCountOnlySupersededFailuresForSameFileNameAndChecksum() {
         InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
         repository.saveAndFlush(sourceJsonFile("extract.json", "json-checksum", Status.FAILED, parent));
-        saveSourceJsonFiles(6, "other-extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
-        saveSourceJsonFiles(6, "extract.json", "other-checksum", Status.FAILED_SUPERSEDED, parent);
+        saveSourceJsonFiles(FAILURE_LIMIT + 1, "other-extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
+        saveSourceJsonFiles(FAILURE_LIMIT + 1, "extract.json", "other-checksum", Status.FAILED_SUPERSEDED, parent);
         entityManager.clear();
 
         List<InterfaceFileEntity> result = repository.findAll(
-            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, 5));
+            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, FAILURE_LIMIT));
 
         assertThat(result)
             .extracting(InterfaceFileEntity::getInterfaceFileId)
@@ -191,7 +189,7 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
         entityManager.clear();
 
         List<InterfaceFileEntity> result = repository.findAll(
-            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, 5));
+            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, FAILURE_LIMIT));
 
         assertThat(result)
             .extracting(InterfaceFileEntity::getInterfaceFileId)
@@ -209,7 +207,7 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
         entityManager.clear();
 
         List<InterfaceFileEntity> result = repository.findAll(
-            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, 5));
+            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, FAILURE_LIMIT));
 
         assertThat(result)
             .extracting(InterfaceFileEntity::getInterfaceFileId)
