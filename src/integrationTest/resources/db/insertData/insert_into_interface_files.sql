@@ -1,3 +1,4 @@
+DELETE FROM public.interface_files;
 INSERT INTO
     public.interface_files
     (interface_file_id, source, target, type, opal_domain,

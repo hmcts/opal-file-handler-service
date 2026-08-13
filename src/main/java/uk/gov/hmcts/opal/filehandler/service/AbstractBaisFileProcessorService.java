@@ -102,8 +102,6 @@ public abstract class AbstractBaisFileProcessorService {
                     fileStoreUuid, config.getContainerName(), new ByteArrayInputStream(downloadedBytes), fileChecksum);
 
                 if (duplicate.isPresent()) {
-                    log.error("File with name '{}' and checksum '{}' for source '{}' is a duplicate of {}",
-                        fileName, fileChecksum, config.getSource(), duplicate.get().getInterfaceFileId());
 
                     entity = createDuplicateInterfaceFile(
                         config, fileName, fileChecksum, fileStoreUuid, duplicate.get());
