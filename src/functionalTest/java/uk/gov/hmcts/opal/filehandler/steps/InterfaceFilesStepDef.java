@@ -45,34 +45,6 @@ public class InterfaceFilesStepDef extends BaseStepDef {
     }
 
     /**
-     * Retrieves interface-file metadata filtered by target and type.
-     *
-     * @param target interface-file target filter.
-     * @param type interface-file type filter.
-     */
-    @When("I request interface files with target {string} and type {string}")
-    public void requestInterfaceFilesWithTargetAndType(String target, String type) {
-        authorisedJsonRequest()
-            .queryParam("target", target)
-            .queryParam("type", type)
-            .when()
-            .get(getTestUrl() + "/interface-files");
-    }
-
-    /**
-     * Retrieves interface-file metadata filtered by domain.
-     *
-     * @param domain interface-file domain filter.
-     */
-    @When("I request interface files with domain {string}")
-    public void requestInterfaceFilesWithDomain(String domain) {
-        authorisedJsonRequest()
-            .queryParam("domain", domain)
-            .when()
-            .get(getTestUrl() + "/interface-files");
-    }
-
-    /**
      * Retrieves interface-file metadata filtered by inclusive creation dates.
      *
      * @param fromDate earliest creation date to include.
