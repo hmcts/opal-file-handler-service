@@ -1,6 +1,6 @@
 buildscript {
   ext {
-    cucumberQueryVersion = "14.7.0"
+    cucumberQueryVersion = "16.1.1"
     cucumberMessagesVersion = "30.1.0"
   }
 
