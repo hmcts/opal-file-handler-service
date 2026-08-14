@@ -1,5 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.config;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 
 /**
@@ -30,6 +32,12 @@ public final class TestEnvironment {
     private static final String FILE_STORE_STORAGE_ACCOUNT_NAME = "FILE_STORE_STORAGE_ACCOUNT_NAME";
     private static final String FILE_STORE_STORAGE_KEY = "FILE_STORE_STORAGE_KEY";
     private static final String FILE_STORE_STORAGE_URL = "FILE_STORE_STORAGE_URL";
+    private static final String DEFAULT_SFTP_HOST = "localhost";
+    private static final String DEFAULT_SFTP_PORT = "2222";
+    private static final String DEFAULT_SFTP_USERNAME = "BTEckoh-report";
+    private static final Path DEFAULT_SFTP_DATA_PATH = Path.of(
+        "../opal-shared-infrastructure/bais-emulator/data");
+    private static final String DEFAULT_APPLICATION_JAR = "build/libs/opal-file-handler-service.jar";
 
     private TestEnvironment() {
     }
@@ -181,7 +189,7 @@ public final class TestEnvironment {
      * @return configured SFTP host name.
      */
     public static String getSftpHost() {
-        return getRequired("FUNCTIONAL_TEST_SFTP_HOST");
+        return get("FUNCTIONAL_TEST_SFTP_HOST").orElse(DEFAULT_SFTP_HOST);
     }
 
     /**
@@ -190,7 +198,7 @@ public final class TestEnvironment {
      * @return configured SFTP port, or 22 when none is set.
      */
     public static int getSftpPort() {
-        return Integer.parseInt(get("FUNCTIONAL_TEST_SFTP_PORT").orElse("22"));
+        return Integer.parseInt(get("FUNCTIONAL_TEST_SFTP_PORT").orElse(DEFAULT_SFTP_PORT));
     }
 
     /**
@@ -199,7 +207,7 @@ public final class TestEnvironment {
      * @return configured SFTP username.
      */
     public static String getSftpUsername() {
-        return getRequired("FUNCTIONAL_TEST_SFTP_USERNAME");
+        return get("FUNCTIONAL_TEST_SFTP_USERNAME").orElse(DEFAULT_SFTP_USERNAME);
     }
 
     /**
@@ -207,8 +215,60 @@ public final class TestEnvironment {
      *
      * @return configured SFTP password.
      */
-    public static String getSftpPassword() {
-        return getRequired("FUNCTIONAL_TEST_SFTP_PASSWORD");
+    public static Optional<String> getSftpPassword() {
+        return get("FUNCTIONAL_TEST_SFTP_PASSWORD");
+    }
+
+    /**
+     * Returns the private key content used to authenticate to the functional-test SFTP server.
+     *
+     * @return configured functional-test key, or the application's BAIS key when available.
+     */
+    public static Optional<String> getSftpPrivateKey() {
+        return get("FUNCTIONAL_TEST_SFTP_PRIVATE_KEY").or(() -> get("BAIS_SFTP_PRIVATE_KEY"));
+    }
+
+    /**
+     * Returns a local private-key path when key content has not been supplied directly.
+     *
+     * @return configured key path, or the shared-infrastructure local key when it exists.
+     */
+    public static Optional<Path> getSftpPrivateKeyPath() {
+        return getSftpPrivateKeyPath(getSftpUsername());
+    }
+
+    /**
+     * Returns a local private-key path for the supplied SFTP user when key content has not been
+     * supplied directly.
+     *
+     * @param sftpUsername SFTP user whose shared-infrastructure key should be used.
+     * @return configured key path, or the user's shared-infrastructure local key when it exists.
+     */
+    public static Optional<Path> getSftpPrivateKeyPath(String sftpUsername) {
+        Path defaultPrivateKeyPath = DEFAULT_SFTP_DATA_PATH.resolve(sftpUsername)
+            .resolve(Path.of(".ssh", "keys", "bais-sftp-key"));
+        return get("FUNCTIONAL_TEST_SFTP_PRIVATE_KEY_PATH")
+            .map(Path::of)
+            .or(() -> Files.isRegularFile(defaultPrivateKeyPath)
+                ? Optional.of(defaultPrivateKeyPath) : Optional.empty());
+    }
+
+    /**
+     * Returns the executable application JAR used by local batch-task functional tests.
+     *
+     * @return configured application JAR path, or the standard Gradle bootJar output.
+     */
+    public static Path getApplicationJar() {
+        return Path.of(get("FUNCTIONAL_TEST_APPLICATION_JAR").orElse(DEFAULT_APPLICATION_JAR));
+    }
+
+    /**
+     * Returns the maximum number of seconds a locally triggered batch task may run.
+     *
+     * @return configured task timeout, or 90 seconds when none is set.
+     */
+    public static long getTaskTimeoutSeconds() {
+        return Long.parseLong(get("FUNCTIONAL_TEST_TASK_TIMEOUT_SECONDS").orElse("90"));
     }
 
     /**

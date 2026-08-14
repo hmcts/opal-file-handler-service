@@ -212,8 +212,8 @@ tasks.register('functional', Test) {
     systemProperty 'cucumber.filter.tags', cucumberTags
   }
   include '**/FunctionalTestRunner.class'
-  dependsOn 'clearReports'
-  finalizedBy 'aggregate', 'copyFunctionalReport'
+  dependsOn 'bootJar', 'clearReports'
+  finalizedBy 'aggregateFunctionalReport', 'copyFunctionalReport'
 }
 
 tasks.register('integration', Test) {
@@ -234,12 +234,12 @@ tasks.register('smoke', Test) {
   reports.junitXml.getOutputLocation().set(layout.buildDirectory.dir("test-results/smoke"))
   testLogging.showStandardStreams = true
   include '**/SmokeTestRunner.class'
-  dependsOn 'clearReports'
+  dependsOn 'bootJar', 'clearReports'
   finalizedBy 'aggregate', 'copySmokeReport'
 }
 
 tasks.register('copyFunctionalReport', Sync) {
-  dependsOn 'aggregate'
+  dependsOn 'aggregateFunctionalReport'
   from("${rootDir}/target/site/serenity")
   into("${rootDir}/functional-test-report")
   doLast {
@@ -270,8 +270,23 @@ tasks.named('aggregate') {
   mustRunAfter tasks.named('functional'), tasks.named('smoke')
 }
 
+tasks.register('aggregateFunctionalReport', JavaExec) {
+  description = "Generates the functional Serenity report in an isolated JVM"
+  group = "Verification"
+  dependsOn 'functionalTestClasses'
+  classpath = sourceSets.functionalTest.runtimeClasspath
+  mainClass = 'uk.gov.hmcts.opal.filehandler.support.SerenityReportGenerator'
+  args(
+    file("${rootDir}/target/site/serenity").absolutePath,
+    layout.buildDirectory.dir("test-results").get().asFile.absolutePath,
+    rootDir.absolutePath,
+    project.name
+  )
+  mustRunAfter tasks.named('functional')
+}
+
 tasks.named('copyFunctionalReport') {
-  mustRunAfter tasks.named('aggregate')
+  mustRunAfter tasks.named('aggregateFunctionalReport')
 }
 
 tasks.named('copySmokeReport') {
