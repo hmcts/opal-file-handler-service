@@ -5,8 +5,8 @@ configurations {
 }
 
 dependencies {
-  zephyrCucumberReportProcessor 'uk.gov.hmcts:zephyr-automation:1.2.1'
-  testImplementation 'uk.gov.hmcts:zephyr-automation:1.2.1'
+  zephyrCucumberReportProcessor 'uk.gov.hmcts:zephyr-automation:1.2.2'
+  testImplementation 'uk.gov.hmcts:zephyr-automation:1.2.2'
 }
 
 tasks.register('syncFunctionalArtifactsFromExistingResults') {
