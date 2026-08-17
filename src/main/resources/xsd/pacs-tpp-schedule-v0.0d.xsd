@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.dwp.gsi.gov.uk/pacs" xmlns="http://www.dwp.gsi.gov.uk/pacs" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified" version="0.0d">
+	<xsd:element name="PacsTppSchedule">
+		<xsd:annotation>
+			<xsd:documentation>Version 0.0d</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="DocumentHeader" type="DocumentHeader">
+					<xsd:annotation>
+						<xsd:documentation>PACS Document Header Information</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="DocumentDetail" type="DocumentDetail" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Payment Detail Information </xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="DocumentSummary" type="DocumentSummary">
+					<xsd:annotation>
+						<xsd:documentation>Payment Summary Information</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+	<!-- To head, identify and specify PACS payment document -->
+	<xsd:complexType name="DocumentHeader">
+		<xsd:sequence>
+			<xsd:element name="CreditorID">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="10"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="BatchNumber" nillable="false">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="PacsDocumentCreationDate" type="xsd:date"/>
+			<xsd:element name="PacsDocumentCreationTime">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:time"/>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="NotificationReference">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:positiveInteger">
+						<xsd:maxInclusive value="9999999999"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<!-- PACS payment detail information sectiont -->
+	<xsd:complexType name="DocumentDetail">
+		<xsd:sequence>
+			<xsd:element name="CustomerRef">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="18"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="RecordType">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="2"/>
+						<xsd:enumeration value="02"/>
+						<xsd:enumeration value="03"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="LocationCode">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:positiveInteger">
+						<xsd:maxInclusive value="999999"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="NationalInsuranceNumberType">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:pattern value="[A-CEGHJ-NPR-TW-Z]{2}[0-9]{6}"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="DateFrom" type="xsd:date"/>
+			<xsd:element name="DateTo">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:date"/>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="DetailAmountType">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:positiveInteger">
+						<xsd:maxInclusive value="9999999999"/>
+						<xsd:minInclusive value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="DetailAmountSign">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="+"/>
+						<xsd:enumeration value="-"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<!-- To provide a summary and control totals for the PACS document-->
+	<xsd:complexType name="DocumentSummary">
+		<xsd:sequence>
+			<xsd:element name="SummaryAmountType">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:positiveInteger">
+						<xsd:maxInclusive value="9999999999"/>
+						<xsd:minInclusive value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="SummaryAmountSign">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Total02Records" type="xsd:nonNegativeInteger"/>
+			<xsd:element name="Total03Records" type="xsd:nonNegativeInteger"/>
+		</xsd:sequence>
+	</xsd:complexType>
+</xsd:schema>
