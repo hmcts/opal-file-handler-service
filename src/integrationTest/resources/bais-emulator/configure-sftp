@@ -4,3 +4,4 @@ set -eu
 sed -i '/^ChrootDirectory %h$/d' /etc/ssh/sshd_config
 
 chown 1001:users /home/CAPS-report
+chown 1002:users /home/BTEckoh-report

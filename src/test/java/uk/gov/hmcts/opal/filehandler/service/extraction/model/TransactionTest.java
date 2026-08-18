@@ -6,10 +6,26 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class TransactionTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @ParameterizedTest
+    @ValueSource(strings = {"44", "54"})
+    void isTotalCode_shouldIdentifyTransactionCodeAsTotal(String transactionCode) {
+        boolean isTotalCode = Transaction.isTotalCode(transactionCode);
+        assertThat(isTotalCode).isTrue();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"00", "11", "15", "68", "93", "99"})
+    void isTotalCode_shouldIdentifyTransactionCodeAsNotTotal(String transactionCode) {
+        boolean isTotalCode = Transaction.isTotalCode(transactionCode);
+        assertThat(isTotalCode).isFalse();
+    }
 
     @Test
     void shouldSerializeUsingSnakeCase() throws IOException {
