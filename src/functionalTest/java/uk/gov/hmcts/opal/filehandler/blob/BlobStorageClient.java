@@ -9,6 +9,7 @@ import com.google.common.io.Resources;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Arrays;
 import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 
 /**
@@ -22,6 +23,15 @@ public class BlobStorageClient {
      * Creates a client for the configured functional-test blob container.
      */
     public BlobStorageClient() {
+        this(TestEnvironment.getBlobContainerName());
+    }
+
+    /**
+     * Creates a client for the supplied report-specific blob container.
+     *
+     * @param containerName blob container to access.
+     */
+    public BlobStorageClient(String containerName) {
         StorageSharedKeyCredential credential = new StorageSharedKeyCredential(
             TestEnvironment.getBlobAccountName(),
             TestEnvironment.getBlobAccountKey()
@@ -30,7 +40,7 @@ public class BlobStorageClient {
             .endpoint(TestEnvironment.getBlobEndpoint())
             .credential(credential)
             .buildClient();
-        containerClient = serviceClient.getBlobContainerClient(TestEnvironment.getBlobContainerName());
+        containerClient = serviceClient.getBlobContainerClient(containerName);
     }
 
     /**
@@ -59,5 +69,23 @@ public class BlobStorageClient {
     public void deleteIfExists(String blobName) {
         BlobClient blobClient = containerClient.getBlobClient(blobName);
         blobClient.deleteIfExists();
+    }
+
+    /**
+     * Compares stored blob content with a classpath resource.
+     *
+     * @param blobName blob to download.
+     * @param resourcePath classpath resource containing the expected bytes.
+     * @return {@code true} when both contents are byte-for-byte equal.
+     */
+    public boolean contentMatchesResource(String blobName, String resourcePath) {
+        try {
+            URL resource = Resources.getResource(resourcePath);
+            byte[] expected = Resources.toByteArray(resource);
+            byte[] actual = containerClient.getBlobClient(blobName).downloadContent().toBytes();
+            return Arrays.equals(expected, actual);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read expected blob resource: " + resourcePath, e);
+        }
     }
 }
