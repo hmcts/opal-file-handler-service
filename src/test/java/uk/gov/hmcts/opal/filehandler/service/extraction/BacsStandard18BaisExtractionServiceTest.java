@@ -29,6 +29,7 @@ import org.mockito.MockedStatic;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
+import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
@@ -63,7 +64,7 @@ class BacsStandard18BaisExtractionServiceTest {
             BacsStandard18BaisExtractionService.ParsedTransaction first = parsedTransaction("99", DESTINATION);
             BacsStandard18BaisExtractionService.ParsedTransaction second = parsedTransaction("99", DESTINATION);
             stubSuccessfulExtraction(lines, first, second);
-            doReturn(InterfaceFileCommonDataExtract.PaymentType.CASH).when(extractionService).paymentTypeFor("99");
+            doReturn(PaymentType.CASH).when(extractionService).paymentTypeFor("99");
 
             try (MockedStatic<StreamUtil> streamUtil = mockStatic(StreamUtil.class)) {
                 streamUtil.when(() -> StreamUtil.readLines(any())).thenReturn(lines);
@@ -77,7 +78,7 @@ class BacsStandard18BaisExtractionServiceTest {
                 InterfaceFileCommonDataExtract extract = extracts.getFirst();
                 assertThat(extract.getFileName()).isEqualTo(FILE_NAME);
                 assertThat(extract.getDestinationDetails().getBankDetails()).isEqualTo(DESTINATION);
-                assertThat(extract.getPaymentType()).isEqualTo(InterfaceFileCommonDataExtract.PaymentType.CASH);
+                assertThat(extract.getPaymentType()).isEqualTo(PaymentType.CASH);
                 assertThat(extract.getTransactions()).containsExactly(first.transaction(), second.transaction());
                 verify(extractionService).validateInputs(eq(sourceFile), any());
                 streamUtil.verify(() -> StreamUtil.readLines(any()));
@@ -149,7 +150,7 @@ class BacsStandard18BaisExtractionServiceTest {
             ).toList();
             doNothing().when(extractionService).validateConsistentDestinationDetails(transactions, first);
             doNothing().when(extractionService).applyAllpayDdSourceUpdate(any(), eq(first.transaction()));
-            doReturn(InterfaceFileCommonDataExtract.PaymentType.CASH).when(extractionService).paymentTypeFor("99");
+            doReturn(PaymentType.CASH).when(extractionService).paymentTypeFor("99");
             doReturn(false).when(extractionService).isTotalRow("DATA1");
             doReturn(false).when(extractionService).isTotalRow("DATA2");
         }
@@ -175,7 +176,7 @@ class BacsStandard18BaisExtractionServiceTest {
             assertThat(destinationBankDetails.getAccountNumber()).isEqualTo("27048527");
             assertThat(destinationBankDetails.getType()).isEqualTo("0");
             assertThat(destinationBankDetails.getName()).isEqualTo("Beneficiary Name 1");
-            assertThat(extract.getPaymentType()).isEqualTo(InterfaceFileCommonDataExtract.PaymentType.CASH);
+            assertThat(extract.getPaymentType()).isEqualTo(PaymentType.CASH);
             assertThat(extract.getTransactions()).hasSize(2);
 
             Transaction firstTransaction = extract.getTransactions().getFirst();
@@ -532,13 +533,13 @@ class BacsStandard18BaisExtractionServiceTest {
         @Test
         void shouldReturnChequeForTransactionCodeEleven() {
             assertThat(service.paymentTypeFor("11"))
-                .isEqualTo(InterfaceFileCommonDataExtract.PaymentType.CHEQUE);
+                .isEqualTo(PaymentType.CHEQUE);
         }
 
         @Test
         void shouldReturnCashForOtherTransactionCodes() {
             assertThat(service.paymentTypeFor("99"))
-                .isEqualTo(InterfaceFileCommonDataExtract.PaymentType.CASH);
+                .isEqualTo(PaymentType.CASH);
         }
     }
 

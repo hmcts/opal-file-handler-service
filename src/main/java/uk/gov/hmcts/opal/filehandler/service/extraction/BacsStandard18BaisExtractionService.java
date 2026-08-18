@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
+import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.BankDetails;
@@ -219,10 +220,10 @@ public class BacsStandard18BaisExtractionService implements ExtractionService<In
         }
     }
 
-    InterfaceFileCommonDataExtract.PaymentType paymentTypeFor(String transactionCode) {
+    PaymentType paymentTypeFor(String transactionCode) {
         return "11".equals(transactionCode)
-            ? InterfaceFileCommonDataExtract.PaymentType.CHEQUE
-            : InterfaceFileCommonDataExtract.PaymentType.CASH;
+            ? PaymentType.CHEQUE
+            : PaymentType.CASH;
     }
 
     void applyAllpayDdSourceUpdate(InterfaceFileEntity sourceInterfaceFile, Transaction firstTransaction) {
