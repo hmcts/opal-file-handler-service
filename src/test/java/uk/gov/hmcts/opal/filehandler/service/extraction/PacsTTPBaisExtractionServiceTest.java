@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
+import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.generated.pacs.PacsTppSchedule;
@@ -60,7 +61,7 @@ class PacsTTPBaisExtractionServiceTest {
             assertThat(extracts).hasSize(1);
             InterfaceFileCommonDataExtract extract = extracts.getFirst();
             assertThat(extract.getFileName()).isEqualTo(FILE_NAME);
-            assertThat(extract.getPaymentType()).isEqualTo(InterfaceFileCommonDataExtract.PaymentType.CASH);
+            assertThat(extract.getPaymentType()).isEqualTo(PaymentType.CASH);
             assertThat(extract.getDwpCourtCode()).isEqualTo("0000031714");
             assertThat(extract.getDestinationDetails()).isNull();
             assertThat(extract.getTransactions()).hasSize(2);
