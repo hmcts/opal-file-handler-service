@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
+import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.generated.pacs.DocumentDetail;
 import uk.gov.hmcts.opal.filehandler.generated.pacs.PacsTppSchedule;
@@ -56,7 +57,7 @@ public class PacsTTPBaisExtractionService implements ExtractionService<Interface
 
         InterfaceFileCommonDataExtract extract = InterfaceFileCommonDataExtract.builder()
             .fileName(sourceInterfaceFile.getFileName())
-            .paymentType(InterfaceFileCommonDataExtract.PaymentType.CASH)
+            .paymentType(PaymentType.CASH)
             .transactions(transactions)
             .dwpCourtCode(schedule.getDocumentHeader().getCreditorID())
             .build();
