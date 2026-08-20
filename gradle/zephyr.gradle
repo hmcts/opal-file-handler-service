@@ -39,6 +39,16 @@ tasks.register('syncSmokeArtifactsFromExistingResults') {
   }
 }
 
+tasks.register('copyIntegrationJunit5Report', Copy) {
+  from("target/zephyr-reports/Junit5Report-IntegrationTest.json")
+  into("${rootDir}/integration-output/zephyr")
+  outputs.upToDateWhen { false }
+}
+
+tasks.named('integration') {
+  finalizedBy 'copyIntegrationJunit5Report'
+}
+
 @Field
 List<String> zephyrBaseArgs = [
   "jira-base-url=https://tools.hmcts.net/jira/rest/api/latest",
@@ -142,6 +152,7 @@ void configureIntegrationZephyrTask(JavaExec task, String actionType, String des
   task.description = description
   task.classpath = configurations.zephyrCucumberReportProcessor
   task.mainClass = "uk.hmcts.zephyr.automation.ZephyrAutomation"
+  task.dependsOn 'copyIntegrationJunit5Report'
 
   File integrationReport = file("integration-output/zephyr/Junit5Report-IntegrationTest.json")
 
