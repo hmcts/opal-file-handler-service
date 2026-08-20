@@ -124,6 +124,18 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldNotFindParentSourceFileWhenSourceJsonSucceeded() {
+        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
+        repository.saveAndFlush(sourceJsonFile("extract.json", "json-checksum", Status.SUCCESS, parent));
+        entityManager.clear();
+
+        List<InterfaceFileEntity> result = repository.findAll(
+            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, FAILURE_LIMIT));
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     void shouldFindParentSourceFileWhenSourceJsonHasNoSupersededFailures() {
         InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
         repository.saveAndFlush(sourceJsonFile("extract.json", "json-checksum", Status.FAILED, parent));
