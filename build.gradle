@@ -34,9 +34,9 @@ java {
 
 ext {
   serenityVersion = "5.3.11"
-  cucumberVersion = "7.34.6"
+  cucumberVersion = "7.34.7"
   log4JVersion = "2.26.1"
-  logbackVersion = "1.6.2"
+  logbackVersion = "1.6.3"
 }
 
 def logPublishedHtmlReport = { String label, String reportDirectory ->
@@ -48,6 +48,16 @@ def logPublishedHtmlReport = { String label, String reportDirectory ->
   }
 }
 
+def xjcGeneratedSourceDir = layout.buildDirectory.dir('generated/sources/xjc/main')
+// XJC is the JAXB XML-to-Java compiler. Add future third-party XML schemas here
+// to generate typed Java classes from XSD files at build time.
+def xmlSchemasToGenerate = [
+    pacsTtp: [
+        xsd        : 'src/main/resources/xsd/pacs-tpp-schedule-v0.0d.xsd',
+        packageName: 'uk.gov.hmcts.opal.filehandler.generated.pacs'
+    ]
+]
+
 sourceSets {
   openapi {
     java {
@@ -58,6 +68,7 @@ sourceSets {
   main {
     java {
       srcDir "$buildDir/generated/openapi/src/main/java"
+      srcDir xjcGeneratedSourceDir
     }
   }
   functionalTest {
@@ -81,6 +92,9 @@ sourceSets {
 
 
 configurations {
+  // JAXB XML-to-Java compiler dependencies used by schema generation tasks.
+  xjc
+
   openapiImplementation.extendsFrom implementation
   openapiRuntimeOnly.extendsFrom runtimeOnly
 
@@ -98,6 +112,32 @@ configurations.configureEach {
     force "io.cucumber:cucumber-junit:${cucumberVersion}"
   }
 }
+
+xmlSchemasToGenerate.each { schemaName, schemaConfig ->
+  def taskName = "generate${schemaName.toString().capitalize()}Jaxb"
+  def schemaGeneratedPackageDir = xjcGeneratedSourceDir.map {
+    it.dir(schemaConfig.packageName.replace('.', '/'))
+  }
+
+  tasks.register(taskName, JavaExec) {
+    group = 'build'
+    description = "Generates JAXB classes from the ${schemaName} XSD"
+    classpath = configurations.xjc
+    mainClass = 'com.sun.tools.xjc.XJCFacade'
+    inputs.file(schemaConfig.xsd)
+    outputs.dir(schemaGeneratedPackageDir)
+    args = [
+        '-d', xjcGeneratedSourceDir.get().asFile.absolutePath,
+        '-p', schemaConfig.packageName,
+        file(schemaConfig.xsd).absolutePath
+    ]
+    doFirst {
+      delete schemaGeneratedPackageDir
+      xjcGeneratedSourceDir.get().asFile.mkdirs()
+    }
+  }
+}
+
 tasks.register("bundleOpenApi", JavaExec) {
   dependsOn 'compileOpenapiJava'
   classpath = sourceSets.openapi.runtimeClasspath
@@ -172,8 +212,8 @@ tasks.register('functional', Test) {
     systemProperty 'cucumber.filter.tags', cucumberTags
   }
   include '**/FunctionalTestRunner.class'
-  dependsOn 'clearReports'
-  finalizedBy 'aggregate', 'copyFunctionalReport'
+  dependsOn 'bootJar', 'clearReports'
+  finalizedBy 'aggregateFunctionalReport', 'copyFunctionalReport'
 }
 
 tasks.register('integration', Test) {
@@ -194,12 +234,12 @@ tasks.register('smoke', Test) {
   reports.junitXml.getOutputLocation().set(layout.buildDirectory.dir("test-results/smoke"))
   testLogging.showStandardStreams = true
   include '**/SmokeTestRunner.class'
-  dependsOn 'clearReports'
+  dependsOn 'bootJar', 'clearReports'
   finalizedBy 'aggregate', 'copySmokeReport'
 }
 
 tasks.register('copyFunctionalReport', Sync) {
-  dependsOn 'aggregate'
+  dependsOn 'aggregateFunctionalReport'
   from("${rootDir}/target/site/serenity")
   into("${rootDir}/functional-test-report")
   doLast {
@@ -230,8 +270,23 @@ tasks.named('aggregate') {
   mustRunAfter tasks.named('functional'), tasks.named('smoke')
 }
 
+tasks.register('aggregateFunctionalReport', JavaExec) {
+  description = "Generates the functional Serenity report in an isolated JVM"
+  group = "Verification"
+  dependsOn 'functionalTestClasses'
+  classpath = sourceSets.functionalTest.runtimeClasspath
+  mainClass = 'uk.gov.hmcts.opal.filehandler.support.SerenityReportGenerator'
+  args(
+    file("${rootDir}/target/site/serenity").absolutePath,
+    layout.buildDirectory.dir("test-results").get().asFile.absolutePath,
+    rootDir.absolutePath,
+    project.name
+  )
+  mustRunAfter tasks.named('functional')
+}
+
 tasks.named('copyFunctionalReport') {
-  mustRunAfter tasks.named('aggregate')
+  mustRunAfter tasks.named('aggregateFunctionalReport')
 }
 
 tasks.named('copySmokeReport') {
@@ -287,11 +342,16 @@ ext['snakeyaml.version'] = '2.0'
 dependencyManagement {
   imports {
     mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2025.1.2'
-    mavenBom "com.fasterxml.jackson:jackson-bom:2.22.1"
+    mavenBom "com.fasterxml.jackson:jackson-bom:2.22.2"
     mavenBom "io.netty:netty-bom:4.2.17.Final"
   }
 }
 dependencies {
+  implementation 'jakarta.xml.bind:jakarta.xml.bind-api'
+  implementation 'org.glassfish.jaxb:jaxb-runtime'
+  xjc 'org.glassfish.jaxb:jaxb-xjc'
+  xjc 'org.glassfish.jaxb:jaxb-runtime'
+
   //OpenAPI
   openapiImplementation "io.swagger.parser.v3:swagger-parser:2.1.46"
   openapiImplementation "io.swagger.core.v3:swagger-models:2.2.53"
@@ -409,7 +469,7 @@ wrapper {
     distributionType = Wrapper.DistributionType.ALL
 }
 checkstyle {
-  checkstyleMain.exclude '**uk/gov/hmcts/opal/generated/**'
+  checkstyleMain.exclude '**/generated/**'
 }
 tasks.register('runAllStyleChecks') {
   dependsOn 'checkstyleMain'
@@ -435,6 +495,9 @@ tasks.named("openApiGenerate") {
 }
 tasks.named("compileJava") {
   dependsOn 'openApiGenerate'
+  xmlSchemasToGenerate.each { schemaName, ignored ->
+    dependsOn tasks.named("generate${schemaName.toString().capitalize()}Jaxb")
+  }
 }
 
 rootProject.tasks.named("processIntegrationTestResources") {

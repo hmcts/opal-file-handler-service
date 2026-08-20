@@ -55,17 +55,46 @@ public class DatabaseClient implements AutoCloseable {
      * @return first-column values returned by the query.
      */
     public List<String> queryFirstColumn(String sql, Object... parameters) {
+        return query(sql, resultSet -> resultSet.getString(1), parameters);
+    }
+
+    /**
+     * Executes a query and maps every result row to a typed value.
+     *
+     * @param sql SQL statement to execute.
+     * @param rowMapper mapper applied to every result row.
+     * @param parameters ordered statement parameters.
+     * @param <T> mapped row type.
+     * @return mapped query results.
+     */
+    public <T> List<T> query(String sql, SqlRowMapper<T> rowMapper, Object... parameters) {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             bindParameters(statement, parameters);
             try (ResultSet resultSet = statement.executeQuery()) {
-                List<String> rows = new ArrayList<>();
+                List<T> rows = new ArrayList<>();
                 while (resultSet.next()) {
-                    rows.add(resultSet.getString(1));
+                    rows.add(rowMapper.map(resultSet));
                 }
                 return rows;
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to execute database query", e);
+        }
+    }
+
+    /**
+     * Executes a parameterised update statement.
+     *
+     * @param sql SQL statement to execute.
+     * @param parameters ordered statement parameters.
+     * @return number of affected rows.
+     */
+    public int update(String sql, Object... parameters) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            bindParameters(statement, parameters);
+            return statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to execute database update", e);
         }
     }
 
@@ -93,6 +122,17 @@ public class DatabaseClient implements AutoCloseable {
         for (int i = 0; i < parameters.length; i++) {
             statement.setObject(i + 1, parameters[i]);
         }
+    }
+
+    /**
+     * Maps a JDBC result row to a typed functional-test value.
+     *
+     * @param <T> mapped row type.
+     */
+    @FunctionalInterface
+    public interface SqlRowMapper<T> {
+
+        T map(ResultSet resultSet) throws SQLException;
     }
 
     /**

@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.DigestUtils;
+import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -33,15 +34,19 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 @RequiredArgsConstructor
 public abstract class AbstractBaisFileProcessorService {
 
-    private final Clock clock;
+    protected final Clock clock;
     private final FeatureFlagUtil featureFlagUtil;
     private final BaisSftpClient baisSftpClient;
-    private final InterfaceFileBlobStoreService interfaceFileBlobStoreService;
-    private final InterfaceFilesRepository interfaceFilesRepository;
+    protected final InterfaceFileBlobStoreService interfaceFileBlobStoreService;
+    protected final InterfaceFilesRepository interfaceFilesRepository;
     private final TransactionTemplate transactionTemplate;
-    private final ObjectMapper objectMapper;
+    protected final ObjectMapper objectMapper;
 
-    protected abstract void processFile(InterfaceFileEntity fileEntity, InputStream inputStream);
+    protected abstract void processFile(
+        BaisFileProcessorConfiguration config,
+        InterfaceFileEntity fileEntity,
+        InputStream inputStream
+    );
 
     public void run(BaisFileProcessorConfiguration config) {
         featureFlagUtil.requireEnabledFeature(FeatureFlags.RELEASE_1C_BANKING_INTERFACES);
@@ -83,50 +88,53 @@ public abstract class AbstractBaisFileProcessorService {
         try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
             baisSftpClient.downloadFile(config.getSftpUsername(), fileName, downloadStream);
             downloadedBytes = downloadStream.toByteArray();
-        }
 
-        String fileChecksum = calculateChecksum(downloadedBytes);
-        UUID fileStoreUuid = UUID.randomUUID();
-        Optional<InterfaceFileEntity> duplicate = interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
-            fileName, fileChecksum, Status.SUCCESS);
+            String fileChecksum = calculateChecksum(new ByteArrayInputStream(downloadedBytes));
+            Optional<InterfaceFileEntity> duplicate = interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
+                fileName, fileChecksum, Status.SUCCESS);
 
-        InterfaceFileEntity entity;
+            InterfaceFileEntity entity;
 
-        try {
-            interfaceFileBlobStoreService.uploadBaisFile(
-                fileStoreUuid, config.getContainerName(), new ByteArrayInputStream(downloadedBytes), fileChecksum);
+            try {
+                UUID fileStoreUuid = UUID.randomUUID();
 
-            if (duplicate.isPresent()) {
-                log.error("File with name '{}' and checksum '{}' for source '{}' is a duplicate of {}",
-                    fileName, fileChecksum, config.getSource(), duplicate.get().getInterfaceFileId());
+                interfaceFileBlobStoreService.uploadBaisFile(
+                    fileStoreUuid, config.getContainerName(), new ByteArrayInputStream(downloadedBytes), fileChecksum);
 
-                entity = createDuplicateInterfaceFile(
-                    config, fileName, fileChecksum, fileStoreUuid);
-            } else {
-                entity = createNewInterfaceFile(config, fileName, fileChecksum, fileStoreUuid);
+                if (duplicate.isPresent()) {
+
+                    entity = createDuplicateInterfaceFile(
+                        config, fileName, fileChecksum, fileStoreUuid, duplicate.get());
+                } else {
+                    entity = createNewInterfaceFile(config, fileName, fileChecksum, fileStoreUuid);
+                }
+            } catch (BlobChecksumValidationException e) {
+                entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
+            } catch (BlobUploadException e) {
+                entity = createFailureInterfaceFile(config, fileName, fileChecksum,
+                    "Blob upload failed for file '%s': %s".formatted(fileName, e.getMessage()));
             }
-        } catch (BlobChecksumValidationException e) {
-            entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
-        } catch (BlobUploadException e) {
-            entity = createFailureInterfaceFile(config, fileName, fileChecksum,
-                "Blob upload failed for file '%s': %s".formatted(fileName, e.getMessage()));
+
+            entity = saveInitialFile(entity);
+
+            if (entity.getStatus().equals(Status.INGESTED)) {
+                processIngestedFile(config, entity, new ByteArrayInputStream(downloadedBytes));
+            }
+
+            completeIngestion(config, fileName, entity);
         }
-
-        entity = saveInitialFile(entity);
-
-        if (entity.getStatus().equals(Status.INGESTED)) {
-            processIngestedFile(entity, new ByteArrayInputStream(downloadedBytes));
-        }
-
-        completeIngestion(config, fileName, entity);
     }
 
     private InterfaceFileEntity createDuplicateInterfaceFile(
         BaisFileProcessorConfiguration config,
         String fileName,
         String fileChecksum,
-        UUID fileStoreUuid
+        UUID fileStoreUuid,
+        InterfaceFileEntity duplicate
     ) {
+        log.error("File with name '{}' and checksum '{}' for source '{}' is a duplicate of {}",
+            fileName, fileChecksum, config.getSource(), duplicate.getInterfaceFileId());
+
         return InterfaceFileEntity.builder()
             .type(Type.SOURCE)
             .target(config.getTarget())
@@ -188,9 +196,13 @@ public abstract class AbstractBaisFileProcessorService {
         });
     }
 
-    private void processIngestedFile(InterfaceFileEntity entity, InputStream inputStream) {
+    private void processIngestedFile(
+        BaisFileProcessorConfiguration config,
+        InterfaceFileEntity entity,
+        InputStream inputStream
+    ) {
         try {
-            transactionTemplate.executeWithoutResult(transactionStatus -> processFile(entity, inputStream));
+            transactionTemplate.executeWithoutResult(transactionStatus -> processFile(config, entity, inputStream));
         } catch (RuntimeException e) {
             transactionTemplate.executeWithoutResult(transactionStatus -> {
                 entity.setStatus(Status.FAILED);
@@ -230,12 +242,12 @@ public abstract class AbstractBaisFileProcessorService {
         previousFailures.forEach(previousFailure -> previousFailure.setStatus(Status.FAILED_SUPERSEDED));
     }
 
-    private String errorJson(String message) {
+    protected String errorJson(String message) {
         return objectMapper.createObjectNode().put("message", message).toString();
     }
 
     @SuppressWarnings("java:S4790") // Used for checksum, not in a sensitive context
-    private static String calculateChecksum(byte[] content) {
-        return DigestUtils.md5DigestAsHex(content);
+    protected static String calculateChecksum(InputStream stream) throws IOException {
+        return DigestUtils.md5DigestAsHex(stream);
     }
 }
