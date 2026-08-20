@@ -82,7 +82,43 @@ docker image rm <image-id>
 
 There is no need to remove postgres and java or similar core images.
 
+## Nightly Jenkins pipeline
+
+`Jenkinsfile_nightly` runs on weekdays using `H 07 * * 1-5`. The shared HMCTS nightly
+pipeline performs checkout, build and dependency-check stages before running the
+file-handler integration, staging functional and staging smoke suites.
+
+Nightly parameters:
+
+| Parameter | Default | Purpose |
+|-----------|---------|---------|
+| `Integration` | `true` | Runs the Testcontainers-backed integration suite once. |
+| `Functional` | `true` | Runs the functional suite against the staging deployment. |
+| `Smoke` | `true` | Runs the smoke suite against the staging deployment. |
+| `ZephyrExecution` | `false` | Creates Zephyr executions. Zephyr execution is also enabled automatically on Fridays. |
+
+The staging functional suite loads database and blob-storage credentials and endpoints
+from the Opal Key Vault, and reads the functional-test blob container from the staging
+chart values. Functional fixture hooks manage their own setup and cleanup because the
+nightly pipeline sets `FUNCTIONAL_TEST_DB_MANAGED_BY_PIPELINE=false`.
+
+Nightly reports and artifacts:
+
+- Integration publishes `Integration Tests Report` and archives `integration-output/`,
+  including the JUnit 5 Zephyr report under `integration-output/zephyr/`.
+- Functional publishes `Serenity Functional Test Report` and archives
+  `functional-output/`, including its Cucumber Zephyr report.
+- Smoke publishes `Serenity Smoke Test Report` and archives `smoke-output/`, including
+  its Cucumber Zephyr report.
+- A failed Gradle stage, missing report, missing Zephyr input or failed Zephyr execution
+  marks the nightly build as failed after all selected suites have published their output.
+- Master failures and subsequent fixes are reported to `#opal-nightly-builds`.
+
+The HMCTS nightly organisation suppresses automatic SCM-triggered builds. After the
+nightly job is first discovered, run the `master` job manually once with Zephyr disabled
+to apply the cron trigger declared in `Jenkinsfile_nightly`. Subsequent weekday builds
+will then be timer-triggered.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
-
