@@ -1,11 +1,13 @@
 package uk.gov.hmcts.opal.filehandler.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory.sourceFilesWithJsonFailuresWithinRetryLimit;
 
 import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.LongStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,8 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.InterfaceFileEntityTestData;
 
 class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
+
+    private static final int FAILURE_LIMIT = 5;
 
     @Autowired
     private InterfaceFilesRepository repository;
@@ -37,14 +41,10 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
     @Test
     @Transactional
     void shouldPersistAndLoadRelatedInterfaceFileRelationship() {
-        InterfaceFileEntity parent = interfaceFileEntityTestData.saveTypicalInterfaceFile(
-            "parent-source-file.dat"
-        );
+        InterfaceFileEntity parent = interfaceFileEntityTestData.saveTypicalInterfaceFile("parent-source-file.dat");
 
         InterfaceFileEntity child = interfaceFileEntityTestData.getTypicalRelatedChildInterfaceFile(
-            "child-transformed-file.json",
-            parent
-        );
+            "child-transformed-file.json", parent);
 
         interfaceFileEntityTestData.saveAndFlushInterfaceFile(child);
 
@@ -123,14 +123,121 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
             .containsExactlyInAnyOrder(firstFailure.getInterfaceFileId(), secondFailure.getInterfaceFileId());
     }
 
+    @Test
+    void shouldNotFindParentSourceFileWhenSourceJsonSucceeded() {
+        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
+        repository.saveAndFlush(sourceJsonFile("extract.json", "json-checksum", Status.SUCCESS, parent));
+        entityManager.clear();
+
+        List<InterfaceFileEntity> result = repository.findAll(
+            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, FAILURE_LIMIT));
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldFindParentSourceFileWhenSourceJsonHasNoSupersededFailures() {
+        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
+        repository.saveAndFlush(sourceJsonFile("extract.json", "json-checksum", Status.FAILED, parent));
+        entityManager.clear();
+
+        List<InterfaceFileEntity> result = repository.findAll(
+            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, 5));
+
+        assertThat(result)
+            .extracting(InterfaceFileEntity::getInterfaceFileId)
+            .containsExactly(parent.getInterfaceFileId());
+    }
+
+    @Test
+    void shouldFindParentSourceFileAtSupersededFailureLimit() {
+        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
+        repository.saveAndFlush(sourceJsonFile("extract.json", "json-checksum", Status.FAILED, parent));
+        saveSourceJsonFiles(FAILURE_LIMIT, "extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
+        entityManager.clear();
+
+        List<InterfaceFileEntity> result = repository.findAll(
+            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, FAILURE_LIMIT));
+
+        assertThat(result)
+            .extracting(InterfaceFileEntity::getInterfaceFileId)
+            .containsExactly(parent.getInterfaceFileId());
+    }
+
+    @Test
+    void shouldExcludeParentSourceFileAboveSupersededFailureLimit() {
+        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
+        repository.saveAndFlush(sourceJsonFile("extract.json", "json-checksum", Status.FAILED, parent));
+        saveSourceJsonFiles(FAILURE_LIMIT + 1, "extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
+        entityManager.clear();
+
+        List<InterfaceFileEntity> result = repository.findAll(
+            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, FAILURE_LIMIT));
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldCountOnlySupersededFailuresForSameFileNameAndChecksum() {
+        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
+        repository.saveAndFlush(sourceJsonFile("extract.json", "json-checksum", Status.FAILED, parent));
+        saveSourceJsonFiles(FAILURE_LIMIT + 1, "other-extract.json", "json-checksum", Status.FAILED_SUPERSEDED, parent);
+        saveSourceJsonFiles(FAILURE_LIMIT + 1, "extract.json", "other-checksum", Status.FAILED_SUPERSEDED, parent);
+        entityManager.clear();
+
+        List<InterfaceFileEntity> result = repository.findAll(
+            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, FAILURE_LIMIT));
+
+        assertThat(result)
+            .extracting(InterfaceFileEntity::getInterfaceFileId)
+            .containsExactly(parent.getInterfaceFileId());
+    }
+
+    @Test
+    void shouldReturnParentSourceFileOnlyOnceForMultipleFailedSourceJsonFiles() {
+        InterfaceFileEntity parent = repository.saveAndFlush(sourceFile("source.dat"));
+        repository.saveAndFlush(sourceJsonFile("first-extract.json", "first-checksum", Status.FAILED, parent));
+        repository.saveAndFlush(sourceJsonFile("second-extract.json", "second-checksum", Status.FAILED, parent));
+        entityManager.clear();
+
+        List<InterfaceFileEntity> result = repository.findAll(
+            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, FAILURE_LIMIT));
+
+        assertThat(result)
+            .extracting(InterfaceFileEntity::getInterfaceFileId)
+            .containsExactly(parent.getInterfaceFileId());
+    }
+
+    @Test
+    void shouldFindParentSourceFilesOnlyForRequestedSource() {
+        InterfaceFileEntity natwestParent = repository.saveAndFlush(
+            sourceFile("natwest-source.dat", Interface.NATWEST));
+        InterfaceFileEntity dwpParent = repository.saveAndFlush(sourceFile("dwp-source.dat", Interface.DWP));
+        repository.saveAndFlush(
+            sourceJsonFile("natwest-extract.json", "natwest-checksum", Status.FAILED, natwestParent));
+        repository.saveAndFlush(sourceJsonFile("dwp-extract.json", "dwp-checksum", Status.FAILED, dwpParent));
+        entityManager.clear();
+
+        List<InterfaceFileEntity> result = repository.findAll(
+            sourceFilesWithJsonFailuresWithinRetryLimit(Interface.NATWEST, FAILURE_LIMIT));
+
+        assertThat(result)
+            .extracting(InterfaceFileEntity::getInterfaceFileId)
+            .containsExactly(natwestParent.getInterfaceFileId());
+    }
+
     private InterfaceFileEntity sourceFile(String fileName) {
+        return sourceFile(fileName, Interface.NATWEST);
+    }
+
+    private InterfaceFileEntity sourceFile(String fileName, Interface source) {
         return InterfaceFileEntity.builder()
-            .source(Interface.NATWEST)
+            .source(source)
             .target(Interface.OPAL)
             .type(Type.SOURCE)
             .opalDomain(Domain.FILE_HANDLER)
             .fileName(fileName)
-            .checksum("source-checksum-" + fileName)
+            .checksum("checksum-" + fileName)
             .status(Status.SUCCESS)
             .createdDatetime(LocalDateTime.now())
             .build();
@@ -143,7 +250,7 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
         InterfaceFileEntity sourceFile
     ) {
         return InterfaceFileEntity.builder()
-            .source(Interface.NATWEST)
+            .source(sourceFile.getSource())
             .target(Interface.OPAL)
             .type(Type.SOURCE_JSON)
             .opalDomain(Domain.FINES)
@@ -156,5 +263,18 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
             .build();
     }
 
-}
+    private void saveSourceJsonFiles(
+        int count,
+        String fileName,
+        String checksum,
+        Status status,
+        InterfaceFileEntity sourceFile
+    ) {
+        List<InterfaceFileEntity> sourceJsonFiles = LongStream.range(0, count)
+            .mapToObj(id -> sourceJsonFile(fileName, checksum, status, sourceFile))
+            .toList();
 
+        repository.saveAllAndFlush(sourceJsonFiles);
+    }
+
+}
