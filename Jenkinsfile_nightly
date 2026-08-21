@@ -75,17 +75,31 @@ def configureFunctionalTestEnvironment = { valuesFile ->
     throw new RuntimeException("Missing functional-test blob container in ${valuesFile}")
   }
 
-  List<String> requiredVariables = [
-    'OPAL_FILE_HANDLER_DB_HOST',
-    'OPAL_FILE_HANDLER_DB_PORT',
-    'OPAL_FILE_HANDLER_DB_NAME',
-    'OPAL_FILE_HANDLER_DB_USERNAME',
-    'OPAL_FILE_HANDLER_DB_PASSWORD',
-    'FILE_STORE_STORAGE_ACCOUNT_NAME',
-    'FILE_STORE_STORAGE_URL',
-    'FILE_STORE_STORAGE_KEY',
-  ]
-  List<String> missingVariables = requiredVariables.findAll { !env[it]?.trim() }
+  List<String> missingVariables = []
+  if (!env.OPAL_FILE_HANDLER_DB_HOST?.trim()) {
+    missingVariables.add('OPAL_FILE_HANDLER_DB_HOST')
+  }
+  if (!env.OPAL_FILE_HANDLER_DB_PORT?.trim()) {
+    missingVariables.add('OPAL_FILE_HANDLER_DB_PORT')
+  }
+  if (!env.OPAL_FILE_HANDLER_DB_NAME?.trim()) {
+    missingVariables.add('OPAL_FILE_HANDLER_DB_NAME')
+  }
+  if (!env.OPAL_FILE_HANDLER_DB_USERNAME?.trim()) {
+    missingVariables.add('OPAL_FILE_HANDLER_DB_USERNAME')
+  }
+  if (!env.OPAL_FILE_HANDLER_DB_PASSWORD?.trim()) {
+    missingVariables.add('OPAL_FILE_HANDLER_DB_PASSWORD')
+  }
+  if (!env.FILE_STORE_STORAGE_ACCOUNT_NAME?.trim()) {
+    missingVariables.add('FILE_STORE_STORAGE_ACCOUNT_NAME')
+  }
+  if (!env.FILE_STORE_STORAGE_URL?.trim()) {
+    missingVariables.add('FILE_STORE_STORAGE_URL')
+  }
+  if (!env.FILE_STORE_STORAGE_KEY?.trim()) {
+    missingVariables.add('FILE_STORE_STORAGE_KEY')
+  }
 
   if (!missingVariables.isEmpty()) {
     throw new RuntimeException(
