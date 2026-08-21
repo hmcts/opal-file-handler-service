@@ -14,6 +14,18 @@
       "enabled": false
     },
     {
+      "description": "Group Tomcat embed dependencies",
+      "matchManagers": ["gradle"],
+      "matchPackageNames": [
+        "org.apache.tomcat.embed:tomcat-embed-core",
+        "org.apache.tomcat.embed:tomcat-embed-websocket",
+        "org.apache.tomcat.embed:tomcat-embed-el",
+        "org.apache.tomcat:tomcat-annotations-api"
+      ],
+      "groupName": "Tomcat Embed",
+      "groupSlug": "tomcat-embed"
+    },
+    {
       "description": "Group all Gradle plugins - Minor/Patch",
       "matchManagers": ["gradle"],
       "matchUpdateTypes": ["minor", "patch"],
