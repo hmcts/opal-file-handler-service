@@ -401,7 +401,6 @@ dependencies {
   // temporary bump until spring-boot-dependencies updates (CVE-2026-54291)
   implementation 'org.postgresql:postgresql:42.7.13'
 
-  // keep embedded Tomcat artifacts aligned until spring-boot-dependencies catches up
   implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:11.0.25'
   implementation 'org.apache.tomcat.embed:tomcat-embed-core:11.0.25'
   implementation 'org.apache.tomcat.embed:tomcat-embed-el:11.0.25'
