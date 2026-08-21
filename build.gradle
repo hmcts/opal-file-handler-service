@@ -354,9 +354,9 @@ dependencies {
   xjc 'org.glassfish.jaxb:jaxb-runtime'
 
   //OpenAPI
-  openapiImplementation "io.swagger.parser.v3:swagger-parser:2.1.46"
-  openapiImplementation "io.swagger.core.v3:swagger-models:2.2.53"
-  openapiImplementation "io.swagger.core.v3:swagger-core:2.2.53"
+  openapiImplementation "io.swagger.parser.v3:swagger-parser:2.1.47"
+  openapiImplementation "io.swagger.core.v3:swagger-models:2.2.54"
+  openapiImplementation "io.swagger.core.v3:swagger-core:2.2.54"
   openapiImplementation "tools.jackson.dataformat:jackson-dataformat-yaml"
   //HMCTS
   implementation 'uk.gov.hmcts:opal-common-lib:0.3.28'
