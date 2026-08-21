@@ -1,5 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.service.extraction;
 
+import jakarta.persistence.EntityNotFoundException;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -13,6 +14,7 @@ import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.generated.pacs.DocumentDetail;
 import uk.gov.hmcts.opal.filehandler.generated.pacs.PacsTppSchedule;
+import uk.gov.hmcts.opal.filehandler.repository.BusinessUnitBankAccountRepository;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.OriginatorDetails;
@@ -29,6 +31,7 @@ public class PacsTTPBaisExtractionService implements ExtractionService<Interface
     private static final DateTimeFormatter OUTPUT_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final InterfaceFilesRepository interfaceFilesRepository;
+    private final BusinessUnitBankAccountRepository businessUnitBankAccountRepository;
     private final XmlSchemaUnmarshalService xmlSchemaUnmarshalService;
 
     @Override
@@ -67,7 +70,12 @@ public class PacsTTPBaisExtractionService implements ExtractionService<Interface
 
     @Override
     public BusinessUnitBankAccountEntity getBusinessUnitBankAccount(InterfaceFileCommonDataExtract extractedData) {
-        throw new UnsupportedOperationException("PO-6452 implements PACS TTP business unit bank account lookup");
+        return businessUnitBankAccountRepository.findByDwpCourtCode(extractedData.getDwpCourtCode())
+            .orElseThrow(() -> new EntityNotFoundException(
+                String.format("Business unit bank account with dwp_court_code '%s' "
+                        + "could not be located for file_name '%s'",
+                    extractedData.getDwpCourtCode(), extractedData.getFileName())
+            ));
     }
 
     void validateInputs(InterfaceFileEntity sourceInterfaceFile, InputStream fileContents) {
