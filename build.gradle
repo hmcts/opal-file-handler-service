@@ -401,11 +401,10 @@ dependencies {
   // temporary bump until spring-boot-dependencies updates (CVE-2026-54291)
   implementation 'org.postgresql:postgresql:42.7.13'
 
-  // temporary update until CVEs are patched out
-  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:11.0.24'
+  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:11.0.25'
   implementation 'org.apache.tomcat.embed:tomcat-embed-core:11.0.25'
   implementation 'org.apache.tomcat.embed:tomcat-embed-el:11.0.25'
-  implementation 'org.apache.tomcat:tomcat-annotations-api:11.0.24'
+  implementation 'org.apache.tomcat:tomcat-annotations-api:11.0.25'
 
   // Azure blob storage
   implementation 'com.azure:azure-storage-blob:12.35.0'
