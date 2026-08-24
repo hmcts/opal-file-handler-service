@@ -23,7 +23,7 @@ paths:
             type: string
           required: true
       responses:
-        '201':
+        '202':
           description: Job triggered successfully
         400:
           description: Bad request
