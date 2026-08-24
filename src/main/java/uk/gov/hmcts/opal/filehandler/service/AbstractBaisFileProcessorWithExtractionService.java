@@ -1,5 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
+import static uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory.sourceFilesWithJsonFailuresWithinRetryLimit;
 import static uk.gov.hmcts.opal.filehandler.util.StringUtil.isBlank;
 
 import java.io.ByteArrayInputStream;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
@@ -40,6 +42,9 @@ public abstract class AbstractBaisFileProcessorWithExtractionService<T extends I
 
     private static final String BUSINESS_UNIT_065 = "065";
 
+    @Value("${opal.file-handler-service.extraction-service.max-retries:5}")
+    protected int maxRetries;
+
     private final ExtractionService<T> extractionService;
 
     private final EnumMap<Domain, InterfaceFilePreprocessQueueService> queueServiceMap;
@@ -62,6 +67,23 @@ public abstract class AbstractBaisFileProcessorWithExtractionService<T extends I
         this.queueServiceMap = new EnumMap<>(Domain.class);
         this.queueServiceMap.put(Domain.FINES, finesQueueService);
         this.queueServiceMap.put(Domain.MAINTENANCE, maintenanceQueueService);
+    }
+
+    @Override
+    protected List<String> selectFilesToProcess(BaisFileProcessorConfiguration config) {
+        List<InterfaceFileEntity> sourceFilesToRetry = interfaceFilesRepository.findAll(
+            sourceFilesWithJsonFailuresWithinRetryLimit(config.getSource(), maxRetries));
+
+        for (InterfaceFileEntity sourceFile : sourceFilesToRetry) {
+            InputStream sourceStream = interfaceFileBlobStoreService.fetchInterfaceFile(
+                sourceFile.getInterfaceFileId(),
+                sourceFile.getFilestoreUuid(),
+                config.getContainerName()).toStream();
+
+            processFile(config, sourceFile, sourceStream);
+        }
+
+        return super.selectFilesToProcess(config);
     }
 
     @Override
