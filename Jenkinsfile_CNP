@@ -378,6 +378,7 @@ static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
 }
 
 withPipeline(type, product, component) {
+    enableDbMigration(product)
     onPR {
         loadVaultSecrets(secrets)
     }
