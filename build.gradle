@@ -1,3 +1,5 @@
+import org.flywaydb.gradle.task.FlywayMigrateTask
+
 buildscript {
   dependencies {
     classpath("org.flywaydb:flyway-database-postgresql:13.3.0")
@@ -497,6 +499,13 @@ tasks.named("compileJava") {
   dependsOn 'openApiGenerate'
   xmlSchemasToGenerate.each { schemaName, ignored ->
     dependsOn tasks.named("generate${schemaName.toString().capitalize()}Jaxb")
+  }
+}
+
+tasks.register('migratePostgresDatabase', FlywayMigrateTask) {
+  baselineOnMigrate = true
+  if (project.hasProperty("dburl")) {
+    url = "jdbc:postgresql://${dburl}"
   }
 }
 
