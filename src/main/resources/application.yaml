@@ -113,6 +113,8 @@ opal:
       supported-algorithms:
         sha-512: SHA-512
   file-handler-service:
+    extraction-service:
+      max-retries: ${EXTRACTION_SERVICE_MAX_RETRIES:5}
     file-store:
       connection-string: ${AZURE_STORAGE_CONNECTION_STRING:UseDevelopmentStorage=true}
       account-name: ${FILE_STORE_STORAGE_ACCOUNT_NAME:}

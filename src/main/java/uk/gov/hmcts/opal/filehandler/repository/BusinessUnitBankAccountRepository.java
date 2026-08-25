@@ -8,6 +8,9 @@ import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 @Repository
 public interface BusinessUnitBankAccountRepository extends JpaRepository<BusinessUnitBankAccountEntity, Long> {
 
+    Optional<BusinessUnitBankAccountEntity> findByBankSortCodeAndBankAccountNumber(
+        String bankSortCode, String bankAccountNumber);
+
     Optional<BusinessUnitBankAccountEntity> findByDwpCourtCode(String dwpCourtCode);
 }
 

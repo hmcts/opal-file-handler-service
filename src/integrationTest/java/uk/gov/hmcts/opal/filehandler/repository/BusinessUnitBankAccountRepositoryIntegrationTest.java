@@ -65,6 +65,30 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
     }
 
     @Nested
+    class FindBySortCodeAndAccountNumber {
+
+        @Test
+        void correctlyFetchesBySortCodeAndAccountNumber() {
+            BusinessUnitBankAccountEntity original = testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID, "AB01");
+
+            entityManager.clear();
+
+            String sortCode = original.getBankSortCode();
+            String accountNumber = original.getBankAccountNumber();
+
+            BusinessUnitBankAccountEntity fetched = repository
+                .findByBankSortCodeAndBankAccountNumber(sortCode, accountNumber).orElseThrow();
+
+            assertThat(fetched.getId()).isEqualTo(original.getId());
+            assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());
+            assertThat(fetched.getDomain()).isEqualTo(original.getDomain());
+            assertThat(fetched.getBankSortCode()).isEqualTo(original.getBankSortCode());
+            assertThat(fetched.getBankAccountNumber()).isEqualTo(original.getBankAccountNumber());
+            assertThat(fetched.getDwpCourtCode()).isEqualTo(original.getDwpCourtCode());
+        }
+    }
+
+    @Nested
     class FindByDwpCourtCode {
         @Test
         void correctlyFetchesByDwpCourtCode() {
