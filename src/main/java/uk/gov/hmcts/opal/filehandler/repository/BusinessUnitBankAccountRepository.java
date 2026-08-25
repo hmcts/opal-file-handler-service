@@ -10,5 +10,7 @@ public interface BusinessUnitBankAccountRepository extends JpaRepository<Busines
 
     Optional<BusinessUnitBankAccountEntity> findByBankSortCodeAndBankAccountNumber(
         String bankSortCode, String bankAccountNumber);
+
+    Optional<BusinessUnitBankAccountEntity> findByDwpCourtCode(String dwpCourtCode);
 }
 

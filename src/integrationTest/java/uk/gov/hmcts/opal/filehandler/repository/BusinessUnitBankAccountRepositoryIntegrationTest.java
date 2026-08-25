@@ -1,6 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity_.dwpCourtCode;
 
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,6 +66,7 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
 
     @Nested
     class FindBySortCodeAndAccountNumber {
+
         @Test
         void correctlyFetchesBySortCodeAndAccountNumber() {
             BusinessUnitBankAccountEntity original = testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID, "AB01");
@@ -76,6 +78,28 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
 
             BusinessUnitBankAccountEntity fetched = repository
                 .findByBankSortCodeAndBankAccountNumber(sortCode, accountNumber).orElseThrow();
+
+            assertThat(fetched.getId()).isEqualTo(original.getId());
+            assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());
+            assertThat(fetched.getDomain()).isEqualTo(original.getDomain());
+            assertThat(fetched.getBankSortCode()).isEqualTo(original.getBankSortCode());
+            assertThat(fetched.getBankAccountNumber()).isEqualTo(original.getBankAccountNumber());
+            assertThat(fetched.getDwpCourtCode()).isEqualTo(original.getDwpCourtCode());
+        }
+    }
+
+    @Nested
+    class FindByDwpCourtCode {
+        @Test
+        void correctlyFetchesByDwpCourtCode() {
+            BusinessUnitBankAccountEntity original = testData.saveMaximumBusinessUnitBankAccount(TYPICAL_ID);
+
+            entityManager.clear();
+
+            String dwpCourtCode = original.getDwpCourtCode();
+
+            BusinessUnitBankAccountEntity fetched = repository
+                .findByDwpCourtCode(dwpCourtCode).orElseThrow();
 
             assertThat(fetched.getId()).isEqualTo(original.getId());
             assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());
