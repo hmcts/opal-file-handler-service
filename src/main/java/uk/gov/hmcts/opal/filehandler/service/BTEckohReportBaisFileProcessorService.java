@@ -13,7 +13,7 @@ import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @Service
-public class BTEckohReportBaisFileProcessorService extends AbstractBaisFileProcessorService {
+public class BTEckohReportBaisFileProcessorService extends AbstractInterfaceFileProcessorService {
 
     public BTEckohReportBaisFileProcessorService(
         Clock clock,
