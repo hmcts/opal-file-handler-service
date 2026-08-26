@@ -51,7 +51,7 @@ public class SecurityConfig {
         "/info",
         "/metrics",
         "/metrics/**",
-        "/testing-support/**",
+        "/test-support/**",
         "/s2s/**",
         "/"
     };
