@@ -504,8 +504,12 @@ tasks.named("compileJava") {
 
 tasks.register('migratePostgresDatabase', FlywayMigrateTask) {
   baselineOnMigrate = true
-  if (project.hasProperty("dburl")) {
-    url = "jdbc:postgresql://${dburl}"
+  def taskUrl = providers.gradleProperty("dburl")
+      .map { dbUrl -> "jdbc:postgresql://${dbUrl}" }
+      .orElse(providers.environmentVariable("FLYWAY_URL"))
+      .orNull
+  if (taskUrl) {
+    url = taskUrl
   }
 }
 
