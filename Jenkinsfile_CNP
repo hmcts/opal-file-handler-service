@@ -1,7 +1,7 @@
 #!groovy
 import uk.gov.hmcts.contino.Kubectl
 
-@Library("Infrastructure@2.5.3")
+@Library("Infrastructure@2.4.4")
 
 def type = "java"
 def product = "opal"
