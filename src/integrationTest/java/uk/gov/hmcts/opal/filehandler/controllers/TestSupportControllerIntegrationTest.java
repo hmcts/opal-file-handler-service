@@ -3,6 +3,8 @@ package uk.gov.hmcts.opal.filehandler.controllers;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.security.MessageDigest;
+import java.util.Base64;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -37,8 +39,12 @@ public class TestSupportControllerIntegrationTest extends AbstractIntegrationTes
         @JiraStory("PO-6454")
         @JiraEpic("PO-3497")
         void returns200WhenFeatureIsOn() throws Exception {
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-512");
+            String digest = Base64.getEncoder().encodeToString(messageDigest.digest(new byte[]{}));
+
             ResultActions res = mockMvc.perform(
                 post(url + "some-task")
+                    .header("Content-Digest", "sha-512=:" + digest + ":")
             );
 
             res.andExpect(status().isOk());
@@ -55,8 +61,12 @@ public class TestSupportControllerIntegrationTest extends AbstractIntegrationTes
         @JiraStory("PO-6454")
         @JiraEpic("PO-3497")
         void returns404WhenFeatureIsOff() throws Exception {
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-512");
+            String digest = Base64.getEncoder().encodeToString(messageDigest.digest(new byte[]{}));
+
             ResultActions res = mockMvc.perform(
                 post(url + "some-task")
+                    .header("Content-Digest", "sha-512=:" + digest + ":")
             );
 
             res.andExpect(status().isNotFound());
