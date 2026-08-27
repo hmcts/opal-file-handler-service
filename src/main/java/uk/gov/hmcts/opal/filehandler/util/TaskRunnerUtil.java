@@ -2,23 +2,35 @@ package uk.gov.hmcts.opal.filehandler.util;
 
 import java.util.Arrays;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.stereotype.Service;
 import uk.gov.hmcts.opal.filehandler.Application;
+import uk.gov.hmcts.opal.filehandler.config.task.TaskConfiguration;
 
+@Service
+@RequiredArgsConstructor
 public class TaskRunnerUtil {
 
     public static final String AUTOMATED_TASK_PREFIX = "AutomatedTask:";
     public static final String AUTOMATED_TASK_PROPERTY = "opal.automated-task";
 
-    public static int runAutomatedTask(final String... args) {
+
+    private final Map<String, TaskConfiguration> tasks;
+
+    public static int runAutomatedTaskWithSpring(final String... args) {
         var ctx = new SpringApplicationBuilder(Application.class)
             .web(WebApplicationType.NONE)
             .properties(Map.of(AUTOMATED_TASK_PROPERTY, getAutomatedTaskName(args)))
             .run(args);
 
         return SpringApplication.exit(ctx);
+    }
+
+    public void runAutomatedTask(String name) {
+        tasks.get(name).run();
     }
 
     public static boolean isAutomatedTask(final String[] args) {

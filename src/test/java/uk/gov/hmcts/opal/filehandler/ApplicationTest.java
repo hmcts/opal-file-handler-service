@@ -52,7 +52,7 @@ public class ApplicationTest {
 
             app.when(() -> SpringApplication.exit(context)).thenReturn(0);
 
-            int exitCode = TaskRunnerUtil.runAutomatedTask(args);
+            int exitCode = TaskRunnerUtil.runAutomatedTaskWithSpring(args);
 
             assertThat(exitCode).isZero();
 

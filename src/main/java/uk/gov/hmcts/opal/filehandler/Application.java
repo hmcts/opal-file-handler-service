@@ -23,7 +23,7 @@ public class Application {
 
     public static void main(final String[] args) {
         if (TaskRunnerUtil.isAutomatedTask(args)) {
-            System.exit(TaskRunnerUtil.runAutomatedTask(args));
+            System.exit(TaskRunnerUtil.runAutomatedTaskWithSpring(args));
         }
 
         SpringApplication.run(Application.class, args);

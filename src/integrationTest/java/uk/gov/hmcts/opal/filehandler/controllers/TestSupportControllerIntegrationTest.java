@@ -10,12 +10,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.context.annotation.Import;
+import org.springframework.stereotype.Component;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import uk.gov.hmcts.opal.filehandler.IntegrationSecurityConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.task.TaskConfiguration;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraEpic;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
@@ -24,10 +27,16 @@ import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 @ActiveProfiles(profiles = {"integration"})
 @Import(IntegrationSecurityConfiguration.class)
 public class TestSupportControllerIntegrationTest extends AbstractIntegrationTest {
-    private final String url = "/test-support/automated-jobs/";
+    private final String url = "/testing-support/automated-jobs/";
     @Autowired
     protected MockMvc mockMvc;
 
+    @Component("automatedTestTaskConfig")
+    @ConditionalOnBooleanProperty("opal.testing-support-endpoints.enabled")
+    public static class AutomatedTestTaskConfig implements TaskConfiguration {
+        public void run() {
+        }
+    }
 
     @TestPropertySource(properties = {
         "opal.testing-support-endpoints.enabled=true"
@@ -43,7 +52,7 @@ public class TestSupportControllerIntegrationTest extends AbstractIntegrationTes
             String digest = Base64.getEncoder().encodeToString(messageDigest.digest(new byte[]{}));
 
             ResultActions res = mockMvc.perform(
-                post(url + "some-task")
+                post(url + "TestTaskConfig")
                     .header("Content-Digest", "sha-512=:" + digest + ":")
             );
 
@@ -65,7 +74,7 @@ public class TestSupportControllerIntegrationTest extends AbstractIntegrationTes
             String digest = Base64.getEncoder().encodeToString(messageDigest.digest(new byte[]{}));
 
             ResultActions res = mockMvc.perform(
-                post(url + "some-task")
+                post(url + "TestTaskConfig")
                     .header("Content-Digest", "sha-512=:" + digest + ":")
             );
 

@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.config.task;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -19,7 +18,8 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 @ActiveProfiles("integration")
 @SpringBootTest(properties = {
     "opal.automated-task=BTEckohReport",
-    "spring.main.web-application-type=none"
+    "spring.main.web-application-type=none",
+    "opal.testing-support-endpoints.enabled=false"
 })
 public class AutomatedTaskBTEckohReportIntegrationTest extends AbstractIntegrationTest {
 
@@ -38,7 +38,7 @@ public class AutomatedTaskBTEckohReportIntegrationTest extends AbstractIntegrati
 
     @Test
     void shouldCallAutomatedTaskRun() throws IOException {
-        verify(automatedBTEckohReport, times(1)).run(any());
+        verify(automatedBTEckohReport, times(1)).run();
     }
 
 }

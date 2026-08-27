@@ -14,13 +14,11 @@ import uk.gov.hmcts.opal.generated.http.api.TestSupportApi;
 @Slf4j
 public class TestSupportController implements TestSupportApi {
 
+    private final TaskRunnerUtil taskRunnerUtil;
+
     @Override
-    public ResponseEntity<Void> testSupportAutomatedJobsNamePost(String name) {
-        try {
-            TaskRunnerUtil.runAutomatedTask(TaskRunnerUtil.AUTOMATED_TASK_PREFIX + name);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
+    public ResponseEntity<Void> testingSupportAutomatedJobsNamePost(String name) {
+        taskRunnerUtil.runAutomatedTask("automated" + name);
 
         return ResponseEntity.ok().build();
     }

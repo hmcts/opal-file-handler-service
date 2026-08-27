@@ -1,29 +1,28 @@
 package uk.gov.hmcts.opal.filehandler.config.task;
 
-import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.service.BTEckohReportBaisFileProcessorService;
 
 @Component
-@RequiredArgsConstructor
-@ConditionalOnProperty(name = "opal.automated-task", havingValue = "BTEckohReport")
+@ConditionalOnExpression(
+    "'${opal.automated-task}'.equals('BTEckohReport') or ${opal.testing-support-endpoints.enabled}"
+)
 @Slf4j
-public class AutomatedBTEckohReport implements ApplicationRunner {
+@RequiredArgsConstructor
+public class AutomatedBTEckohReport implements TaskConfiguration {
 
-    private final BTEckohReportBaisFileProcessorService fileProcessorService;
-    private final BTEckohReportBaisFileProcessorConfiguration configuration;
+    private final BTEckohReportBaisFileProcessorService service;
+    private final BTEckohReportBaisFileProcessorConfiguration config;
 
     @Override
-    public void run(ApplicationArguments args) throws IOException {
+    public void run() {
         log.info("Starting automated BTEckoh report");
 
-        fileProcessorService.run(configuration);
+        service.run(config);
 
         log.info("Completed automated BTEckoh report");
     }
