@@ -5,15 +5,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.DatatypeFactory;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -21,6 +25,7 @@ import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.generated.pacs.PacsTppSchedule;
+import uk.gov.hmcts.opal.filehandler.repository.BusinessUnitBankAccountRepository;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.Transaction;
@@ -32,8 +37,10 @@ class PacsTTPBaisExtractionServiceTest {
     private static final String FILE_NAME = "0000015232_dat_0000000612_08011008_111355.txt";
 
     private final InterfaceFilesRepository repository = mock(InterfaceFilesRepository.class);
+    private final BusinessUnitBankAccountRepository bubaRepository = mock(BusinessUnitBankAccountRepository.class);
     private final XmlSchemaUnmarshalService xmlService = mock(XmlSchemaUnmarshalService.class);
-    private final PacsTTPBaisExtractionService service = new PacsTTPBaisExtractionService(repository, xmlService);
+    private final PacsTTPBaisExtractionService service =
+        new PacsTTPBaisExtractionService(repository, bubaRepository, xmlService);
 
     @Nested
     class ExtractStandardData {
@@ -249,6 +256,43 @@ class PacsTTPBaisExtractionServiceTest {
             ));
 
             assertThat(formattedDate).isEqualTo("03/09/2023");
+        }
+    }
+
+    @Nested
+    class GetBusinessUnitBankAccount {
+        private final InterfaceFileCommonDataExtract input = mock(InterfaceFileCommonDataExtract.class);
+
+        @Test
+        void shouldReturnWhenDataIsFound() {
+            when(input.getDwpCourtCode()).thenReturn("0000031714");
+            when(input.getFileName()).thenReturn("file.txt");
+            when(bubaRepository.findByDwpCourtCode(eq("0000031714")))
+                .thenReturn(Optional.of(mock(BusinessUnitBankAccountEntity.class)));
+
+            BusinessUnitBankAccountEntity response = service.getBusinessUnitBankAccount(input);
+
+            verify(bubaRepository, times(1)).findByDwpCourtCode(
+                eq("0000031714")
+            );
+            assertThat(response).isNotNull();
+        }
+
+        @Test
+        void shouldThrowErrorWhenDataIsNotFound() {
+            when(input.getDwpCourtCode()).thenReturn("0000031714");
+            when(input.getFileName()).thenReturn("file.txt");
+            when(bubaRepository.findByDwpCourtCode(eq("0000031714")))
+                .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.getBusinessUnitBankAccount(input))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("Business unit bank account with dwp_court_code '0000031714' could not "
+                    + "be located for file_name 'file.txt'");
+
+            verify(bubaRepository, times(1)).findByDwpCourtCode(
+                eq("0000031714")
+            );
         }
     }
 

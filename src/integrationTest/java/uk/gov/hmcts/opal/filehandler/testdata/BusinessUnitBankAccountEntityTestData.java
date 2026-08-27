@@ -37,6 +37,10 @@ public class BusinessUnitBankAccountEntityTestData {
         return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitCode));
     }
 
+    public BusinessUnitBankAccountEntity saveMaximumBusinessUnitBankAccount(long id) {
+        return repository.save(getMaximumBusinessUnitBankAccount(id));
+    }
+
     public BusinessUnitBankAccountEntity saveAndFlushBusinessUnitBankAccount(BusinessUnitBankAccountEntity entity) {
         return repository.saveAndFlush(entity);
     }

@@ -71,7 +71,7 @@ import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @ExtendWith(MockitoExtension.class)
-class AbstractBaisFileProcessorWithExtractionServiceTest {
+class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
 
     private static final String CONTAINER = "natwest-report";
     private static final String SOURCE_JSON_NAME = "typical.dat";
@@ -148,27 +148,31 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
             verify(extractionService, never()).getBusinessUnitBankAccount(any());
             verify(processor, never()).validateSupportedDomain(any(), any());
             verify(processor, never()).updateSourceBusinessUnitAndDomain(any(), any(), any());
-            verify(processor, never()).processExtract(any(), any(), any(), any());
+            verify(processor, never()).createAndUploadSourceJson(any(), any(), any());
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+            verify(finesQueueService, never()).send(any());
+            verify(maintenanceQueueService, never()).send(any());
         }
 
         @Test
-        void shouldValidateUpdateProcessExtractAndSaveSourceFile() {
+        void shouldPreProcessAndQueueNewExtract() {
             TestProcessor processor = spy(service);
             InputStream inputStream = new ByteArrayInputStream("source".getBytes(StandardCharsets.UTF_8));
             InterfaceFileCommonDataExtract extract = extract();
             BusinessUnitBankAccountEntity businessUnit = businessUnit("BC12", Domain.FINES);
+            InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS, Domain.FINES);
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
             when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
-            doNothing().when(processor).validateSupportedDomain(sourceFile, Domain.FINES);
-            doNothing().when(processor).updateSourceBusinessUnitAndDomain(sourceFile, businessUnit, Domain.FINES);
-            doNothing().when(processor).processExtract(config, sourceFile, extract, businessUnit);
+            doReturn(sourceJson).when(processor).createAndUploadSourceJson(config, sourceFile, extract);
 
             processor.processFile(config, sourceFile, inputStream);
 
-            verify(processor).validateSupportedDomain(sourceFile, Domain.FINES);
-            verify(processor).updateSourceBusinessUnitAndDomain(sourceFile, businessUnit, Domain.FINES);
-            verify(processor).processExtract(config, sourceFile, extract, businessUnit);
+            assertThat(sourceFile.getBusinessUnitCode()).containsExactly("BC12");
+            assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
+            verify(processor).createAndUploadSourceJson(config, sourceFile, extract);
+            verify(finesQueueService).send(200L);
+            verify(maintenanceQueueService, never()).send(any());
             verify(repository).save(sourceFile);
         }
 
@@ -181,14 +185,15 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
             when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
-            doNothing().when(processor).validateSupportedDomain(sourceFile, Domain.FINES);
-            doNothing().when(processor).updateSourceBusinessUnitAndDomain(sourceFile, businessUnit, Domain.FINES);
 
             processor.processFile(config, sourceFile, inputStream);
 
-            verify(processor).validateSupportedDomain(sourceFile, Domain.FINES);
-            verify(processor).updateSourceBusinessUnitAndDomain(sourceFile, businessUnit, Domain.FINES);
-            verify(processor, never()).processExtract(any(), any(), any(), any());
+            assertThat(sourceFile.getBusinessUnitCode()).containsExactly("065");
+            assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
+            verify(processor, never()).createAndUploadSourceJson(any(), any(), any());
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+            verify(finesQueueService, never()).send(any());
+            verify(maintenanceQueueService, never()).send(any());
             verify(repository).save(sourceFile);
         }
 
@@ -203,23 +208,23 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
                 .build();
             BusinessUnitBankAccountEntity firstBusinessUnit = businessUnit("BC12", Domain.FINES);
             BusinessUnitBankAccountEntity secondBusinessUnit = businessUnit("MN01", Domain.MAINTENANCE);
+            InterfaceFileEntity firstSourceJson = sourceJsonFile(200L, Status.SUCCESS, Domain.FINES);
+            InterfaceFileEntity secondSourceJson = sourceJsonFile(201L, Status.SUCCESS, Domain.MAINTENANCE);
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(first, second));
             when(extractionService.getBusinessUnitBankAccount(first)).thenReturn(firstBusinessUnit);
             when(extractionService.getBusinessUnitBankAccount(second)).thenReturn(secondBusinessUnit);
-            doNothing().when(processor).validateSupportedDomain(sourceFile, Domain.FINES);
-            doNothing().when(processor).validateSupportedDomain(sourceFile, Domain.MAINTENANCE);
-            doNothing().when(processor).updateSourceBusinessUnitAndDomain(
-                sourceFile, firstBusinessUnit, Domain.FINES);
-            doNothing().when(processor).updateSourceBusinessUnitAndDomain(
-                sourceFile, secondBusinessUnit, Domain.MAINTENANCE);
-            doNothing().when(processor).processExtract(config, sourceFile, first, firstBusinessUnit);
-            doNothing().when(processor).processExtract(config, sourceFile, second, secondBusinessUnit);
+            doReturn(firstSourceJson).when(processor).createAndUploadSourceJson(config, sourceFile, first);
+            doReturn(secondSourceJson).when(processor).createAndUploadSourceJson(config, sourceFile, second);
 
             processor.processFile(config, sourceFile, inputStream);
 
-            verify(processor).processExtract(config, sourceFile, first, firstBusinessUnit);
-            verify(processor).processExtract(config, sourceFile, second, secondBusinessUnit);
+            assertThat(sourceFile.getBusinessUnitCode()).containsExactly("BC12", "MN01");
+            assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.MAINTENANCE);
+            verify(processor).createAndUploadSourceJson(config, sourceFile, first);
+            verify(processor).createAndUploadSourceJson(config, sourceFile, second);
+            verify(finesQueueService).send(200L);
+            verify(maintenanceQueueService).send(201L);
             verify(repository).save(sourceFile);
         }
 
@@ -229,18 +234,17 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
             InputStream inputStream = new ByteArrayInputStream("source".getBytes(StandardCharsets.UTF_8));
             InterfaceFileCommonDataExtract extract = extract();
             BusinessUnitBankAccountEntity businessUnit = businessUnit("CF01", Domain.CONFISCATION);
-            UnexpectedDomainException exception = new UnexpectedDomainException("Unexpected domain");
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
             when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
-            doThrow(exception).when(processor).validateSupportedDomain(sourceFile, Domain.CONFISCATION);
 
             assertThatThrownBy(() -> processor.processFile(config, sourceFile, inputStream))
-                .isSameAs(exception);
+                .isInstanceOf(UnexpectedDomainException.class);
 
-            verify(processor).validateSupportedDomain(sourceFile, Domain.CONFISCATION);
-            verify(processor, never()).updateSourceBusinessUnitAndDomain(any(), any(), any());
-            verify(processor, never()).processExtract(any(), any(), any(), any());
+            verify(processor, never()).createAndUploadSourceJson(any(), any(), any());
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+            verify(finesQueueService, never()).send(any());
+            verify(maintenanceQueueService, never()).send(any());
             verify(repository, never()).save(any());
         }
     }
@@ -284,106 +288,6 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
 
             assertThat(sourceFile.getBusinessUnitCode()).containsExactly("BC12");
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
-        }
-    }
-
-    @Nested
-    class ProcessExtract {
-
-        @Test
-        void shouldStopWhenExtractWasAlreadyProcessedSuccessfully() {
-            TestProcessor processor = spy(service);
-            InterfaceFileCommonDataExtract extract = extract();
-            BusinessUnitBankAccountEntity businessUnit = businessUnit("BC12", Domain.FINES);
-
-            doNothing().when(processor).populateMissingDestinationBankDetails(extract, businessUnit);
-            doReturn("checksum").when(processor).calculateExtractChecksum(any());
-            doReturn(true).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
-
-            processor.processExtract(config, sourceFile, extract, businessUnit);
-
-            verify(processor).populateMissingDestinationBankDetails(extract, businessUnit);
-            verify(processor).calculateExtractChecksum(any());
-            verify(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
-            verify(processor, never()).supersedeFailedSourceJson(any(), any(), any());
-            verify(processor, never()).createSourceJson(any(), any(), any(), any(), any());
-            verify(processor, never()).uploadSourceJson(any(), any(), any());
-            verify(repository, never()).save(any());
-            verify(processor, never()).sendToQueue(any(), any());
-        }
-
-        @Test
-        void shouldCreateUploadSaveAndQueueNewExtract() {
-            TestProcessor processor = spy(service);
-            InterfaceFileCommonDataExtract extract = extract();
-            BusinessUnitBankAccountEntity businessUnit = businessUnit("BC12", Domain.FINES);
-            InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
-
-            doNothing().when(processor).populateMissingDestinationBankDetails(extract, businessUnit);
-            doReturn("checksum").when(processor).calculateExtractChecksum(any());
-            doReturn(false).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
-            doNothing().when(processor).supersedeFailedSourceJson(sourceFile, extract, "checksum");
-            doReturn(sourceJson).when(processor)
-                .createSourceJson(config, sourceFile, extract, businessUnit, "checksum");
-            doNothing().when(processor).uploadSourceJson(eq(config), eq(sourceJson), any());
-            doNothing().when(processor).sendToQueue(any(), eq(Domain.FINES));
-
-            processor.processExtract(config, sourceFile, extract, businessUnit);
-
-            verify(processor).populateMissingDestinationBankDetails(extract, businessUnit);
-            verify(processor).supersedeFailedSourceJson(sourceFile, extract, "checksum");
-            verify(processor).createSourceJson(config, sourceFile, extract, businessUnit, "checksum");
-            verify(processor).uploadSourceJson(eq(config), eq(sourceJson), any());
-            verify(repository).save(sourceJson);
-            verify(processor).sendToQueue(sourceJson, Domain.FINES);
-        }
-
-        @Test
-        void shouldSaveFailedSourceJsonAgainWhenQueueSendFails() {
-            TestProcessor processor = spy(service);
-            InterfaceFileCommonDataExtract extract = extract();
-            BusinessUnitBankAccountEntity businessUnit = businessUnit("BC12", Domain.FINES);
-            InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
-
-            doNothing().when(processor).populateMissingDestinationBankDetails(extract, businessUnit);
-            doReturn("checksum").when(processor).calculateExtractChecksum(any());
-            doReturn(false).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
-            doNothing().when(processor).supersedeFailedSourceJson(sourceFile, extract, "checksum");
-            doReturn(sourceJson).when(processor)
-                .createSourceJson(config, sourceFile, extract, businessUnit, "checksum");
-            doNothing().when(processor).uploadSourceJson(eq(config), eq(sourceJson), any());
-            doAnswer(invocation -> {
-                sourceJson.setStatus(Status.FAILED);
-                return null;
-            }).when(processor).sendToQueue(any(), eq(Domain.FINES));
-
-            processor.processExtract(config, sourceFile, extract, businessUnit);
-
-            verify(repository, times(2)).save(sourceJson);
-        }
-
-        @Test
-        void shouldNotQueueFailedUpload() {
-            TestProcessor processor = spy(service);
-            InterfaceFileCommonDataExtract extract = extract();
-            BusinessUnitBankAccountEntity businessUnit = businessUnit("BC12", Domain.FINES);
-            InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
-
-            doNothing().when(processor).populateMissingDestinationBankDetails(extract, businessUnit);
-            doReturn("checksum").when(processor).calculateExtractChecksum(any());
-            doReturn(false).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
-            doNothing().when(processor).supersedeFailedSourceJson(sourceFile, extract, "checksum");
-            doReturn(sourceJson).when(processor)
-                .createSourceJson(config, sourceFile, extract, businessUnit, "checksum");
-            doAnswer(invocation -> {
-                sourceJson.setStatus(Status.FAILED);
-                return null;
-            }).when(processor).uploadSourceJson(eq(config), eq(sourceJson), any());
-
-            processor.processExtract(config, sourceFile, extract, businessUnit);
-
-            verify(repository).save(sourceJson);
-            verify(processor, never()).sendToQueue(any(), any());
         }
     }
 
@@ -487,10 +391,10 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
 
         @Test
         void shouldWrapChecksumReadFailure() {
-            try (MockedStatic<AbstractBaisFileProcessorService> checksum =
-                mockStatic(AbstractBaisFileProcessorService.class, CALLS_REAL_METHODS)) {
+            try (MockedStatic<AbstractInterfaceFileProcessorService> checksum =
+                mockStatic(AbstractInterfaceFileProcessorService.class, CALLS_REAL_METHODS)) {
 
-                checksum.when(() -> AbstractBaisFileProcessorService.calculateChecksum(any(InputStream.class)))
+                checksum.when(() -> AbstractInterfaceFileProcessorService.calculateChecksum(any(InputStream.class)))
                     .thenThrow(new IOException("read failed"));
                 Throwable thrown =
                     catchThrowable(() -> service.calculateExtractChecksum("abc".getBytes(StandardCharsets.UTF_8)));
@@ -510,7 +414,7 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
             InterfaceFileCommonDataExtract extract = extract();
 
             InterfaceFileEntity sourceJson = service.createSourceJson(
-                config, sourceFile, extract, businessUnit("BC12", Domain.FINES), "checksum");
+                config, sourceFile, extract, new String[] {"BC12"}, Domain.FINES, "checksum");
 
             assertThat(sourceJson.getSource()).isEqualTo(Interface.NATWEST);
             assertThat(sourceJson.getTarget()).isEqualTo(Interface.OPAL);
@@ -696,12 +600,16 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
     }
 
     private InterfaceFileEntity sourceJsonFile(long id, Status status) {
+        return sourceJsonFile(id, status, Domain.FINES);
+    }
+
+    private InterfaceFileEntity sourceJsonFile(long id, Status status, Domain domain) {
         return InterfaceFileEntity.builder()
             .interfaceFileId(id)
             .source(Interface.NATWEST)
             .target(Interface.OPAL)
             .type(Type.SOURCE_JSON)
-            .opalDomain(Domain.FINES)
+            .opalDomain(domain)
             .fileName(SOURCE_JSON_NAME)
             .checksum("json-checksum")
             .status(status)
@@ -727,9 +635,128 @@ class AbstractBaisFileProcessorWithExtractionServiceTest {
             .build();
     }
 
+    @Nested
+    class PreProcessExtract {
+
+        @Test
+        void shouldUpdateSourceFilePopulateBankDetailsAndReturnTrue() {
+            TestProcessor processor = spy(service);
+            InterfaceFileCommonDataExtract extract = extract();
+            BusinessUnitBankAccountEntity businessUnit = businessUnit("BC12", Domain.FINES);
+
+            when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
+            doNothing().when(processor).validateSupportedDomain(sourceFile, Domain.FINES);
+            doNothing().when(processor).updateSourceBusinessUnitAndDomain(sourceFile, businessUnit, Domain.FINES);
+            doNothing().when(processor).populateMissingDestinationBankDetails(extract, businessUnit);
+
+            boolean result = processor.preProcessExtract(config, sourceFile, extract);
+
+            assertThat(result).isTrue();
+            verify(extractionService).getBusinessUnitBankAccount(extract);
+            verify(processor).validateSupportedDomain(sourceFile, Domain.FINES);
+            verify(processor).updateSourceBusinessUnitAndDomain(sourceFile, businessUnit, Domain.FINES);
+            verify(processor).populateMissingDestinationBankDetails(extract, businessUnit);
+        }
+
+        @Test
+        void shouldReturnFalseForBusinessUnit065AfterUpdatingSourceFile() {
+            TestProcessor processor = spy(service);
+            InterfaceFileCommonDataExtract extract = extract();
+            BusinessUnitBankAccountEntity businessUnit = businessUnit("065", Domain.FINES);
+
+            when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
+            doNothing().when(processor).validateSupportedDomain(sourceFile, Domain.FINES);
+            doNothing().when(processor).updateSourceBusinessUnitAndDomain(sourceFile, businessUnit, Domain.FINES);
+
+            boolean result = processor.preProcessExtract(config, sourceFile, extract);
+
+            assertThat(result).isFalse();
+            verify(extractionService).getBusinessUnitBankAccount(extract);
+            verify(processor).validateSupportedDomain(sourceFile, Domain.FINES);
+            verify(processor).updateSourceBusinessUnitAndDomain(sourceFile, businessUnit, Domain.FINES);
+            verify(processor, never()).populateMissingDestinationBankDetails(extract, businessUnit);
+        }
+    }
+
+    @Nested
+    class PostProcessExtract {
+
+        @Test
+        void shouldSendSuccessfulSourceJsonToDomainQueue() {
+            TestProcessor processor = spy(service);
+            InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS, Domain.FINES);
+            InterfaceFileCommonDataExtract extract = extract();
+            doNothing().when(processor).sendToQueue(sourceJson, Domain.FINES);
+
+            processor.postProcessExtract(config, sourceJson, extract);
+
+            verify(processor).sendToQueue(sourceJson, Domain.FINES);
+            verify(repository, never()).save(sourceJson);
+        }
+
+        @Test
+        void shouldIgnoreFailedSourceJson() {
+            TestProcessor processor = spy(service);
+            InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.FAILED, Domain.FINES);
+            InterfaceFileCommonDataExtract extract = extract();
+
+            processor.postProcessExtract(config, sourceJson, extract);
+
+            verify(processor, never()).sendToQueue(sourceJson, Domain.FINES);
+            verify(repository, never()).save(sourceJson);
+        }
+
+        @Test
+        void shouldSaveSourceJsonWhenQueueSendMarksItFailed() {
+            TestProcessor processor = spy(service);
+            InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS, Domain.FINES);
+            InterfaceFileCommonDataExtract extract = extract();
+            doAnswer(invocation -> {
+                sourceJson.setStatus(Status.FAILED);
+                sourceJson.setErrors("{\"message\":\"Queue send failed: queue unavailable\"}");
+                return null;
+            }).when(processor).sendToQueue(sourceJson, Domain.FINES);
+
+            processor.postProcessExtract(config, sourceJson, extract);
+
+            assertThat(sourceJson.getStatus()).isEqualTo(Status.FAILED);
+            assertThat(sourceJson.getErrors()).isEqualTo("{\"message\":\"Queue send failed: queue unavailable\"}");
+            verify(processor).sendToQueue(sourceJson, Domain.FINES);
+            verify(repository).save(sourceJson);
+        }
+    }
+
+    @Nested
+    class GetBusinessUnitsFromExtract {
+
+        @Test
+        void shouldReturnBusinessUnitCodeFromExtractionServiceBankAccount() {
+            InterfaceFileCommonDataExtract extract = extract();
+
+            when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit("BC12", Domain.FINES));
+
+            assertThat(service.getBusinessUnitsFromExtract(config, extract)).containsExactly("BC12");
+        }
+    }
+
+    @Nested
+    class GetDomainFromExtract {
+
+        @Test
+        void shouldReturnDomainFromExtractionServiceBankAccount() {
+            InterfaceFileCommonDataExtract extract = extract();
+
+            when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit("BC12", Domain.FINES));
+
+            assertThat(service.getDomainFromExtract(config, extract)).isEqualTo(Domain.FINES);
+        }
+    }
+
+
+
     @Service
     private static class TestProcessor
-        extends AbstractBaisFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
+        extends AbstractBaisInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
 
         TestProcessor(
             FeatureFlagUtil featureFlagUtil,
