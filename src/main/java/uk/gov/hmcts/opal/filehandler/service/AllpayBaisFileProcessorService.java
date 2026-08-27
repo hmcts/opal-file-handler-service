@@ -17,7 +17,7 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 @Slf4j
 @Service
 public class    AllpayBaisFileProcessorService
-    extends AbstractBaisFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
+    extends AbstractBaisInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
 
     public AllpayBaisFileProcessorService(Clock clock,
         FeatureFlagUtil featureFlagUtil,
