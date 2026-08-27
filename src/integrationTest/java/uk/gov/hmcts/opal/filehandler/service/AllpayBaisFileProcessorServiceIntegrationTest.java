@@ -8,6 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
@@ -30,7 +32,7 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceInt
 })
 public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
 
-    private static final String ALLPAY_FILE = "a121_00350005_300000.dat";
+    private static final String ALLPAY_FILE = "a121_00350005_300000";
     private static final String ALLPAY_FILE_CHECKSUM = "bbecbed9c565374b110b7113ecceae03";
     private static final String ALLPAY_FILE_RESOURCE = "bais-emulator/" + ALLPAY_FILE;
     private static final String ALLPAY_FILE_CONTAINER = "/home/AllPay/" + ALLPAY_FILE;
@@ -104,7 +106,7 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
 
     }
 
-    @Test
+    @ParameterizedTest
     @DisplayName("AC2: When Allpay file is present it should be read and stored correctly")
     @Sql(
         scripts = "classpath:db/insertData/insert_into_business_unit_bank_account.sql",
@@ -114,16 +116,22 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
         scripts = "classpath:db/deleteData/delete_from_business_unit_bank_account.sql",
         executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD
     )
-    void whenAllpayFileIsPresentReadAndStoreCorrectly() {
-        uploadResourceToSftp(ALLPAY_FILE_RESOURCE, ALLPAY_FILE_CONTAINER);
+    @ValueSource(strings =  {".dat", ".crf", ".dir", ".err", ".sta"})
+    void whenAllpayFileIsPresentReadAndStoreCorrectly(String fileEnding) {
+        String resource = ALLPAY_FILE_RESOURCE + fileEnding;
+        String container =  ALLPAY_FILE_CONTAINER + fileEnding;
+
+        uploadResourceToSftp(resource, container);
         allpayBaisFileProcessorService.run(allpayBaisFileProcessorConfiguration);
 
+        String file = ALLPAY_FILE + fileEnding;
+
         InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
-            ALLPAY_FILE, ALLPAY_FILE_CHECKSUM, Interface.ALLPAY, Type.SOURCE, Domain.MAINTENANCE);
+            file, ALLPAY_FILE_CHECKSUM, Interface.ALLPAY, Type.SOURCE, Domain.MAINTENANCE);
         InterfaceFileEntity sourceJsonFile = assertSuccessfulSourceJsonInterfaceFile(
-            ALLPAY_FILE, Interface.ALLPAY, Domain.MAINTENANCE, sourceFile.getInterfaceFileId());
+            file, Interface.ALLPAY, Domain.MAINTENANCE, sourceFile.getInterfaceFileId());
         verify(maintenanceQueueService).send(sourceJsonFile.getInterfaceFileId());
-        assertBlobChecksum(ALLPAY_FILE, ALLPAY_FILE_CHECKSUM, allpayBaisFileProcessorConfiguration.getContainerName());
+        assertBlobChecksum(file, ALLPAY_FILE_CHECKSUM, allpayBaisFileProcessorConfiguration.getContainerName());
         assertNumberOfSftpFiles(allpayBaisFileProcessorConfiguration.getSftpUsername(), 0);
     }
 
