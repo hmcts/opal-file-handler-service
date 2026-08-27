@@ -2,6 +2,8 @@ package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -106,8 +108,8 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
 
     }
 
-    @ParameterizedTest
-    @DisplayName("AC2: When Allpay file is present it should be read and stored correctly")
+    @Test
+    @DisplayName("AC2: An Allpay DAT file is stored and transformed to SOURCE_JSON")
     @Sql(
         scripts = "classpath:db/insertData/insert_into_business_unit_bank_account.sql",
         executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD
@@ -116,21 +118,40 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
         scripts = "classpath:db/deleteData/delete_from_business_unit_bank_account.sql",
         executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD
     )
-    @ValueSource(strings =  {".dat", ".crf", ".dir", ".err", ".sta"})
-    void whenAllpayFileIsPresentReadAndStoreCorrectly(String fileEnding) {
-        String resource = ALLPAY_FILE_RESOURCE + fileEnding;
-        String container =  ALLPAY_FILE_CONTAINER + fileEnding;
+    void whenAllpayDatFileIsPresentReadStoreAndTransformCorrectly() {
+        String file = ALLPAY_FILE + ".dat";
 
-        uploadResourceToSftp(resource, container);
+        uploadResourceToSftp(ALLPAY_FILE_RESOURCE + ".dat", ALLPAY_FILE_CONTAINER + ".dat");
         allpayBaisFileProcessorService.run(allpayBaisFileProcessorConfiguration);
-
-        String file = ALLPAY_FILE + fileEnding;
 
         InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
             file, ALLPAY_FILE_CHECKSUM, Interface.ALLPAY, Type.SOURCE, Domain.MAINTENANCE);
         InterfaceFileEntity sourceJsonFile = assertSuccessfulSourceJsonInterfaceFile(
             file, Interface.ALLPAY, Domain.MAINTENANCE, sourceFile.getInterfaceFileId());
         verify(maintenanceQueueService).send(sourceJsonFile.getInterfaceFileId());
+        assertBlobChecksum(file, ALLPAY_FILE_CHECKSUM, allpayBaisFileProcessorConfiguration.getContainerName());
+        assertNumberOfSftpFiles(allpayBaisFileProcessorConfiguration.getSftpUsername(), 0);
+    }
+
+    @ParameterizedTest
+    @DisplayName("AC2: A non-DAT Allpay file is stored without being transformed to SOURCE_JSON")
+    @ValueSource(strings = {".crf", ".dir", ".err", ".sta"})
+    void whenNonDatAllpayFileIsPresentReadAndStoreWithoutTransforming(String fileEnding) {
+        String resource = ALLPAY_FILE_RESOURCE + fileEnding;
+        String container = ALLPAY_FILE_CONTAINER + fileEnding;
+
+        uploadResourceToSftp(resource, container);
+        allpayBaisFileProcessorService.run(allpayBaisFileProcessorConfiguration);
+
+        String file = ALLPAY_FILE + fileEnding;
+
+        assertSuccessfulInterfaceFile(
+            file, ALLPAY_FILE_CHECKSUM, Interface.ALLPAY, Type.SOURCE, Domain.MAINTENANCE);
+        assertThat(repository.findAll())
+            .filteredOn(interfaceFile -> interfaceFile.getType() == Type.SOURCE_JSON)
+            .filteredOn(interfaceFile -> file.equals(interfaceFile.getFileName()))
+            .isEmpty();
+        verify(maintenanceQueueService, never()).send(anyLong());
         assertBlobChecksum(file, ALLPAY_FILE_CHECKSUM, allpayBaisFileProcessorConfiguration.getContainerName());
         assertNumberOfSftpFiles(allpayBaisFileProcessorConfiguration.getSftpUsername(), 0);
     }
