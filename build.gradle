@@ -386,7 +386,7 @@ dependencies {
   implementation 'org.springframework.integration:spring-integration-sftp'
   //Other
 
-  implementation 'com.azure:azure-storage-blob:12.35.0'
+  implementation 'com.azure:azure-storage-blob:12.35.1'
   implementation 'com.microsoft.azure:applicationinsights-web:3.7.9'
 
   implementation 'commons-logging:commons-logging:1.4.0'
@@ -409,7 +409,7 @@ dependencies {
   implementation 'org.apache.tomcat:tomcat-annotations-api:11.0.25'
 
   // Azure blob storage
-  implementation 'com.azure:azure-storage-blob:12.35.0'
+  implementation 'com.azure:azure-storage-blob:12.35.1'
 
   //Annotation
   annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.6.Final'
