@@ -363,7 +363,7 @@ dependencies {
   //HMCTS
   implementation 'uk.gov.hmcts:opal-common-lib:0.3.28'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
-  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.15.0'
+  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.16.0'
 
   //Spring Boot
   implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
