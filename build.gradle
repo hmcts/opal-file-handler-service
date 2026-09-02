@@ -412,7 +412,7 @@ dependencies {
   implementation 'com.azure:azure-storage-blob:12.35.1'
 
   //Annotation
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.6.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.7.Final'
 
   compileOnly 'org.projectlombok:lombok:1.18.46'
   annotationProcessor 'org.projectlombok:lombok:1.18.46'
