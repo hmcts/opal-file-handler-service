@@ -6,10 +6,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.azure.storage.blob.BlobClient;
-import com.azure.storage.blob.models.BlobProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.HexFormat;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.util.DigestUtils;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.NatWestBaisFileProcessorConfiguration;
@@ -143,8 +140,7 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
 
         assertSourceFile(source);
         assertSourceJson(sourceJson, source);
-        assertBlobChecksum(source, NATWEST_FILE_CHECKSUM);
-        assertBlobChecksum(sourceJson, sourceJson.getChecksum());
+        assertBlobChecksum(NATWEST_FILE, NATWEST_FILE_CHECKSUM, natWestBaisFileProcessorConfiguration.getContainerName());
         assertSourceJsonContents(sourceJson);
         assertNumberOfSftpFiles(natWestBaisFileProcessorConfiguration.getSftpUsername(), 0);
         verify(finesQueueService, times(1)).send(sourceJson.getInterfaceFileId());
@@ -178,20 +174,6 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
         assertThat(sourceJson.getPaymentType()).isEqualTo(PaymentType.CASH);
         assertThat(sourceJson.getRelatedInterfaceFile().getInterfaceFileId()).isEqualTo(source.getInterfaceFileId());
         assertThat(sourceJson.getErrors()).isNull();
-    }
-
-    private void assertBlobChecksum(InterfaceFileEntity entity, String expectedChecksum) {
-        BlobClient client = blobServiceClient
-            .getBlobContainerClient(natWestBaisFileProcessorConfiguration.getContainerName())
-            .getBlobClient(entity.getFilestoreUuid().toString());
-
-        assertThat(client.exists()).isTrue();
-
-        byte[] content = client.downloadContent().toBytes();
-        BlobProperties properties = client.getProperties();
-
-        assertThat(DigestUtils.md5DigestAsHex(content)).isEqualTo(expectedChecksum);
-        assertThat(HexFormat.of().formatHex(properties.getContentMd5())).isEqualTo(expectedChecksum);
     }
 
     private void assertSourceJsonContents(InterfaceFileEntity sourceJson) throws Exception {
