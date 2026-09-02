@@ -123,14 +123,14 @@ opal:
     file-types:
       caps-report:
         container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}
-        feature-flag: CAPS-Report-file-transfer-Job
+        feature-flag: caps-report-file-transfer-Job
         file-name-regex: ^CapFa\.GB\.\d{8}\.\d{6}\.xml$
         source: CAPS_REPORT
         target: OPAL
         sftp-username: ${BAIS_SFTP_CAPS_REPORT_USERNAME:}
       bteckoh-report:
         container-name: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-report}
-        feature-flag: BTEckoh-Report-file-transfer-Job
+        feature-flag: bteckoh-report-file-transfer-Job
         file-name-regex: ^2498-MCPLDB-MOJ-Payments-Report-Daily-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.xlsx$
         source: BTECKOH_REPORT
         target: OPAL
@@ -169,8 +169,8 @@ launchdarkly:
     release-1b: ${RELEASE_1B_ENABLED:false}
     release-1c: ${RELEASE_1C_ENABLED:false}
     release-1c-banking-interfaces: ${RELEASE_1C_BANKING_INTERFACES_ENABLED:false}
-    CAPS-Report-file-transfer-Job: ${CAPS_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
-    BTEckoh-Report-file-transfer-Job: ${BTECKOH_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
+    caps-report-file-transfer-Job: ${CAPS_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
+    bteckoh-report-file-transfer-Job: ${BTECKOH_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
 
 user:
   service:
