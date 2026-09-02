@@ -135,6 +135,13 @@ opal:
         source: BTECKOH_REPORT
         target: OPAL
         sftp-username: ${BAIS_SFTP_BTECKOH_REPORT_USERNAME:}
+      barclaycard:
+        container-name: ${NATWEST_AZURE_STORAGE_CONTAINER:barclaycard}
+        feature-flag: barclaycard-file-transfer-Job
+        file-name-regex: a121_\d{8}_\d{6}\.dat
+        source: BARCLAYCARD
+        target: OPAL
+        sftp-username: ${BAIS_SFTP_BARCLAYCARD_USERNAME:}
     sftp:
       bais:
         host: ${BAIS_SFTP_CONNECTION_HOST:localhost}
