@@ -140,7 +140,8 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
 
         assertSourceFile(source);
         assertSourceJson(sourceJson, source);
-        assertBlobChecksum(NATWEST_FILE, NATWEST_FILE_CHECKSUM, natWestBaisFileProcessorConfiguration.getContainerName());
+        assertBlobChecksum(NATWEST_FILE, NATWEST_FILE_CHECKSUM,
+            natWestBaisFileProcessorConfiguration.getContainerName());
         assertSourceJsonContents(sourceJson);
         assertNumberOfSftpFiles(natWestBaisFileProcessorConfiguration.getSftpUsername(), 0);
         verify(finesQueueService, times(1)).send(sourceJson.getInterfaceFileId());
