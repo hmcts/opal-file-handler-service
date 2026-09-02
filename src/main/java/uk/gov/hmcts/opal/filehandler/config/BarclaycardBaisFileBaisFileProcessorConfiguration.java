@@ -5,6 +5,5 @@ import org.springframework.stereotype.Component;
 
 @Component("BarclaycardBaisFileBaisFileProcessorConfig")
 @ConfigurationProperties("opal.file-handler-service.file-types.barclaycard")
-public class BarclaycardBaisFileBaisFileProcessorConfiguration {
-
+public class BarclaycardBaisFileBaisFileProcessorConfiguration extends AbstractBaisFileProcessorConfiguration {
 }

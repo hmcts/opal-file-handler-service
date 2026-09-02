@@ -49,6 +49,8 @@ spring:
             jwk-set-uri: ${opal.azure.active-directory-justice-auth-uri}/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/discovery/v2.0/keys
             logout-uri: ${opal.azure.active-directory-justice-auth-uri}/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/oauth2/v2.0/logout
             reset-password-uri: ${opal.azure.active-directory-justice-auth-uri}/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/oauth2/v2.0/authorize
+  jackson:
+    property-naming-strategy: SNAKE_CASE
 
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -178,6 +180,7 @@ launchdarkly:
     release-1c-banking-interfaces: ${RELEASE_1C_BANKING_INTERFACES_ENABLED:false}
     CAPS-Report-file-transfer-Job: ${CAPS_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     BTEckoh-Report-file-transfer-Job: ${BTECKOH_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
+    barclaycard-file-transfer-Job: ${BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED:false}
 
 user:
   service:
