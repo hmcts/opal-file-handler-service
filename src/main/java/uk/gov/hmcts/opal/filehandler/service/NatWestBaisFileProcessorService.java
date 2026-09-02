@@ -15,7 +15,7 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @Service
 public class NatWestBaisFileProcessorService
-    extends AbstractBaisFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
+    extends AbstractBaisInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
 
     public NatWestBaisFileProcessorService(
         Clock clock,
