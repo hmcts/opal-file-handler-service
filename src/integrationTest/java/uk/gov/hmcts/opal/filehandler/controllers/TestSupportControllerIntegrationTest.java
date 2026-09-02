@@ -1,11 +1,14 @@
 package uk.gov.hmcts.opal.filehandler.controllers;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.security.MessageDigest;
 import java.util.Base64;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,8 +37,16 @@ public class TestSupportControllerIntegrationTest extends AbstractIntegrationTes
     @Component("automatedTestTaskConfig")
     @ConditionalOnBooleanProperty("opal.testing-support-endpoints.enabled")
     public static class AutomatedTestTaskConfig implements TaskConfiguration {
+        public static boolean RunWasCalled = false;
+
         public void run() {
+            RunWasCalled = true;
         }
+    }
+
+    @BeforeEach
+    void setup() {
+        AutomatedTestTaskConfig.RunWasCalled = false;
     }
 
     @TestPropertySource(properties = {
@@ -56,7 +67,8 @@ public class TestSupportControllerIntegrationTest extends AbstractIntegrationTes
                     .header("Content-Digest", "sha-512=:" + digest + ":")
             );
 
-            res.andExpect(status().isOk());
+            res.andExpect(status().is(202));
+            assertTrue(AutomatedTestTaskConfig.RunWasCalled);
         }
     }
 
@@ -79,6 +91,7 @@ public class TestSupportControllerIntegrationTest extends AbstractIntegrationTes
             );
 
             res.andExpect(status().isNotFound());
+            assertFalse(AutomatedTestTaskConfig.RunWasCalled);
         }
     }
 }

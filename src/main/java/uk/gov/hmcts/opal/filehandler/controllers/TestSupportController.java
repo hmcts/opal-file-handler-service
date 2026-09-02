@@ -20,6 +20,6 @@ public class TestSupportController implements TestSupportApi {
     public ResponseEntity<Void> testingSupportAutomatedJobsNamePost(String name) {
         taskRunnerUtil.runAutomatedTask("automated" + name);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.accepted().build();
     }
 }

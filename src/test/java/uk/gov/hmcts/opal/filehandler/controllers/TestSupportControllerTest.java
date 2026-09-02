@@ -25,6 +25,6 @@ public class TestSupportControllerTest {
     void testSupportAutomatedJobsNamePost_returns200() {
         ResponseEntity<Void> response = controller.testingSupportAutomatedJobsNamePost("BTEckohReport");
         verify(taskRunnerUtil).runAutomatedTask(eq("automatedBTEckohReport"));
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
     }
 }
