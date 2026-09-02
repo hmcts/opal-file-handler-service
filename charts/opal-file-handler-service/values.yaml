@@ -92,7 +92,6 @@ bt-eckoh-report:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
-    LAUNCH_DARKLY_ENABLED: false
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 caps-report:
@@ -138,11 +137,13 @@ caps-report:
           alias: BAIS_SFTP_CONNECTION_PORT
         - name: bais-emulator-sftp-caps-report-username
           alias: BAIS_SFTP_CAPS_REPORT_USERNAME
+        - name: bais-emulator-sftp-bteckoh-report-username
+          alias: BAIS_SFTP_BTECKOH_REPORT_USERNAME
+
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
-    LAUNCH_DARKLY_ENABLED: false
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 natwest-transfer:
@@ -192,7 +193,6 @@ natwest-transfer:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
-    LAUNCH_DARKLY_ENABLED: false
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 allpay-file-transfer:
@@ -228,7 +228,6 @@ allpay-file-transfer:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
-    LAUNCH_DARKLY_ENABLED: false
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 barclaycard-transfer:
@@ -264,7 +263,6 @@ barclaycard-transfer:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
-    LAUNCH_DARKLY_ENABLED: false
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 bt-eckoh-transfer:
@@ -300,7 +298,6 @@ bt-eckoh-transfer:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
-    LAUNCH_DARKLY_ENABLED: false
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 dwp-transfer:
@@ -336,7 +333,6 @@ dwp-transfer:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
-    LAUNCH_DARKLY_ENABLED: false
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 jacobs-transfer:
@@ -372,7 +368,6 @@ jacobs-transfer:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
-    LAUNCH_DARKLY_ENABLED: false
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 cder-transfer:
@@ -408,7 +403,6 @@ cder-transfer:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
-    LAUNCH_DARKLY_ENABLED: false
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 marston-transfer:
@@ -444,5 +438,4 @@ marston-transfer:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
-    LAUNCH_DARKLY_ENABLED: false
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs

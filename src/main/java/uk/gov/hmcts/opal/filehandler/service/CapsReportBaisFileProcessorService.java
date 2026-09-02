@@ -15,7 +15,7 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @Slf4j
 @Service
-public class CapsReportBaisFileProcessorService extends AbstractBaisFileProcessorService {
+public class CapsReportBaisFileProcessorService extends AbstractInterfaceFileProcessorService {
 
     public CapsReportBaisFileProcessorService(
         Clock clock,

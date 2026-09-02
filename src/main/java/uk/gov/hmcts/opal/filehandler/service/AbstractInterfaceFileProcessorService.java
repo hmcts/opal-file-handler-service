@@ -16,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.DigestUtils;
-import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -32,7 +31,7 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @Slf4j
 @RequiredArgsConstructor
-public abstract class AbstractBaisFileProcessorService {
+public abstract class AbstractInterfaceFileProcessorService {
 
     protected final Clock clock;
     private final FeatureFlagUtil featureFlagUtil;

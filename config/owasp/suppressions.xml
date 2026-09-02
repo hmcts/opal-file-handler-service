@@ -11,7 +11,7 @@
     <cve>CVE-2025-7962</cve>
   </suppress>
   <!--End of false positives section -->
-  <suppress until="2026-08-31Z">
+  <suppress until="2026-09-15Z">
     <notes><![CDATA[
     Reviewed 2026-05-27.
     CVE-2025-21199 applies to Microsoft Azure Agent Installer products under the CPE family
@@ -54,7 +54,7 @@
     <cve>CVE-2026-55831</cve>
     <cve>CVE-2026-55833</cve>
   </suppress>
-  <suppress until="2026-08-31Z">
+  <suppress until="2026-09-15Z">
     <notes><![CDATA[
     Reviewed 2026-06-17.
     CVE-2026-33117 applies to com.azure:azure-keyvault-keys local cryptographic verification
@@ -64,7 +64,7 @@
     generic Azure SDK mappings against the Blob Storage dependency chain used by this service.
     This suppression copied from opal-fines-service.
     ]]></notes>
-    <packageUrl regex="true">^pkg:maven/com\.azure/(azure\-core@1\.58\.(0|1)|azure\-core\-http\-netty@1\.16\.(4|5)|azure\-json@1\.5\.1|azure\-storage\-blob@12\.(34|35)\.0|azure\-storage\-common@12\.(33|34)\.0|azure\-storage\-internal\-avro@12\.(19|20)\.0|azure\-xml@1\.2\.1)$</packageUrl>
+    <packageUrl regex="true">^pkg:maven/com\.azure/(azure\-core@1\.(58\.(0|1)|59\.0)|azure\-core\-http\-netty@1\.16\.(4|5|6)|azure\-json@1\.5\.1|azure\-storage\-blob@12\.(34|35)\.(0|1)|azure\-storage\-common@12\.(33|34)\.0|azure\-storage\-internal\-avro@12\.(19|20)\.0|azure\-xml@1\.2\.1)$</packageUrl>
     <cve>CVE-2026-33117</cve>
   </suppress>
 </suppressions>

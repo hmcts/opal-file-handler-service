@@ -55,7 +55,7 @@ import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @ExtendWith(MockitoExtension.class)
-class AbstractBaisFileProcessorServiceTest {
+class AbstractInterfaceFileProcessorServiceTest {
 
     private static final String TEST_FEATURE_FLAG = "test-feature-flag";
     private static final String SFTP_USERNAME = "sftp-username";
@@ -89,7 +89,7 @@ class AbstractBaisFileProcessorServiceTest {
     private ObjectMapper objectMapper;
     private List<Status> savedStatuses;
 
-    private final Logger logger = (Logger) LoggerFactory.getLogger(AbstractBaisFileProcessorService.class);
+    private final Logger logger = (Logger) LoggerFactory.getLogger(AbstractInterfaceFileProcessorService.class);
     private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 
     @BeforeEach
@@ -392,7 +392,7 @@ class AbstractBaisFileProcessorServiceTest {
             .toList();
     }
 
-    private static class TestProcessor extends AbstractBaisFileProcessorService {
+    private static class TestProcessor extends AbstractInterfaceFileProcessorService {
 
         private int processCount;
         private RuntimeException processingFailure;
