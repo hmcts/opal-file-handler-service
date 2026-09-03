@@ -8,7 +8,7 @@ public enum Interface {
     ALLPAY("AllpayBaisFileBaisFileProcessorConfig"),
     ALLPAY_DD(null),
     BARCLAYCARD(null),
-    BTECKOH(null),
+    BTECKOH("BTEckohBaisFileProcessorConfig"),
     DWP(null),
     CDER(null),
     JACOBS(null),
