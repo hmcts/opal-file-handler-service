@@ -56,7 +56,7 @@ dependencies:
     alias: bt-eckoh-transfer
     version: 2.2.1
     repository: 'oci://hmctsprod.azurecr.io/helm'
-    condition: bt-echko-transfer.enabled
+    condition: bt-eckoh-transfer.enabled
   - name: job
     alias: dwp-transfer
     version: 2.2.1

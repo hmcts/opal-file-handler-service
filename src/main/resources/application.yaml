@@ -142,6 +142,13 @@ opal:
         source: ALLPAY
         target: OPAL
         sftp-username: ${BAIS_SFTP_ALLPAY_USERNAME:}
+      bteckoh:
+        container-name: ${BTECKOH_AZURE_STORAGE_CONTAINER:bteckoh}
+        feature-flag: bteckoh-file-transfer-Job
+        file-name-regex: ^a121_\d{8}_\d{6}\.dat$
+        source: BTECKOH
+        target: OPAL
+        sftp-username: ${BAIS_SFTP_BTECKOH_USERNAME:}
     sftp:
       bais:
         host: ${BAIS_SFTP_CONNECTION_HOST:localhost}
@@ -178,7 +185,6 @@ launchdarkly:
     release-1c-banking-interfaces: ${RELEASE_1C_BANKING_INTERFACES_ENABLED:false}
     caps-report-file-transfer-Job: ${CAPS_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     bteckoh-report-file-transfer-Job: ${BTECKOH_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
-    allpay-file-transfer-Job: ${ALLPAY_FILE_TRANSFER_JOB_ENABLED:false}
 
 user:
   service:
