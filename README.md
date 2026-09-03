@@ -140,14 +140,12 @@ on exit. It does not use the existing local Opal stack. Fixtures are reset befor
 after every scenario. Blob names and ETags detect new uploads and overwrites; happy
 paths also verify downloaded bytes, metadata and removal from SFTP.
 
-The complete acceptance run currently exposes PO-6382 gaps: duplicates are uploaded
-as new blobs, and supported filenames containing malformed data are uploaded without
-content validation. These four scenarios have `@EI1AcceptanceGap`; they are real,
-failing assertions, not ignored tests. To run only the currently supported behaviour:
+The complete run covers 14 scenarios across CAPS and BTEckoh, including duplicate
+and malformed content rejection. Duplicate records reuse the successful upload;
+invalid XML or XLSX content is recorded as failed without uploading or deleting
+the source file. Validation checks the file format, not business fields or a CAPS
+schema. The XLSX parser uses Apache POI.
 
-```bash
-bin/test-ei1.sh '@EI1 and not @EI1AcceptanceGap'
-```
 
 The ordinary deployed `functional` suite excludes `@EI1`. The script explicitly
 selects it with `-Dcucumber.filter.tags` and supplies isolated local infrastructure.
@@ -156,6 +154,10 @@ replaces the named BAIS files and removes their database/blob records.
 
 Reports: `build/test-results/functional`, `functional-test-report/index.html`.
 Bootstrap diagnostics: `build/ei1-bootstrap.log`.
+
+The related Gradle `integration` suite also allocates its own SFTP port. If local
+services occupy the default WireMock port 4553, set `INTEGRATION_WIREMOCK_PORT` to
+an available port before running it. This changes only the integration-test stub.
 
 PO-6454 is not implemented in this checkout: there is no job-trigger controller,
 the OpenAPI path is `/test-support/automated-jobs/{name}`, and

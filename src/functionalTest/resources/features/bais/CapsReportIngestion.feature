@@ -42,7 +42,6 @@ Feature: CAPS report ingestion
     And the CAPS interface records are unchanged
     And the configured CAPS report is available on bais
 
-  @EI1AcceptanceGap
   Scenario: A duplicate CAPS report does not create another blob
     Given the configured CAPS report is available on bais
     And the configured CAPS report has already been ingested successfully
@@ -50,10 +49,13 @@ Feature: CAPS report ingestion
     And the CAPS blobstore and interface records are recorded
     When the CAPS report ingestion task is triggered
     Then the CAPS blobstore is unchanged
+    And one successful and one duplicate CAPS interface file are stored
+    And the configured CAPS report no longer exists on bais
 
-  @EI1AcceptanceGap
   Scenario: A malformed CAPS report is not saved to blob storage
     Given a malformed CAPS report with a supported filename is available on bais
     And the CAPS blobstore and interface records are recorded
     When the CAPS report ingestion task is triggered
     Then the CAPS blobstore is unchanged
+    And a failed CAPS report is recorded without a blob
+    And the configured CAPS report is available on bais

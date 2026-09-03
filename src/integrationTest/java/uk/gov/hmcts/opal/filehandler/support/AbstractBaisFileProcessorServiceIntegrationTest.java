@@ -67,6 +67,9 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
         String privateKey = privateKeyStreamOut.toString();
 
         registry.add("opal.file-handler-service.sftp.bais.private-key", () -> privateKey);
+        registry.add("opal.file-handler-service.sftp.bais.host", TestContainerConfig.SFTP_CONTAINER::getHost);
+        registry.add("opal.file-handler-service.sftp.bais.port",
+            () -> TestContainerConfig.SFTP_CONTAINER.getMappedPort(22));
     }
 
     public final void uploadResourceToSftp(String resourcePath, String containerPath) {

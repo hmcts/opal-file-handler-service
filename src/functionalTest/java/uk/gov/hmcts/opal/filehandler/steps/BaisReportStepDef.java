@@ -3,6 +3,7 @@ package uk.gov.hmcts.opal.filehandler.steps;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.opal.filehandler.support.BaisReportTestData.forDisplayName;
 import static uk.gov.hmcts.opal.filehandler.support.BaisReportTestData.forSource;
@@ -160,6 +161,13 @@ public class BaisReportStepDef {
             assertEquals(recordsBefore, databaseClient.findByFileName(forDisplayName(displayName).fileName()),
                 "The job must not create or alter interface-file records");
         }
+    }
+
+    @Then("^a failed (BTEckoh|CAPS) report is recorded without a blob$")
+    public void failedReportIsRecorded(String displayName) {
+        List<InterfaceFileRecord> failures = recordsWithStatus(forDisplayName(displayName), "FAILED");
+        assertEquals(1, failures.size(), "Expected one failed report record");
+        assertNull(failures.getFirst().filestoreUuid(), "Rejected content must not reference a blob");
     }
 
     private void triggerTask(BaisReportTestConfig config) {

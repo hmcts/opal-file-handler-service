@@ -42,7 +42,6 @@ Feature: BTEckoh report ingestion
     And the BTEckoh interface records are unchanged
     And the configured BTEckoh report is available on bais
 
-  @EI1AcceptanceGap
   Scenario: A duplicate BTEckoh report does not create another blob
     Given the configured BTEckoh report is available on bais
     And the configured BTEckoh report has already been ingested successfully
@@ -50,10 +49,13 @@ Feature: BTEckoh report ingestion
     And the BTEckoh blobstore and interface records are recorded
     When the BTEckoh report ingestion task is triggered
     Then the BTEckoh blobstore is unchanged
+    And one successful and one duplicate BTEckoh interface file are stored
+    And the configured BTEckoh report no longer exists on bais
 
-  @EI1AcceptanceGap
   Scenario: A malformed BTEckoh report is not saved to blob storage
     Given a malformed BTEckoh report with a supported filename is available on bais
     And the BTEckoh blobstore and interface records are recorded
     When the BTEckoh report ingestion task is triggered
     Then the BTEckoh blobstore is unchanged
+    And a failed BTEckoh report is recorded without a blob
+    And the configured BTEckoh report is available on bais

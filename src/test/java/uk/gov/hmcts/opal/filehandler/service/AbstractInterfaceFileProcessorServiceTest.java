@@ -16,6 +16,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import java.io.InputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Clock;
 import java.time.Instant;
@@ -49,6 +50,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.exception.BaisSftpFileDownloadException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobUploadException;
+import uk.gov.hmcts.opal.filehandler.exception.InvalidReportFileException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
@@ -190,6 +192,7 @@ class AbstractInterfaceFileProcessorServiceTest {
         void shouldStoreAndDeleteDuplicateWithoutProcessing() {
             InterfaceFileEntity duplicate = InterfaceFileEntity.builder()
                 .interfaceFileId(123L)
+                .filestoreUuid(FILE_UUID)
                 .source(Interface.CAPS_REPORT)
                 .target(Interface.OPAL)
                 .type(Type.SOURCE)
@@ -207,6 +210,8 @@ class AbstractInterfaceFileProcessorServiceTest {
 
             assertThat(service.processCount).isZero();
             assertThat(savedStatuses).containsExactly(Status.DUPLICATE);
+            assertThat(service.lastSavedEntity.getFilestoreUuid()).isEqualTo(FILE_UUID);
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
             assertThat(errorLogs()).contains(
                 "File with name 'matching-file.dat' and checksum '3685d7f2b30e9b34b8d3e5496fb45506' for source "
                     + "'CAPS_REPORT' is a duplicate of 123");
@@ -241,32 +246,22 @@ class AbstractInterfaceFileProcessorServiceTest {
         }
 
         @Test
-        void uploadFailureIsRetainedWhenDuplicateExists() {
-            InterfaceFileEntity duplicate = InterfaceFileEntity.builder()
-                .interfaceFileId(123L)
-                .source(Interface.CAPS_REPORT)
-                .target(Interface.OPAL)
-                .type(Type.SOURCE)
-                .fileName(MATCHING_FILE)
-                .checksum(CHECKSUM)
-                .status(Status.SUCCESS)
-                .createdDatetime(LocalDateTime.now(CLOCK))
-                .opalDomain(Domain.MAINTENANCE)
-                .build();
-
-            when(repository.findByFileNameAndChecksumAndStatus(
-                MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.of(duplicate));
-            doThrow(new BlobUploadException(
-                UUID.randomUUID(), "test-container", new RuntimeException("storage unavailable")))
-                .when(blobStoreService)
-                .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
+        void shouldRejectInvalidContentBeforeUploadAndKeepTheSourceFile() {
+            service.validationFailure = new InvalidReportFileException("Invalid report", new IOException());
+            InterfaceFileEntity previousFailure = failedEntity(10L);
+            when(repository.findAllByFileNameAndChecksumAndStatus(
+                MATCHING_FILE, CHECKSUM, Status.FAILED)).thenAnswer(invocation ->
+                    service.lastSavedEntity == null ? List.of(previousFailure) : List.of(service.lastSavedEntity));
 
             service.run(config);
 
             assertThat(savedStatuses).containsExactly(Status.FAILED);
-            assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
-                .isEqualTo("Blob upload failed for file 'matching-file.dat': storage unavailable");
+            assertThat(service.lastSavedEntity.getStatus()).isEqualTo(Status.FAILED);
+            assertThat(service.lastSavedEntity.getFilestoreUuid()).isNull();
+            assertThat(service.lastSavedEntity.getErrors()).contains("Invalid report");
+            assertThat(previousFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
             assertThat(service.processCount).isZero();
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
             verify(baisSftpClient, never()).deleteFile(any(), any());
         }
 
@@ -396,6 +391,7 @@ class AbstractInterfaceFileProcessorServiceTest {
 
         private int processCount;
         private RuntimeException processingFailure;
+        private InvalidReportFileException validationFailure;
         private InterfaceFileEntity lastSavedEntity;
         private BaisFileProcessorConfiguration lastProcessConfig;
         private List<String> filesToProcess;
@@ -423,6 +419,13 @@ class AbstractInterfaceFileProcessorServiceTest {
         @Override
         protected List<String> selectFilesToProcess(BaisFileProcessorConfiguration config) {
             return filesToProcess == null ? super.selectFilesToProcess(config) : filesToProcess;
+        }
+
+        @Override
+        protected void validateFile(InputStream inputStream) {
+            if (validationFailure != null) {
+                throw validationFailure;
+            }
         }
 
         @Override
