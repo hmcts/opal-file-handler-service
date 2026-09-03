@@ -11,6 +11,7 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.util.List;
+import java.util.Map;
 import net.serenitybdd.core.Serenity;
 import uk.gov.hmcts.opal.filehandler.blob.BlobStorageClient;
 import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
@@ -24,6 +25,9 @@ import uk.gov.hmcts.opal.filehandler.support.BaisReportTestConfig;
  */
 public class BaisReportStepDef {
 
+    private Map<String, String> blobsBefore;
+    private List<InterfaceFileRecord> recordsBefore;
+
     private final BaisAutomatedTaskRunner taskRunner = new BaisAutomatedTaskRunner();
 
     @Given("^the configured (BTEckoh|CAPS) report is available on bais$")
@@ -36,6 +40,7 @@ public class BaisReportStepDef {
     public void unsupportedReportIsAvailable(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
+            sftpClient.deleteIfExists(config.fileName());
             sftpClient.uploadResource(config.resourcePath(), config.unsupportedFileName());
         }
     }
@@ -115,6 +120,46 @@ public class BaisReportStepDef {
             "Expected one successful " + config.displayName() + " interface-file record");
         assertEquals(1, recordsWithStatus(config, "DUPLICATE").size(),
             "Expected one duplicate " + config.displayName() + " interface-file record");
+    }
+
+    @Given("^the (BTEckoh|CAPS) blobstore and interface records are recorded$")
+    public void recordState(String displayName) {
+        BaisReportTestConfig config = forDisplayName(displayName);
+        blobsBefore = new BlobStorageClient(config.blobContainerName()).snapshot();
+        try (InterfaceFileTestDatabaseClient databaseClient = new InterfaceFileTestDatabaseClient()) {
+            recordsBefore = databaseClient.findByFileName(config.fileName());
+        }
+    }
+
+    @Given("^a malformed (BTEckoh|CAPS) report with a supported filename is available on bais$")
+    public void malformedReportIsAvailable(String displayName) {
+        BaisReportTestConfig config = forDisplayName(displayName);
+        try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
+            sftpClient.uploadResource("test-data/bais/malformed.txt", config.fileName());
+        }
+    }
+
+    @When("^the (BTEckoh|CAPS) report ingestion task is triggered with its feature flag disabled$")
+    public void triggerDisabledTask(String displayName) {
+        String output = taskRunner.run(forDisplayName(displayName), false);
+        Serenity.recordReportData().withTitle("Disabled report job output").andContents(output);
+    }
+
+    @Then("^the (BTEckoh|CAPS) blobstore is unchanged$")
+    public void blobstoreIsUnchanged(String displayName) {
+        assertNotNull(blobsBefore, "Record blob state before triggering the job");
+        assertEquals(blobsBefore,
+            new BlobStorageClient(forDisplayName(displayName).blobContainerName()).snapshot(),
+            "The job must not create, delete or overwrite any blobs");
+    }
+
+    @Then("^the (BTEckoh|CAPS) interface records are unchanged$")
+    public void interfaceRecordsAreUnchanged(String displayName) {
+        assertNotNull(recordsBefore, "Record interface state before triggering the job");
+        try (InterfaceFileTestDatabaseClient databaseClient = new InterfaceFileTestDatabaseClient()) {
+            assertEquals(recordsBefore, databaseClient.findByFileName(forDisplayName(displayName).fileName()),
+                "The job must not create or alter interface-file records");
+        }
     }
 
     private void triggerTask(BaisReportTestConfig config) {

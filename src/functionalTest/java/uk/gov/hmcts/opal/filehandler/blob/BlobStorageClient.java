@@ -10,6 +10,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.TreeMap;
 import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 
 /**
@@ -41,6 +43,18 @@ public class BlobStorageClient {
             .credential(credential)
             .buildClient();
         containerClient = serviceClient.getBlobContainerClient(containerName);
+    }
+
+    /** Creates the report container in the disposable emulator before ingestion. */
+    public void createContainerIfAbsent() {
+        containerClient.createIfNotExists();
+    }
+
+    /** Returns blob names and ETags so negative scenarios also detect overwrites. */
+    public Map<String, String> snapshot() {
+        Map<String, String> blobs = new TreeMap<>();
+        containerClient.listBlobs().forEach(blob -> blobs.put(blob.getName(), blob.getProperties().getETag()));
+        return blobs;
     }
 
     /**

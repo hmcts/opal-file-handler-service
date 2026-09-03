@@ -1,6 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.support;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.UUID;
 import uk.gov.hmcts.opal.filehandler.blob.BlobStorageClient;
 import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
@@ -22,6 +23,7 @@ public class BaisReportFixture {
      * Ensures a scenario starts with only its baseline report fixture.
      */
     public void setUp() {
+        new BlobStorageClient(config.blobContainerName()).createContainerIfAbsent();
         cleanDatabaseAndBlobs();
         restoreBaselineSftpFile();
     }
@@ -55,7 +57,8 @@ public class BaisReportFixture {
     private void cleanDatabaseAndBlobs() {
         BlobStorageClient blobStorageClient = new BlobStorageClient(config.blobContainerName());
         try (InterfaceFileTestDatabaseClient databaseClient = new InterfaceFileTestDatabaseClient()) {
-            List<InterfaceFileRecord> records = databaseClient.findByFileName(config.fileName());
+            List<InterfaceFileRecord> records = new ArrayList<>(databaseClient.findByFileName(config.fileName()));
+            records.addAll(databaseClient.findByFileName(config.unsupportedFileName()));
             records.stream()
                 .map(InterfaceFileRecord::filestoreUuid)
                 .filter(uuid -> uuid != null)

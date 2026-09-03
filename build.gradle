@@ -203,6 +203,10 @@ tasks.withType(Test).configureEach {
 
 tasks.register('functional', Test) {
   description = "Runs functional tests"
+  if (project.hasProperty("ei1")) {
+    failFast = false
+    testLogging.events "passed", "skipped", "failed"
+  }
   group = "Verification"
   testClassesDirs = sourceSets.functionalTest.output.classesDirs
   classpath = sourceSets.functionalTest.runtimeClasspath
@@ -213,6 +217,9 @@ tasks.register('functional', Test) {
   def cucumberTags = requestedCucumberTags
       ? "(${requestedCucumberTags}) and not @Ignore"
       : 'not @Ignore'
+  if (!project.hasProperty('ei1')) {
+    cucumberTags += ' and not @EI1'
+  }
   systemProperty 'cucumber.filter.tags', cucumberTags
   include '**/FunctionalTestRunner.class'
   dependsOn 'bootJar', 'clearReports'

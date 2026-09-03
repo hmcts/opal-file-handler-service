@@ -122,3 +122,43 @@ will then be timer-triggered.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
+
+## EI1 local end-to-end tests (PO-6382)
+
+The BAIS features use the existing Serenity/Cucumber `functional` task and run the
+real Java 21 batch application against disposable PostgreSQL, SFTP and Azurite
+containers. No deployed services, test users or LaunchDarkly connection are needed.
+Docker Compose V2 and `JAVA_HOME` pointing to JDK 21 are required.
+
+```bash
+bin/test-ei1.sh
+```
+
+The script builds the application, allocates random loopback ports, migrates a fresh
+database, runs both report features sequentially and removes its containers/volumes
+on exit. It does not use the existing local Opal stack. Fixtures are reset before and
+after every scenario. Blob names and ETags detect new uploads and overwrites; happy
+paths also verify downloaded bytes, metadata and removal from SFTP.
+
+The complete acceptance run currently exposes PO-6382 gaps: duplicates are uploaded
+as new blobs, and supported filenames containing malformed data are uploaded without
+content validation. These four scenarios have `@EI1AcceptanceGap`; they are real,
+failing assertions, not ignored tests. To run only the currently supported behaviour:
+
+```bash
+bin/test-ei1.sh '@EI1 and not @EI1AcceptanceGap'
+```
+
+The ordinary deployed `functional` suite excludes `@EI1`. The script explicitly
+selects it with `-Dcucumber.filter.tags` and supplies isolated local infrastructure.
+Do not set `FUNCTIONAL_TEST_EI1_ISOLATED` against a shared environment: fixture setup
+replaces the named BAIS files and removes their database/blob records.
+
+Reports: `build/test-results/functional`, `functional-test-report/index.html`.
+Bootstrap diagnostics: `build/ei1-bootstrap.log`.
+
+PO-6454 is not implemented in this checkout: there is no job-trigger controller,
+the OpenAPI path is `/test-support/automated-jobs/{name}`, and
+`TESTING_SUPPORT_ENDPOINTS_ENABLED` currently defaults to `true`. Consequently this
+suite uses the existing batch JVM entry point; it does not claim to verify the
+`/testing-support/automated-jobs/{name}` HTTP 202 contract or deployed dev/master jobs.
