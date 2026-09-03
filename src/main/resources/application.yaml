@@ -141,6 +141,15 @@ opal:
         port: ${BAIS_SFTP_CONNECTION_PORT:2222}
         private-key: ${BAIS_SFTP_PRIVATE_KEY:}
 
+    bailiffs:
+      marston:
+        account-name: ${FILE_STORE_STORAGE_ACCOUNT_NAME:MARSTON}
+        feature-flag: marston-file-transfer-job
+        file-name-regex: '\d{10}dat\d{10}\d{8}\d{6}\.txt'
+        source: MARSTON
+        target: OPAL
+        sftp-username: ${BAIS_SFTP_MARSTON_USERNAME:}
+
 logging:
   level:
     root: ${ROOT_LOG_LEVEL:INFO}
