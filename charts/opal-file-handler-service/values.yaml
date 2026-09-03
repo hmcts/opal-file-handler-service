@@ -137,9 +137,6 @@ caps-report:
           alias: BAIS_SFTP_CONNECTION_PORT
         - name: bais-sftp-caps-report-username
           alias: BAIS_SFTP_CAPS_REPORT_USERNAME
-        - name: bais-sftp-bteckoh-report-username
-          alias: BAIS_SFTP_BTECKOH_REPORT_USERNAME
-
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
