@@ -219,7 +219,7 @@ allpay-file-transfer:
           alias: BAIS_SFTP_CONNECTION_HOST
         - name: bais-sftp-connection-port
           alias: BAIS_SFTP_CONNECTION_PORT
-        - name: bais-sftp-allpay-username
+        - name: bais-sftp-allpay-report-username
           alias: BAIS_SFTP_ALLPAY_USERNAME
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
