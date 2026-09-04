@@ -20,7 +20,8 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 @ActiveProfiles("integration")
 @SpringBootTest(properties = {
     "opal.automated-task=BTEckohReport",
-    "spring.main.web-application-type=none"
+    "spring.main.web-application-type=none",
+    "opal.testing-support-endpoints.enabled=false"
 })
 public class AutomatedTaskBTEckohReportIntegrationTest extends AbstractIntegrationTest {
 

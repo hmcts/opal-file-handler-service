@@ -1,4 +1,6 @@
 opal:
+  testing-support-endpoints:
+    enabled: false
   file-handling-service:
     file-types:
       bteckoh-report:
