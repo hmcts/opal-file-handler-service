@@ -7,7 +7,6 @@ import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
@@ -22,12 +21,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.util.DigestUtils;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
-import uk.gov.hmcts.opal.common.launchdarkly.service.FeatureToggleApi;
+import uk.gov.hmcts.opal.common.launchdarkly.config.LaunchDarklyProperties;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -51,8 +49,8 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
     @Autowired
     private BusinessUnitBankAccountEntityTestData businessUnitBankAccountTestData;
 
-    @MockitoBean
-    private FeatureToggleApi featureToggleApi;
+    @Autowired
+    private LaunchDarklyProperties launchDarklyProperties;
 
     protected abstract AbstractInterfaceFileProcessorService processor();
 
@@ -84,14 +82,21 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
         deleteSftpFiles();
         clearInvocations(queueService());
 
-        when(featureToggleApi.isFeatureEnabled(FeatureFlags.RELEASE_1C_BANKING_INTERFACES)).thenReturn(true);
-        when(featureToggleApi.isFeatureEnabled(processorConfiguration().getFeatureFlag())).thenReturn(true);
+        setFeatureFlag(FeatureFlags.RELEASE_1C_BANKING_INTERFACES, true);
+        setFeatureFlag(processorConfiguration().getFeatureFlag(), true);
     }
 
     @AfterEach
     void tearDownBacsStandard18Contract() {
         deleteSftpFiles();
         businessUnitBankAccountTestData.clear();
+    }
+
+    @Test
+    @DisplayName("BACS18 processor feature flag has an offline default")
+    void shouldConfigureProcessorFeatureFlagDefault() {
+        assertThat(launchDarklyProperties.getDefaultFlagValues())
+            .containsKey(processorConfiguration().getFeatureFlag());
     }
 
     @ParameterizedTest(name = "banking interfaces enabled={0}, processor enabled={1}")
@@ -110,9 +115,8 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
         // A real file proves disabled feature flags prevent ingestion and leave SFTP contents untouched.
         uploadFixture(fixture.fileName());
 
-        when(featureToggleApi.isFeatureEnabled(FeatureFlags.RELEASE_1C_BANKING_INTERFACES))
-            .thenReturn(bankingInterfacesEnabled);
-        when(featureToggleApi.isFeatureEnabled(processorConfiguration().getFeatureFlag())).thenReturn(processorEnabled);
+        setFeatureFlag(FeatureFlags.RELEASE_1C_BANKING_INTERFACES, bankingInterfacesEnabled);
+        setFeatureFlag(processorConfiguration().getFeatureFlag(), processorEnabled);
 
         String expectedDisabledFeature = "processor".equals(disabledFeature)
             ? processorConfiguration().getFeatureFlag()
@@ -276,6 +280,11 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
     private void deleteSftpFiles() {
         String username = processorConfiguration().getSftpUsername();
         sftpClient.listRegularFiles(username).forEach(file -> sftpClient.deleteFile(username, file));
+    }
+
+    private void setFeatureFlag(String featureFlag, boolean enabled) {
+        assertThat(launchDarklyProperties.getDefaultFlagValues()).containsKey(featureFlag);
+        launchDarklyProperties.getDefaultFlagValues().put(featureFlag, enabled);
     }
 
     public record BacsStandard18Fixture(

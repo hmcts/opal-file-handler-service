@@ -12,6 +12,9 @@ opal:
       caps-report:
         sftp-username: CAPS-report
 
+launchdarkly:
+  enabled: false
+
 user:
   service:
     url: http://localhost:4553
