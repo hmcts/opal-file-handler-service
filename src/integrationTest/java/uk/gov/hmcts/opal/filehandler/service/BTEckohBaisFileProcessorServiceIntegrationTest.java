@@ -16,8 +16,8 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractBacsStandard18BaisFileProce
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
-    "opal.file-handler-service.file-types.bteckoh.sftp-username=BTEckoh",
-    "opal.file-handler-service.file-types.bteckoh.container-name=bteckoh"
+    "opal.file-handler-service.file-types.bteckoh-transfer.sftp-username=BTEckoh",
+    "opal.file-handler-service.file-types.bteckoh-transfer.container-name=bteckoh"
 })
 @DisplayName("BTEckoh BACS Standard 18 File Processor Integration Tests")
 class BTEckohBaisFileProcessorServiceIntegrationTest
