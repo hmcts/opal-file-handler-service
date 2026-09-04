@@ -21,11 +21,6 @@ public class BaisAutomatedTaskRunner {
      * @return captured application output for the Serenity report.
      */
     public String run(BaisReportTestConfig config) {
-        return run(config, true);
-    }
-
-    /** Runs the real batch process with its report feature flag explicitly controlled. */
-    public String run(BaisReportTestConfig config, boolean enabled) {
         Path applicationJar = TestEnvironment.getApplicationJar().toAbsolutePath().normalize();
         if (!Files.isRegularFile(applicationJar)) {
             throw new IllegalStateException(config.displayName() + " functional-test application JAR does not exist: "
@@ -42,7 +37,6 @@ public class BaisAutomatedTaskRunner {
         processBuilder.redirectErrorStream(true);
         processBuilder.redirectOutput(outputFile.toFile());
         configureEnvironment(processBuilder.environment(), config);
-        processBuilder.environment().put(config.jobFlagEnvironmentVariable(), Boolean.toString(enabled));
 
         try {
             Process process = processBuilder.start();
@@ -55,14 +49,7 @@ public class BaisAutomatedTaskRunner {
             }
 
             String output = readOutput(outputFile, config);
-            if (!enabled) {
-                if (process.exitValue() == 0 || !output.contains("FeatureDisabledException")
-                    || !output.contains(config.source().equals("CAPS_REPORT")
-                        ? "caps-report-file-transfer-Job is not enabled"
-                        : "bteckoh-report-file-transfer-Job is not enabled")) {
-                    throw new IllegalStateException("Expected the disabled job to reject execution\n" + output);
-                }
-            } else if (process.exitValue() != 0) {
+            if (process.exitValue() != 0) {
                 throw new IllegalStateException(config.displayName() + " ingestion task exited with code "
                     + process.exitValue() + "\n" + output);
             }
@@ -79,7 +66,6 @@ public class BaisAutomatedTaskRunner {
     }
 
     private static void configureEnvironment(Map<String, String> environment, BaisReportTestConfig config) {
-        environment.clear();
         environment.put("SPRING_DATASOURCE_URL", TestEnvironment.getDatabaseUrl());
         environment.put("SPRING_DATASOURCE_USERNAME", TestEnvironment.getDatabaseUsername());
         environment.put("SPRING_DATASOURCE_PASSWORD", TestEnvironment.getDatabasePassword());

@@ -11,39 +11,44 @@ These are extracts, not the complete TDIA, data-store specification or LLD. Neit
 
 The functional overview labels the CAPS format as `.xlsx` in its table but calls it an XML document in the description. Tests use XML, matching the description and existing processor. Confirm this documentation inconsistency; do not substitute an XLSX fixture without a contract change.
 
-## What the automation proves
+## Automated coverage and pipeline placement
 
-The suite uses the production batch application and real SFTP, PostgreSQL and Azure SDK operations against disposable local services. Azurite emulates Azure Blob Storage and the SFTP container simulates BAIS. Assertions read independently persisted records and downloaded bytes; outcomes are not mocked as successful.
+The additional cases extend the existing CAPS and BTEckoh Spring integration tests. They use the
+repository's shared Testcontainers configuration (SFTP, PostgreSQL and Azurite), real processor services,
+repositories and blob clients. External services are simulated locally; no deployed services are contacted.
 
-| Requirement | Automated evidence |
+| Requirement | Integration evidence |
 | --- | --- |
-| Correct report destination | Exactly one new blob in the configured `caps-report` or `bteckoh-report` container; every other container and existing blob remains unchanged. |
-| Original file retained | Bytes downloaded from blob storage equal the source fixture. Azure Content-MD5 equals the database checksum and the fixture checksum; blob size equals the source size. |
-| Metadata links to the physical file | Filename, source, target, type, status, domain, timestamp and filestore UUID are checked. The UUID identifies the actual blob, rather than assuming the original filename is its storage name. |
-| Global reports | No Business Unit assignment and no payment type in the persisted record. This is not proof of UI filter behaviour. |
-| Duplicate handling | SUCCESS and DUPLICATE records share the original UUID and checksum; no blob is added or overwritten; source duplicate is removed. |
-| Invalid and disabled flows | Unsupported filenames and disabled jobs leave storage unchanged. Invalid contents produce an explained FAILED record with a timestamp/checksum, no blob reference, and a retained source file. |
-| Retry after correcting a file | Replacing invalid content with a valid report permits successful ingestion. The previous failed attempt remains identifiable and the original valid bytes are stored. |
-| Repeated invalid submission | The latest attempt remains FAILED, the earlier matching failure is FAILED_SUPERSEDED, and neither attempt creates a blob or deletes the source. |
-| Listing and download | Related Spring integration tests list a newly ingested report by source/status, compare the returned metadata to its record, and download the original bytes through InterfaceFilesService. These are service integration checks, not browser or authenticated HTTP E2E tests. |
+| Valid report ingestion | SUCCESS metadata, original blob checksum and size, source removal, listing and original-byte download through InterfaceFilesService. |
+| Global report metadata | No Business Unit or payment type on the persisted report; source, target, type, domain, filename and UUID checked. |
+| Duplicate report | Ingest an original before resubmission; the DUPLICATE row reuses its UUID. Blob names and ETags prove the duplicate creates or overwrites nothing while a different valid report still succeeds. |
+| No new files | Existing no-file test also asserts unchanged blob storage. |
+| Disabled feature flags | Existing service integration cases cover disabled flags; no duplicate functional cases are added. |
+| Unsupported filename | No database record or blob change; source file retained. |
+| Malformed report and repeated retry | No blob upload; errors recorded; source retained. The first FAILED becomes FAILED_SUPERSEDED and a new FAILED remains traceable. |
+| Corrected report | Replacing malformed bytes with a valid report succeeds and preserves the earlier failed attempt; original bytes can be downloaded. |
 
-The BDD features are `src/functionalTest/resources/features/bais/CapsReportIngestion.feature` and `BTEckohReportIngestion.feature`: nine scenarios each, 18 total. Existing Given/When/Then step definitions and Serenity reporting are reused.
+`./gradlew integration` runs these tests without a custom script or tag. The existing `check` task depends
+on `integration`, and `Jenkinsfile_CNP` publishes the integration results after the test stage. No separate
+Compose infrastructure, `-Pei1` switch or functional-test exclusion is required.
 
-Business metadata is held in `interface_files`. Azure blob properties such as Content-MD5, size and ETag are separate. No custom `x-ms-meta-*` tags are asserted because no such contract was supplied. Serenity attaches actual database metadata and blob-property values to the relevant steps.
+The existing Serenity/Cucumber features are restored to their pre-PR state, including their existing
+`@Ignore` tags. This PR does not claim to enable deployed EI1 functional testing. These integration tests
+replace the extra 18-scenario local suite; its previous screenshots are historical evidence, not evidence
+of the revised suite.
 
-## What remains outside this local evidence
+Business metadata is stored in `interface_files`; blob Content-MD5, size and ETag are storage properties.
+No custom Azure metadata tags are asserted because no such contract was supplied.
 
-- Delivery through the deployed BAIS route, Azure identity/RBAC, firewall/network paths, deployed configuration, and the scheduled job.
-- PO-6454's HTTP trigger and testing-support flag contract; the checkout used by this PR has no trigger controller. Local automation invokes the existing batch entry point.
-- Viewer visibility when a Business Unit filter changes. The current listing API has no Business Unit filter, and the supplied extracts do not provide the frontend implementation or acceptance fixtures.
-- Complete authentication/permission and viewer upload/download behaviour.
-- Payment posting, transformations, account consolidation, APR lookups and reference-data reconciliation for other banking interfaces. BTEckoh REPORT is distinct from the BTEckoh payment interface. These flows must not be claimed from EI1 report-transfer results.
-- Staging or dev/master SIT. Local passes are not evidence of deployed connectivity.
-- A dedicated CI invocation of `bin/test-ei1.sh`; ordinary deployed functional runs intentionally exclude `@EI1`.
+## Outstanding deployed verification
+
+The deployed BAIS route, Azure permissions/connectivity, scheduled job and PO-6454 HTTP trigger still
+need environment testing. Viewer Business Unit filtering and authenticated downloads are not proved by
+service-level integration tests. Payment transformation and posting for other interfaces are outside EI1.
 
 ## Staging/SIT handover — NOT RUN
 
-Use an agreed test window and approved synthetic or sanitised samples. Record the environment, deployed commit, actual configured storage account/container, job name, feature flags and execution time. Do not point the destructive local fixture/reset script at a shared environment.
+Use an agreed test window and approved synthetic or sanitised samples. Record the environment, deployed commit, actual configured storage account/container, job name, feature flags and execution time. Use only environment-owner-approved fixture setup and cleanup.
 
 | Test step | Test data | Expected result | Evidence to retain |
 | --- | --- | --- | --- |
@@ -59,15 +64,9 @@ Do not include storage keys, tokens, private keys or real financial/customer dat
 ## Local execution
 
 ```bash
-JAVA_HOME=<JDK21> bin/test-ei1.sh
-INTEGRATION_WIREMOCK_PORT=<available-port> JAVA_HOME=<JDK21> ./gradlew --no-daemon build checkstyleFunctionalTest
+JAVA_HOME=<JDK21> ./gradlew --no-daemon build checkstyleFunctionalTest
 ```
 
-Serenity output: `functional-test-report/index.html`. JUnit output: `build/test-results/functional`. Report attachments show the metadata and blob properties actually observed in the run.
-
-## Verified on 4 September 2026
-
-- `bin/test-ei1.sh`: 18 EI1 scenarios passed, zero failures. The tag filter excluded 14 unrelated functional scenarios.
-- `./gradlew --no-daemon build checkstyleFunctionalTest`: BUILD SUCCESSFUL; 226 unit tests and 47 integration tests passed, including the new listing/download assertions. All build style checks passed.
-- An available `INTEGRATION_WIREMOCK_PORT` was supplied to avoid the local stack's port 4553.
-- Staging/SIT and viewer Business Unit filtering remain NOT RUN.
+If the default WireMock port is occupied, set `INTEGRATION_WIREMOCK_PORT` to an available port.
+JUnit results are in `build/test-results/integration`; the HTML report is in `build/reports/tests/integration`.
+Staging/SIT and viewer filtering remain NOT RUN. See the PR validation section for the latest run totals.

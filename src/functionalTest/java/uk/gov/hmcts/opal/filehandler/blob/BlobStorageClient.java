@@ -4,15 +4,12 @@ import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
-import com.azure.storage.blob.models.BlobProperties;
 import com.azure.storage.common.StorageSharedKeyCredential;
 import com.google.common.io.Resources;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
-import java.util.Map;
-import java.util.TreeMap;
 import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 
 /**
@@ -21,7 +18,6 @@ import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 public class BlobStorageClient {
 
     private final BlobContainerClient containerClient;
-    private final BlobServiceClient serviceClient;
 
     /**
      * Creates a client for the configured functional-test blob container.
@@ -40,40 +36,11 @@ public class BlobStorageClient {
             TestEnvironment.getBlobAccountName(),
             TestEnvironment.getBlobAccountKey()
         );
-        serviceClient = new BlobServiceClientBuilder()
+        BlobServiceClient serviceClient = new BlobServiceClientBuilder()
             .endpoint(TestEnvironment.getBlobEndpoint())
             .credential(credential)
             .buildClient();
         containerClient = serviceClient.getBlobContainerClient(containerName);
-    }
-
-    /** Creates the report container in the disposable emulator before ingestion. */
-    public void createContainerIfAbsent() {
-        containerClient.createIfNotExists();
-    }
-
-    /** Returns blob names and ETags so negative scenarios also detect overwrites. */
-    public Map<String, String> snapshot() {
-        Map<String, String> blobs = new TreeMap<>();
-        containerClient.listBlobs().forEach(blob -> blobs.put(blob.getName(), blob.getProperties().getETag()));
-        return blobs;
-    }
-
-    /** Includes every container so routing checks detect misplaced or additional uploads. */
-    public Map<String, Map<String, String>> snapshotStorage() {
-        Map<String, Map<String, String>> containers = new TreeMap<>();
-        serviceClient.listBlobContainers().forEach(container -> {
-            Map<String, String> blobs = new TreeMap<>();
-            serviceClient.getBlobContainerClient(container.getName()).listBlobs().forEach(blob ->
-                blobs.put(blob.getName(), blob.getProperties().getETag()));
-            containers.put(container.getName(), blobs);
-        });
-        return containers;
-    }
-
-    /** Reads the persisted Azure blob properties independently of the database record. */
-    public BlobProperties properties(String blobName) {
-        return containerClient.getBlobClient(blobName).getProperties();
     }
 
     /**

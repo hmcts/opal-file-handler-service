@@ -12,6 +12,8 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -80,6 +82,19 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
     public final void uploadResourceToSftp(String resourcePath, String containerPath) {
         TestContainerConfig.SFTP_CONTAINER.copyFileToContainer(
             MountableFile.forClasspathResource(resourcePath), containerPath);
+    }
+
+    protected final Map<String, String> storedBlobs(String containerName) {
+        Map<String, String> blobs = new TreeMap<>();
+        blobServiceClient.getBlobContainerClient(containerName).listBlobs()
+            .forEach(blob -> blobs.put(blob.getName(), blob.getProperties().getETag()));
+        return blobs;
+    }
+
+    protected final void clearReportFiles(String username, String containerName) {
+        sftpClient.listRegularFiles(username).forEach(file -> sftpClient.deleteFile(username, file));
+        var container = blobServiceClient.createBlobContainerIfNotExists(containerName);
+        container.listBlobs().forEach(blob -> container.getBlobClient(blob.getName()).delete());
     }
 
     public final void assertNumberOfSftpFiles(String username, int expected) {
@@ -178,6 +193,7 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
 
         assertThat(DigestUtils.md5DigestAsHex(content)).isEqualTo(fileChecksum);
         assertThat(HexFormat.of().formatHex(properties.getContentMd5())).isEqualTo(fileChecksum);
+        assertThat(properties.getBlobSize()).isEqualTo(content.length);
     }
 
     public final void assertReportCanBeListedAndDownloaded(String fileName, String checksum, String resourcePath)
