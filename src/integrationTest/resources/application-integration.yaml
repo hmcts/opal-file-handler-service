@@ -10,6 +10,9 @@ opal:
       caps-report:
         container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}
 
+launchdarkly:
+  enabled: false
+
 user:
   service:
     url: http://localhost:4553
