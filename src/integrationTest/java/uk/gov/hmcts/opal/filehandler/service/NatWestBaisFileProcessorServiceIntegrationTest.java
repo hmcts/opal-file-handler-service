@@ -129,52 +129,20 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
         List<InterfaceFileEntity> entities = repository.findAll();
 
         assertThat(entities).hasSize(2);
-        InterfaceFileEntity source = entities.stream()
-            .filter(entity -> entity.getType() == Type.SOURCE)
-            .findFirst()
-            .orElseThrow();
         InterfaceFileEntity sourceJson = entities.stream()
             .filter(entity -> entity.getType() == Type.SOURCE_JSON)
             .findFirst()
             .orElseThrow();
 
-        assertSourceFile(source);
-        assertSourceJson(sourceJson, source);
+        InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
+            NATWEST_FILE, NATWEST_FILE_CHECKSUM, Interface.NATWEST, Type.SOURCE, Domain.FINES);
+        InterfaceFileEntity sourceJsonFile = assertSuccessfulSourceJsonInterfaceFile(
+            NATWEST_FILE, Interface.NATWEST, Domain.FINES, sourceFile.getInterfaceFileId());
         assertBlobChecksum(NATWEST_FILE, NATWEST_FILE_CHECKSUM,
             natWestBaisFileProcessorConfiguration.getContainerName());
         assertSourceJsonContents(sourceJson);
         assertNumberOfSftpFiles(natWestBaisFileProcessorConfiguration.getSftpUsername(), 0);
         verify(finesQueueService, times(1)).send(sourceJson.getInterfaceFileId());
-    }
-
-    private void assertSourceFile(InterfaceFileEntity source) {
-        assertThat(source.getSource()).isEqualTo(Interface.NATWEST);
-        assertThat(source.getTarget()).isEqualTo(Interface.OPAL);
-        assertThat(source.getType()).isEqualTo(Type.SOURCE);
-        assertThat(source.getOpalDomain()).isEqualTo(Domain.FINES);
-        assertThat(source.getFileName()).isEqualTo(NATWEST_FILE);
-        assertThat(source.getFilestoreUuid()).isNotNull();
-        assertThat(source.getChecksum()).isEqualTo(NATWEST_FILE_CHECKSUM);
-        assertThat(source.getStatus()).isEqualTo(Status.SUCCESS);
-        assertThat(source.getBusinessUnitCode()).containsExactly(BUSINESS_UNIT_CODE);
-        assertThat(source.getPaymentType()).isNull();
-        assertThat(source.getRelatedInterfaceFile()).isNull();
-        assertThat(source.getErrors()).isNull();
-    }
-
-    private void assertSourceJson(InterfaceFileEntity sourceJson, InterfaceFileEntity source) {
-        assertThat(sourceJson.getSource()).isEqualTo(Interface.NATWEST);
-        assertThat(sourceJson.getTarget()).isEqualTo(Interface.OPAL);
-        assertThat(sourceJson.getType()).isEqualTo(Type.SOURCE_JSON);
-        assertThat(sourceJson.getOpalDomain()).isEqualTo(Domain.FINES);
-        assertThat(sourceJson.getFileName()).isEqualTo(NATWEST_FILE);
-        assertThat(sourceJson.getFilestoreUuid()).isNotNull();
-        assertThat(sourceJson.getChecksum()).isNotBlank();
-        assertThat(sourceJson.getStatus()).isEqualTo(Status.SUCCESS);
-        assertThat(sourceJson.getBusinessUnitCode()).containsExactly(BUSINESS_UNIT_CODE);
-        assertThat(sourceJson.getPaymentType()).isEqualTo(PaymentType.CASH);
-        assertThat(sourceJson.getRelatedInterfaceFile().getInterfaceFileId()).isEqualTo(source.getInterfaceFileId());
-        assertThat(sourceJson.getErrors()).isNull();
     }
 
     private void assertSourceJsonContents(InterfaceFileEntity sourceJson) throws Exception {
