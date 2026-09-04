@@ -142,7 +142,7 @@ opal:
         source: ALLPAY
         target: OPAL
         sftp-username: ${BAIS_SFTP_ALLPAY_USERNAME:}
-      bteckoh:
+      bteckoh-transfer:
         container-name: ${BTECKOH_AZURE_STORAGE_CONTAINER:bteckoh}
         feature-flag: bteckoh-file-transfer-Job
         file-name-regex: ^a121_\d{8}_\d{6}\.dat$
