@@ -1,10 +1,17 @@
 opal:
-  file-handling-service:
+  file-handler-service:
     file-types:
+      allpay:
+        container-name: ${ALLPAY_AZURE_STORAGE_CONTAINER:allpay}
+      bteckoh-transfer:
+        container-name: ${BTECKOH_AZURE_STORAGE_CONTAINER:bteckoh}
       bteckoh-report:
         container-name: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-report}
       caps-report:
         container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}
+
+launchdarkly:
+  enabled: false
 
 user:
   service:

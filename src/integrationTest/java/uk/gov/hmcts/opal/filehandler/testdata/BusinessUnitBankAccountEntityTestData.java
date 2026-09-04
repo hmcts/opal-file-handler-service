@@ -37,6 +37,22 @@ public class BusinessUnitBankAccountEntityTestData {
         return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitCode));
     }
 
+    public BusinessUnitBankAccountEntity saveBusinessUnitBankAccount(
+        long id,
+        String businessUnitCode,
+        Domain domain,
+        String bankSortCode,
+        String bankAccountNumber
+    ) {
+        return repository.save(BusinessUnitBankAccountEntity.builder()
+                                   .id(id)
+                                   .businessUnitCode(businessUnitCode)
+                                   .domain(domain)
+                                   .bankSortCode(bankSortCode)
+                                   .bankAccountNumber(bankAccountNumber)
+                                   .build());
+    }
+
     public BusinessUnitBankAccountEntity saveMaximumBusinessUnitBankAccount(long id) {
         return repository.save(getMaximumBusinessUnitBankAccount(id));
     }
@@ -49,4 +65,3 @@ public class BusinessUnitBankAccountEntityTestData {
         repository.deleteAll();
     }
 }
-
