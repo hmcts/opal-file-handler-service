@@ -107,6 +107,7 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
         String disabledFeature
     ) {
         BacsStandard18Fixture fixture = validFixture();
+        // A real file proves disabled feature flags prevent ingestion and leave SFTP contents untouched.
         uploadFixture(fixture.fileName());
 
         when(featureToggleApi.isFeatureEnabled(FeatureFlags.RELEASE_1C_BANKING_INTERFACES))
