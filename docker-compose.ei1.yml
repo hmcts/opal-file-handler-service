@@ -28,7 +28,7 @@ services:
         chmod +x /etc/sftp.d/configure-sftp
         exec /entrypoint "$$@"
       - --
-    command: ["CAPS-report::1001", "BTEckoh-report::1002"]
+    command: ["CAPS-report::1001", "BTEckoh-report::1002", "AllPay::1003"]
     healthcheck:
       test: ["CMD-SHELL", "nc -z 127.0.0.1 22"]
       interval: 2s
