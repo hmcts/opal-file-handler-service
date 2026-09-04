@@ -1,6 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import java.time.Clock;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
@@ -12,6 +13,7 @@ import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePrepr
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
+@Service
 public class BarclaycardBaisFileProcessorService extends
     AbstractBaisInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
 

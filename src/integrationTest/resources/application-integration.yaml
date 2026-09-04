@@ -7,7 +7,6 @@ opal:
         container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}
       barclaycard:
         container-name: ${BARCLAYCARD_AZURE_STORAGE_CONTAINER:barclaycard}
-
 user:
   service:
     url: http://localhost:4553
