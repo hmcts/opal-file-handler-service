@@ -49,6 +49,8 @@ spring:
             jwk-set-uri: ${opal.azure.active-directory-justice-auth-uri}/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/discovery/v2.0/keys
             logout-uri: ${opal.azure.active-directory-justice-auth-uri}/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/oauth2/v2.0/logout
             reset-password-uri: ${opal.azure.active-directory-justice-auth-uri}/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/oauth2/v2.0/authorize
+  jackson:
+    property-naming-strategy: SNAKE_CASE
 
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -142,6 +144,13 @@ opal:
         source: ALLPAY
         target: OPAL
         sftp-username: ${BAIS_SFTP_ALLPAY_USERNAME:}
+      barclaycard:
+        container-name: ${NATWEST_AZURE_STORAGE_CONTAINER:barclaycard}
+        feature-flag: barclaycard-file-transfer-Job
+        file-name-regex: a121_\d{8}_\d{6}\.dat
+        source: BARCLAYCARD
+        target: OPAL
+        sftp-username: ${BAIS_SFTP_BARCLAYCARD_USERNAME:}
     sftp:
       bais:
         host: ${BAIS_SFTP_CONNECTION_HOST:localhost}
@@ -179,6 +188,7 @@ launchdarkly:
     caps-report-file-transfer-Job: ${CAPS_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     bteckoh-report-file-transfer-Job: ${BTECKOH_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     allpay-file-transfer-Job: ${ALLPAY_FILE_TRANSFER_JOB_ENABLED:false}
+    barclaycard-file-transfer-Job: ${BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED:false}
 
 user:
   service:
