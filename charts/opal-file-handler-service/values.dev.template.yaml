@@ -80,6 +80,7 @@ blobstorage:
     containers:
       - bteckoh-report
       - caps-report
+      - barclaycard
 bais-emulator:
   enabled: true
   azureName: "opalfilebaisapr${CHANGE_ID}"
@@ -91,6 +92,7 @@ bais-emulator:
     containers:
       - bteckoh-report
       - caps-report
+      - barclaycard
 bt-eckoh-report:
   image: ${IMAGE_NAME}
   environment:
