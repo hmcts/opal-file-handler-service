@@ -3,6 +3,10 @@ opal:
     enabled: false
   file-handler-service:
     file-types:
+      allpay:
+        container-name: ${ALLPAY_AZURE_STORAGE_CONTAINER:allpay}
+      bteckoh-transfer:
+        container-name: ${BTECKOH_AZURE_STORAGE_CONTAINER:bteckoh}
       bteckoh-report:
         sftp-username: BTEckoh-report
       caps-report:

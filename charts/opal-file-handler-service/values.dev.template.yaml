@@ -84,6 +84,8 @@ blobstorage:
   resourceGroup: "opal-aso-dev-rg"
   setup:
     containers:
+      - allpay
+      - bteckoh
       - bteckoh-report
       - caps-report
 bais-emulator:
@@ -95,6 +97,8 @@ bais-emulator:
     isSftpEnabled: true
     isHnsEnabled: true
     containers:
+      - allpay
+      - bteckoh
       - bteckoh-report
       - caps-report
 bt-eckoh-report:
