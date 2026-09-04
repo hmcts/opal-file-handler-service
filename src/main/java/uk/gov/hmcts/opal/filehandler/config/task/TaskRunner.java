@@ -14,10 +14,6 @@ import org.springframework.stereotype.Component;
 public class TaskRunner implements ApplicationRunner {
 
     public TaskRunner(List<TaskConfiguration> configs, @Value("${opal.automated-task}") String task) {
-        if (configs.size() == 1) {
-            configuration = configs.getFirst();
-            return;
-        }
         configuration = configs.stream()
             .filter(c -> c.getClass().toString().toLowerCase().contains(task.toLowerCase()))
             .findFirst().orElseThrow();
