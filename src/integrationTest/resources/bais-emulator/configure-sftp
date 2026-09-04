@@ -5,4 +5,5 @@ sed -i '/^ChrootDirectory %h$/d' /etc/ssh/sshd_config
 
 chown 1001:users /home/CAPS-report
 chown 1002:users /home/BTEckoh-report
-chown 1003:users /home/NATWEST
+chown 1003:users /home/AllPay
+chown 1004:users /home/NATWEST

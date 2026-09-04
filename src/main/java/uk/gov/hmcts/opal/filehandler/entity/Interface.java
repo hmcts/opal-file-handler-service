@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public enum Interface {
     NATWEST("NatWestBaisFileBaisFileProcessorConfig"),
-    ALLPAY(null),
+    ALLPAY("AllpayBaisFileBaisFileProcessorConfig"),
     ALLPAY_DD(null),
     BARCLAYCARD(null),
     BTECKOH(null),
