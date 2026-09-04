@@ -3,12 +3,16 @@ package uk.gov.hmcts.opal.filehandler.controllers;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.Collections;
@@ -18,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -33,6 +38,7 @@ import uk.gov.hmcts.opal.generated.model.StatusEnumInterfaceFile;
 
 @ExtendWith(MockitoExtension.class)
 public class InterfaceFilesControllerTest {
+
     @Mock
     private InterfaceFilesService service;
 
@@ -94,14 +100,46 @@ public class InterfaceFilesControllerTest {
     }
 
     @Test
-    void getInterfaceFileContent_returns200() {
-        when(service.getInterfaceFilesContent(eq(1L))).thenReturn(
-            mock(InputStream.class)
+    void getInterfaceFile_returns200WithResponseBody() {
+        InterfaceFileObjectInterfaceFile expected = mock(InterfaceFileObjectInterfaceFile.class);
+        when(service.getInterfaceFile(1L)).thenReturn(expected);
+
+        ResponseEntity<InterfaceFileObjectInterfaceFile> response = controller.getInterfaceFile(1L);
+
+        verify(service).getInterfaceFile(1L);
+        verifyNoMoreInteractions(service);
+        assertAll(
+            () -> assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode()),
+            () -> assertSame(expected, response.getBody())
         );
+    }
+
+    @Test
+    void getInterfaceFile_propagatesServiceException() {
+        RuntimeException expected = new RuntimeException("not found");
+        when(service.getInterfaceFile(1L)).thenThrow(expected);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> controller.getInterfaceFile(1L));
+
+        assertSame(expected, exception);
+        verify(service).getInterfaceFile(1L);
+        verifyNoMoreInteractions(service);
+    }
+
+    @Test
+    void getInterfaceFileContent_returns200WithBodyWrappingReturnedStream() {
+        InputStream expectedStream = new ByteArrayInputStream("payload".getBytes(StandardCharsets.UTF_8));
+        when(service.getInterfaceFilesContent(eq(1L))).thenReturn(expectedStream);
 
         ResponseEntity<Resource> response = controller.getInterfaceFileContent(1L);
 
         verify(service).getInterfaceFilesContent(eq(1L));
-        assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
+        verifyNoMoreInteractions(service);
+        assertAll(
+            () -> assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode()),
+            () -> assertEquals(InputStreamResource.class, response.getBody().getClass()),
+            () -> assertEquals("payload",
+                new String(response.getBody().getInputStream().readAllBytes(), StandardCharsets.UTF_8))
+        );
     }
 }
