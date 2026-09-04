@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PacsTppSchedule xmlns="http://www.dwp.gsi.gov.uk/pacs">
+  <DocumentHeader>
+    <CreditorID>0000031816</CreditorID>
+    <BatchNumber>01469</BatchNumber>
+    <PacsDocumentCreationDate>2026-06-01</PacsDocumentCreationDate>
+    <PacsDocumentCreationTime>09:47:45</PacsDocumentCreationTime>
+    <NotificationReference>0000101141</NotificationReference>
+  </DocumentHeader>
+  <DocumentDetail>
+    <CustomerRef>NNNNNNNNK         </CustomerRef>
+    <RecordType>02</RecordType>
+    <LocationCode>160005</LocationCode>
+    <NationalInsuranceNumberType>AA012345</NationalInsuranceNumberType>
+    <DateFrom>2026-04-07</DateFrom>
+    <DateTo>2026-05-06</DateTo>
+    <DetailAmountType>0000002125</DetailAmountType>
+    <DetailAmountSign>+</DetailAmountSign>
+  </DocumentDetail>
+  <DocumentDetail>
+    <CustomerRef>NNNNNNNNK SW      </CustomerRef>
+    <RecordType>02</RecordType>
+    <LocationCode>160005</LocationCode>
+    <NationalInsuranceNumberType>AA012345</NationalInsuranceNumberType>
+    <DateFrom>2026-04-06</DateFrom>
+    <DateTo>2026-05-05</DateTo>
+    <DetailAmountType>0000002125</DetailAmountType>
+    <DetailAmountSign>+</DetailAmountSign>
+  </DocumentDetail>
+  <DocumentDetail>
+    <CustomerRef>NNNNNNNNK SW      </CustomerRef>
+    <RecordType>02</RecordType>
+    <LocationCode>160005</LocationCode>
+    <NationalInsuranceNumberType>AA012345</NationalInsuranceNumberType>
+    <DateFrom>2026-04-08</DateFrom>
+    <DateTo>2026-05-07</DateTo>
+    <DetailAmountType>0000002125</DetailAmountType>
+    <DetailAmountSign>+</DetailAmountSign>
+  </DocumentDetail>
+  <DocumentDetail>
+    <CustomerRef>NNNNNNNNK SW      </CustomerRef>
+    <RecordType>02</RecordType>
+    <LocationCode>160005</LocationCode>
+    <NationalInsuranceNumberType>AA012345</NationalInsuranceNumberType>
+    <DateFrom>2026-04-10</DateFrom>
+    <DateTo>2026-05-09</DateTo>
+    <DetailAmountType>0000002125</DetailAmountType>
+    <DetailAmountSign>+</DetailAmountSign>
+  </DocumentDetail>
+  <DocumentDetail>
+    <CustomerRef>NNNNNNNNK         </CustomerRef>
+    <RecordType>02</RecordType>
+    <LocationCode>160005</LocationCode>
+    <NationalInsuranceNumberType>AA012345</NationalInsuranceNumberType>
+    <DateFrom>2026-04-01</DateFrom>
+    <DateTo>2026-04-30</DateTo>
+    <DetailAmountType>0000002001</DetailAmountType>
+    <DetailAmountSign>+</DetailAmountSign>
+  </DocumentDetail>
+<DocumentSummary>
+    <SummaryAmountType>0000010501</SummaryAmountType>
+    <SummaryAmountSign>+</SummaryAmountSign>
+    <Total02Records>0000000005</Total02Records>
+    <Total03Records>0000000000</Total03Records>
+  </DocumentSummary>
+</PacsTppSchedule>
