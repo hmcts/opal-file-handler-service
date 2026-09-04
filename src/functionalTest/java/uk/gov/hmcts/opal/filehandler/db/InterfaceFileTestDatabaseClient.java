@@ -1,5 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.db;
 
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -10,7 +12,8 @@ public class InterfaceFileTestDatabaseClient implements AutoCloseable {
 
     private static final String FIND_BY_FILE_NAME = """
         SELECT interface_file_id, source::text, target::text, type::text, opal_domain::text,
-               file_name, filestore_uuid, checksum, status::text
+               file_name, filestore_uuid, checksum, status::text, created_datetime, errors::text,
+               business_unit_code, payment_type::text
         FROM public.interface_files
         WHERE file_name = ?
         ORDER BY created_datetime, interface_file_id
@@ -39,7 +42,12 @@ public class InterfaceFileTestDatabaseClient implements AutoCloseable {
             resultSet.getString("file_name"),
             resultSet.getObject("filestore_uuid", UUID.class),
             resultSet.getString("checksum"),
-            resultSet.getString("status")
+            resultSet.getString("status"),
+            resultSet.getObject("created_datetime", LocalDateTime.class),
+            resultSet.getString("errors"),
+            resultSet.getArray("business_unit_code") == null ? List.of()
+                : Arrays.asList((String[]) resultSet.getArray("business_unit_code").getArray()),
+            resultSet.getString("payment_type")
         ), fileName);
     }
 
@@ -69,7 +77,11 @@ public class InterfaceFileTestDatabaseClient implements AutoCloseable {
         String fileName,
         UUID filestoreUuid,
         String checksum,
-        String status
+        String status,
+        LocalDateTime createdDatetime,
+        String errors,
+        List<String> businessUnitCodes,
+        String paymentType
     ) {
     }
 }

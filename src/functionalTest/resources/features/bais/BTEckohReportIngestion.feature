@@ -3,8 +3,17 @@ Feature: BTEckoh report ingestion
 
   Scenario: A valid BTEckoh report is ingested
     Given the configured BTEckoh report is available on bais
+    And the BTEckoh blobstore and interface records are recorded
     When the BTEckoh report ingestion task is triggered
     Then a successful BTECKOH_REPORT interface file is stored
+    And the BTEckoh report has global-file metadata:
+      | source              | BTECKOH_REPORT |
+      | target              | OPAL             |
+      | type                | SOURCE           |
+      | status              | SUCCESS          |
+      | business_unit_codes | none             |
+      | payment_type        | none             |
+    And the BTEckoh report is stored only in its configured blob container
     And the stored BTEckoh report content matches the bais workbook
     And the configured BTEckoh report no longer exists on bais
 
@@ -58,4 +67,29 @@ Feature: BTEckoh report ingestion
     When the BTEckoh report ingestion task is triggered
     Then the BTEckoh blobstore is unchanged
     And a failed BTEckoh report is recorded without a blob
+    And the configured BTEckoh report is available on bais
+
+  Scenario: A corrected BTEckoh report can be ingested after a failed attempt
+    Given a malformed BTEckoh report with a supported filename is available on bais
+    When the BTEckoh report ingestion task is triggered
+    Then a failed BTEckoh report is recorded without a blob
+    And the configured BTEckoh report is available on bais
+    Given the BTEckoh blobstore and interface records are recorded
+    When the BTEckoh report is replaced with a valid file
+    And the BTEckoh report ingestion task is triggered
+    Then a successful BTECKOH_REPORT interface file is stored
+    And the BTEckoh report is stored only in its configured blob container
+    And the stored BTEckoh report content matches the bais file
+    And the earlier failed BTEckoh attempt remains traceable
+    And the configured BTEckoh report no longer exists on bais
+
+  Scenario: Retrying an invalid BTEckoh report retains the source and the latest failure
+    Given a malformed BTEckoh report with a supported filename is available on bais
+    When the BTEckoh report ingestion task is triggered
+    Then a failed BTEckoh report is recorded without a blob
+    Given the BTEckoh blobstore and interface records are recorded
+    When the BTEckoh report ingestion task is triggered
+    Then the BTEckoh blobstore is unchanged
+    And a failed BTEckoh report is recorded without a blob
+    And one earlier BTEckoh failure is superseded without a blob
     And the configured BTEckoh report is available on bais

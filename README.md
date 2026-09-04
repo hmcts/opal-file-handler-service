@@ -140,11 +140,14 @@ on exit. It does not use the existing local Opal stack. Fixtures are reset befor
 after every scenario. Blob names and ETags detect new uploads and overwrites; happy
 paths also verify downloaded bytes, metadata and removal from SFTP.
 
-The complete run covers 14 scenarios across CAPS and BTEckoh, including duplicate
+The complete run covers 18 scenarios across CAPS and BTEckoh, including duplicate
 and malformed content rejection. Duplicate records reuse the successful upload;
 invalid XML or XLSX content is recorded as failed without uploading or deleting
 the source file. Validation checks the file format, not business fields or a CAPS
 schema. The XLSX parser uses Apache POI.
+
+See [EI1 coverage and staging evidence](docs/testing/PO-6382-ei1-coverage.md) for
+metadata and blob assertions, BDD retry coverage, and the separate staging/SIT checklist.
 
 
 The ordinary deployed `functional` suite excludes `@EI1`. The script explicitly

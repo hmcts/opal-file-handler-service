@@ -7,6 +7,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -122,13 +123,14 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
 
     @Test
     @DisplayName("AC2: CAPS file is present, read and stored correctly")
-    void capsReportBaisFileProcessorServiceShouldRunSuccesfully() {
+    void capsReportBaisFileProcessorServiceShouldRunSuccesfully() throws IOException {
         uploadResourceToSftp(CAPS_FILE_RESOURCE, CAPS_FILE_CONTAINER);
         capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
 
         assertMostRecentEntityHasStatus(CAPS_FILE, CAPS_FILE_CHECKSUM, Interface.CAPS_REPORT, Status.SUCCESS);
         assertBlobChecksum(CAPS_FILE, CAPS_FILE_CHECKSUM, capsReportBaisFileProcessorConfiguration.getContainerName());
         assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
+        assertReportCanBeListedAndDownloaded(CAPS_FILE, CAPS_FILE_CHECKSUM, CAPS_FILE_RESOURCE);
     }
 
     @Test

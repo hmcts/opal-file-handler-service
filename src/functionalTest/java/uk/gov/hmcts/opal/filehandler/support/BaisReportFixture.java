@@ -23,7 +23,8 @@ public class BaisReportFixture {
      * Ensures a scenario starts with only its baseline report fixture.
      */
     public void setUp() {
-        new BlobStorageClient(config.blobContainerName()).createContainerIfAbsent();
+        new BlobStorageClient(BaisReportTestData.CAPS.blobContainerName()).createContainerIfAbsent();
+        new BlobStorageClient(BaisReportTestData.BTECKOH.blobContainerName()).createContainerIfAbsent();
         cleanDatabaseAndBlobs();
         restoreBaselineSftpFile();
     }

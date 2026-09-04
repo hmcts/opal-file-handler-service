@@ -7,6 +7,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -123,13 +124,14 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
 
     @Test
     @DisplayName("AC2: BTEckoh-Report file is present, read and stored correctly")
-    void btEckohReportBaisFileProcessorServiceShouldRunSuccesfully() {
+    void btEckohReportBaisFileProcessorServiceShouldRunSuccesfully() throws IOException {
         uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
         service.run(config);
 
         assertMostRecentEntityHasStatus(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Status.SUCCESS);
         assertBlobChecksum(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, config.getContainerName());
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
+        assertReportCanBeListedAndDownloaded(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, BTECKOH_FILE_RESOURCE);
     }
 
     @Test
