@@ -49,8 +49,7 @@ public class MarstonBaisFileProcessorServiceIntegrationTest  extends AbstractBai
 
         uploadResourceToSftp( MARSTON_FILE_RESOURCE, MARSTON_FILE_CONTAINER);
         marstonBaisFileProcessorService.run();
-        assertMostRecentEntityHasStatus(MARSTON_FILE, MARSTON_FILE_CHECKSUM,Interface.MARSTON,Status.SUCCESS);
-
+        super.assertMostRecentEntityHasStatus(MARSTON_FILE, MARSTON_FILE_CHECKSUM,Interface.MARSTON,Status.SUCCESS);
         assertNumberOfSftpFiles(config.getSftpUsername(),0 );
     }
 
