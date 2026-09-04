@@ -126,23 +126,15 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
 
         natWestBaisFileProcessorService.run(natWestBaisFileProcessorConfiguration);
 
-        List<InterfaceFileEntity> entities = repository.findAll();
-
-        assertThat(entities).hasSize(2);
-        InterfaceFileEntity sourceJson = entities.stream()
-            .filter(entity -> entity.getType() == Type.SOURCE_JSON)
-            .findFirst()
-            .orElseThrow();
-
         InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
             NATWEST_FILE, NATWEST_FILE_CHECKSUM, Interface.NATWEST, Type.SOURCE, Domain.FINES);
         InterfaceFileEntity sourceJsonFile = assertSuccessfulSourceJsonInterfaceFile(
             NATWEST_FILE, Interface.NATWEST, Domain.FINES, sourceFile.getInterfaceFileId());
         assertBlobChecksum(NATWEST_FILE, NATWEST_FILE_CHECKSUM,
             natWestBaisFileProcessorConfiguration.getContainerName());
-        assertSourceJsonContents(sourceJson);
+        assertSourceJsonContents(sourceJsonFile);
         assertNumberOfSftpFiles(natWestBaisFileProcessorConfiguration.getSftpUsername(), 0);
-        verify(finesQueueService, times(1)).send(sourceJson.getInterfaceFileId());
+        verify(finesQueueService, times(1)).send(sourceJsonFile.getInterfaceFileId());
     }
 
     private void assertSourceJsonContents(InterfaceFileEntity sourceJson) throws Exception {
