@@ -80,7 +80,7 @@ blobstorage:
     containers:
       - bteckoh-report
       - caps-report
-      - NATWEST
+      - natwest
 bais-emulator:
   enabled: true
   azureName: "opalfilebaisapr${CHANGE_ID}"
@@ -92,7 +92,7 @@ bais-emulator:
     containers:
       - bteckoh-report
       - caps-report
-      - NATWEST
+      - natwest
 bt-eckoh-report:
   image: ${IMAGE_NAME}
   environment:
