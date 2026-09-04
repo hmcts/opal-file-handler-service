@@ -11,7 +11,7 @@ import uk.gov.hmcts.opal.filehandler.config.BarclaycardBaisFileBaisFileProcessor
 import uk.gov.hmcts.opal.filehandler.service.BarclaycardBaisFileProcessorService;
 
 @Component
-@ConditionalOnProperty(name = "opal.automated-task", havingValue = "NatWestFileTransferJob")
+@ConditionalOnProperty(name = "opal.automated-task", havingValue = "BarclaycardFileTransferJob")
 @Slf4j
 @RequiredArgsConstructor
 public class AutomatedBarclaycardFileTransferJob implements ApplicationRunner {
@@ -21,11 +21,11 @@ public class AutomatedBarclaycardFileTransferJob implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws IOException {
-        log.info("Starting automated NatWest file transfer job");
+        log.info("Starting automated Barclaycard file transfer job");
 
         service.run(configuration);
 
-        log.info("Completed automated NatWest file transfer job");
+        log.info("Completed automated Barclaycard file transfer job");
     }
 
 }
