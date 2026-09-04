@@ -17,7 +17,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
-import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 
 @RequiredArgsConstructor
 public class ApiTest {
@@ -114,13 +113,12 @@ public class ApiTest {
         }
 
         @SneakyThrows
-        public <T> T getResponseBodyAsObject(Class<T> interfaceFileObjectInterfaceFileClass) {
+        public <T> T getResponseBodyAsObject(Class<T> obj) {
             return objectMapper.convertValue(resultActions.andReturn().getResponse()
-                    .getContentAsString(),
-                interfaceFileObjectInterfaceFileClass);
+                    .getContentAsString(), obj);
         }
 
-        public Response assertBody(InterfaceFileObjectInterfaceFile expectedResponse) {
+        public Response assertBody(Object expectedResponse) {
             String expectedJson = objectMapper.writeValueAsString(expectedResponse);
             assertResponse(content().json(expectedJson, JsonCompareMode.STRICT));
             return this;
