@@ -260,7 +260,7 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
             .orElseThrow(() -> new AssertionError("Expected one " + type + " with status " + status));
     }
 
-    private void uploadFixture(String destinationFileName) {
+    protected final void uploadFixture(String destinationFileName) {
         uploadResourceToSftp(validFixture().classpathResource(), sftpPath(destinationFileName));
     }
 
