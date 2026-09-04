@@ -15,7 +15,6 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Sort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.util.DigestUtils;
@@ -93,26 +92,62 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
         assertThat(entities).hasSize(numExpected);
     }
 
-    public final void assertMostRecentEntityHasStatus(String fileName, String checksum, Interface source,
-        Status status) {
-        List<InterfaceFileEntity> allEntities = repository.findAll(Sort.by(Sort.Direction.ASC, "createdDatetime"));
-        assertThat(allEntities.size()).isGreaterThan(0);
+    public final InterfaceFileEntity assertSuccessfulInterfaceFile(String fileName, String checksum,
+        Interface source, Type type, Domain domain) {
 
-        InterfaceFileEntity mostRecent = allEntities.getLast();
+        List<InterfaceFileEntity> entities = repository.findAllByFileNameAndChecksumAndStatus(
+            fileName, checksum, Status.SUCCESS);
 
-        assertThat(mostRecent.getFileName()).isEqualTo(fileName);
-        assertThat(mostRecent.getStatus()).isEqualTo(status);
-        assertThat(mostRecent.getChecksum()).isEqualTo(checksum);
-        assertThat(mostRecent.getType()).isEqualTo(Type.SOURCE);
-        assertThat(mostRecent.getOpalDomain()).isEqualTo(Domain.MAINTENANCE);
-        assertThat(mostRecent.getSource()).isEqualTo(source);
-        assertThat(mostRecent.getTarget()).isEqualTo(Interface.OPAL);
+        assertThat(entities)
+            .singleElement()
+            .satisfies(entity -> {
+                assertThat(entity)
+                    .extracting(
+                        InterfaceFileEntity::getFileName,
+                        InterfaceFileEntity::getChecksum,
+                        InterfaceFileEntity::getSource,
+                        InterfaceFileEntity::getTarget,
+                        InterfaceFileEntity::getType,
+                        InterfaceFileEntity::getOpalDomain,
+                        InterfaceFileEntity::getStatus)
+                    .containsExactly(fileName, checksum, source, Interface.OPAL, type, domain, Status.SUCCESS);
+                assertThat(entity.getErrors()).isNull();
+            });
 
-        if (status.equals(Status.SUCCESS)) {
-            assertThat(mostRecent.getErrors()).isNull();
-        } else {
-            assertThat(mostRecent.getErrors()).isNotNull();
-        }
+        return entities.getFirst();
+    }
+
+    public final InterfaceFileEntity assertSuccessfulSourceJsonInterfaceFile(String fileName, Interface source,
+        Domain domain, Long relatedInterfaceFileId) {
+
+        List<InterfaceFileEntity> entities = repository.findAll().stream()
+            .filter(entity -> entity.getType() == Type.SOURCE_JSON)
+            .filter(entity -> fileName.equals(entity.getFileName()))
+            .filter(entity -> entity.getRelatedInterfaceFile() != null)
+            .filter(entity -> relatedInterfaceFileId.equals(
+                entity.getRelatedInterfaceFile().getInterfaceFileId()))
+            .toList();
+
+        assertThat(entities)
+            .singleElement()
+            .satisfies(entity -> {
+                assertThat(entity)
+                    .extracting(
+                        InterfaceFileEntity::getFileName,
+                        InterfaceFileEntity::getSource,
+                        InterfaceFileEntity::getTarget,
+                        InterfaceFileEntity::getType,
+                        InterfaceFileEntity::getOpalDomain,
+                        InterfaceFileEntity::getStatus,
+                        related -> related.getRelatedInterfaceFile().getInterfaceFileId())
+                    .containsExactly(fileName, source, Interface.OPAL, Type.SOURCE_JSON, domain, Status.SUCCESS,
+                        relatedInterfaceFileId);
+                assertThat(entity.getChecksum()).isNotBlank();
+                assertThat(entity.getFilestoreUuid()).isNotNull();
+                assertThat(entity.getErrors()).isNull();
+            });
+
+        return entities.getFirst();
     }
 
     public final void assertBlobChecksum(String fileName, String fileChecksum, String containerName) {

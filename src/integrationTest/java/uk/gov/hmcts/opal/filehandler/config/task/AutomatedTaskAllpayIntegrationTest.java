@@ -14,22 +14,21 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.DispatcherServlet;
-import uk.gov.hmcts.opal.filehandler.service.BTEckohReportBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.AllpayBaisFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
 @ActiveProfiles("integration")
 @SpringBootTest(properties = {
-    "opal.automated-task=BTEckohReport",
+    "opal.automated-task=AllpayFileTransferJob",
     "spring.main.web-application-type=none"
 })
-public class AutomatedTaskBTEckohReportIntegrationTest extends AbstractIntegrationTest {
+public class AutomatedTaskAllpayIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private ApplicationContext applicationContext;
 
-    // placeholder mock until the actual service is implemented formally
     @MockitoBean(enforceOverride = true, reset = MockReset.NONE)
-    private BTEckohReportBaisFileProcessorService service;
+    private AllpayBaisFileProcessorService service;
 
     @Test
     void shouldNotCreateWebLayer() {
