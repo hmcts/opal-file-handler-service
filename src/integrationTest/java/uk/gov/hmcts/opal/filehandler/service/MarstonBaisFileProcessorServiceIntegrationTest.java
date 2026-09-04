@@ -48,7 +48,7 @@ public class MarstonBaisFileProcessorServiceIntegrationTest  extends AbstractBai
     void marstonBaisFileProcessorServiceShouldRunSuccessfully() {
 
         uploadResourceToSftp( MARSTON_FILE_RESOURCE, MARSTON_FILE_CONTAINER);
-        marstonBaisFileProcessorService.run();
+        marstonBaisFileProcessorService.run(config);
         assertMostRecentEntityHasStatus(MARSTON_FILE, MARSTON_FILE_CHECKSUM,Interface.MARSTON,Status.SUCCESS);
         assertNumberOfSftpFiles(config.getSftpUsername(),0 );
     }
@@ -58,7 +58,7 @@ public class MarstonBaisFileProcessorServiceIntegrationTest  extends AbstractBai
     void shouldThrowExceptionWhenMarstonFeatureFlagDisabled() {
 
         FeatureDisabledException exception = assertThrows(  FeatureDisabledException.class,
-                () -> marstonBaisFileProcessorService.run() );
+                () -> marstonBaisFileProcessorService.run(config) );
 
             assertThat(exception).hasMessage("bailiffs.marston-file-transfer-job is not enabled");
         }
