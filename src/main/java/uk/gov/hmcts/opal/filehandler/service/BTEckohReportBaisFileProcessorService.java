@@ -11,6 +11,7 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
+import uk.gov.hmcts.opal.filehandler.utils.ReportFileValidator;
 
 @Service
 public class BTEckohReportBaisFileProcessorService extends AbstractInterfaceFileProcessorService {
@@ -25,6 +26,11 @@ public class BTEckohReportBaisFileProcessorService extends AbstractInterfaceFile
         ObjectMapper objectMapper) {
         super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
             transactionTemplate, objectMapper);
+    }
+
+    @Override
+    protected void validateFile(InputStream inputStream) {
+        ReportFileValidator.validateXlsx(inputStream);
     }
 
     @Override

@@ -7,6 +7,8 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import java.io.IOException;
+import org.springframework.util.DigestUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +58,8 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
     @BeforeEach
     void setUp() {
         repository.deleteAll();
-        blobServiceClient.createBlobContainerIfNotExists(capsReportBaisFileProcessorConfiguration.getContainerName());
+        clearReportFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(),
+            capsReportBaisFileProcessorConfiguration.getContainerName());
 
         logAppender.start();
         logger.addAppender(logAppender);
@@ -64,6 +67,8 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
 
     @AfterEach
     void tearDown() {
+        clearReportFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(),
+            capsReportBaisFileProcessorConfiguration.getContainerName());
         logger.detachAppender(logAppender);
         logAppender.stop();
     }
@@ -124,7 +129,7 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
 
     @Test
     @DisplayName("AC2: CAPS file is present, read and stored correctly")
-    void capsReportBaisFileProcessorServiceShouldRunSuccesfully() {
+    void capsReportBaisFileProcessorServiceShouldRunSuccesfully() throws IOException {
         uploadResourceToSftp(CAPS_FILE_RESOURCE, CAPS_FILE_CONTAINER);
         capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
 
@@ -132,13 +137,16 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
             Domain.MAINTENANCE);
         assertBlobChecksum(CAPS_FILE, CAPS_FILE_CHECKSUM, capsReportBaisFileProcessorConfiguration.getContainerName());
         assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
+        assertReportCanBeListedAndDownloaded(CAPS_FILE, CAPS_FILE_CHECKSUM, CAPS_FILE_RESOURCE);
     }
 
     @Test
     @DisplayName("AC3: When no files are present the service should not fail")
     void whenNoFilesArePresentServiceSucceeds() {
         assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
+        final var before = storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName());
         capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+        assertThat(storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName())).isEqualTo(before);
 
         assertThat(repository.findAll()).isEmpty();
         assertThat(logAppender.list)
@@ -151,7 +159,11 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
     @Test
     @DisplayName("AC4: Duplicate file with previous success should reject")
     void duplicateFileShouldReject() {
-        final InterfaceFileEntity success = createSuccessfulInterfaceFile(CAPS_FILE, CAPS_FILE_CHECKSUM);
+        uploadResourceToSftp(CAPS_FILE_RESOURCE, CAPS_FILE_CONTAINER);
+        capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+        final InterfaceFileEntity success = assertSuccessfulInterfaceFile(
+            CAPS_FILE, CAPS_FILE_CHECKSUM, Interface.CAPS_REPORT, Type.SOURCE, Domain.MAINTENANCE);
+        final var before = storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName());
 
         uploadResourceToSftp(CAPS_FILE_RESOURCE, CAPS_FILE_CONTAINER);
         uploadResourceToSftp(CAPS_FILE_RESOURCE_2, CAPS_FILE_CONTAINER_2);
@@ -163,6 +175,15 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
 
         assertBlobChecksum(
             CAPS_FILE_2, CAPS_FILE_CHECKSUM_2, capsReportBaisFileProcessorConfiguration.getContainerName());
+
+        var duplicate = repository.findByFileNameAndChecksumAndStatus(
+            CAPS_FILE, CAPS_FILE_CHECKSUM, Status.DUPLICATE).orElseThrow();
+        assertThat(duplicate.getFilestoreUuid()).isEqualTo(success.getFilestoreUuid());
+        var second = repository.findByFileNameAndChecksumAndStatus(
+            CAPS_FILE_2, CAPS_FILE_CHECKSUM_2, Status.SUCCESS).orElseThrow();
+        var after = storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName());
+        assertThat(after.remove(second.getFilestoreUuid().toString())).isNotNull();
+        assertThat(after).isEqualTo(before);
 
         assertThat(logAppender.list)
             .filteredOn(event -> event.getLevel() == Level.ERROR)
@@ -185,6 +206,79 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
         assertSuccessfulInterfaceFile(CAPS_FILE, CAPS_FILE_CHECKSUM, Interface.CAPS_REPORT, Type.SOURCE,
             Domain.MAINTENANCE);
         assertBlobChecksum(CAPS_FILE, CAPS_FILE_CHECKSUM, capsReportBaisFileProcessorConfiguration.getContainerName());
+    }
+
+
+    @Test
+    @DisplayName("PO-6382: Unsupported filename is retained without storing a report")
+    void unsupportedFilenameIsIgnored() {
+        final var before = storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName());
+        uploadResourceToSftp(CAPS_FILE_RESOURCE, CAPS_FILE_CONTAINER + ".unsupported");
+
+        capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+
+        assertThat(repository.findAll()).isEmpty();
+        assertThat(storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName())).isEqualTo(before);
+        assertThat(sftpClient.listRegularFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername()))
+            .containsExactly(CAPS_FILE + ".unsupported");
+    }
+
+    @Test
+    @DisplayName("PO-6382: Malformed report is retained and its failed retry remains traceable")
+    void malformedReportRetryDoesNotUpload() throws IOException {
+        final var before = storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName());
+        uploadResourceToSftp("bais-emulator/malformed-report.txt", CAPS_FILE_CONTAINER);
+        String checksum;
+        try (var input = getClass().getClassLoader().getResourceAsStream("bais-emulator/malformed-report.txt")) {
+            checksum = DigestUtils.md5DigestAsHex(input);
+        }
+
+        capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+
+        var failed = repository.findByFileNameAndChecksumAndStatus(
+            CAPS_FILE, checksum, Status.FAILED).orElseThrow();
+        assertThat(failed.getFilestoreUuid()).isNull();
+        assertThat(failed.getErrors()).contains("CAPS report was not valid XML");
+        assertThat(storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName())).isEqualTo(before);
+        assertThat(sftpClient.listRegularFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername()))
+            .containsExactly(CAPS_FILE);
+
+        capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+
+        assertThat(repository.findAll()).hasSize(2);
+        assertThat(repository.findById(failed.getInterfaceFileId()).orElseThrow().getStatus())
+            .isEqualTo(Status.FAILED_SUPERSEDED);
+        var retry = repository.findByFileNameAndChecksumAndStatus(
+            CAPS_FILE, checksum, Status.FAILED).orElseThrow();
+        assertThat(retry.getInterfaceFileId()).isNotEqualTo(failed.getInterfaceFileId());
+        assertThat(retry.getFilestoreUuid()).isNull();
+        assertThat(retry.getErrors()).contains("CAPS report was not valid XML");
+        assertThat(storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName())).isEqualTo(before);
+        assertThat(sftpClient.listRegularFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername()))
+            .containsExactly(CAPS_FILE);
+    }
+
+    @Test
+    @DisplayName("PO-6382: Corrected report succeeds and preserves the failed attempt")
+    void correctedReportCanBeIngested() throws IOException {
+        uploadResourceToSftp("bais-emulator/malformed-report.txt", CAPS_FILE_CONTAINER);
+        capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+        assertThat(repository.findAll()).singleElement().satisfies(file ->
+            assertThat(file.getStatus()).isEqualTo(Status.FAILED));
+        final var failedId = repository.findAll().getFirst().getInterfaceFileId();
+
+        uploadResourceToSftp(CAPS_FILE_RESOURCE, CAPS_FILE_CONTAINER);
+        capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+
+        assertThat(repository.findAll()).hasSize(2);
+        assertThat(repository.findById(failedId).orElseThrow().getStatus()).isEqualTo(Status.FAILED);
+        var success = assertSuccessfulInterfaceFile(
+            CAPS_FILE, CAPS_FILE_CHECKSUM, Interface.CAPS_REPORT, Type.SOURCE, Domain.MAINTENANCE);
+        assertThat(storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName()))
+            .containsOnlyKeys(success.getFilestoreUuid().toString());
+        assertBlobChecksum(CAPS_FILE, CAPS_FILE_CHECKSUM, capsReportBaisFileProcessorConfiguration.getContainerName());
+        assertReportCanBeListedAndDownloaded(CAPS_FILE, CAPS_FILE_CHECKSUM, CAPS_FILE_RESOURCE);
+        assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
     }
 
 }

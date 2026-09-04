@@ -1,0 +1,1 @@
+This is neither an XML report nor an XLSX workbook.

@@ -12,9 +12,12 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.util.DigestUtils;
@@ -27,6 +30,8 @@ import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.CapsReportBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.service.InterfaceFilesService;
+import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 
 @SpringBootTest(properties = {
@@ -49,6 +54,9 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
     @Autowired
     protected BlobServiceClient blobServiceClient;
 
+    @Autowired
+    private InterfaceFilesService interfaceFilesService;
+
     @DynamicPropertySource
     static void dynamicProperties(DynamicPropertyRegistry registry) throws IOException {
         registry.add("opal.file-handler-service.file-store.connection-string",
@@ -66,11 +74,27 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
         String privateKey = privateKeyStreamOut.toString();
 
         registry.add("opal.file-handler-service.sftp.bais.private-key", () -> privateKey);
+        registry.add("opal.file-handler-service.sftp.bais.host", TestContainerConfig.SFTP_CONTAINER::getHost);
+        registry.add("opal.file-handler-service.sftp.bais.port",
+            () -> TestContainerConfig.SFTP_CONTAINER.getMappedPort(22));
     }
 
     public final void uploadResourceToSftp(String resourcePath, String containerPath) {
         TestContainerConfig.SFTP_CONTAINER.copyFileToContainer(
             MountableFile.forClasspathResource(resourcePath), containerPath);
+    }
+
+    protected final Map<String, String> storedBlobs(String containerName) {
+        Map<String, String> blobs = new TreeMap<>();
+        blobServiceClient.getBlobContainerClient(containerName).listBlobs()
+            .forEach(blob -> blobs.put(blob.getName(), blob.getProperties().getETag()));
+        return blobs;
+    }
+
+    protected final void clearReportFiles(String username, String containerName) {
+        sftpClient.listRegularFiles(username).forEach(file -> sftpClient.deleteFile(username, file));
+        var container = blobServiceClient.createBlobContainerIfNotExists(containerName);
+        container.listBlobs().forEach(blob -> container.getBlobClient(blob.getName()).delete());
     }
 
     public final void assertNumberOfSftpFiles(String username, int expected) {
@@ -169,6 +193,31 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
 
         assertThat(DigestUtils.md5DigestAsHex(content)).isEqualTo(fileChecksum);
         assertThat(HexFormat.of().formatHex(properties.getContentMd5())).isEqualTo(fileChecksum);
+        assertThat(properties.getBlobSize()).isEqualTo(content.length);
+    }
+
+    public final void assertReportCanBeListedAndDownloaded(String fileName, String checksum, String resourcePath)
+        throws IOException {
+        InterfaceFileEntity entity = repository.findByFileNameAndChecksumAndStatus(fileName, checksum, Status.SUCCESS)
+            .orElseThrow();
+        assertThat(entity.getBusinessUnitCode()).isNullOrEmpty();
+        assertThat(entity.getPaymentType()).isNull();
+        assertThat(entity.getErrors()).isNull();
+        var listed = interfaceFilesService.searchInterfaceFiles(SearchInterfaceFilesDto.builder()
+            .source(entity.getSource()).status(Status.SUCCESS).build());
+        assertThat(listed).filteredOn(file -> file.getInterfaceFileId().equals(entity.getInterfaceFileId()))
+            .singleElement().satisfies(file -> {
+                assertThat(file.getFileName()).isEqualTo(fileName);
+                assertThat(file.getFilestoreUuid()).isEqualTo(entity.getFilestoreUuid());
+                assertThat(file.getChecksum()).isEqualTo(checksum);
+                assertThat(file.getSource().getValue()).isEqualTo(entity.getSource().name());
+                assertThat(file.getCreatedDatetime()).isEqualTo(entity.getCreatedDatetime());
+                assertThat(file.getErrors()).isNull();
+            });
+        try (InputStream expected = new ClassPathResource(resourcePath).getInputStream();
+             InputStream actual = interfaceFilesService.getInterfaceFilesContent(entity.getInterfaceFileId())) {
+            assertThat(actual.readAllBytes()).isEqualTo(expected.readAllBytes());
+        }
     }
 
     public final InterfaceFileEntity createFailedInterfaceFile(String fileName, String checksum, Interface source) {
