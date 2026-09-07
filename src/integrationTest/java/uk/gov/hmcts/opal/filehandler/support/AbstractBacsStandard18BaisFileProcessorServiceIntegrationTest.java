@@ -25,7 +25,6 @@ import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
-import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.service.queue.InterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 
@@ -71,6 +70,8 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
         BacsStandard18Fixture fixture = validFixture();
         final byte[] expectedSourceBytes =
             new ClassPathResource(fixture.classpathResource()).getContentAsByteArray();
+        final byte[] expectedJsonBytes =
+            new ClassPathResource(fixture.expectedJsonResource()).getContentAsByteArray();
 
         uploadFixture(fixture.fileName());
         processor().run(processorConfiguration());
@@ -84,15 +85,7 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
         byte[] sourceBytes = assertStoredBlob(source);
         byte[] sourceJsonBytes = assertStoredBlob(sourceJson);
         assertThat(sourceBytes).isEqualTo(expectedSourceBytes);
-
-        InterfaceFileCommonDataExtract extract = objectMapper.readValue(
-            sourceJsonBytes, InterfaceFileCommonDataExtract.class);
-        assertThat(extract.getFileName()).isEqualTo(fixture.fileName());
-        assertThat(extract.getPaymentType()).isEqualTo(fixture.paymentType());
-        assertThat(extract.getDestinationDetails().getBankDetails().getSortCode()).isEqualTo(fixture.bankSortCode());
-        assertThat(extract.getDestinationDetails().getBankDetails().getAccountNumber())
-            .isEqualTo(fixture.bankAccountNumber());
-        assertThat(extract.getTransactions()).hasSize(2);
+        assertThat(objectMapper.readTree(sourceJsonBytes)).isEqualTo(objectMapper.readTree(expectedJsonBytes));
 
         verify(queueService()).send(sourceJson.getInterfaceFileId());
         assertNumberOfSftpFiles(processorConfiguration().getSftpUsername(), 0);
@@ -253,6 +246,7 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
     public record BacsStandard18Fixture(
         String fileName,
         String classpathResource,
+        String expectedJsonResource,
         String checksum,
         Interface source,
         Interface target,

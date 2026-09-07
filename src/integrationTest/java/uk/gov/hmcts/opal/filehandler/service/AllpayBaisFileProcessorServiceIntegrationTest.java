@@ -35,6 +35,7 @@ public class AllpayBaisFileProcessorServiceIntegrationTest
     private static final BacsStandard18Fixture FIXTURE = new BacsStandard18Fixture(
         FILE_STEM + ".dat",
         "bais-emulator/" + FILE_STEM + ".dat",
+        "bais-emulator/" + FILE_STEM + ".expected.json",
         "bbecbed9c565374b110b7113ecceae03",
         Interface.ALLPAY,
         Interface.OPAL,

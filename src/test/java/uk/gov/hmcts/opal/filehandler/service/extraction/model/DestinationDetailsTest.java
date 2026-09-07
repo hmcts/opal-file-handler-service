@@ -1,13 +1,14 @@
 package uk.gov.hmcts.opal.filehandler.service.extraction.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 class DestinationDetailsTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     @Test
     void shouldSerializeUsingSnakeCase() throws IOException {
@@ -28,6 +29,5 @@ class DestinationDetailsTest {
         BankDetailsTest.assertTypicalData(json.get("bank_details"));
     }
 }
-
 
 

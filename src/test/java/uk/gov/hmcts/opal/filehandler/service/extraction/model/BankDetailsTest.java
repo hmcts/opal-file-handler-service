@@ -2,14 +2,15 @@ package uk.gov.hmcts.opal.filehandler.service.extraction.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 class BankDetailsTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     @Test
     void shouldSerializeUsingSnakeCase() throws IOException {
@@ -36,5 +37,4 @@ class BankDetailsTest {
         assertThat(json.get("type").asText()).isEqualTo("SAVINGS");
     }
 }
-
 

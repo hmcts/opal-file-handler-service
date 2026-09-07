@@ -26,6 +26,7 @@ class BTEckohBaisFileProcessorServiceIntegrationTest
     private static final BacsStandard18Fixture FIXTURE = new BacsStandard18Fixture(
         "a121_00350005_300000.dat",
         "bais-emulator/a121_00350005_300000.dat",
+        "bais-emulator/a121_00350005_300000.expected.json",
         "bbecbed9c565374b110b7113ecceae03",
         Interface.BTECKOH,
         Interface.OPAL,

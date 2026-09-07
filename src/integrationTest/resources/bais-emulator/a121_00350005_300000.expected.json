@@ -1,0 +1,40 @@
+{
+  "file_name": "a121_00350005_300000.dat",
+  "destination_details": {
+    "bank_details": {
+      "account_number": "27048527",
+      "sort_code": "560033",
+      "name": "",
+      "type": "0"
+    }
+  },
+  "payment_type": "CASH",
+  "transactions": [
+    {
+      "transaction_code": "99",
+      "originator_details": {
+        "name": "Mrs D Richardson",
+        "account_reference": "08000066I",
+        "bank_details": {
+          "account_number": "00000000",
+          "sort_code": "000000"
+        }
+      },
+      "amount": 1500,
+      "date_entry_applied": "01/06/2026"
+    },
+    {
+      "transaction_code": "99",
+      "originator_details": {
+        "name": "Mr A Waddams",
+        "account_reference": "08000067E",
+        "bank_details": {
+          "account_number": "00000000",
+          "sort_code": "000000"
+        }
+      },
+      "amount": 500,
+      "date_entry_applied": "01/06/2026"
+    }
+  ]
+}
