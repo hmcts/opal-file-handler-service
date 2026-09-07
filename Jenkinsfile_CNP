@@ -160,6 +160,7 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
         //Force Dev subscription login to ensure az cli commands are executed in the correct subscription context
         withSubscriptionLogin('dev') {
             Closure az = { cmd -> return sh(script: "env AZURE_CONFIG_DIR=/opt/jenkins/.azure-stg az $cmd", returnStdout: true).trim() }
+            az "storage container-rm create --storage-account '${storageAccount}' --resource-group '${resourceGroup}' --name '${container}' --only-show-errors"
             def status
             try {
                 status = az "storage account local-user show --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}' --only-show-errors --query name --output tsv"
