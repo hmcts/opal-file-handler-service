@@ -5,6 +5,10 @@ import uk.gov.hmcts.opal.filehandler.steps.BearerTokenStepDef;
 import uk.gov.hmcts.opal.filehandler.support.TestHttpClient;
 import uk.gov.hmcts.opal.filehandler.support.TestHttpClient.TestHttpResponse;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -31,7 +35,7 @@ public class TestSupportApiClient {
      * @return response returned by the endpoint.
      */
     public TestHttpResponse post(String path, String body) {
-        return TestHttpClient.request("POST", testSupportUrl(path), defaultHeaders(), body);
+        return TestHttpClient.request("POST", testSupportUrl(path), headersForBody(body), body);
     }
 
     /**
@@ -41,7 +45,7 @@ public class TestSupportApiClient {
      * @return response returned by the endpoint.
      */
     public TestHttpResponse post(String path) {
-        return TestHttpClient.request("POST", testSupportUrl(path), defaultHeaders(), null);
+        return TestHttpClient.request("POST", testSupportUrl(path), headersForBody(null), null);
     }
 
     /**
@@ -52,7 +56,7 @@ public class TestSupportApiClient {
      * @return response returned by the endpoint.
      */
     public TestHttpResponse patch(String path, String body) {
-        return TestHttpClient.request("PATCH", testSupportUrl(path), defaultHeaders(), body);
+        return TestHttpClient.request("PATCH", testSupportUrl(path), headersForBody(body), body);
     }
 
     /**
@@ -79,5 +83,17 @@ public class TestSupportApiClient {
             headers.put("Authorization", "Bearer " + token);
         }
         return headers;
+    }
+
+    private static Map<String, String> headersForBody(String body) {
+        Map<String, String> headers = defaultHeaders();
+        byte[] content = body == null ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-512").digest(content);
+            headers.put("Content-Digest", "sha-512=:" + Base64.getEncoder().encodeToString(digest) + ":");
+            return headers;
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-512 is not available", exception);
+        }
     }
 }
