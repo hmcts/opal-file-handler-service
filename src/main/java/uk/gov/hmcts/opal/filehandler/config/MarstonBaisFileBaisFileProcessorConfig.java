@@ -3,30 +3,20 @@ package uk.gov.hmcts.opal.filehandler.config;
 import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
-
 @Component("marstonBaisFileBaisFileProcessorConfig")
+@ConfigurationProperties(prefix = "opal.file-handler-service.bailiffs.marston")
 public class MarstonBaisFileBaisFileProcessorConfig
     implements BaisFileProcessorConfiguration {
 
-    @Value("${opal.file-handler-service.bailiffs.marston.account-name}")
     private String containerName;
-
-    @Value("${opal.file-handler-service.bailiffs.marston.feature-flag}")
     private String featureFlag;
-
-    @Value("${opal.file-handler-service.bailiffs.marston.file-name-regex}")
     private String fileNameRegex;
-
-    @Value("${opal.file-handler-service.bailiffs.marston.sftp-username}")
     private String sftpUsername;
-
-    @Value("${opal.file-handler-service.bailiffs.marston.source}")
     private Interface source;
-
-    @Value("${opal.file-handler-service.bailiffs.marston.target}")
     private Interface target;
 
     @Override
@@ -57,5 +47,29 @@ public class MarstonBaisFileBaisFileProcessorConfig
     @Override
     public String getSftpUsername() {
         return sftpUsername;
+    }
+
+    public void setContainerName(String containerName) {
+        this.containerName = containerName;
+    }
+
+    public void setFeatureFlag(String featureFlag) {
+        this.featureFlag = featureFlag;
+    }
+
+    public void setFileNameRegex(String fileNameRegex) {
+        this.fileNameRegex = fileNameRegex;
+    }
+
+    public void setSftpUsername(String sftpUsername) {
+        this.sftpUsername = sftpUsername;
+    }
+
+    public void setSource(Interface source) {
+        this.source = source;
+    }
+
+    public void setTarget(Interface target) {
+        this.target = target;
     }
 }
