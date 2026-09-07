@@ -162,6 +162,15 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
     }
 }
 
+def configureFunctionalTestBais(String storageAccountNamePrefix) {
+    String storageAccount = "${storageAccountNamePrefix}${env.CHANGE_ID}"
+    env.FUNCTIONAL_TEST_SFTP_HOST = "${storageAccount}.blob.core.windows.net"
+    env.FUNCTIONAL_TEST_SFTP_PORT = '22'
+    env.FUNCTIONAL_TEST_CAPS_SFTP_USERNAME = "${storageAccount}.capsreport"
+    env.FUNCTIONAL_TEST_BTECKOH_SFTP_USERNAME = "${storageAccount}.bteckohreport"
+    steps.echo "Configured functional-test BAIS SFTP account ${storageAccount}"
+}
+
 def configureFunctionalTestBlobStorage(String valuesFile) {
     Map devValues = steps.readYaml(file: valuesFile)
     Map blobStorage = devValues.blobstorage as Map
@@ -342,7 +351,8 @@ def executeFunctionalTestDatabaseScript(
 
 def secrets = [
         'opal-${env}': [
-                secret('bais-emulator-public-key', 'BAIS_EMULATOR_PUBLIC_KEY')
+                secret('bais-emulator-public-key', 'BAIS_EMULATOR_PUBLIC_KEY'),
+                secret('bais-private-key', 'FUNCTIONAL_TEST_SFTP_PRIVATE_KEY')
         ]
 ]
 
@@ -364,7 +374,12 @@ def stagingFunctionalTestSecrets = [
                 secret(
                         'opal-file-handler-service-file-store-access-key',
                         'FILE_STORE_STORAGE_KEY'
-                )
+                ),
+                secret('bais-private-key', 'FUNCTIONAL_TEST_SFTP_PRIVATE_KEY'),
+                secret('bais-sftp-connection-host', 'FUNCTIONAL_TEST_SFTP_HOST'),
+                secret('bais-sftp-connection-port', 'FUNCTIONAL_TEST_SFTP_PORT'),
+                secret('bais-sftp-caps-report-username', 'FUNCTIONAL_TEST_CAPS_SFTP_USERNAME'),
+                secret('bais-sftp-bteckoh-report-username', 'FUNCTIONAL_TEST_BTECKOH_SFTP_USERNAME')
         ]
 ]
 
@@ -398,6 +413,7 @@ withPipeline(type, product, component) {
         onPR {
             String releaseName = "opal-${component}-pr-${env.CHANGE_ID}"
             setupAzure(blobStorageAccountNamePrefix, blobStorageResourceGroup, blobStorageSftpUsers)
+            configureFunctionalTestBais(blobStorageAccountNamePrefix)
             configureFunctionalTestBlobStorage(devValuesFile)
             configureFunctionalTestUserService(devValuesFile)
             configureFunctionalTestDatabase(

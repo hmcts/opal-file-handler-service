@@ -9,7 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Lightweight client for future file-handler `/testing-support/**` endpoints.
+ * Lightweight client for file-handler `/testing-support/**` endpoints.
  */
 public class TestSupportApiClient {
 
@@ -32,6 +32,16 @@ public class TestSupportApiClient {
      */
     public TestHttpResponse post(String path, String body) {
         return TestHttpClient.request("POST", testSupportUrl(path), defaultHeaders(), body);
+    }
+
+    /**
+     * Executes a body-less POST request against a test-support path.
+     *
+     * @param path path relative to `/testing-support`.
+     * @return response returned by the endpoint.
+     */
+    public TestHttpResponse post(String path) {
+        return TestHttpClient.request("POST", testSupportUrl(path), defaultHeaders(), null);
     }
 
     /**

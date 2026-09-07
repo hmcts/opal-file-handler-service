@@ -28,23 +28,28 @@ repositories and blob clients. External services are simulated locally; no deplo
 | Malformed report and repeated retry | No blob upload; errors recorded; source retained. The first FAILED becomes FAILED_SUPERSEDED and a new FAILED remains traceable. |
 | Corrected report | Replacing malformed bytes with a valid report succeeds and preserves the earlier failed attempt; original bytes can be downloaded. |
 
-`./gradlew integration` runs these tests without a custom script or tag. The existing `check` task depends
-on `integration`, and `Jenkinsfile_CNP` publishes the integration results after the test stage. No separate
-Compose infrastructure, `-Pei1` switch or functional-test exclusion is required.
+`./gradlew integration` runs these detailed cases without a custom script or tag. The existing `check` task
+depends on `integration`, and `Jenkinsfile_CNP` publishes the integration results after the test stage.
 
-The existing Serenity/Cucumber features are restored to their pre-PR state, including their existing
-`@Ignore` tags. This PR does not claim to enable deployed EI1 functional testing. These integration tests
-replace the extra 18-scenario local suite; its previous screenshots are historical evidence, not evidence
-of the revised suite.
+Two focused Serenity/Cucumber scenarios provide deployed journey coverage: one for CAPS and one for
+BTEckoh. Each uploads an approved fixture to the pipeline-provisioned BAIS SFTP account, calls
+`POST /testing-support/automated-jobs/{name}`, asserts `202`, and verifies the SUCCESS metadata, original
+blob bytes and removal of the BAIS source. The PR pipeline supplies the generated Azure SFTP host/users;
+the master pipeline uses the staging BAIS secrets. Both use the existing functional-test task and reports.
+No separate Compose infrastructure, local batch JVM, `-Pei1` switch or functional-test exclusion is used.
+
+The earlier 18-scenario screenshots describe a superseded local suite and are not evidence for the revised
+functional or integration suites.
 
 Business metadata is stored in `interface_files`; blob Content-MD5, size and ETag are storage properties.
 No custom Azure metadata tags are asserted because no such contract was supplied.
 
 ## Outstanding deployed verification
 
-The deployed BAIS route, Azure permissions/connectivity, scheduled job and PO-6454 HTTP trigger still
-need environment testing. Viewer Business Unit filtering and authenticated downloads are not proved by
-service-level integration tests. Payment transformation and posting for other interfaces are outside EI1.
+The focused functional scenarios exercise the deployed BAIS route, Azure storage and PO-6454 trigger in
+the PR/master functional pipelines. Scheduled execution is not covered. Viewer Business Unit filtering
+and authenticated UI downloads remain separate verification. Payment transformation and posting for
+other interfaces are outside EI1.
 
 ## Staging/SIT handover — NOT RUN
 

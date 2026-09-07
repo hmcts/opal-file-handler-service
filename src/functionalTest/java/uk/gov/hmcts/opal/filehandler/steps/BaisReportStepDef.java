@@ -11,20 +11,21 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.util.List;
-import net.serenitybdd.core.Serenity;
 import uk.gov.hmcts.opal.filehandler.blob.BlobStorageClient;
 import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
 import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient.InterfaceFileRecord;
 import uk.gov.hmcts.opal.filehandler.sftp.SftpClient;
-import uk.gov.hmcts.opal.filehandler.support.BaisAutomatedTaskRunner;
 import uk.gov.hmcts.opal.filehandler.support.BaisReportTestConfig;
+import uk.gov.hmcts.opal.filehandler.support.TestHttpClient.TestHttpResponse;
+import uk.gov.hmcts.opal.filehandler.testsupport.TestSupportApiClient;
 
 /**
  * Defines the shared end-to-end journey for BAIS report ingestion.
  */
 public class BaisReportStepDef {
 
-    private final BaisAutomatedTaskRunner taskRunner = new BaisAutomatedTaskRunner();
+    private final TestSupportApiClient testSupportApiClient = new TestSupportApiClient();
+    private TestHttpResponse taskResponse;
 
     @Given("^the configured (BTEckoh|CAPS) report is available on bais$")
     public void configuredReportIsAvailable(String displayName) {
@@ -32,33 +33,16 @@ public class BaisReportStepDef {
         assertSftpFilePresence(config, config.fileName(), true);
     }
 
-    @Given("^a (BTEckoh|CAPS) report with an unsupported filename is available on bais$")
-    public void unsupportedReportIsAvailable(String displayName) {
+    @When("^the (BTEckoh|CAPS) report ingestion job is requested through testing support$")
+    public void reportIngestionJobIsRequested(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
-        try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
-            sftpClient.uploadResource(config.resourcePath(), config.unsupportedFileName());
-        }
+        taskResponse = testSupportApiClient.post("/automated-jobs/" + config.automatedTaskName());
     }
 
-    @Given("^the configured (BTEckoh|CAPS) report has already been ingested successfully$")
-    public void configuredReportHasAlreadyBeenIngested(String displayName) {
-        BaisReportTestConfig config = forDisplayName(displayName);
-        triggerTask(config);
-        assertEquals(1, recordsWithStatus(config, "SUCCESS").size(),
-            "Expected the first " + config.displayName() + " report ingestion to succeed");
-    }
-
-    @Given("^the same (BTEckoh|CAPS) report is uploaded again$")
-    public void sameReportIsUploadedAgain(String displayName) {
-        BaisReportTestConfig config = forDisplayName(displayName);
-        try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
-            sftpClient.uploadResource(config.resourcePath(), config.fileName());
-        }
-    }
-
-    @When("^the (BTEckoh|CAPS) report ingestion task is triggered$")
-    public void reportIngestionTaskIsTriggered(String displayName) {
-        triggerTask(forDisplayName(displayName));
+    @Then("the testing-support request is accepted")
+    public void testingSupportRequestIsAccepted() {
+        assertNotNull(taskResponse, "The testing-support endpoint was not called");
+        assertEquals(202, taskResponse.statusCode(), "The testing-support endpoint did not accept the job");
     }
 
     @Then("^a successful (BTECKOH_REPORT|CAPS_REPORT) interface file is stored$")
@@ -91,35 +75,6 @@ public class BaisReportStepDef {
     public void configuredReportNoLongerExists(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.fileName(), false);
-    }
-
-    @Then("^no interface file is created for the unsupported (BTEckoh|CAPS) filename$")
-    public void unsupportedInterfaceFileIsNotCreated(String displayName) {
-        BaisReportTestConfig config = forDisplayName(displayName);
-        try (InterfaceFileTestDatabaseClient databaseClient = new InterfaceFileTestDatabaseClient()) {
-            assertTrue(databaseClient.findByFileName(config.unsupportedFileName()).isEmpty(),
-                "An interface-file record was created for an unsupported " + config.displayName() + " filename");
-        }
-    }
-
-    @Then("^the unsupported (BTEckoh|CAPS) file remains on bais$")
-    public void unsupportedReportRemainsOnSftp(String displayName) {
-        BaisReportTestConfig config = forDisplayName(displayName);
-        assertSftpFilePresence(config, config.unsupportedFileName(), true);
-    }
-
-    @Then("^one successful and one duplicate (BTEckoh|CAPS) interface file are stored$")
-    public void successAndDuplicateAreStored(String displayName) {
-        BaisReportTestConfig config = forDisplayName(displayName);
-        assertEquals(1, recordsWithStatus(config, "SUCCESS").size(),
-            "Expected one successful " + config.displayName() + " interface-file record");
-        assertEquals(1, recordsWithStatus(config, "DUPLICATE").size(),
-            "Expected one duplicate " + config.displayName() + " interface-file record");
-    }
-
-    private void triggerTask(BaisReportTestConfig config) {
-        String output = taskRunner.run(config);
-        Serenity.recordReportData().withTitle(config.displayName() + " ingestion task output").andContents(output);
     }
 
     private static List<InterfaceFileRecord> recordsWithStatus(BaisReportTestConfig config, String status) {
