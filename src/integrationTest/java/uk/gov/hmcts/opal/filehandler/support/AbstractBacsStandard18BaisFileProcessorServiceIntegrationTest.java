@@ -1,8 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.support;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -10,7 +8,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.azure.storage.blob.BlobClient;
-import com.azure.storage.blob.BlobContainerClient;
 import java.io.IOException;
 import java.util.HexFormat;
 import java.util.List;
@@ -18,23 +15,16 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.DigestUtils;
 import tools.jackson.databind.ObjectMapper;
-import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
-import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
-import uk.gov.hmcts.opal.common.launchdarkly.config.LaunchDarklyProperties;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
-import uk.gov.hmcts.opal.filehandler.service.AbstractInterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.service.queue.InterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
@@ -50,83 +40,29 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
     @Autowired
     private BusinessUnitBankAccountEntityTestData businessUnitBankAccountTestData;
 
-    @Autowired
-    private LaunchDarklyProperties launchDarklyProperties;
-
-    protected abstract AbstractInterfaceFileProcessorService processor();
-
-    protected abstract BaisFileProcessorConfiguration processorConfiguration();
-
     protected abstract InterfaceFilePreprocessQueueService queueService();
 
     protected abstract BacsStandard18Fixture validFixture();
 
-    protected abstract String unsupportedFileName();
+    @Override
+    protected final BaisTestFile validFile() {
+        BacsStandard18Fixture fixture = validFixture();
+        return new BaisTestFile(fixture.fileName(), fixture.classpathResource());
+    }
 
     @BeforeEach
     void setUpBacsStandard18Contract() {
-        repository.deleteAll();
         businessUnitBankAccountTestData.clear();
 
         BacsStandard18Fixture fixture = validFixture();
         saveBusinessUnitBankAccount(fixture);
 
-        BlobContainerClient container = blobContainer();
-        container.createIfNotExists();
-        container.listBlobs().forEach(blob -> container.getBlobClient(blob.getName()).deleteIfExists());
-
-        deleteSftpFiles();
         clearInvocations(queueService());
-
-        setFeatureFlag(FeatureFlags.RELEASE_1C_BANKING_INTERFACES, true);
-        setFeatureFlag(processorConfiguration().getFeatureFlag(), true);
     }
 
     @AfterEach
     void tearDownBacsStandard18Contract() {
-        deleteSftpFiles();
         businessUnitBankAccountTestData.clear();
-    }
-
-    @Test
-    @DisplayName("BACS18 processor feature flag has an offline default")
-    void shouldConfigureProcessorFeatureFlagDefault() {
-        assertThat(launchDarklyProperties.getDefaultFlagValues())
-            .containsKey(processorConfiguration().getFeatureFlag());
-    }
-
-    @ParameterizedTest(name = "banking interfaces enabled={0}, processor enabled={1}")
-    @CsvSource({
-        "false, true, release-1c-banking-interfaces",
-        "true, false, processor",
-        "false, false, release-1c-banking-interfaces"
-    })
-    @DisplayName("AC1: processing requires both feature flags")
-    void shouldNotProcessWhenARequiredFeatureIsDisabled(
-        boolean bankingInterfacesEnabled,
-        boolean processorEnabled,
-        String disabledFeature
-    ) {
-        BacsStandard18Fixture fixture = validFixture();
-        // A real file proves disabled feature flags prevent ingestion and leave SFTP contents untouched.
-        uploadFixture(fixture.fileName());
-
-        setFeatureFlag(FeatureFlags.RELEASE_1C_BANKING_INTERFACES, bankingInterfacesEnabled);
-        setFeatureFlag(processorConfiguration().getFeatureFlag(), processorEnabled);
-
-        String expectedDisabledFeature = "processor".equals(disabledFeature)
-            ? processorConfiguration().getFeatureFlag()
-            : FeatureFlags.RELEASE_1C_BANKING_INTERFACES;
-
-        assertThatThrownBy(() -> processor().run(processorConfiguration()))
-            .isInstanceOf(FeatureDisabledException.class)
-            .hasMessage(expectedDisabledFeature + " is not enabled");
-
-        assertThat(repository.findAll()).isEmpty();
-        assertThat(blobContainer().listBlobs()).isEmpty();
-        assertThat(sftpClient.listRegularFiles(processorConfiguration().getSftpUsername()))
-            .containsExactly(fixture.fileName());
-        verify(queueService(), never()).send(org.mockito.ArgumentMatchers.anyLong());
     }
 
     @Test
@@ -163,20 +99,6 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
     }
 
     @Test
-    @DisplayName("Unsupported BACS18 filenames remain on SFTP without processing")
-    void shouldIgnoreUnsupportedFileAndLeaveItOnSftp() {
-        uploadFixture(unsupportedFileName());
-
-        processor().run(processorConfiguration());
-
-        assertThat(repository.findAll()).isEmpty();
-        assertThat(blobContainer().listBlobs()).isEmpty();
-        assertThat(sftpClient.listRegularFiles(processorConfiguration().getSftpUsername()))
-            .containsExactly(unsupportedFileName());
-        verify(queueService(), never()).send(org.mockito.ArgumentMatchers.anyLong());
-    }
-
-    @Test
     @DisplayName("Duplicate BACS18 files are recorded without repeat extraction or queueing")
     void shouldRecordDuplicateWithoutCreatingAnotherSourceJson() {
         uploadFixture(validFixture().fileName());
@@ -199,16 +121,6 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
         assertThat(entities).filteredOn(entity -> entity.getType() == Type.SOURCE_JSON).hasSize(1);
         verify(queueService(), times(1)).send(sourceJson.getInterfaceFileId());
         assertNumberOfSftpFiles(processorConfiguration().getSftpUsername(), 0);
-    }
-
-    @Test
-    @DisplayName("An empty BACS18 SFTP directory completes without side effects")
-    void shouldSucceedWhenSftpDirectoryIsEmpty() {
-        assertThatCode(() -> processor().run(processorConfiguration())).doesNotThrowAnyException();
-
-        assertThat(repository.findAll()).isEmpty();
-        assertThat(blobContainer().listBlobs()).isEmpty();
-        verify(queueService(), never()).send(org.mockito.ArgumentMatchers.anyLong());
     }
 
     @Test
@@ -329,23 +241,6 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
             .orElseThrow(() -> new AssertionError("Expected one " + type + " with status " + status));
     }
 
-    protected final void uploadFixture(String destinationFileName) {
-        uploadResourceToSftp(validFixture().classpathResource(), sftpPath(destinationFileName));
-    }
-
-    private String sftpPath(String fileName) {
-        return "/home/%s/%s".formatted(processorConfiguration().getSftpUsername(), fileName);
-    }
-
-    private BlobContainerClient blobContainer() {
-        return blobServiceClient.getBlobContainerClient(processorConfiguration().getContainerName());
-    }
-
-    private void deleteSftpFiles() {
-        String username = processorConfiguration().getSftpUsername();
-        sftpClient.listRegularFiles(username).forEach(file -> sftpClient.deleteFile(username, file));
-    }
-
     private void saveBusinessUnitBankAccount(BacsStandard18Fixture fixture) {
         businessUnitBankAccountTestData.saveBusinessUnitBankAccount(
             BUSINESS_UNIT_BANK_ACCOUNT_ID,
@@ -353,11 +248,6 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
             fixture.domain(),
             fixture.bankSortCode(),
             fixture.bankAccountNumber());
-    }
-
-    private void setFeatureFlag(String featureFlag, boolean enabled) {
-        assertThat(launchDarklyProperties.getDefaultFlagValues()).containsKey(featureFlag);
-        launchDarklyProperties.getDefaultFlagValues().put(featureFlag, enabled);
     }
 
     public record BacsStandard18Fixture(

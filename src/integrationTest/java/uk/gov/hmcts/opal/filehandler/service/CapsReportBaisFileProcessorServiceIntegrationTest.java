@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -11,14 +10,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
-import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
-import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -49,14 +45,31 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
     @Autowired
     private CapsReportBaisFileProcessorConfiguration capsReportBaisFileProcessorConfiguration;
 
+    @Override
+    protected CapsReportBaisFileProcessorService processor() {
+        return capsReportBaisFileProcessorService;
+    }
+
+    @Override
+    protected CapsReportBaisFileProcessorConfiguration processorConfiguration() {
+        return capsReportBaisFileProcessorConfiguration;
+    }
+
+    @Override
+    protected BaisTestFile validFile() {
+        return new BaisTestFile(CAPS_FILE, CAPS_FILE_RESOURCE);
+    }
+
+    @Override
+    protected String unsupportedFileName() {
+        return "unsupported-caps-report.txt";
+    }
+
     private final Logger logger = (Logger) LoggerFactory.getLogger(AbstractInterfaceFileProcessorService.class);
     private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 
     @BeforeEach
     void setUp() {
-        repository.deleteAll();
-        blobServiceClient.createBlobContainerIfNotExists(capsReportBaisFileProcessorConfiguration.getContainerName());
-
         logAppender.start();
         logger.addAppender(logAppender);
     }
@@ -65,60 +78,6 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
     void tearDown() {
         logger.detachAppender(logAppender);
         logAppender.stop();
-    }
-
-    @Nested
-    @TestPropertySource(properties = {
-        "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.caps-report-file-transfer-Job=true"
-    })
-    public class BankingInterfacesDisabled {
-
-        @Test
-        @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
-        void bankingInterfacesIsDisabled() {
-            FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration));
-
-            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
-        }
-
-    }
-
-    @Nested
-    @TestPropertySource(properties = {
-        "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
-        "launchdarkly.default-flag-values.caps-report-file-transfer-Job=false"
-    })
-    public class CapsReportFileTransferJobDisabled {
-
-        @Test
-        @DisplayName("AC1: Feature flag 'caps-report-file-transfer-Job' is false")
-        void bankingInterfacesIsDisabled() {
-            FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration));
-
-            assertThat(exception).hasMessage("caps-report-file-transfer-Job is not enabled");
-        }
-
-    }
-
-    @Nested
-    @TestPropertySource(properties = {
-        "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.caps-report-file-transfer-Job=false"
-    })
-    public class BothFeatureFlagsDisabled {
-
-        @Test
-        @DisplayName("AC1: Both feature flags are false")
-        void bankingInterfacesIsDisabled() {
-            FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration));
-
-            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
-        }
-
     }
 
     @Test
@@ -131,20 +90,6 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
             Domain.MAINTENANCE);
         assertBlobChecksum(CAPS_FILE, CAPS_FILE_CHECKSUM, capsReportBaisFileProcessorConfiguration.getContainerName());
         assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
-    }
-
-    @Test
-    @DisplayName("AC3: When no files are present the service should not fail")
-    void whenNoFilesArePresentServiceSucceeds() {
-        assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
-        capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
-
-        assertThat(repository.findAll()).isEmpty();
-        assertThat(logAppender.list)
-            .filteredOn(event -> event.getLevel() == Level.INFO)
-            .extracting(ILoggingEvent::getFormattedMessage)
-            .containsExactly(String.format("No files found in BAIS for user '%s' when processing source 'CAPS_REPORT'",
-                capsReportBaisFileProcessorConfiguration.getSftpUsername()));
     }
 
     @Test
