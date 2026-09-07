@@ -37,13 +37,4 @@ public class DWPBaisFileProcessorService
         super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
             transactionTemplate, objectMapper, extractionService, finesQueueService, maintenanceQueueService);
     }
-
-    @Override
-    public void processFile(
-        BaisFileProcessorConfiguration config,
-        InterfaceFileEntity fileEntity,
-        InputStream inputStream) {
-        super.processFile(config, fileEntity, inputStream);
-    }
-
 }
