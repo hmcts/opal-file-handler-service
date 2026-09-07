@@ -1,29 +1,28 @@
 package uk.gov.hmcts.opal.filehandler.config.task;
 
-import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.config.JacobsBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.service.JacobsBaisFileProcessorService;
 
-@Component
-@RequiredArgsConstructor
-@ConditionalOnProperty(name = "opal.automated-task", havingValue = "JacobsFileTransferJob")
+@Component("automatedJacobsFileTransfer")
+@ConditionalOnExpression(
+    "'${opal.automated-task}'.equals('JacobsFileTransferJob') or ${opal.testing-support-endpoints.enabled}"
+)
 @Slf4j
-public class AutomatedJacobsFileTransfer implements ApplicationRunner {
+@RequiredArgsConstructor
+public class AutomatedJacobsFileTransfer implements TaskConfiguration {
 
-    private final JacobsBaisFileProcessorService fileProcessorService;
+    private final JacobsBaisFileProcessorService processorService;
     private final JacobsBaisFileProcessorConfiguration configuration;
 
     @Override
-    public void run(ApplicationArguments args) throws IOException {
+    public void run() {
         log.info("Starting Jacobs File Transfer Job");
 
-        fileProcessorService.run(configuration);
+        processorService.run(configuration);
 
         log.info("Completed Jacobs File Transfer Job");
     }
