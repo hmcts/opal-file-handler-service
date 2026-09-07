@@ -65,6 +65,7 @@ blobstorage:
   enabled: false
 bais-emulator:
   enabled: false
+
 bt-eckoh-report:
   enabled: true
   kind: CronJob

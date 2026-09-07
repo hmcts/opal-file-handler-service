@@ -2,7 +2,6 @@ package uk.gov.hmcts.opal.filehandler.service.extraction.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -29,7 +28,7 @@ class TransactionTest {
     }
 
     @Test
-    void shouldSerializeUsingSnakeCase() throws IOException {
+    void shouldSerializeUsingSnakeCase() {
         Transaction transaction = getTypicalData();
 
         JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(transaction));

@@ -1,6 +1,5 @@
 package uk.gov.hmcts.opal.filehandler.service.extraction.model;
 
-import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -11,7 +10,7 @@ class DestinationDetailsTest {
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     @Test
-    void shouldSerializeUsingSnakeCase() throws IOException {
+    void shouldSerializeUsingSnakeCase() {
         DestinationDetails destinationDetails = getTypicalData();
 
         JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(destinationDetails));

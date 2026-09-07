@@ -2,7 +2,6 @@ package uk.gov.hmcts.opal.filehandler.service.extraction.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -13,7 +12,7 @@ class BankDetailsTest {
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     @Test
-    void shouldSerializeUsingSnakeCase() throws IOException {
+    void shouldSerializeUsingSnakeCase() {
         BankDetails bankDetails = getTypicalData();
 
         JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(bankDetails));
