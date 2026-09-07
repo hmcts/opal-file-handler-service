@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -68,12 +69,7 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
         businessUnitBankAccountTestData.clear();
 
         BacsStandard18Fixture fixture = validFixture();
-        businessUnitBankAccountTestData.saveBusinessUnitBankAccount(
-            BUSINESS_UNIT_BANK_ACCOUNT_ID,
-            fixture.businessUnitCode(),
-            fixture.domain(),
-            fixture.bankSortCode(),
-            fixture.bankAccountNumber());
+        saveBusinessUnitBankAccount(fixture);
 
         BlobContainerClient container = blobContainer();
         container.createIfNotExists();
@@ -215,6 +211,74 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
         verify(queueService(), never()).send(org.mockito.ArgumentMatchers.anyLong());
     }
 
+    @Test
+    @DisplayName("A processing failure retains the SFTP file and a later run recovers it")
+    void shouldRecoverAfterProcessingFailure() {
+        BacsStandard18Fixture fixture = validFixture();
+        businessUnitBankAccountTestData.clear();
+        uploadFixture(fixture.fileName());
+
+        processor().run(processorConfiguration());
+
+        InterfaceFileEntity failedSource = findOnly(Type.SOURCE, Status.FAILED);
+        assertThat(failedSource.getErrors())
+            .contains("Business unit bank account with sort code '%s' and account number '%s' could not be located"
+                .formatted(fixture.bankSortCode(), fixture.bankAccountNumber()));
+        assertStoredBlob(failedSource);
+        assertThat(repository.findAll()).filteredOn(entity -> entity.getType() == Type.SOURCE_JSON).isEmpty();
+        assertThat(sftpClient.listRegularFiles(processorConfiguration().getSftpUsername()))
+            .containsExactly(fixture.fileName());
+        verify(queueService(), never()).send(org.mockito.ArgumentMatchers.anyLong());
+
+        saveBusinessUnitBankAccount(fixture);
+        processor().run(processorConfiguration());
+
+        InterfaceFileEntity supersededSource = findOnly(Type.SOURCE, Status.FAILED_SUPERSEDED);
+        InterfaceFileEntity successfulSource = findOnly(Type.SOURCE, Status.SUCCESS);
+        InterfaceFileEntity successfulSourceJson = findOnly(Type.SOURCE_JSON, Status.SUCCESS);
+        assertThat(supersededSource.getInterfaceFileId()).isEqualTo(failedSource.getInterfaceFileId());
+        assertThat(successfulSource.getInterfaceFileId()).isNotEqualTo(failedSource.getInterfaceFileId());
+        assertThat(successfulSourceJson.getRelatedInterfaceFile().getInterfaceFileId())
+            .isEqualTo(successfulSource.getInterfaceFileId());
+        assertStoredBlob(successfulSource);
+        assertStoredBlob(successfulSourceJson);
+        verify(queueService()).send(successfulSourceJson.getInterfaceFileId());
+        assertNumberOfSftpFiles(processorConfiguration().getSftpUsername(), 0);
+    }
+
+    @Test
+    @DisplayName("A queue failure is recovered from blob storage on a later run")
+    void shouldRetryFailedSourceJsonFromBlobStorage() {
+        doThrow(new IllegalStateException("queue unavailable"))
+            .doCallRealMethod()
+            .when(queueService())
+            .send(org.mockito.ArgumentMatchers.anyLong());
+        uploadFixture(validFixture().fileName());
+
+        processor().run(processorConfiguration());
+
+        InterfaceFileEntity source = findOnly(Type.SOURCE, Status.SUCCESS);
+        InterfaceFileEntity failedSourceJson = findOnly(Type.SOURCE_JSON, Status.FAILED);
+        assertThat(failedSourceJson.getErrors()).contains("Queue send failed: queue unavailable");
+        assertStoredBlob(source);
+        assertStoredBlob(failedSourceJson);
+        verify(queueService()).send(failedSourceJson.getInterfaceFileId());
+        assertNumberOfSftpFiles(processorConfiguration().getSftpUsername(), 0);
+
+        processor().run(processorConfiguration());
+
+        InterfaceFileEntity supersededSourceJson = findOnly(Type.SOURCE_JSON, Status.FAILED_SUPERSEDED);
+        InterfaceFileEntity successfulSourceJson = findOnly(Type.SOURCE_JSON, Status.SUCCESS);
+        assertThat(supersededSourceJson.getInterfaceFileId()).isEqualTo(failedSourceJson.getInterfaceFileId());
+        assertThat(successfulSourceJson.getRelatedInterfaceFile().getInterfaceFileId())
+            .isEqualTo(source.getInterfaceFileId());
+        assertThat(repository.findAll()).filteredOn(entity -> entity.getType() == Type.SOURCE).hasSize(1);
+        assertStoredBlob(successfulSourceJson);
+        verify(queueService()).send(successfulSourceJson.getInterfaceFileId());
+        verify(queueService(), times(2)).send(org.mockito.ArgumentMatchers.anyLong());
+        assertNumberOfSftpFiles(processorConfiguration().getSftpUsername(), 0);
+    }
+
     private void assertSource(InterfaceFileEntity source, BacsStandard18Fixture fixture) {
         assertThat(source.getSource()).isEqualTo(fixture.source());
         assertThat(source.getTarget()).isEqualTo(fixture.target());
@@ -280,6 +344,15 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
     private void deleteSftpFiles() {
         String username = processorConfiguration().getSftpUsername();
         sftpClient.listRegularFiles(username).forEach(file -> sftpClient.deleteFile(username, file));
+    }
+
+    private void saveBusinessUnitBankAccount(BacsStandard18Fixture fixture) {
+        businessUnitBankAccountTestData.saveBusinessUnitBankAccount(
+            BUSINESS_UNIT_BANK_ACCOUNT_ID,
+            fixture.businessUnitCode(),
+            fixture.domain(),
+            fixture.bankSortCode(),
+            fixture.bankAccountNumber());
     }
 
     private void setFeatureFlag(String featureFlag, boolean enabled) {
