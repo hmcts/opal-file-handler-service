@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PacsTppSchedule xmlns="http://www.dwp.gsi.gov.uk/pacs">
   <DocumentHeader>
-    <CreditorID>0000031816</CreditorID>
+    <CreditorID>DWP1234567</CreditorID>
     <BatchNumber>01469</BatchNumber>
     <PacsDocumentCreationDate>2026-06-01</PacsDocumentCreationDate>
     <PacsDocumentCreationTime>09:47:45</PacsDocumentCreationTime>

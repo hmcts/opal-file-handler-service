@@ -6,5 +6,4 @@ WHERE business_unit_code = 'AB01'
 INSERT INTO public.business_unit_bank_account
     (business_unit_code, opal_domain, bank_sort_code, bank_account_number, dwp_court_code)
 VALUES
-    ('AB01', 'MAINTENANCE', '560033', '27048527', null),
-    ('AB02', 'MAINTENANCE', '010101', '12341234', '0000031816');
+    ('AB01', 'MAINTENANCE', '560033', '27048527', null);

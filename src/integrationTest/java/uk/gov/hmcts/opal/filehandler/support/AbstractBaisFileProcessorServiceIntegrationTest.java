@@ -15,7 +15,6 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Sort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.util.DigestUtils;
@@ -24,7 +23,6 @@ import org.testcontainers.utility.MountableFile;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
-import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
@@ -150,36 +148,6 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
             });
 
         return entities.getFirst();
-    }
-
-    public final InterfaceFileEntity assertNthEntity(int n, String fileName, String checksum, Interface source,
-        Status status, Type type, PaymentType paymentType, Long relatedInterfaceFileID) {
-        List<InterfaceFileEntity> allEntities = repository.findAll(Sort.by(Sort.Direction.ASC, "createdDatetime"));
-        assertThat(allEntities.size()).isGreaterThan(n);
-
-        InterfaceFileEntity entity = allEntities.get(n);
-
-        assertThat(entity.getFileName()).isEqualTo(fileName);
-        assertThat(entity.getStatus()).isEqualTo(status);
-        assertThat(entity.getChecksum()).isEqualTo(checksum);
-        assertThat(entity.getType()).isEqualTo(type);
-        assertThat(entity.getOpalDomain()).isEqualTo(Domain.MAINTENANCE);
-        assertThat(entity.getSource()).isEqualTo(source);
-        assertThat(entity.getTarget()).isEqualTo(Interface.OPAL);
-        assertThat(entity.getPaymentType()).isEqualTo(paymentType);
-        if (relatedInterfaceFileID != null) {
-            assertThat(entity.getRelatedInterfaceFile()).isNotNull();
-            assertThat(entity.getRelatedInterfaceFile().getInterfaceFileId()).isEqualTo(relatedInterfaceFileID);
-        } else {
-            assertThat(entity.getRelatedInterfaceFile()).isNull();
-        }
-
-        if (status.equals(Status.SUCCESS)) {
-            assertThat(entity.getErrors()).isNull();
-        } else {
-            assertThat(entity.getErrors()).isNotNull();
-        }
-        return entity;
     }
 
     public final void assertBlobChecksum(String fileName, String fileChecksum, String containerName) {

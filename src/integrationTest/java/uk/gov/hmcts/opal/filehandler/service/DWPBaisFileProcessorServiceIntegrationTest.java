@@ -6,31 +6,26 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.test.context.jdbc.Sql;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.DWPBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
+import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
-import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
-import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraEpic;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
@@ -39,11 +34,11 @@ import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 public class DWPBaisFileProcessorServiceIntegrationTest
     extends AbstractBaisFileProcessorServiceIntegrationTest {
 
-    private static final String CHECKSUM = "82e82ecf86bf04017d6a7a754e3eeb95";
-    private static final String CHECKSUM_2 = "d13e942a704fc368fa0742e49845bdf3";
+    private static final String CHECKSUM = "bdbbd6c4e0daba273d9387f466acb6b9";
     private static final String FILE = "0000015232_dat_0000000612_08011008_111355.txt";
     private static final String RESOURCE = "bais-emulator/" + FILE;
     private static final String CONTAINER = "/home/DWP/" + FILE;
+    private static final String BUSINESS_UNIT_CODE = "DW01";
 
     @Autowired
     private DWPBaisFileProcessorService service;
@@ -51,25 +46,26 @@ public class DWPBaisFileProcessorServiceIntegrationTest
     @Autowired
     private DWPBaisFileProcessorConfiguration config;
 
+    @Autowired
+    private BusinessUnitBankAccountEntityTestData businessUnitBankAccountEntityTestData;
+
     @MockitoSpyBean
     private MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService;
-
-    private final Logger logger = (Logger) LoggerFactory.getLogger(AbstractInterfaceFileProcessorService.class);
-    private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 
     @BeforeEach
     void setUp() {
         repository.deleteAll();
+        businessUnitBankAccountEntityTestData.clear();
+        BusinessUnitBankAccountEntity bu = BusinessUnitBankAccountEntity.builder()
+            .id(1L)
+            .businessUnitCode(BUSINESS_UNIT_CODE)
+            .domain(Domain.MAINTENANCE)
+            .bankSortCode("010101")
+            .bankAccountNumber("12341234")
+            .dwpCourtCode("DWP1234567")
+            .build();
+        businessUnitBankAccountEntityTestData.saveAndFlushBusinessUnitBankAccount(bu);
         blobServiceClient.createBlobContainerIfNotExists(config.getContainerName());
-
-        logAppender.start();
-        logger.addAppender(logAppender);
-    }
-
-    @AfterEach
-    void tearDown() {
-        logger.detachAppender(logAppender);
-        logAppender.stop();
     }
 
     @Nested
@@ -96,7 +92,7 @@ public class DWPBaisFileProcessorServiceIntegrationTest
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
         "launchdarkly.default-flag-values.dwp-file-transfer-job=false"
     })
-    public class BTEckohReportFileTransferJobDisabled {
+    public class DWPFileTransferJobDisabled {
 
         @Test
         @DisplayName("Feature flag 'dwp-file-transfer-job' is false")
@@ -134,14 +130,6 @@ public class DWPBaisFileProcessorServiceIntegrationTest
         "opal.file-handler-service.file-types.dwp.sftp-username=DWP",
         "launchdarkly.default-flag-values.dwp-file-transfer-job=true",
     })
-    @Sql(
-        scripts = "classpath:db/insertData/insert_into_business_unit_bank_account.sql",
-        executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD
-    )
-    @Sql(
-        scripts = "classpath:db/deleteData/delete_from_business_unit_bank_account.sql",
-        executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD
-    )
     public class FeatureOnTests {
 
         @Test
@@ -152,10 +140,10 @@ public class DWPBaisFileProcessorServiceIntegrationTest
             uploadResourceToSftp(RESOURCE, CONTAINER);
             service.run(config);
 
-            InterfaceFileEntity parentEntity = assertNthEntity(0, FILE, CHECKSUM, Interface.DWP,
-                Status.SUCCESS, Type.SOURCE, null, null);
-            InterfaceFileEntity childEntity = assertNthEntity(1, FILE, CHECKSUM_2, Interface.DWP,
-                Status.SUCCESS, Type.SOURCE_JSON, PaymentType.CASH, parentEntity.getInterfaceFileId());
+            InterfaceFileEntity parentEntity = assertSuccessfulInterfaceFile(FILE, CHECKSUM, Interface.DWP,
+                Type.SOURCE, Domain.MAINTENANCE);
+            InterfaceFileEntity childEntity = assertSuccessfulSourceJsonInterfaceFile(FILE, Interface.DWP,
+                Domain.MAINTENANCE, parentEntity.getInterfaceFileId());
             assertBlobChecksum(FILE, CHECKSUM, config.getContainerName());
             assertNumberOfSftpFiles(config.getSftpUsername(), 0);
 
