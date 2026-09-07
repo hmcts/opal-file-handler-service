@@ -2,6 +2,7 @@ package uk.gov.hmcts.opal.filehandler.service;
 
 import java.time.Clock;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
@@ -29,8 +30,11 @@ public class MarstonBaisFileProcessorService
         InterfaceFilesRepository interfaceFilesRepository,
         TransactionTemplate transactionTemplate,
         ObjectMapper objectMapper,
+        @Qualifier("bacsStandard18BaisExtractionService")
         ExtractionService<InterfaceFileCommonDataExtract> extractionService,
+        @Qualifier("finesInterfaceFilePreprocessQueueService")
         InterfaceFilePreprocessQueueService finesQueueService,
+        @Qualifier("maintenanceInterfaceFilePreprocessQueueService")
         InterfaceFilePreprocessQueueService maintenanceQueueService,
         MarstonBaisFileBaisFileProcessorConfig config
     ) {
@@ -50,7 +54,4 @@ public class MarstonBaisFileProcessorService
         this.config = config;
     }
 
-    public void run() {
-        super.run(config);
-    }
 }
