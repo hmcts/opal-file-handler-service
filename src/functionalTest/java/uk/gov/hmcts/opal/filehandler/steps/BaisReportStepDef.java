@@ -95,28 +95,31 @@ public class BaisReportStepDef extends BaseStepDef {
 
     private Map<String, Object> awaitSuccessfulInterfaceFile(BaisReportTestConfig config) {
         long deadline = System.nanoTime() + INGESTION_TIMEOUT.toNanos();
+        List<Map<String, Object>> matchingRecords = List.of();
         do {
             Response response = authorisedJsonRequest()
                 .queryParam("source", config.source())
-                .queryParam("status", "SUCCESS")
                 .when()
                 .get(getTestUrl() + "/interface-files");
             assertEquals(200, response.statusCode(), "Interface-file metadata could not be retrieved");
 
-            List<Map<String, Object>> matches = response.jsonPath()
+            matchingRecords = response.jsonPath()
                 .<Map<String, Object>>getList("interface_files")
                 .stream()
                 .filter(record -> config.fileName().equals(record.get("file_name")))
                 .toList();
-            if (matches.size() == 1) {
-                return matches.getFirst();
+            List<Map<String, Object>> successfulRecords = matchingRecords.stream()
+                .filter(record -> "SUCCESS".equals(record.get("status")))
+                .toList();
+            if (successfulRecords.size() == 1) {
+                return successfulRecords.getFirst();
             }
             pauseBeforeRetry();
         } while (System.nanoTime() < deadline);
 
         throw new AssertionError(
             "Expected one successful " + config.displayName() + " interface-file record within "
-                + INGESTION_TIMEOUT.toSeconds() + " seconds"
+                + INGESTION_TIMEOUT.toSeconds() + " seconds; matching records: " + matchingRecords
         );
     }
 
