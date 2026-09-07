@@ -20,15 +20,17 @@ import org.springframework.test.context.TestPropertySource;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
+import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
     "opal.file-handler-service.file-types.bteckoh-report.sftp-username=BTEckoh-report",
-    "launchdarkly.default-flag-values.BTEckoh-Report-file-transfer-Job=true",
+    "launchdarkly.default-flag-values.bteckoh-report-file-transfer-Job=true",
 })
 @Slf4j
 public class BTEckohReportBaisFileProcessorServiceIntegrationTest
@@ -70,7 +72,7 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.BTEckoh-Report-file-transfer-Job=true"
+        "launchdarkly.default-flag-values.bteckoh-report-file-transfer-Job=true"
     })
     public class BankingInterfacesDisabled {
 
@@ -88,17 +90,17 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
-        "launchdarkly.default-flag-values.BTEckoh-Report-file-transfer-Job=false"
+        "launchdarkly.default-flag-values.bteckoh-report-file-transfer-Job=false"
     })
     public class BTEckohReportFileTransferJobDisabled {
 
         @Test
-        @DisplayName("AC1: Feature flag 'BTEckoh-Report-file-transfer-Job' is false")
+        @DisplayName("AC1: Feature flag 'bteckoh-report-file-transfer-Job' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 service.run(config));
 
-            assertThat(exception).hasMessage("BTEckoh-Report-file-transfer-Job is not enabled");
+            assertThat(exception).hasMessage("bteckoh-report-file-transfer-Job is not enabled");
         }
 
     }
@@ -106,7 +108,7 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.BTEckoh-Report-file-transfer-Job=false"
+        "launchdarkly.default-flag-values.bteckoh-report-file-transfer-Job=false"
     })
     public class BothFeatureFlagsDisabled {
 
@@ -127,7 +129,8 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
         uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
         service.run(config);
 
-        assertMostRecentEntityHasStatus(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Status.SUCCESS);
+        assertSuccessfulInterfaceFile(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE,
+            Domain.MAINTENANCE);
         assertBlobChecksum(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, config.getContainerName());
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
     }
@@ -182,7 +185,8 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
 
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
         assertEntitiesWithStatus(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Status.FAILED_SUPERSEDED);
-        assertMostRecentEntityHasStatus(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Status.SUCCESS);
+        assertSuccessfulInterfaceFile(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE,
+            Domain.MAINTENANCE);
         assertBlobChecksum(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, config.getContainerName());
     }
 

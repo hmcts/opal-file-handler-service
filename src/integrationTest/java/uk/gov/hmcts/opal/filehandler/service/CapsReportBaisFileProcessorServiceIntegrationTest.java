@@ -20,15 +20,17 @@ import org.springframework.test.context.TestPropertySource;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
+import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
     "opal.file-handler-service.file-types.caps-report.sftp-username=CAPS-report",
-    "launchdarkly.default-flag-values.CAPS-Report-file-transfer-Job=true",
+    "launchdarkly.default-flag-values.caps-report-file-transfer-Job=true",
 })
 @Slf4j
 public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
@@ -69,7 +71,7 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.CAPS-Report-file-transfer-Job=true"
+        "launchdarkly.default-flag-values.caps-report-file-transfer-Job=true"
     })
     public class BankingInterfacesDisabled {
 
@@ -87,17 +89,17 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
-        "launchdarkly.default-flag-values.CAPS-Report-file-transfer-Job=false"
+        "launchdarkly.default-flag-values.caps-report-file-transfer-Job=false"
     })
     public class CapsReportFileTransferJobDisabled {
 
         @Test
-        @DisplayName("AC1: Feature flag 'CAPS-Report-file-transfer-Job' is false")
+        @DisplayName("AC1: Feature flag 'caps-report-file-transfer-Job' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration));
 
-            assertThat(exception).hasMessage("CAPS-Report-file-transfer-Job is not enabled");
+            assertThat(exception).hasMessage("caps-report-file-transfer-Job is not enabled");
         }
 
     }
@@ -105,7 +107,7 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.CAPS-Report-file-transfer-Job=false"
+        "launchdarkly.default-flag-values.caps-report-file-transfer-Job=false"
     })
     public class BothFeatureFlagsDisabled {
 
@@ -126,7 +128,8 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
         uploadResourceToSftp(CAPS_FILE_RESOURCE, CAPS_FILE_CONTAINER);
         capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
 
-        assertMostRecentEntityHasStatus(CAPS_FILE, CAPS_FILE_CHECKSUM, Interface.CAPS_REPORT, Status.SUCCESS);
+        assertSuccessfulInterfaceFile(CAPS_FILE, CAPS_FILE_CHECKSUM, Interface.CAPS_REPORT, Type.SOURCE,
+            Domain.MAINTENANCE);
         assertBlobChecksum(CAPS_FILE, CAPS_FILE_CHECKSUM, capsReportBaisFileProcessorConfiguration.getContainerName());
         assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
     }
@@ -179,7 +182,8 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
 
         assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
         assertEntitiesWithStatus(CAPS_FILE, CAPS_FILE_CHECKSUM, Status.FAILED_SUPERSEDED);
-        assertMostRecentEntityHasStatus(CAPS_FILE, CAPS_FILE_CHECKSUM, Interface.CAPS_REPORT, Status.SUCCESS);
+        assertSuccessfulInterfaceFile(CAPS_FILE, CAPS_FILE_CHECKSUM, Interface.CAPS_REPORT, Type.SOURCE,
+            Domain.MAINTENANCE);
         assertBlobChecksum(CAPS_FILE, CAPS_FILE_CHECKSUM, capsReportBaisFileProcessorConfiguration.getContainerName());
     }
 
