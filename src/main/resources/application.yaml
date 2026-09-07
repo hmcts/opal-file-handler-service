@@ -142,6 +142,14 @@ opal:
         source: ALLPAY
         target: OPAL
         sftp-username: ${BAIS_SFTP_ALLPAY_USERNAME:}
+      bailiffs:
+        cder:
+          container-name: ${CDER_AZURE_STORAGE_CONTAINER:cder}
+          feature-flag: bailiffs.cder-file-transfer-Job
+          file-name-regex: \d{10}dat\d{10}\d{8}\d{6}\.txt
+          source: CDER
+          target: OPAL
+          sftp-username: ${BAIS_SFTP_CDER_USERNAME:}
     sftp:
       bais:
         host: ${BAIS_SFTP_CONNECTION_HOST:localhost}
@@ -179,6 +187,7 @@ launchdarkly:
     caps-report-file-transfer-Job: ${CAPS_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     bteckoh-report-file-transfer-Job: ${BTECKOH_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     allpay-file-transfer-Job: ${ALLPAY_FILE_TRANSFER_JOB_ENABLED:false}
+    cder-file-transfer-Job: ${CDER_FILE_TRANSFER_JOB_ENABLED:false}
 
 user:
   service:
