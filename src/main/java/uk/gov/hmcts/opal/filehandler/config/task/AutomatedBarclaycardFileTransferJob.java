@@ -7,7 +7,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.opal.filehandler.config.BarclaycardBaisFileBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.BarclaycardBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.service.BarclaycardBaisFileProcessorService;
 
 @Component
@@ -17,7 +17,7 @@ import uk.gov.hmcts.opal.filehandler.service.BarclaycardBaisFileProcessorService
 public class AutomatedBarclaycardFileTransferJob implements ApplicationRunner {
 
     private final BarclaycardBaisFileProcessorService service;
-    private final BarclaycardBaisFileBaisFileProcessorConfiguration configuration;
+    private final BarclaycardBaisFileProcessorConfiguration configuration;
 
     @Override
     public void run(ApplicationArguments args) throws IOException {

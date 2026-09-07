@@ -18,7 +18,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
-import uk.gov.hmcts.opal.filehandler.config.BarclaycardBaisFileBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.BarclaycardBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -46,7 +46,7 @@ public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFilePro
     private BarclaycardBaisFileProcessorService service;
 
     @Autowired
-    private BarclaycardBaisFileBaisFileProcessorConfiguration configuration;
+    private BarclaycardBaisFileProcessorConfiguration configuration;
 
     @Autowired
     private BusinessUnitBankAccountEntityTestData businessUnitBankAccountEntityTestData;

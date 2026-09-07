@@ -13,7 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.DispatcherServlet;
-import uk.gov.hmcts.opal.filehandler.config.BarclaycardBaisFileBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.BarclaycardBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.service.BarclaycardBaisFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
@@ -38,6 +38,6 @@ public class AutomatedTaskBarclaycardIntegrationTest extends AbstractIntegration
 
     @Test
     void shouldCallAutomatedTaskRun() {
-        verify(service, times(1)).run(any(BarclaycardBaisFileBaisFileProcessorConfiguration.class));
+        verify(service, times(1)).run(any(BarclaycardBaisFileProcessorConfiguration.class));
     }
 }

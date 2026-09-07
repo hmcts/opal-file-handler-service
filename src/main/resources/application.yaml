@@ -145,7 +145,7 @@ opal:
         target: OPAL
         sftp-username: ${BAIS_SFTP_ALLPAY_USERNAME:}
       barclaycard:
-        container-name: ${NATWEST_AZURE_STORAGE_CONTAINER:barclaycard}
+        container-name: ${BARCLAYCARD_AZURE_STORAGE_CONTAINER:barclaycard}
         feature-flag: barclaycard-file-transfer-Job
         file-name-regex: a121_\d{8}_\d{6}\.dat
         source: BARCLAYCARD
