@@ -131,10 +131,23 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
     // Keep the orchestration in Groovy and use shell only for az CLI calls.
     String storageAccount = "${storageAccountNamePrefix}${env.CHANGE_ID}"
     String resourceGroup = storageResourceGroup
-    String sshPublicKey = env.BAIS_EMULATOR_PUBLIC_KEY?.trim()
+    String sshPrivateKey = env.FUNCTIONAL_TEST_SFTP_PRIVATE_KEY?.trim()
 
-    if (!sshPublicKey) {
-        throw new RuntimeException('BAIS_EMULATOR_PUBLIC_KEY must be set')
+    if (!sshPrivateKey) {
+        throw new RuntimeException('FUNCTIONAL_TEST_SFTP_PRIVATE_KEY must be set')
+    }
+
+    String privateKeyFile = '.functional-test-bais-key'
+    steps.writeFile(file: privateKeyFile, text: sshPrivateKey + '\n')
+    steps.sh "chmod 600 '${privateKeyFile}'"
+    String sshPublicKey
+    try {
+        sshPublicKey = steps.sh(
+                script: "ssh-keygen -y -f '${privateKeyFile}'",
+                returnStdout: true
+        ).trim()
+    } finally {
+        steps.sh "rm -f '${privateKeyFile}'"
     }
 
     for (Map<String, String> mapping : storageSftpUsers) {
@@ -157,6 +170,9 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
             if (!status) {
                 steps.echo "Create Account ${localUser} for ${container} in ${storageAccount}"
                 az "storage account local-user create --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}'  --home-directory '${container}' --permission-scope permissions=rwdl service=blob resource-name='${container}' --has-ssh-key true --ssh-authorized-key key='${sshPublicKey}' --has-ssh-password false --only-show-errors"
+            } else {
+                steps.echo "Update Account ${localUser} SSH key in ${storageAccount}"
+                az "storage account local-user update --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}' --ssh-authorized-key key='${sshPublicKey}' --only-show-errors"
             }
         }
     }
@@ -351,7 +367,6 @@ def executeFunctionalTestDatabaseScript(
 
 def secrets = [
         'opal-${env}': [
-                secret('bais-emulator-public-key', 'BAIS_EMULATOR_PUBLIC_KEY'),
                 secret('bais-private-key', 'FUNCTIONAL_TEST_SFTP_PRIVATE_KEY')
         ]
 ]

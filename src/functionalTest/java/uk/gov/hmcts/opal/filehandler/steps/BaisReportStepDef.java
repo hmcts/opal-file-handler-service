@@ -1,5 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.steps;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -7,13 +8,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.opal.filehandler.support.BaisReportTestData.forDisplayName;
 import static uk.gov.hmcts.opal.filehandler.support.BaisReportTestData.forSource;
 
+import com.google.common.io.Resources;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import io.restassured.response.Response;
+import java.io.IOException;
+import java.net.URL;
+import java.time.Duration;
 import java.util.List;
-import uk.gov.hmcts.opal.filehandler.blob.BlobStorageClient;
-import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
-import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient.InterfaceFileRecord;
+import java.util.Map;
 import uk.gov.hmcts.opal.filehandler.sftp.SftpClient;
 import uk.gov.hmcts.opal.filehandler.support.BaisReportTestConfig;
 import uk.gov.hmcts.opal.filehandler.support.TestHttpClient.TestHttpResponse;
@@ -22,10 +26,14 @@ import uk.gov.hmcts.opal.filehandler.testsupport.TestSupportApiClient;
 /**
  * Defines the shared end-to-end journey for BAIS report ingestion.
  */
-public class BaisReportStepDef {
+public class BaisReportStepDef extends BaseStepDef {
+
+    private static final Duration INGESTION_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(500);
 
     private final TestSupportApiClient testSupportApiClient = new TestSupportApiClient();
     private TestHttpResponse taskResponse;
+    private Map<String, Object> successfulInterfaceFile;
 
     @Given("^the configured (BTEckoh|CAPS) report is available on bais$")
     public void configuredReportIsAvailable(String displayName) {
@@ -48,27 +56,35 @@ public class BaisReportStepDef {
     @Then("^a successful (BTECKOH_REPORT|CAPS_REPORT) interface file is stored$")
     public void successfulInterfaceFileIsStored(String source) {
         BaisReportTestConfig config = forSource(source);
-        List<InterfaceFileRecord> records = recordsWithStatus(config, "SUCCESS");
-        assertEquals(1, records.size(),
-            "Expected one successful " + config.displayName() + " interface-file record");
+        successfulInterfaceFile = awaitSuccessfulInterfaceFile(config);
 
-        InterfaceFileRecord record = records.getFirst();
-        assertEquals(config.source(), record.source());
-        assertEquals("OPAL", record.target());
-        assertEquals("SOURCE", record.type());
-        assertEquals("MAINTENANCE", record.domain());
-        assertEquals(config.fileName(), record.fileName());
-        assertEquals(config.checksum(), record.checksum());
-        assertNotNull(record.filestoreUuid());
+        assertEquals(config.source(), successfulInterfaceFile.get("source"));
+        assertEquals("OPAL", successfulInterfaceFile.get("target"));
+        assertEquals("SOURCE", successfulInterfaceFile.get("type"));
+        assertEquals("MAINTENANCE", successfulInterfaceFile.get("domain"));
+        assertEquals(config.fileName(), successfulInterfaceFile.get("file_name"));
+        assertEquals(config.checksum(), successfulInterfaceFile.get("checksum"));
+        assertNotNull(successfulInterfaceFile.get("filestore_uuid"));
     }
 
     @Then("^the stored (BTEckoh|CAPS) report content matches the bais (workbook|file)$")
-    public void storedReportContentMatches(String displayName, String fileDescription) {
+    public void storedReportContentMatches(String displayName, String fileDescription) throws IOException {
         BaisReportTestConfig config = forDisplayName(displayName);
-        InterfaceFileRecord success = recordsWithStatus(config, "SUCCESS").getFirst();
-        assertTrue(new BlobStorageClient(config.blobContainerName()).contentMatchesResource(
-            success.filestoreUuid().toString(), config.resourcePath()),
-            "Stored " + config.displayName() + " report content differs from the SFTP " + fileDescription);
+        assertNotNull(successfulInterfaceFile, "Successful interface-file metadata was not retrieved");
+        long interfaceFileId = ((Number) successfulInterfaceFile.get("interface_file_id")).longValue();
+
+        Response response = authorisedJsonRequest()
+            .accept("application/octet-stream")
+            .when()
+            .get(getTestUrl() + "/interface-files/" + interfaceFileId + "/content");
+
+        URL expectedResource = Resources.getResource(config.resourcePath());
+        assertEquals(200, response.statusCode(), "Stored report content could not be retrieved");
+        assertArrayEquals(
+            Resources.toByteArray(expectedResource),
+            response.getBody().asByteArray(),
+            "Stored " + config.displayName() + " report content differs from the SFTP " + fileDescription
+        );
     }
 
     @Then("^the configured (BTEckoh|CAPS) report no longer exists on bais$")
@@ -77,11 +93,39 @@ public class BaisReportStepDef {
         assertSftpFilePresence(config, config.fileName(), false);
     }
 
-    private static List<InterfaceFileRecord> recordsWithStatus(BaisReportTestConfig config, String status) {
-        try (InterfaceFileTestDatabaseClient databaseClient = new InterfaceFileTestDatabaseClient()) {
-            return databaseClient.findByFileName(config.fileName()).stream()
-                .filter(record -> status.equals(record.status()))
+    private Map<String, Object> awaitSuccessfulInterfaceFile(BaisReportTestConfig config) {
+        long deadline = System.nanoTime() + INGESTION_TIMEOUT.toNanos();
+        do {
+            Response response = authorisedJsonRequest()
+                .queryParam("source", config.source())
+                .queryParam("status", "SUCCESS")
+                .when()
+                .get(getTestUrl() + "/interface-files");
+            assertEquals(200, response.statusCode(), "Interface-file metadata could not be retrieved");
+
+            List<Map<String, Object>> matches = response.jsonPath()
+                .<Map<String, Object>>getList("interface_files")
+                .stream()
+                .filter(record -> config.fileName().equals(record.get("file_name")))
                 .toList();
+            if (matches.size() == 1) {
+                return matches.getFirst();
+            }
+            pauseBeforeRetry();
+        } while (System.nanoTime() < deadline);
+
+        throw new AssertionError(
+            "Expected one successful " + config.displayName() + " interface-file record within "
+                + INGESTION_TIMEOUT.toSeconds() + " seconds"
+        );
+    }
+
+    private static void pauseBeforeRetry() {
+        try {
+            Thread.sleep(POLL_INTERVAL.toMillis());
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for interface-file metadata", exception);
         }
     }
 
