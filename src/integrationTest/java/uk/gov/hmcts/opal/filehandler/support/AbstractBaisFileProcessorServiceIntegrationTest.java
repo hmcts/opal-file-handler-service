@@ -116,16 +116,16 @@ public abstract class AbstractBaisFileProcessorServiceIntegrationTest extends Ab
             .containsKey(processorConfiguration().getFeatureFlag());
     }
 
-    @ParameterizedTest(name = "banking interfaces enabled={0}, processor enabled={1}")
+    @ParameterizedTest(name = "banking interfaces enabled={0}, feature enabled={1}")
     @CsvSource({
         "false, true, release-1c-banking-interfaces",
-        "true, false, processor",
+        "true, false, feature",
         "false, false, release-1c-banking-interfaces"
     })
     @DisplayName("AC1: processing requires both feature flags")
     void shouldNotProcessWhenARequiredFeatureIsDisabled(
         boolean bankingInterfacesEnabled,
-        boolean processorEnabled,
+        boolean featureEnabled,
         String disabledFeature
     ) {
         BaisTestFile fixture = validFile();
@@ -133,9 +133,9 @@ public abstract class AbstractBaisFileProcessorServiceIntegrationTest extends Ab
         uploadFixture(fixture.fileName());
 
         setFeatureFlag(FeatureFlags.RELEASE_1C_BANKING_INTERFACES, bankingInterfacesEnabled);
-        setFeatureFlag(processorConfiguration().getFeatureFlag(), processorEnabled);
+        setFeatureFlag(processorConfiguration().getFeatureFlag(), featureEnabled);
 
-        String expectedDisabledFeature = "processor".equals(disabledFeature)
+        String expectedDisabledFeature = "feature".equals(disabledFeature)
             ? processorConfiguration().getFeatureFlag()
             : FeatureFlags.RELEASE_1C_BANKING_INTERFACES;
 
