@@ -12,7 +12,7 @@ import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommo
 @Service
 public class VariantBacsStandard18BaisExtractionService extends BacsStandard18BaisExtractionService {
 
-    private final Pattern regex = Pattern.compile("^a121_\\d{6}VB(?<buCode>\\d{3})_\\d{2}\\.dat$");
+    private final Pattern fileNamePattern = Pattern.compile("^a121_\\d{6}VB(?<buCode>\\d{3})_\\d{2}\\.dat$");
 
     public VariantBacsStandard18BaisExtractionService(InterfaceFilesRepository interfaceFilesRepository,
         BusinessUnitBankAccountRepository businessUnitBankAccountRepository) {
@@ -21,20 +21,20 @@ public class VariantBacsStandard18BaisExtractionService extends BacsStandard18Ba
 
     @Override
     public BusinessUnitBankAccountEntity getBusinessUnitBankAccount(InterfaceFileCommonDataExtract extractedData) {
-        Matcher matcher = regex.matcher(extractedData.getFileName());
+        Matcher matcher = fileNamePattern.matcher(extractedData.getFileName());
         if (!matcher.find()) {
             throw new EntityNotFoundException(
                 String.format("Business unit bank account code cannot be found for file_name '%s'",
                 extractedData.getFileName())
             );
         }
-        String buCode = matcher.group("buCode");
+        String businessUnitCode = matcher.group("buCode");
 
-        return businessUnitBankAccountRepository.findByBusinessUnitCode(buCode)
+        return businessUnitBankAccountRepository.findByBusinessUnitCode(businessUnitCode)
             .orElseThrow(() -> new EntityNotFoundException(
                 String.format("Business unit bank account with business unit code '%s' could not be "
                         + "located for file_name '%s'",
-                    buCode, extractedData.getFileName())
+                    businessUnitCode, extractedData.getFileName())
             ));
     }
 }
