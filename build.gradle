@@ -36,7 +36,7 @@ java {
 
 ext {
   serenityVersion = "5.3.11"
-  cucumberVersion = "7.34.7"
+  cucumberVersion = "7.34.8"
   log4JVersion = "2.26.1"
   logbackVersion = "1.6.3"
 }
@@ -366,7 +366,7 @@ dependencies {
   testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.16.0'
 
   //Spring Boot
-  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
+  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
 
   implementation 'org.springframework.boot:spring-boot-flyway'
   implementation "org.springframework.boot:spring-boot-starter-web"
