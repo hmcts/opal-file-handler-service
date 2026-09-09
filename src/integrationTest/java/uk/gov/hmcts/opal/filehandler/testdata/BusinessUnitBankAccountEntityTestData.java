@@ -13,12 +13,18 @@ public class BusinessUnitBankAccountEntityTestData {
     private final BusinessUnitBankAccountRepository repository;
 
     public BusinessUnitBankAccountEntity getTypicalBusinessUnitBankAccount(long id, String businessUnitCode) {
+        return getTypicalBusinessUnitBankAccount(id, businessUnitCode, null);
+    }
+
+    public BusinessUnitBankAccountEntity getTypicalBusinessUnitBankAccount(
+        long id, String businessUnitCode, String dwpCourtCode) {
         return BusinessUnitBankAccountEntity.builder()
             .id(id)
             .businessUnitCode(businessUnitCode)
             .domain(Domain.FINES)
             .bankSortCode("560033")
             .bankAccountNumber("27048527")
+            .dwpCourtCode(dwpCourtCode)
             .build();
     }
 
@@ -35,6 +41,11 @@ public class BusinessUnitBankAccountEntityTestData {
 
     public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(long id, String businessUnitCode) {
         return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitCode));
+    }
+
+    public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(
+        long id, String businessUnitCode, String dwpCourtCode) {
+        return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitCode, dwpCourtCode));
     }
 
     public BusinessUnitBankAccountEntity saveMaximumBusinessUnitBankAccount(long id) {
