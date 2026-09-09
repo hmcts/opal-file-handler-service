@@ -10,8 +10,11 @@ import uk.gov.hmcts.opal.filehandler.config.MarstonBaisFileBaisFileProcessorConf
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.ExtractionService;
+import uk.gov.hmcts.opal.filehandler.service.extraction.PacsTTPBaisExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
+import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.service.queue.InterfaceFilePreprocessQueueService;
+import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
@@ -30,12 +33,9 @@ public class MarstonBaisFileProcessorService
         InterfaceFilesRepository interfaceFilesRepository,
         TransactionTemplate transactionTemplate,
         ObjectMapper objectMapper,
-        @Qualifier("pacsTTPBaisExtractionService")
-        ExtractionService<InterfaceFileCommonDataExtract> extractionService,
-        @Qualifier("finesInterfaceFilePreprocessQueueService")
-        InterfaceFilePreprocessQueueService finesQueueService,
-        @Qualifier("maintenanceInterfaceFilePreprocessQueueService")
-        InterfaceFilePreprocessQueueService maintenanceQueueService,
+        PacsTTPBaisExtractionService extractionService,
+        FinesInterfaceFilePreprocessQueueService finesQueueService,
+        MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService,
         MarstonBaisFileBaisFileProcessorConfig config
     ) {
         super(
