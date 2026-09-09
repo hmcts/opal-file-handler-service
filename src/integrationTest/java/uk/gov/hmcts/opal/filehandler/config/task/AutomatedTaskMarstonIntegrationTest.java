@@ -26,6 +26,9 @@ public class AutomatedTaskMarstonIntegrationTest extends AbstractIntegrationTest
     @Autowired
     private ApplicationContext applicationContext;
 
+    @Autowired
+    private AutomatedMarston automatedMarston;
+
     @MockitoBean(enforceOverride = true, reset = MockReset.NONE)
     private MarstonBaisFileProcessorService service;
 
@@ -38,6 +41,7 @@ public class AutomatedTaskMarstonIntegrationTest extends AbstractIntegrationTest
 
     @Test
     void shouldCallAutomatedTaskRun() {
+        automatedMarston.run();
         verify(service, times(1)).run(any(MarstonBaisFileBaisFileProcessorConfig.class));
     }
 
