@@ -10,4 +10,8 @@ public class InterfaceFileNotFoundException extends ResponseStatusException {
     public InterfaceFileNotFoundException(String detailedReason) {
         super(HttpStatus.NOT_FOUND, detailedReason);
     }
+
+    public InterfaceFileNotFoundException(Long id) {
+        this(String.format("Interface file with id %d could not be located.", id));
+    }
 }

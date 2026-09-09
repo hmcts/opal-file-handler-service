@@ -83,9 +83,7 @@ public class InterfaceFilesService {
 
     public InterfaceFileEntity getInterfaceFileEntity(Long id) {
         return repository.findById(id)
-            .orElseThrow(() -> new InterfaceFileNotFoundException(
-                String.format("Interface file with id %d could not be located.", id))
-            );
+            .orElseThrow(() -> new InterfaceFileNotFoundException(id));
     }
 
 }
