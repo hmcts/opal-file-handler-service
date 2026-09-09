@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.DispatcherServlet;
+import uk.gov.hmcts.opal.filehandler.config.JacobsBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.service.JacobsBaisFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
@@ -37,7 +37,7 @@ public class AutomatedTaskJacobsFileTransferJobIntegrationTest extends AbstractI
     }
 
     @Test
-    void shouldCallAutomatedTaskRun() throws IOException {
-        verify(service, times(1)).run(any());
+    void shouldCallAutomatedTaskRun() {
+        verify(service, times(1)).run(any(JacobsBaisFileProcessorConfiguration.class));
     }
 }
