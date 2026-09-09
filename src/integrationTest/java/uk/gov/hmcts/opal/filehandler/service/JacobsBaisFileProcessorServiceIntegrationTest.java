@@ -80,7 +80,7 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
         "launchdarkly.default-flag-values[bailiffs.jacobs-file-transfer-Job]=false"
     })
-    public class AllpayFileTransferJobDisabled {
+    public class JacobsFileTransferJobDisabled {
 
         @Test
         @DisplayName("AC1: Feature flag 'bailiffs.jacobs-file-transfer-Job' is false")
