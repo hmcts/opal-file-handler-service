@@ -25,6 +25,7 @@ public class MarstonBaisFileBaisFileProcessorConfigTest {
         ReflectionTestUtils.setField(config, "sftpUsername", "MARSTON");
         ReflectionTestUtils.setField(config, "source", Interface.MARSTON);
         ReflectionTestUtils.setField(config, "target", Interface.OPAL);
+
     }
 
     @Test

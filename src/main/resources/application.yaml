@@ -143,9 +143,10 @@ opal:
 
     bailiffs:
       marston:
+        container-name: ${FILE_STORE_STORAGE_ACCOUNT_NAME:marston}
         account-name: ${FILE_STORE_STORAGE_ACCOUNT_NAME:marston}
         feature-flag: marston-file-transfer-job
-        file-name-regex: '\d{10}dat\d{10}\d{8}\d{6}\.txt'
+        file-name-regex: ^Marston\.GB\.\d{8}\.\d{6}\.xml$
         source: marston
         target: OPAL
         sftp-username: ${BAIS_SFTP_MARSTON_USERNAME:}

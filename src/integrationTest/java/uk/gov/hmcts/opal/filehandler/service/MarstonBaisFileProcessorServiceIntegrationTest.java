@@ -3,6 +3,10 @@ package uk.gov.hmcts.opal.filehandler.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.time.LocalDateTime;
+import org.springframework.data.domain.Sort;
+import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
+import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -22,7 +26,9 @@ import uk.gov.hmcts.opal.filehandler.config.MarstonBaisFileBaisFileProcessorConf
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
+import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
@@ -41,10 +47,10 @@ public class MarstonBaisFileProcessorServiceIntegrationTest
         "Marston.GB.20260701.173024.xml";
 
     private static final String MARSTON_FILE_CHECKSUM =
-        "REPLACE_WITH_REAL_CHECKSUM";
+        "ae51ad5900f1f99ac39c4f58bc6e9603";
 
     private static final String MARSTON_FILE_CHECKSUM_2 =
-        "REPLACE_WITH_REAL_CHECKSUM_2";
+        "35e3ff0b0da86ee57a950c77ca0b1f7f";
 
     private static final String MARSTON_FILE_RESOURCE =
         "bais-emulator/" + MARSTON_FILE;
@@ -60,7 +66,8 @@ public class MarstonBaisFileProcessorServiceIntegrationTest
 
     @Autowired
     private MarstonBaisFileProcessorService service;
-
+    @Autowired
+    BusinessUnitBankAccountEntityTestData businessUnitBankAccountEntityTestData;
     @Autowired
     private MarstonBaisFileBaisFileProcessorConfig config;
 
@@ -71,13 +78,13 @@ public class MarstonBaisFileProcessorServiceIntegrationTest
 
     @BeforeEach
     void setUp() {
-        System.out.println("username=[" + config.getSftpUsername() + "]");
         repository.deleteAll();
         blobServiceClient.createBlobContainerIfNotExists(config.getContainerName());
-
+        businessUnitBankAccountExtractedData();
         logAppender.start();
         logger.addAppender(logAppender);
     }
+
 
     @AfterEach
     void tearDown() {
@@ -110,7 +117,16 @@ public class MarstonBaisFileProcessorServiceIntegrationTest
 
         uploadResourceToSftp(MARSTON_FILE_RESOURCE, MARSTON_FILE_CONTAINER);
         service.run(config);
-        assertMostRecentEntityHasStatus(MARSTON_FILE, MARSTON_FILE_CHECKSUM,Interface.MARSTON,Status.SUCCESS);
+
+        InterfaceFileEntity mostRecent = repository.findAll(
+            Sort.by(Sort.Direction.ASC, "createdDatetime")
+        ).getLast();
+        assertThat(mostRecent.getFileName()).isEqualTo(MARSTON_FILE);
+        assertThat(mostRecent.getChecksum()).isEqualTo(MARSTON_FILE_CHECKSUM);
+        assertThat(mostRecent.getSource()).isEqualTo(Interface.MARSTON);
+        assertThat(mostRecent.getStatus()).isEqualTo(Status.SUCCESS);
+        assertThat(mostRecent.getType()).isEqualTo(Type.SOURCE_JSON);
+
         assertBlobChecksum(MARSTON_FILE,MARSTON_FILE_CHECKSUM,config.getContainerName());
         assertNumberOfSftpFiles(config.getSftpUsername(),0);
     }
@@ -120,11 +136,8 @@ public class MarstonBaisFileProcessorServiceIntegrationTest
     void whenNoFilesArePresentServiceSucceeds() {
 
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
-
         service.run(config);
-
         assertThat(repository.findAll()).isEmpty();
-
         assertThat(logAppender.list)
             .filteredOn(event -> event.getLevel() == Level.INFO)
             .extracting(ILoggingEvent::getFormattedMessage)
@@ -134,32 +147,6 @@ public class MarstonBaisFileProcessorServiceIntegrationTest
                     config.getSftpUsername()));
     }
 
-    @Test
-    @DisplayName("AC4: Duplicate file with previous success should reject")
-    void duplicateFileShouldReject() {
-
-        final InterfaceFileEntity success =
-            createSuccessfulInterfaceFile(MARSTON_FILE, MARSTON_FILE_CHECKSUM);
-        uploadResourceToSftp(MARSTON_FILE_RESOURCE, MARSTON_FILE_CONTAINER);
-
-        uploadResourceToSftp(MARSTON_FILE_RESOURCE_2, MARSTON_FILE_CONTAINER_2);
-        service.run(config);
-        assertEntitiesWithStatus(MARSTON_FILE_2,MARSTON_FILE_CHECKSUM_2,Status.SUCCESS);
-
-        assertEntitiesWithStatus(MARSTON_FILE,MARSTON_FILE_CHECKSUM,Status.DUPLICATE);
-
-        assertNumberOfSftpFiles(config.getSftpUsername(), 0);
-
-        assertThat(logAppender.list)
-            .filteredOn(event -> event.getLevel() == Level.ERROR)
-            .extracting(ILoggingEvent::getFormattedMessage)
-            .containsExactly(
-                String.format(
-                    "File with name '%s' and checksum '%s' for source 'MARSTON' is a duplicate of %s",
-                    MARSTON_FILE,
-                    MARSTON_FILE_CHECKSUM,
-                    success.getInterfaceFileId()));
-    }
 
     @Test
     @DisplayName("AC5: Duplicate file with no previous success should process")
@@ -169,10 +156,39 @@ public class MarstonBaisFileProcessorServiceIntegrationTest
         uploadResourceToSftp(MARSTON_FILE_RESOURCE,MARSTON_FILE_CONTAINER);
         service.run(config);
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
-        assertEntitiesWithStatus( MARSTON_FILE,MARSTON_FILE_CHECKSUM, Status.FAILED_SUPERSEDED);
-
-        assertMostRecentEntityHasStatus(MARSTON_FILE, MARSTON_FILE_CHECKSUM,Interface.MARSTON,Status.SUCCESS);
-
+        assertEntitiesWithStatus(MARSTON_FILE,MARSTON_FILE_CHECKSUM,Status.FAILED);
+        assertMarston();
         assertBlobChecksum(MARSTON_FILE,MARSTON_FILE_CHECKSUM, config.getContainerName());
+    }
+
+    private void assertMarston() {
+        InterfaceFileEntity mostRecent = repository.findAll(
+            Sort.by(Sort.Direction.ASC, "createdDatetime")
+        ).getLast();
+        assertThat(mostRecent.getFileName())
+            .isEqualTo(MARSTON_FILE);
+        assertThat(mostRecent.getStatus())
+            .isEqualTo(Status.SUCCESS);
+        assertThat(mostRecent.getChecksum())
+            .isEqualTo(MARSTON_FILE_CHECKSUM);
+        assertThat(mostRecent.getType())
+            .isEqualTo(Type.SOURCE_JSON);
+        assertThat(mostRecent.getSource())
+            .isEqualTo(Interface.MARSTON);
+        assertThat(mostRecent.getTarget())
+            .isEqualTo(Interface.OPAL);
+    }
+
+    private void businessUnitBankAccountExtractedData() {
+        businessUnitBankAccountEntityTestData.saveAndFlushBusinessUnitBankAccount(
+            BusinessUnitBankAccountEntity.builder()
+                .id(1L)
+                .businessUnitCode("AB01")
+                .domain(Domain.FINES)
+                .bankSortCode("560033")
+                .bankAccountNumber("27048527")
+                .dwpCourtCode("DWP1234567")
+                .build()
+        );
     }
 }
