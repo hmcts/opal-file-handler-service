@@ -13,7 +13,7 @@ import uk.gov.hmcts.opal.filehandler.service.JacobsBaisFileProcessorService;
 )
 @Slf4j
 @RequiredArgsConstructor
-public class AutomatedJacobsFileTransfer implements TaskConfiguration {
+public class AutomatedJacobsFileTransferJob implements TaskConfiguration {
 
     private final JacobsBaisFileProcessorService processorService;
     private final JacobsBaisFileProcessorConfiguration configuration;
