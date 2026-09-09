@@ -2,8 +2,6 @@ package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.time.LocalDateTime;
 import org.springframework.data.domain.Sort;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;

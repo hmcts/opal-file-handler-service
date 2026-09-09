@@ -1,16 +1,14 @@
 package uk.gov.hmcts.opal.filehandler.config;
 
 import java.util.regex.Pattern;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
+
 @Component("marstonBaisFileBaisFileProcessorConfig")
 @ConfigurationProperties(prefix = "opal.file-handler-service.bailiffs.marston")
-public class MarstonBaisFileBaisFileProcessorConfig
-    implements BaisFileProcessorConfiguration {
+public class MarstonBaisFileBaisFileProcessorConfig  implements BaisFileProcessorConfiguration {
 
     private String containerName;
     private String featureFlag;
