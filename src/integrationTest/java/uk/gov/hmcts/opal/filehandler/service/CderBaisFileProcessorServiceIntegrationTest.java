@@ -18,6 +18,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
+import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.CderBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -49,6 +50,9 @@ public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFil
     private CderBaisFileProcessorConfiguration configuration;
 
     @Autowired
+    private CapsReportBaisFileProcessorConfiguration capsReportBaisFileProcessorConfiguration;
+
+    @Autowired
     private BusinessUnitBankAccountEntityTestData businessUnitBankAccountEntityTestData;
 
     @MockitoBean
@@ -68,7 +72,7 @@ public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFil
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
         "launchdarkly.default-flag-values[bailiffs.cder-file-transfer-Job]=false"
     })
-    public class NatWestFileTransferJobDisabled {
+    public class CderFileTransferJobDisabled {
 
         @Test
         @DisplayName("AC1: Feature flag 'bailiffs.cder-file-transfer-Job' is false")
@@ -100,9 +104,10 @@ public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFil
 
     @Test
     @DisplayName("AC2: When CDER file is present it should be read and stored correctly")
-    void natWestBaisFileProcessorServiceShouldRunSuccessfully() throws Exception {
+    void cderFileProcessorServiceShouldRunSuccessfully() throws Exception {
         uploadResourceToSftp(CDER_FILE_RESOURCE, CDER_FILE_CONTAINER);
 
+        var t = capsReportBaisFileProcessorConfiguration.getFileNameRegex();
         service.run(configuration);
 
         InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
