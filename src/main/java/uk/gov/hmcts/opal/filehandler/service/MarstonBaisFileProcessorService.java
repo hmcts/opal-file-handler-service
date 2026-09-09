@@ -30,7 +30,7 @@ public class MarstonBaisFileProcessorService
         InterfaceFilesRepository interfaceFilesRepository,
         TransactionTemplate transactionTemplate,
         ObjectMapper objectMapper,
-        @Qualifier("bacsStandard18BaisExtractionService")
+        @Qualifier("pacsTTPBaisExtractionService")
         ExtractionService<InterfaceFileCommonDataExtract> extractionService,
         @Qualifier("finesInterfaceFilePreprocessQueueService")
         InterfaceFilePreprocessQueueService finesQueueService,

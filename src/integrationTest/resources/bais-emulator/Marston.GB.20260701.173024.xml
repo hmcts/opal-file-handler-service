@@ -1,1 +1,28 @@
-<?xml version="1.0" encoding="UTF-8"?><CapFa><CapFaPayment><FaPaymentId>US CAPS PAYMENTS 20260629 cfaa7e5d07744650b93be4b864bc721a</FaPaymentId><PaymentDate>2026-07-02</PaymentDate><UsdPaymentAmount>111.23</UsdPaymentAmount><ForeignCurrencyPaymentAmount>111.35</ForeignCurrencyPaymentAmount><UsdToForeignCurrencyExchangeRate>0.75501930</UsdToForeignCurrencyExchangeRate><CapFaPaymentTx><UsStateName>Place</UsStateName><UsStateCaseId>0000000000</UsStateCaseId><ForeignCaseId>00000000A</ForeignCaseId><UsStateCaseNcpName>LASTNAME</UsStateCaseNcpName><UsdPaymentTxAmount>800.66</UsdPaymentTxAmount><ForeignCurrencyPaymentTxAmount>658.88</ForeignCurrencyPaymentTxAmount><UsStateEftTraceNumber>000000000000000</UsStateEftTraceNumber></CapFaPaymentTx></CapFaPayment></CapFa>
+<?xml version="1.0" encoding="UTF-8"?>
+<PacsTppSchedule xmlns="http://www.dwp.gsi.gov.uk/pacs">
+  <DocumentHeader>
+    <CreditorID>DWP1234567</CreditorID>
+    <BatchNumber>12345</BatchNumber>
+    <PacsDocumentCreationDate>2023-09-04</PacsDocumentCreationDate>
+    <PacsDocumentCreationTime>11:13:55</PacsDocumentCreationTime>
+    <NotificationReference>612</NotificationReference>
+  </DocumentHeader>
+
+  <DocumentDetail>
+    <CustomerRef>23000106E</CustomerRef>
+    <RecordType>02</RecordType>
+    <LocationCode>31714</LocationCode>
+    <NationalInsuranceNumberType>AB123456</NationalInsuranceNumberType>
+    <DateFrom>2023-09-03</DateFrom>
+    <DateTo>2023-09-03</DateTo>
+    <DetailAmountType>1000</DetailAmountType>
+    <DetailAmountSign>+</DetailAmountSign>
+  </DocumentDetail>
+
+  <DocumentSummary>
+    <SummaryAmountType>1000</SummaryAmountType>
+    <SummaryAmountSign>+</SummaryAmountSign>
+    <Total02Records>1</Total02Records>
+    <Total03Records>0</Total03Records>
+  </DocumentSummary>
+</PacsTppSchedule>
