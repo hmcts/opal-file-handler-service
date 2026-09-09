@@ -1,6 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 
@@ -12,15 +13,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.test.context.jdbc.Sql;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.JacobsBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
-import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
+import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
@@ -34,6 +35,7 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
     private static final String JACOBS_FILE_CHECKSUM = "74efc9e50988e6694fa6dd55a8e739f0";
     private static final String JACOBS_FILE_RESOURCE = "bais-emulator/" + JACOBS_FILE;
     private static final String JACOBS_FILE_CONTAINER = "/home/Jacobs/" + JACOBS_FILE;
+    private static final String DWP_CODE = "0000031714";
 
     @Autowired
     private JacobsBaisFileProcessorService service;
@@ -41,13 +43,19 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
     @Autowired
     private JacobsBaisFileProcessorConfiguration configuration;
 
+    @Autowired
+    private BusinessUnitBankAccountEntityTestData buBankAccountTestData;
+
     @MockitoSpyBean
-    private MaintenanceInterfaceFilePreprocessQueueService queue;
+    private FinesInterfaceFilePreprocessQueueService queue;
 
     @BeforeEach
     void setUp() {
         repository.deleteAll();
         blobServiceClient.createBlobContainerIfNotExists(configuration.getContainerName());
+
+        buBankAccountTestData.clear();
+        buBankAccountTestData.saveTypicalBusinessUnitBankAccount(1L, "BC21", DWP_CODE);
     }
 
     @Nested
@@ -103,26 +111,20 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
 
     @Test
     @DisplayName("AC2: When Jacobs file is present it should be read and stored correctly")
-    @Sql(
-        scripts = "classpath:db/insertData/insert_into_business_unit_bank_account_for_jacobs.sql",
-        executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD
-    )
-    @Sql(
-        scripts = "classpath:db/deleteData/delete_from_business_unit_bank_account_for_jacobs.sql",
-        executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD
-    )
     void whenJacobsFileIsPresentReadAndStoreCorrectly() {
         uploadResourceToSftp(JACOBS_FILE_RESOURCE, JACOBS_FILE_CONTAINER);
 
         service.run(configuration);
 
         var sourceFile = assertSuccessfulInterfaceFile(
-            JACOBS_FILE, JACOBS_FILE_CHECKSUM, Interface.JACOBS, Type.SOURCE, Domain.MAINTENANCE);
+            JACOBS_FILE, JACOBS_FILE_CHECKSUM, Interface.JACOBS, Type.SOURCE, Domain.FINES);
+
         var sourceJson = assertSuccessfulSourceJsonInterfaceFile(
-            JACOBS_FILE, Interface.JACOBS, Domain.MAINTENANCE, sourceFile.getInterfaceFileId());
+            JACOBS_FILE, Interface.JACOBS, Domain.FINES, sourceFile.getInterfaceFileId());
 
         verify(queue).send(sourceJson.getInterfaceFileId());
 
+        assertArrayEquals(sourceFile.getBusinessUnitCode(), sourceJson.getBusinessUnitCode());
         assertBlobChecksum(JACOBS_FILE, JACOBS_FILE_CHECKSUM, configuration.getContainerName());
         assertNumberOfSftpFiles(configuration.getSftpUsername(), 0);
     }
