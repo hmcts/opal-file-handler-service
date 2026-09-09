@@ -6,7 +6,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
-import uk.gov.hmcts.opal.filehandler.service.extraction.BacsStandard18BaisExtractionService;
+import uk.gov.hmcts.opal.filehandler.service.extraction.PacsTTPBaisExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
@@ -24,7 +24,7 @@ public class CderBaisFileProcessorService extends
         InterfaceFilesRepository interfaceFilesRepository,
         TransactionTemplate transactionTemplate,
         ObjectMapper objectMapper,
-        BacsStandard18BaisExtractionService extractionService,
+        PacsTTPBaisExtractionService extractionService,
         FinesInterfaceFilePreprocessQueueService finesQueueService,
         MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService) {
         super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,

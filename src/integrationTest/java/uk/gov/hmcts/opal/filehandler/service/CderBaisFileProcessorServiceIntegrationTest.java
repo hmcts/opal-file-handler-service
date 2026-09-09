@@ -29,10 +29,10 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
-    "opal.file-handler-service.file-types.bailiffs.cder.sftp-username=CDER-blah",
-    "launchdarkly.default-flag-values.bailiffs.cder-file-transfer-Job=true",
+    "opal.file-handler-service.file-types.bailiffs.cder.sftp-username=CDER",
+    "launchdarkly.default-flag-values[bailiffs.cder-file-transfer-Job]=true",
 })
-public class CderBaisFileProcessorServiceTest extends AbstractBaisFileProcessorServiceIntegrationTest {
+public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
 
     private static final String CDER_FILE = "0000031712_dat_0000098475_20260408_103500.txt";
     private static final String CDER_FILE_CHECKSUM = "74efc9e50988e6694fa6dd55a8e739f0";
@@ -66,7 +66,7 @@ public class CderBaisFileProcessorServiceTest extends AbstractBaisFileProcessorS
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
-        "launchdarkly.default-flag-values.bailiffs.cder-file-transfer-Job=false"
+        "launchdarkly.default-flag-values[bailiffs.cder-file-transfer-Job]=false"
     })
     public class NatWestFileTransferJobDisabled {
 
@@ -83,7 +83,7 @@ public class CderBaisFileProcessorServiceTest extends AbstractBaisFileProcessorS
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.bailiffs.cder-file-transfer-Job=false"
+        "launchdarkly.default-flag-values[bailiffs.cder-file-transfer-Job]=false"
     })
     public class BothFeatureFlagsDisabled {
 
@@ -106,9 +106,9 @@ public class CderBaisFileProcessorServiceTest extends AbstractBaisFileProcessorS
         service.run(configuration);
 
         InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
-            CDER_FILE, CDER_FILE_CHECKSUM, Interface.CDER, Type.SOURCE, Domain.MAINTENANCE);
+            CDER_FILE, CDER_FILE_CHECKSUM, Interface.CDER, Type.SOURCE, Domain.FINES);
         InterfaceFileEntity sourceJsonFile = assertSuccessfulSourceJsonInterfaceFile(
-            CDER_FILE, Interface.CDER, Domain.MAINTENANCE, sourceFile.getInterfaceFileId());
+            CDER_FILE, Interface.CDER, Domain.FINES, sourceFile.getInterfaceFileId());
         assertBlobChecksum(CDER_FILE, CDER_FILE_CHECKSUM, configuration.getContainerName());
 //        assertSourceJsonContents(sourceJsonFile); // TODO
         assertNumberOfSftpFiles(configuration.getSftpUsername(), 0);

@@ -125,7 +125,7 @@ opal:
         cder:
           container-name: ${CDER_AZURE_STORAGE_CONTAINER:cder}
           feature-flag: bailiffs.cder-file-transfer-Job
-          file-name-regex: \d{10}dat\d{10}\d{8}\d{6}\.txt
+          file-name-regex: \d{10}_dat_\d{10}_\d{8}_\d{6}.txt
           source: CDER
           target: OPAL
           sftp-username: ${BAIS_SFTP_CDER_USERNAME:}
