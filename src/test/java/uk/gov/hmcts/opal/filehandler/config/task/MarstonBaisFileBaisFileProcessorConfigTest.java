@@ -21,7 +21,7 @@ public class MarstonBaisFileBaisFileProcessorConfigTest {
 
         ReflectionTestUtils.setField(config, "containerName", "MARSTON");
         ReflectionTestUtils.setField(config, "featureFlag", "bailiffs.marston-file-transfer-job");
-        ReflectionTestUtils.setField(config, "fileNameRegex", "\\d{10}dat\\d{10}\\.xml");
+        ReflectionTestUtils.setField(config, "fileNameRegex",Pattern.compile("\\d{10}dat\\d{10}\\.xml"));
         ReflectionTestUtils.setField(config, "sftpUsername", "MARSTON");
         ReflectionTestUtils.setField(config, "source", Interface.MARSTON);
         ReflectionTestUtils.setField(config, "target", Interface.OPAL);
