@@ -3,7 +3,6 @@ package uk.gov.hmcts.opal.filehandler.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.springframework.data.domain.Sort;
-import uk.gov.hmcts.opal.filehandler.config.task.AutomatedMarston;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import ch.qos.logback.classic.Level;
@@ -39,9 +38,6 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 public class MarstonBaisFileProcessorServiceIntegrationTest   extends AbstractBaisFileProcessorServiceIntegrationTest {
 
     private static final String MARSTON_FILE =
-        "Marston.GB.20260701.173024.xml";
-
-    private static final String MARSTON_FILE_2 =
         "Marston.GB.20260701.173024.xml";
 
     private static final String MARSTON_FILE_CHECKSUM =
