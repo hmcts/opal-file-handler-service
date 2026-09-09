@@ -30,7 +30,7 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceInt
 public class JacobsBaisFileProcessorServiceIntegrationTest
     extends AbstractBaisFileProcessorServiceIntegrationTest {
 
-    private static final String JACOBS_FILE = "0000015232_dat_0000000612_08011008_111355.txt";
+    private static final String JACOBS_FILE = "0000031712_dat_0000098475_20260408_103500.txt";
     private static final String JACOBS_FILE_CHECKSUM = "74efc9e50988e6694fa6dd55a8e739f0";
     private static final String JACOBS_FILE_RESOURCE = "bais-emulator/" + JACOBS_FILE;
     private static final String JACOBS_FILE_CONTAINER = "/home/Jacobs/" + JACOBS_FILE;
