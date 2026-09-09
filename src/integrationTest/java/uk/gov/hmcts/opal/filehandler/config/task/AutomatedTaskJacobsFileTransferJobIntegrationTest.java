@@ -27,7 +27,7 @@ public class AutomatedTaskJacobsFileTransferJobIntegrationTest extends AbstractI
     @Autowired
     private ApplicationContext applicationContext;
 
-    @MockitoBean(enforceOverride = true, reset= MockReset.NONE)
+    @MockitoBean(enforceOverride = true, reset = MockReset.NONE)
     private JacobsBaisFileProcessorService service;
 
     @Test
