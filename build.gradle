@@ -54,10 +54,10 @@ def xjcGeneratedSourceDir = layout.buildDirectory.dir('generated/sources/xjc/mai
 // XJC is the JAXB XML-to-Java compiler. Add future third-party XML schemas here
 // to generate typed Java classes from XSD files at build time.
 def xmlSchemasToGenerate = [
-    pacsTtp: [
-        xsd        : 'src/main/resources/xsd/pacs-tpp-schedule-v0.0d.xsd',
-        packageName: 'uk.gov.hmcts.opal.filehandler.generated.pacs'
-    ]
+        pacsTtp: [
+                xsd        : 'src/main/resources/xsd/pacs-tpp-schedule-v0.0d.xsd',
+                packageName: 'uk.gov.hmcts.opal.filehandler.generated.pacs'
+        ]
 ]
 
 sourceSets {
@@ -129,9 +129,9 @@ xmlSchemasToGenerate.each { schemaName, schemaConfig ->
     inputs.file(schemaConfig.xsd)
     outputs.dir(schemaGeneratedPackageDir)
     args = [
-        '-d', xjcGeneratedSourceDir.get().asFile.absolutePath,
-        '-p', schemaConfig.packageName,
-        file(schemaConfig.xsd).absolutePath
+            '-d', xjcGeneratedSourceDir.get().asFile.absolutePath,
+            '-p', schemaConfig.packageName,
+            file(schemaConfig.xsd).absolutePath
     ]
     doFirst {
       delete schemaGeneratedPackageDir
@@ -211,8 +211,8 @@ tasks.register('functional', Test) {
   testLogging.showStandardStreams = true
   def requestedCucumberTags = System.getProperty('cucumber.filter.tags')?.trim()
   def cucumberTags = requestedCucumberTags
-      ? "(${requestedCucumberTags}) and not @Ignore"
-      : 'not @Ignore'
+          ? "(${requestedCucumberTags}) and not @Ignore"
+          : 'not @Ignore'
   systemProperty 'cucumber.filter.tags', cucumberTags
   include '**/FunctionalTestRunner.class'
   dependsOn 'bootJar', 'clearReports'
@@ -262,8 +262,8 @@ tasks.register('copySmokeReport', Sync) {
 tasks.named('clearReports') {
   doLast {
     delete(
-      layout.buildDirectory.dir("test-results/functional"),
-      layout.buildDirectory.dir("test-results/smoke")
+            layout.buildDirectory.dir("test-results/functional"),
+            layout.buildDirectory.dir("test-results/smoke")
     )
   }
 }
@@ -280,10 +280,10 @@ tasks.register('aggregateFunctionalReport', JavaExec) {
   classpath = sourceSets.functionalTest.runtimeClasspath
   mainClass = 'uk.gov.hmcts.opal.filehandler.support.SerenityReportGenerator'
   args(
-    file("${rootDir}/target/site/serenity").absolutePath,
-    layout.buildDirectory.dir("test-results").get().asFile.absolutePath,
-    rootDir.absolutePath,
-    project.name
+          file("${rootDir}/target/site/serenity").absolutePath,
+          layout.buildDirectory.dir("test-results").get().asFile.absolutePath,
+          rootDir.absolutePath,
+          project.name
   )
   mustRunAfter tasks.named('functional')
 }
@@ -470,7 +470,7 @@ rootProject.tasks.named("processIntegrationTestResources") {
 }
 
 wrapper {
-    distributionType = Wrapper.DistributionType.ALL
+  distributionType = Wrapper.DistributionType.ALL
 }
 checkstyle {
   checkstyleMain.exclude '**/generated/**'
@@ -507,9 +507,9 @@ tasks.named("compileJava") {
 tasks.register('migratePostgresDatabase', FlywayMigrateTask) {
   baselineOnMigrate = true
   def taskUrl = providers.gradleProperty("dburl")
-      .map { dbUrl -> "jdbc:postgresql://${dbUrl}" }
-      .orElse(providers.environmentVariable("FLYWAY_URL"))
-      .orNull
+          .map { dbUrl -> "jdbc:postgresql://${dbUrl}" }
+          .orElse(providers.environmentVariable("FLYWAY_URL"))
+          .orNull
   if (taskUrl) {
     url = taskUrl
   }
