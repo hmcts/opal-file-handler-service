@@ -181,7 +181,7 @@ public class MarstonBaisFileProcessorServiceIntegrationTest
         businessUnitBankAccountEntityTestData.saveAndFlushBusinessUnitBankAccount(
             BusinessUnitBankAccountEntity.builder()
                 .id(1L)
-                .businessUnitCode("AB01")
+                .businessUnitCode("MR01")
                 .domain(Domain.FINES)
                 .bankSortCode("560033")
                 .bankAccountNumber("27048527")
