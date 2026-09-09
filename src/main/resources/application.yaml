@@ -146,7 +146,7 @@ opal:
         jacobs:
           container-name: ${JACOBS_AZURE_STORAGE_CONTAINER:jacobs}
           feature-flag: bailiffs.jacobs-file-transfer-Job
-          file-name-regex: ^\d{10}dat\d{10}\d{8}\d{6}\.txt$
+          file-name-regex: ^\d{10}_dat_\d{10}_\d{8}_\d{6}\.txt$
           source: JACOBS
           target: OPAL
           sftp-username: ${BAIS_SFTP_JACOBS_USERNAME:}
@@ -187,6 +187,8 @@ launchdarkly:
     caps-report-file-transfer-Job: ${CAPS_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     bteckoh-report-file-transfer-Job: ${BTECKOH_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     allpay-file-transfer-Job: ${ALLPAY_FILE_TRANSFER_JOB_ENABLED:false}
+    bailiffs:
+      jacobs-file-transfer-Job: ${JACOBS_FILE_TRANSFER_JOB_ENABLED:false}
 
 user:
   service:
