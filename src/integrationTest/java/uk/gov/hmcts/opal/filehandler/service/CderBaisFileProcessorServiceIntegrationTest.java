@@ -107,7 +107,6 @@ public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFil
     void cderFileProcessorServiceShouldRunSuccessfully() throws Exception {
         uploadResourceToSftp(CDER_FILE_RESOURCE, CDER_FILE_CONTAINER);
 
-        var t = capsReportBaisFileProcessorConfiguration.getFileNameRegex();
         service.run(configuration);
 
         InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
