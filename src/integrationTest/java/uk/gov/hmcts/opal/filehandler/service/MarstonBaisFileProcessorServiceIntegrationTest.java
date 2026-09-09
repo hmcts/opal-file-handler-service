@@ -35,8 +35,7 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 })
 
 @Slf4j
-public class MarstonBaisFileProcessorServiceIntegrationTest
-    extends AbstractBaisFileProcessorServiceIntegrationTest {
+public class MarstonBaisFileProcessorServiceIntegrationTest   extends AbstractBaisFileProcessorServiceIntegrationTest {
 
     private static final String MARSTON_FILE =
         "Marston.GB.20260701.173024.xml";
@@ -108,6 +107,26 @@ public class MarstonBaisFileProcessorServiceIntegrationTest
                 .hasMessage("marston-file-transfer-job is not enabled");
         }
     }
+
+    @Nested
+    @TestPropertySource(properties = {
+        "launchdarkly.default-flag-values.release-1c-banking-interfaces=false"
+    })
+    public class MarstonRelease1CBankingInterfacesDisabled {
+
+        @Test
+        @DisplayName("ACx: Feature flag 'release-1c-banking-interfaces' is false")
+        void release1CBankingInterfacesIsDisabled() {
+
+            FeatureDisabledException exception = assertThrows(
+                FeatureDisabledException.class,
+                () -> service.run(config));
+
+            assertThat(exception)
+                .hasMessage("release-1c-banking-interfaces is not enabled");
+        }
+    }
+
 
     @Test
     @DisplayName("AC2: Marston file is present, read and stored correctly")
