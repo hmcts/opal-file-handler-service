@@ -14,6 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.DispatcherServlet;
+import uk.gov.hmcts.opal.filehandler.config.CderBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.service.CderBaisFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
@@ -38,7 +39,7 @@ public class AutomatedTaskCderIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldCallAutomatedTaskRun() throws IOException {
-        verify(service, times(1)).run(any());
+        verify(service, times(1)).run(any(CderBaisFileProcessorConfiguration.class));
     }
 
 }
