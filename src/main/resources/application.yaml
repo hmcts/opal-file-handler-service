@@ -143,7 +143,7 @@ opal:
 
     bailiffs:
       marston:
-        container-name: ${FILE_STORE_STORAGE_ACCOUNT_NAME:martinazurstoragecontainer}
+        container-name: ${MARSTON_AZURE_STORAGE_CONTAINER:marston}
         account-name: ${FILE_STORE_STORAGE_ACCOUNT_NAME:MARSTON}
         feature-flag: marston-file-transfer-job
         file-name-regex: ^Marston\.GB\.\d{8}\.\d{6}\.xml$
