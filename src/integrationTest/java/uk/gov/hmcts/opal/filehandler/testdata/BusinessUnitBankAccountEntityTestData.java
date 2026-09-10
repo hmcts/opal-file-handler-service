@@ -16,7 +16,8 @@ public class BusinessUnitBankAccountEntityTestData {
         return getTypicalBusinessUnitBankAccount(id, businessUnitCode, null);
     }
 
-    public BusinessUnitBankAccountEntity getTypicalBusinessUnitBankAccount(long id, String businessUnitCode, String dwpCourtCode) {
+    public BusinessUnitBankAccountEntity getTypicalBusinessUnitBankAccount(
+        long id, String businessUnitCode, String dwpCourtCode) {
         return BusinessUnitBankAccountEntity.builder()
             .id(id)
             .businessUnitCode(businessUnitCode)
@@ -43,7 +44,8 @@ public class BusinessUnitBankAccountEntityTestData {
     }
 
 
-    public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(long id, String businessUnitCode, String dwpCourtCode) {
+    public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(
+        long id, String businessUnitCode, String dwpCourtCode) {
         return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitCode, dwpCourtCode));
     }
 
