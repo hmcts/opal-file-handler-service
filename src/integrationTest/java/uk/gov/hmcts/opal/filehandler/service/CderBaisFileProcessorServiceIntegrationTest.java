@@ -83,6 +83,24 @@ public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFil
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
+        "launchdarkly.default-flag-values[bailiffs.cder-file-transfer-Job]=true"
+    })
+    public class BankingInterfacesDisabled {
+
+        @Test
+        @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
+        void bankingInterfacesDisabled() {
+            FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
+                service.run(configuration)
+            );
+
+            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
+        }
+    }
+
+    @Nested
+    @TestPropertySource(properties = {
+        "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
         "launchdarkly.default-flag-values[bailiffs.cder-file-transfer-Job]=false"
     })
     public class BothFeatureFlagsDisabled {
