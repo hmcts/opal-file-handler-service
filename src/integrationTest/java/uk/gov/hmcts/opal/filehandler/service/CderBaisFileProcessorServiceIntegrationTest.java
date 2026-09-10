@@ -18,8 +18,6 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
-import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.CderBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
