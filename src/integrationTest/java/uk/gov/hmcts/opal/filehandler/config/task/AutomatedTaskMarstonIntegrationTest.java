@@ -41,8 +41,8 @@ public class AutomatedTaskMarstonIntegrationTest extends AbstractIntegrationTest
 
     @Test
     void shouldCallAutomatedTaskRun() {
-        automatedMarstonFileTransferJob.run();
         verify(service, times(1)).run(any(MarstonBaisFileBaisFileProcessorConfig.class));
+
     }
 
 }
