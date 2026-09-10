@@ -38,10 +38,10 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 public class MarstonBaisFileProcessorServiceIntegrationTest   extends AbstractBaisFileProcessorServiceIntegrationTest {
 
     private static final String MARSTON_FILE =
-        "Marston.GB.20260701.173024.xml";
+        "1234567890dat098765432120260910143015.txt";
 
     private static final String MARSTON_FILE_CHECKSUM =
-        "ae51ad5900f1f99ac39c4f58bc6e9603";
+        "f195a1b077347a3d811a563217058444";
 
     private static final String MARSTON_FILE_RESOURCE =
         "bais-emulator/" + MARSTON_FILE;
