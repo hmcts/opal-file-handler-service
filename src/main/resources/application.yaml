@@ -121,14 +121,6 @@ opal:
       endpoint: ${FILE_STORE_STORAGE_URL:}
       account-key: ${FILE_STORE_STORAGE_KEY:}
     file-types:
-      bailiffs:
-        cder:
-          container-name: ${CDER_AZURE_STORAGE_CONTAINER:cder}
-          feature-flag: bailiffs.cder-file-transfer-Job
-          file-name-regex: \d{10}_dat_\d{10}_\d{8}_\d{6}.txt
-          source: CDER
-          target: OPAL
-          sftp-username: ${BAIS_SFTP_CDER_USERNAME:}
       caps-report:
         container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}
         feature-flag: caps-report-file-transfer-Job
@@ -150,6 +142,14 @@ opal:
         source: ALLPAY
         target: OPAL
         sftp-username: ${BAIS_SFTP_ALLPAY_USERNAME:}
+      bailiffs:
+        cder:
+          container-name: ${CDER_AZURE_STORAGE_CONTAINER:cder}
+          feature-flag: bailiffs.cder-file-transfer-Job
+          file-name-regex: \d{10}_dat_\d{10}_\d{8}_\d{6}.txt
+          source: CDER
+          target: OPAL
+          sftp-username: ${BAIS_SFTP_CDER_USERNAME:}
     sftp:
       bais:
         host: ${BAIS_SFTP_CONNECTION_HOST:localhost}
