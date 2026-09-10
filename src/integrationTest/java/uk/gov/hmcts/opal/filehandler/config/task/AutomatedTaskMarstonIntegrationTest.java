@@ -18,7 +18,7 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
 @ActiveProfiles("integration")
 @SpringBootTest(properties = {
-    "opal.automated-task=MARSTON",
+    "opal.automated-task=MarstonFileTransferJob",
     "spring.main.web-application-type=none"
 })
 public class AutomatedTaskMarstonIntegrationTest extends AbstractIntegrationTest {
@@ -27,7 +27,7 @@ public class AutomatedTaskMarstonIntegrationTest extends AbstractIntegrationTest
     private ApplicationContext applicationContext;
 
     @Autowired
-    private AutomatedMarston automatedMarston;
+    private AutomatedMarstonFileTransferJob automatedMarstonFileTransferJob;
 
     @MockitoBean(enforceOverride = true, reset = MockReset.NONE)
     private MarstonBaisFileProcessorService service;
@@ -41,7 +41,7 @@ public class AutomatedTaskMarstonIntegrationTest extends AbstractIntegrationTest
 
     @Test
     void shouldCallAutomatedTaskRun() {
-        automatedMarston.run();
+        automatedMarstonFileTransferJob.run();
         verify(service, times(1)).run(any(MarstonBaisFileBaisFileProcessorConfig.class));
     }
 
