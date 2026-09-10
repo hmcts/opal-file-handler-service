@@ -112,12 +112,12 @@ public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFil
         InterfaceFileEntity sourceJsonFile = assertSuccessfulSourceJsonInterfaceFile(
             CDER_FILE, Interface.CDER, Domain.FINES, sourceFile.getInterfaceFileId());
         assertBlobChecksum(CDER_FILE, CDER_FILE_CHECKSUM, configuration.getContainerName());
-//        assertSourceJsonContents(sourceJsonFile); // TODO
+        assertSourceJsonContents(sourceJsonFile);
         assertNumberOfSftpFiles(configuration.getSftpUsername(), 0);
         verify(finesQueueService, times(1)).send(sourceJsonFile.getInterfaceFileId());
     }
 
-    // TODO
+
     private void assertSourceJsonContents(InterfaceFileEntity sourceJson) throws Exception {
         BlobClient client = blobServiceClient
             .getBlobContainerClient(configuration.getContainerName())
