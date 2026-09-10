@@ -408,8 +408,8 @@ cder-transfer:
           alias: BAIS_SFTP_CONNECTION_HOST
         - name: bais-sftp-connection-port
           alias: BAIS_SFTP_CONNECTION_PORT
-        - name: bais-sftp-jacobs-username
-          alias: BAIS_SFTP_JACOBS_USERNAME
+        - name: bais-sftp-cder-username
+          alias: BAIS_SFTP_CDER_USERNAME
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
