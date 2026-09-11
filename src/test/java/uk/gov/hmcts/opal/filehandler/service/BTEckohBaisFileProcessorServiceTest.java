@@ -100,7 +100,8 @@ class BTEckohBaisFileProcessorServiceTest {
     }
 
     @Test
-    void shouldRouteDomainsToConfiguredQueues() {
+    void shouldPassImplementationSpecificDependenciesToAbstractService() {
+        assertThat(service.extractionService).isSameAs(extractionService);
         assertThat(service.queueService(Domain.FINES)).isSameAs(finesQueueService);
         assertThat(service.queueService(Domain.MAINTENANCE)).isSameAs(maintenanceQueueService);
     }

@@ -1,6 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.config.task;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -31,9 +32,6 @@ class AutomatedTaskBTEckohIntegrationTest extends AbstractIntegrationTest {
     @MockitoBean(enforceOverride = true, reset = MockReset.NONE)
     private BTEckohBaisFileProcessorService processorService;
 
-    @Autowired
-    private BTEckohBaisFileProcessorConfiguration processorConfiguration;
-
     @Test
     @DisplayName("BTEckoh file transfer starts without the web layer")
     void shouldNotCreateWebLayer() {
@@ -44,6 +42,6 @@ class AutomatedTaskBTEckohIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("BTEckoh file transfer invokes the configured processor")
     void shouldRunBTEckohFileTransferJob() {
-        verify(processorService, times(1)).run(processorConfiguration);
+        verify(processorService, times(1)).run(any(BTEckohBaisFileProcessorConfiguration.class));
     }
 }

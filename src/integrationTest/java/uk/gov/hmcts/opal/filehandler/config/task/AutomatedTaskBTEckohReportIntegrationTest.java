@@ -14,6 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.DispatcherServlet;
+import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.service.BTEckohReportBaisFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
@@ -40,7 +41,7 @@ public class AutomatedTaskBTEckohReportIntegrationTest extends AbstractIntegrati
 
     @Test
     void shouldCallAutomatedTaskRun() throws IOException {
-        verify(service, times(1)).run(any());
+        verify(service, times(1)).run(any(BTEckohReportBaisFileProcessorConfiguration.class));
     }
 
 }

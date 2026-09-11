@@ -3,7 +3,6 @@ package uk.gov.hmcts.opal.filehandler.service;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import uk.gov.hmcts.opal.filehandler.config.BTEckohBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
@@ -15,10 +14,6 @@ import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePrepr
 import uk.gov.hmcts.opal.filehandler.support.AbstractBacsStandard18BaisFileProcessorServiceIntegrationTest;
 
 @ActiveProfiles("integration")
-@TestPropertySource(properties = {
-    "opal.file-handler-service.file-types.bteckoh-transfer.sftp-username=BTEckoh",
-    "opal.file-handler-service.file-types.bteckoh-transfer.container-name=bteckoh"
-})
 @DisplayName("BTEckoh BACS Standard 18 File Processor Integration Tests")
 class BTEckohBaisFileProcessorServiceIntegrationTest
     extends AbstractBacsStandard18BaisFileProcessorServiceIntegrationTest {

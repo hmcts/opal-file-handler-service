@@ -10,7 +10,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.opal.filehandler.config.AllpayBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
@@ -23,10 +22,6 @@ import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePrepr
 import uk.gov.hmcts.opal.filehandler.support.AbstractBacsStandard18BaisFileProcessorServiceIntegrationTest;
 
 @ActiveProfiles("integration")
-@TestPropertySource(properties = {
-    "opal.file-handler-service.file-types.allpay.sftp-username=AllPay",
-    "opal.file-handler-service.file-types.allpay.container-name=allpay"
-})
 @DisplayName("AllPay BACS Standard 18 File Processor Integration Tests")
 public class AllpayBaisFileProcessorServiceIntegrationTest
     extends AbstractBacsStandard18BaisFileProcessorServiceIntegrationTest {
