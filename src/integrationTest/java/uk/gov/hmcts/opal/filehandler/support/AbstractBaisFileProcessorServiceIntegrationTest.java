@@ -117,8 +117,8 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
         return entities.getFirst();
     }
 
-    public final InterfaceFileEntity assertSuccessfulSourceJsonInterfaceFile(String fileName, Interface source,
-        Domain domain, Long relatedInterfaceFileId) {
+    public final InterfaceFileEntity assertSuccessfulSourceJsonInterfaceFile(String fileName,
+        Interface source, Domain domain, Long relatedInterfaceFileId) {
 
         List<InterfaceFileEntity> entities = repository.findAll().stream()
             .filter(entity -> entity.getType() == Type.SOURCE_JSON)
