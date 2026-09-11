@@ -29,7 +29,6 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceInt
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
-    "opal.file-handler-service.file-types.caps-report.sftp-username=CAPS-report",
     "launchdarkly.default-flag-values.caps-report-file-transfer-Job=true",
 })
 @Slf4j
