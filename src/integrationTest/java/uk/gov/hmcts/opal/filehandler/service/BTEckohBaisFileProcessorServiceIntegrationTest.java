@@ -3,7 +3,7 @@ package uk.gov.hmcts.opal.filehandler.service;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.opal.filehandler.config.BTEckohBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -38,7 +38,7 @@ class BTEckohBaisFileProcessorServiceIntegrationTest
     @Autowired
     private BTEckohBaisFileProcessorConfiguration configuration;
 
-    @MockitoSpyBean
+    @MockitoBean
     private MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService;
 
     @Override

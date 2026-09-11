@@ -155,7 +155,7 @@ public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationT
     @DisplayName("A queue failure is recovered from blob storage on a later run")
     void shouldRetryFailedSourceJsonFromBlobStorage() {
         doThrow(new IllegalStateException("queue unavailable"))
-            .doCallRealMethod()
+            .doNothing()
             .when(queueService())
             .send(org.mockito.ArgumentMatchers.anyLong());
         uploadFixture(validFixture().fileName());
