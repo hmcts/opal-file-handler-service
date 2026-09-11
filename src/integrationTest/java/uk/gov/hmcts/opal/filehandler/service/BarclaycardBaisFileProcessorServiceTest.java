@@ -29,7 +29,6 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
-    "opal.file-handler-service.file-types.barclaycard.sftp-username=BARCLAYCARD",
     "launchdarkly.default-flag-values.barclaycard-file-transfer-Job=true",
 })
 public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFileProcessorServiceIntegrationTest {
