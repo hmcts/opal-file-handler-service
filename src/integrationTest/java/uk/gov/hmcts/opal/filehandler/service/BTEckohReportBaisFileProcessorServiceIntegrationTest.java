@@ -118,19 +118,4 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
     }
 
 
-    @Test
-    @DisplayName("AC5: Duplicate file with no previous success should process")
-    void processDuplicateWithoutPreviousSuccess() {
-        createFailedInterfaceFile(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT);
-        uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
-
-        service.run(config);
-
-        assertNumberOfSftpFiles(config.getSftpUsername(), 0);
-        assertEntitiesWithStatus(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Status.FAILED_SUPERSEDED);
-        assertSuccessfulInterfaceFile(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE,
-            Domain.MAINTENANCE);
-        assertBlobChecksum(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, config.getContainerName());
-    }
-
 }

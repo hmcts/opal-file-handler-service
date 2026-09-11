@@ -24,6 +24,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.util.DigestUtils;
@@ -169,6 +170,37 @@ public abstract class AbstractBaisFileProcessorServiceIntegrationTest extends Ab
 
         assertThat(repository.findAll()).isEmpty();
         assertThat(blobContainer().listBlobs()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("A previously failed BAIS source file is retried and superseded")
+    void shouldRetryPreviouslyFailedSourceFile() throws IOException {
+        BaisTestFile fixture = validFile();
+        String checksum = DigestUtils.md5DigestAsHex(
+            new ClassPathResource(fixture.classpathResource()).getContentAsByteArray());
+        InterfaceFileEntity previousFailure = createFailedInterfaceFile(
+            fixture.fileName(), checksum, processorConfiguration().getSource());
+        uploadFixture(fixture.fileName());
+
+        processor().run(processorConfiguration());
+
+        InterfaceFileEntity supersededFailure = repository.findById(previousFailure.getInterfaceFileId())
+            .orElseThrow();
+        assertThat(supersededFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
+
+        List<InterfaceFileEntity> successfulFiles = repository.findAllByFileNameAndChecksumAndStatus(
+            fixture.fileName(), checksum, Status.SUCCESS);
+        assertThat(successfulFiles)
+            .singleElement()
+            .satisfies(successfulFile -> {
+                assertThat(successfulFile.getInterfaceFileId()).isNotEqualTo(previousFailure.getInterfaceFileId());
+                assertThat(successfulFile.getType()).isEqualTo(Type.SOURCE);
+                assertThat(successfulFile.getErrors()).isNull();
+                assertThat(successfulFile.getFilestoreUuid()).isNotNull();
+            });
+
+        assertBlobChecksum(fixture.fileName(), checksum, processorConfiguration().getContainerName());
+        assertNumberOfSftpFiles(processorConfiguration().getSftpUsername(), 0);
     }
 
     public final void uploadResourceToSftp(String resourcePath, String containerPath) {

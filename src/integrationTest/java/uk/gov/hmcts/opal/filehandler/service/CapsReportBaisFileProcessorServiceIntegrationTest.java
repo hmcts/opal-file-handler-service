@@ -116,19 +116,4 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
                     CAPS_FILE, CAPS_FILE_CHECKSUM, success.getInterfaceFileId()));
     }
 
-    @Test
-    @DisplayName("AC5: Duplicate file with no previous success should process")
-    void processDuplicateWithoutPreviousSuccess() {
-        createFailedInterfaceFile(CAPS_FILE, CAPS_FILE_CHECKSUM, Interface.CAPS_REPORT);
-        uploadResourceToSftp(CAPS_FILE_RESOURCE, CAPS_FILE_CONTAINER);
-
-        capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
-
-        assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
-        assertEntitiesWithStatus(CAPS_FILE, CAPS_FILE_CHECKSUM, Status.FAILED_SUPERSEDED);
-        assertSuccessfulInterfaceFile(CAPS_FILE, CAPS_FILE_CHECKSUM, Interface.CAPS_REPORT, Type.SOURCE,
-            Domain.MAINTENANCE);
-        assertBlobChecksum(CAPS_FILE, CAPS_FILE_CHECKSUM, capsReportBaisFileProcessorConfiguration.getContainerName());
-    }
-
 }
