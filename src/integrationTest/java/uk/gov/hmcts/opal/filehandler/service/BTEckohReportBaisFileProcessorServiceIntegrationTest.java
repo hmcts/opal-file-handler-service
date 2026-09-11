@@ -29,7 +29,6 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceInt
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
-    "opal.file-handler-service.file-types.bteckoh-report.sftp-username=BTEckoh-report",
     "launchdarkly.default-flag-values.bteckoh-report-file-transfer-Job=true",
 })
 @Slf4j

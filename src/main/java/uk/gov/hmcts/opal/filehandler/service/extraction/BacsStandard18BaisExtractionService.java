@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -23,6 +24,7 @@ import uk.gov.hmcts.opal.filehandler.service.extraction.model.Transaction;
 import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
 
 @Service
+@Primary
 @RequiredArgsConstructor
 public class BacsStandard18BaisExtractionService implements ExtractionService<InterfaceFileCommonDataExtract> {
 
@@ -33,7 +35,7 @@ public class BacsStandard18BaisExtractionService implements ExtractionService<In
     private static final DateTimeFormatter OUTPUT_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final InterfaceFilesRepository interfaceFilesRepository;
-    private final BusinessUnitBankAccountRepository businessUnitBankAccountRepository;
+    final BusinessUnitBankAccountRepository businessUnitBankAccountRepository;
 
     @Override
     public List<InterfaceFileCommonDataExtract> extractStandardData(
