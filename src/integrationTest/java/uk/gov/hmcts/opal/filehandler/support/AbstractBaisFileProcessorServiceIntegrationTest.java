@@ -119,15 +119,14 @@ public abstract class AbstractBaisFileProcessorServiceIntegrationTest extends Ab
 
     @ParameterizedTest(name = "banking interfaces enabled={0}, feature enabled={1}")
     @CsvSource({
-        "false, true, release-1c-banking-interfaces",
-        "true, false, feature",
-        "false, false, release-1c-banking-interfaces"
+        "false, true",
+        "true, false",
+        "false, false"
     })
     @DisplayName("AC1: processing requires both feature flags")
     void shouldNotProcessWhenARequiredFeatureIsDisabled(
         boolean bankingInterfacesEnabled,
-        boolean featureEnabled,
-        String disabledFeature
+        boolean featureEnabled
     ) {
         BaisTestFile fixture = validFile();
         // A real file proves disabled feature flags prevent ingestion and leave SFTP contents untouched.
@@ -136,7 +135,7 @@ public abstract class AbstractBaisFileProcessorServiceIntegrationTest extends Ab
         setFeatureFlag(FeatureFlags.RELEASE_1C_BANKING_INTERFACES, bankingInterfacesEnabled);
         setFeatureFlag(processorConfiguration().getFeatureFlag(), featureEnabled);
 
-        String expectedDisabledFeature = "feature".equals(disabledFeature)
+        String expectedDisabledFeature = bankingInterfacesEnabled
             ? processorConfiguration().getFeatureFlag()
             : FeatureFlags.RELEASE_1C_BANKING_INTERFACES;
 
