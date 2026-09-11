@@ -159,6 +159,13 @@ opal:
         source: ALLPAY
         target: OPAL
         sftp-username: ${BAIS_SFTP_ALLPAY_USERNAME:}
+      dwp:
+        container-name: ${DWP_AZURE_STORAGE_CONTAINER:dwp}
+        feature-flag: dwp-file-transfer-job
+        file-name-regex: ^\d{10}_dat_\d{10}_\d{8}_\d{6}\.txt$
+        source: DWP
+        target: OPAL
+        sftp-username: ${BAIS_SFTP_DWP_USERNAME:}
     sftp:
       bais:
         host: ${BAIS_SFTP_CONNECTION_HOST:localhost}
@@ -196,6 +203,7 @@ launchdarkly:
     caps-report-file-transfer-Job: ${CAPS_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     bteckoh-report-file-transfer-Job: ${BTECKOH_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     allpay-file-transfer-Job: ${ALLPAY_FILE_TRANSFER_JOB_ENABLED:false}
+    dwp-file-transfer-job: ${DWP_FILE_TRANSFER_JOB_ENABLED:false}
 
 user:
   service:
