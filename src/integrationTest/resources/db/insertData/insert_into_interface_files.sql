@@ -8,7 +8,7 @@ VALUES
     -- valid bteckoh report
     (1, 'BTECKOH_REPORT', 'BTECKOH_REPORT', 'SOURCE',
      'FILE_HANDLER', '', '0f664b85-a5df-4600-9bb3-3b7092ab8718', null,
-     'SUCCESS', NOW(), null),
+     'SUCCESS', '2023-06-01T10:00:00', null),
     -- valid caps report
     (2, 'CAPS_REPORT', 'CAPS_REPORT', 'SOURCE',
      'FILE_HANDLER', '', '73c21773-6f49-438d-a760-78f0ffbedf0d', null,
