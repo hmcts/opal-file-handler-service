@@ -1,12 +1,13 @@
 opal:
-  file-handling-service:
+  testing-support-endpoints:
+    enabled: false
+  file-handler-service:
     file-types:
       bteckoh-report:
-        container-name: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-report}
+        sftp-username: BTEckoh-report
       caps-report:
-        container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}
-      natwest:
-        container-name: ${NATWEST_AZURE_STORAGE_CONTAINER:natwest}
+        sftp-username: CAPS-report
+
 user:
   service:
     url: http://localhost:4553
