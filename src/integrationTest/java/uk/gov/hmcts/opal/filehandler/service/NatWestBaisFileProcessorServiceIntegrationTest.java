@@ -29,7 +29,6 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
-    "opal.file-handler-service.file-types.natwest.sftp-username=NATWEST",
     "launchdarkly.default-flag-values.natwest-file-transfer-Job=true",
 })
 public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
