@@ -7,7 +7,7 @@ public enum Interface {
     NATWEST(null),
     ALLPAY("AllpayBaisFileBaisFileProcessorConfig"),
     ALLPAY_DD(null),
-    BARCLAYCARD(null),
+    BARCLAYCARD("BarclaycardBaisFileProcessorConfig"),
     BTECKOH(null),
     DWP(null),
     CDER(null),
