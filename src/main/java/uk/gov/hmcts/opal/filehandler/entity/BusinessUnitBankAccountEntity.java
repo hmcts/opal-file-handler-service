@@ -32,6 +32,7 @@ public class BusinessUnitBankAccountEntity {
 
     @Column(name = "business_unit_code", nullable = false)
     @Length(max = 4)
+    @NonNull
     private String businessUnitCode;
 
     @Column(name = "opal_domain", nullable = false)
@@ -42,10 +43,12 @@ public class BusinessUnitBankAccountEntity {
 
     @Column(name = "bank_sort_code", nullable = false)
     @Length(max = 6)
+    @NonNull
     private String bankSortCode;
 
     @Column(name = "bank_account_number", nullable = false)
     @Length(max = 10)
+    @NonNull
     private String bankAccountNumber;
 
     @Column(name = "dwp_court_code")
