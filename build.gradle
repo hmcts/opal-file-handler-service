@@ -385,6 +385,7 @@ dependencies {
 
   implementation 'org.springframework.integration:spring-integration-sftp'
   //Other
+  implementation 'org.apache.poi:poi-ooxml:5.5.1'
 
   implementation 'com.azure:azure-storage-blob:12.35.1'
   implementation 'com.microsoft.azure:applicationinsights-web:3.7.9'

@@ -131,10 +131,23 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
     // Keep the orchestration in Groovy and use shell only for az CLI calls.
     String storageAccount = "${storageAccountNamePrefix}${env.CHANGE_ID}"
     String resourceGroup = storageResourceGroup
-    String sshPublicKey = env.BAIS_EMULATOR_PUBLIC_KEY?.trim()
+    String sshPrivateKey = env.FUNCTIONAL_TEST_SFTP_PRIVATE_KEY?.trim()
 
-    if (!sshPublicKey) {
-        throw new RuntimeException('BAIS_EMULATOR_PUBLIC_KEY must be set')
+    if (!sshPrivateKey) {
+        throw new RuntimeException('FUNCTIONAL_TEST_SFTP_PRIVATE_KEY must be set')
+    }
+
+    String privateKeyFile = '.functional-test-bais-key'
+    steps.writeFile(file: privateKeyFile, text: sshPrivateKey + '\n')
+    steps.sh "chmod 600 '${privateKeyFile}'"
+    String sshPublicKey
+    try {
+        sshPublicKey = steps.sh(
+                script: "ssh-keygen -y -f '${privateKeyFile}'",
+                returnStdout: true
+        ).trim()
+    } finally {
+        steps.sh "rm -f '${privateKeyFile}'"
     }
 
     for (Map<String, String> mapping : storageSftpUsers) {
@@ -147,6 +160,7 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
         //Force Dev subscription login to ensure az cli commands are executed in the correct subscription context
         withSubscriptionLogin('dev') {
             Closure az = { cmd -> return sh(script: "env AZURE_CONFIG_DIR=/opt/jenkins/.azure-stg az $cmd", returnStdout: true).trim() }
+            az "storage container-rm create --storage-account '${storageAccount}' --resource-group '${resourceGroup}' --name '${container}' --only-show-errors"
             def status
             try {
                 status = az "storage account local-user show --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}' --only-show-errors --query name --output tsv"
@@ -156,10 +170,22 @@ def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, Lis
 
             if (!status) {
                 steps.echo "Create Account ${localUser} for ${container} in ${storageAccount}"
-                az "storage account local-user create --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}'  --home-directory '${container}' --permission-scope permissions=rwdl service=blob resource-name='${container}' --has-ssh-key true --ssh-authorized-key key='${sshPublicKey}' --has-ssh-password false --only-show-errors"
+                az "storage account local-user create --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}'  --home-directory '${container}' --permission-scope permissions=rwdlcop service=blob resource-name='${container}' --has-ssh-key true --ssh-authorized-key key='${sshPublicKey}' --has-ssh-password false --only-show-errors"
+            } else {
+                steps.echo "Update Account ${localUser} SSH key and permissions in ${storageAccount}"
+                az "storage account local-user update --account-name '${storageAccount}' --resource-group '${resourceGroup}' --user-name '${localUser}' --home-directory '${container}' --permission-scope permissions=rwdlcop service=blob resource-name='${container}' --ssh-authorized-key key='${sshPublicKey}' --only-show-errors"
             }
         }
     }
+}
+
+def configureFunctionalTestBais(String storageAccountNamePrefix) {
+    String storageAccount = "${storageAccountNamePrefix}${env.CHANGE_ID}"
+    env.FUNCTIONAL_TEST_SFTP_HOST = "${storageAccount}.blob.core.windows.net"
+    env.FUNCTIONAL_TEST_SFTP_PORT = '22'
+    env.FUNCTIONAL_TEST_CAPS_SFTP_USERNAME = "${storageAccount}.capsreport"
+    env.FUNCTIONAL_TEST_BTECKOH_SFTP_USERNAME = "${storageAccount}.bteckohreport"
+    steps.echo "Configured functional-test BAIS SFTP account ${storageAccount}"
 }
 
 def configureFunctionalTestBlobStorage(String valuesFile) {
@@ -177,9 +203,9 @@ def configureFunctionalTestBlobStorage(String valuesFile) {
     String storageAccount = blobStorage.azureName?.toString()?.replace('${CHANGE_ID}', changeId)
     String resourceGroup = blobStorage.resourceGroup?.toString()?.trim()
     List containers = (blobStorage.setup as Map)?.containers as List
-    String container = containers?.find { it == 'bteckoh-report' }
+    List<String> requiredContainers = ['bteckoh-report', 'caps-report']
 
-    if (!storageAccount || !resourceGroup || !container) {
+    if (!storageAccount || !resourceGroup || !containers?.containsAll(requiredContainers)) {
         throw new RuntimeException("Missing functional-test blob storage values in ${valuesFile}")
     }
 
@@ -205,13 +231,20 @@ def configureFunctionalTestBlobStorage(String valuesFile) {
             throw new RuntimeException("Could not resolve functional-test blob storage account ${storageAccount}")
         }
 
+        requiredContainers.each { container ->
+            az(
+                    "storage container-rm create --storage-account '${storageAccount}' "
+                            + "--resource-group '${resourceGroup}' --name '${container}' --only-show-errors"
+            )
+        }
+
         env.FILE_STORE_STORAGE_ACCOUNT_NAME = storageAccount
         env.FILE_STORE_STORAGE_URL = endpoint
         env.FILE_STORE_STORAGE_KEY = accountKey
-        env.FUNCTIONAL_TEST_BLOB_CONTAINER_NAME = container
+        env.FUNCTIONAL_TEST_BLOB_CONTAINER_NAME = requiredContainers.first()
     }
 
-    steps.echo "Configured functional-test blob storage account ${storageAccount}, container ${container}"
+    steps.echo "Configured functional-test blob storage account ${storageAccount}, containers ${requiredContainers}"
 }
 
 def configureFunctionalTestUserService(String valuesFile) {
@@ -342,7 +375,7 @@ def executeFunctionalTestDatabaseScript(
 
 def secrets = [
         'opal-${env}': [
-                secret('bais-emulator-public-key', 'BAIS_EMULATOR_PUBLIC_KEY')
+                secret('bais-private-key', 'FUNCTIONAL_TEST_SFTP_PRIVATE_KEY')
         ]
 ]
 
@@ -364,7 +397,12 @@ def stagingFunctionalTestSecrets = [
                 secret(
                         'opal-file-handler-service-file-store-access-key',
                         'FILE_STORE_STORAGE_KEY'
-                )
+                ),
+                secret('bais-private-key', 'FUNCTIONAL_TEST_SFTP_PRIVATE_KEY'),
+                secret('bais-sftp-connection-host', 'FUNCTIONAL_TEST_SFTP_HOST'),
+                secret('bais-sftp-connection-port', 'FUNCTIONAL_TEST_SFTP_PORT'),
+                secret('bais-sftp-caps-report-username', 'FUNCTIONAL_TEST_CAPS_SFTP_USERNAME'),
+                secret('bais-sftp-bteckoh-report-username', 'FUNCTIONAL_TEST_BTECKOH_SFTP_USERNAME')
         ]
 ]
 
@@ -398,6 +436,7 @@ withPipeline(type, product, component) {
         onPR {
             String releaseName = "opal-${component}-pr-${env.CHANGE_ID}"
             setupAzure(blobStorageAccountNamePrefix, blobStorageResourceGroup, blobStorageSftpUsers)
+            configureFunctionalTestBais(blobStorageAccountNamePrefix)
             configureFunctionalTestBlobStorage(devValuesFile)
             configureFunctionalTestUserService(devValuesFile)
             configureFunctionalTestDatabase(

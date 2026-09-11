@@ -27,7 +27,8 @@ import uk.hmcts.zephyr.automation.junit5.extension.ZephyrAutomationExtension;
 @Slf4j
 public class AbstractIntegrationTest {
 
-    private static final int WIREMOCK_PORT = 4553;
+    private static final int WIREMOCK_PORT =
+        Integer.parseInt(System.getenv().getOrDefault("INTEGRATION_WIREMOCK_PORT", "4553"));
     private static final WireMockServer WIREMOCK_SERVER = new WireMockServer(options().port(WIREMOCK_PORT));
 
     protected UserStateStub userStateStub;

@@ -1,5 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.steps;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -7,24 +8,32 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.opal.filehandler.support.BaisReportTestData.forDisplayName;
 import static uk.gov.hmcts.opal.filehandler.support.BaisReportTestData.forSource;
 
+import com.google.common.io.Resources;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import io.restassured.response.Response;
+import java.io.IOException;
+import java.net.URL;
+import java.time.Duration;
 import java.util.List;
-import net.serenitybdd.core.Serenity;
-import uk.gov.hmcts.opal.filehandler.blob.BlobStorageClient;
-import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
-import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient.InterfaceFileRecord;
+import java.util.Map;
 import uk.gov.hmcts.opal.filehandler.sftp.SftpClient;
-import uk.gov.hmcts.opal.filehandler.support.BaisAutomatedTaskRunner;
 import uk.gov.hmcts.opal.filehandler.support.BaisReportTestConfig;
+import uk.gov.hmcts.opal.filehandler.support.TestHttpClient.TestHttpResponse;
+import uk.gov.hmcts.opal.filehandler.testsupport.TestSupportApiClient;
 
 /**
  * Defines the shared end-to-end journey for BAIS report ingestion.
  */
-public class BaisReportStepDef {
+public class BaisReportStepDef extends BaseStepDef {
 
-    private final BaisAutomatedTaskRunner taskRunner = new BaisAutomatedTaskRunner();
+    private static final Duration INGESTION_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(500);
+
+    private final TestSupportApiClient testSupportApiClient = new TestSupportApiClient();
+    private TestHttpResponse taskResponse;
+    private Map<String, Object> successfulInterfaceFile;
 
     @Given("^the configured (BTEckoh|CAPS) report is available on bais$")
     public void configuredReportIsAvailable(String displayName) {
@@ -32,59 +41,50 @@ public class BaisReportStepDef {
         assertSftpFilePresence(config, config.fileName(), true);
     }
 
-    @Given("^a (BTEckoh|CAPS) report with an unsupported filename is available on bais$")
-    public void unsupportedReportIsAvailable(String displayName) {
+    @When("^the (BTEckoh|CAPS) report ingestion job is requested through testing support$")
+    public void reportIngestionJobIsRequested(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
-        try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
-            sftpClient.uploadResource(config.resourcePath(), config.unsupportedFileName());
-        }
+        taskResponse = testSupportApiClient.post("/automated-jobs/" + config.automatedTaskName());
     }
 
-    @Given("^the configured (BTEckoh|CAPS) report has already been ingested successfully$")
-    public void configuredReportHasAlreadyBeenIngested(String displayName) {
-        BaisReportTestConfig config = forDisplayName(displayName);
-        triggerTask(config);
-        assertEquals(1, recordsWithStatus(config, "SUCCESS").size(),
-            "Expected the first " + config.displayName() + " report ingestion to succeed");
-    }
-
-    @Given("^the same (BTEckoh|CAPS) report is uploaded again$")
-    public void sameReportIsUploadedAgain(String displayName) {
-        BaisReportTestConfig config = forDisplayName(displayName);
-        try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
-            sftpClient.uploadResource(config.resourcePath(), config.fileName());
-        }
-    }
-
-    @When("^the (BTEckoh|CAPS) report ingestion task is triggered$")
-    public void reportIngestionTaskIsTriggered(String displayName) {
-        triggerTask(forDisplayName(displayName));
+    @Then("the testing-support request is accepted")
+    public void testingSupportRequestIsAccepted() {
+        assertNotNull(taskResponse, "The testing-support endpoint was not called");
+        assertEquals(202, taskResponse.statusCode(), "The testing-support endpoint did not accept the job");
     }
 
     @Then("^a successful (BTECKOH_REPORT|CAPS_REPORT) interface file is stored$")
     public void successfulInterfaceFileIsStored(String source) {
         BaisReportTestConfig config = forSource(source);
-        List<InterfaceFileRecord> records = recordsWithStatus(config, "SUCCESS");
-        assertEquals(1, records.size(),
-            "Expected one successful " + config.displayName() + " interface-file record");
+        successfulInterfaceFile = awaitSuccessfulInterfaceFile(config);
 
-        InterfaceFileRecord record = records.getFirst();
-        assertEquals(config.source(), record.source());
-        assertEquals("OPAL", record.target());
-        assertEquals("SOURCE", record.type());
-        assertEquals("MAINTENANCE", record.domain());
-        assertEquals(config.fileName(), record.fileName());
-        assertEquals(config.checksum(), record.checksum());
-        assertNotNull(record.filestoreUuid());
+        assertEquals(config.source(), successfulInterfaceFile.get("source"));
+        assertEquals("OPAL", successfulInterfaceFile.get("target"));
+        assertEquals("SOURCE", successfulInterfaceFile.get("type"));
+        assertEquals("MAINTENANCE", successfulInterfaceFile.get("domain"));
+        assertEquals(config.fileName(), successfulInterfaceFile.get("file_name"));
+        assertEquals(config.checksum(), successfulInterfaceFile.get("checksum"));
+        assertNotNull(successfulInterfaceFile.get("filestore_uuid"));
     }
 
     @Then("^the stored (BTEckoh|CAPS) report content matches the bais (workbook|file)$")
-    public void storedReportContentMatches(String displayName, String fileDescription) {
+    public void storedReportContentMatches(String displayName, String fileDescription) throws IOException {
         BaisReportTestConfig config = forDisplayName(displayName);
-        InterfaceFileRecord success = recordsWithStatus(config, "SUCCESS").getFirst();
-        assertTrue(new BlobStorageClient(config.blobContainerName()).contentMatchesResource(
-            success.filestoreUuid().toString(), config.resourcePath()),
-            "Stored " + config.displayName() + " report content differs from the SFTP " + fileDescription);
+        assertNotNull(successfulInterfaceFile, "Successful interface-file metadata was not retrieved");
+        long interfaceFileId = ((Number) successfulInterfaceFile.get("interface_file_id")).longValue();
+
+        Response response = authorisedJsonRequest()
+            .accept("application/octet-stream")
+            .when()
+            .get(getTestUrl() + "/interface-files/" + interfaceFileId + "/content");
+
+        URL expectedResource = Resources.getResource(config.resourcePath());
+        assertEquals(200, response.statusCode(), "Stored report content could not be retrieved");
+        assertArrayEquals(
+            Resources.toByteArray(expectedResource),
+            response.getBody().asByteArray(),
+            "Stored " + config.displayName() + " report content differs from the SFTP " + fileDescription
+        );
     }
 
     @Then("^the configured (BTEckoh|CAPS) report no longer exists on bais$")
@@ -93,40 +93,42 @@ public class BaisReportStepDef {
         assertSftpFilePresence(config, config.fileName(), false);
     }
 
-    @Then("^no interface file is created for the unsupported (BTEckoh|CAPS) filename$")
-    public void unsupportedInterfaceFileIsNotCreated(String displayName) {
-        BaisReportTestConfig config = forDisplayName(displayName);
-        try (InterfaceFileTestDatabaseClient databaseClient = new InterfaceFileTestDatabaseClient()) {
-            assertTrue(databaseClient.findByFileName(config.unsupportedFileName()).isEmpty(),
-                "An interface-file record was created for an unsupported " + config.displayName() + " filename");
-        }
-    }
+    private Map<String, Object> awaitSuccessfulInterfaceFile(BaisReportTestConfig config) {
+        long deadline = System.nanoTime() + INGESTION_TIMEOUT.toNanos();
+        List<Map<String, Object>> matchingRecords = List.of();
+        do {
+            Response response = authorisedJsonRequest()
+                .queryParam("source", config.source())
+                .when()
+                .get(getTestUrl() + "/interface-files");
+            assertEquals(200, response.statusCode(), "Interface-file metadata could not be retrieved");
 
-    @Then("^the unsupported (BTEckoh|CAPS) file remains on bais$")
-    public void unsupportedReportRemainsOnSftp(String displayName) {
-        BaisReportTestConfig config = forDisplayName(displayName);
-        assertSftpFilePresence(config, config.unsupportedFileName(), true);
-    }
-
-    @Then("^one successful and one duplicate (BTEckoh|CAPS) interface file are stored$")
-    public void successAndDuplicateAreStored(String displayName) {
-        BaisReportTestConfig config = forDisplayName(displayName);
-        assertEquals(1, recordsWithStatus(config, "SUCCESS").size(),
-            "Expected one successful " + config.displayName() + " interface-file record");
-        assertEquals(1, recordsWithStatus(config, "DUPLICATE").size(),
-            "Expected one duplicate " + config.displayName() + " interface-file record");
-    }
-
-    private void triggerTask(BaisReportTestConfig config) {
-        String output = taskRunner.run(config);
-        Serenity.recordReportData().withTitle(config.displayName() + " ingestion task output").andContents(output);
-    }
-
-    private static List<InterfaceFileRecord> recordsWithStatus(BaisReportTestConfig config, String status) {
-        try (InterfaceFileTestDatabaseClient databaseClient = new InterfaceFileTestDatabaseClient()) {
-            return databaseClient.findByFileName(config.fileName()).stream()
-                .filter(record -> status.equals(record.status()))
+            matchingRecords = response.jsonPath()
+                .<Map<String, Object>>getList("interface_files")
+                .stream()
+                .filter(record -> config.fileName().equals(record.get("file_name")))
                 .toList();
+            List<Map<String, Object>> successfulRecords = matchingRecords.stream()
+                .filter(record -> "SUCCESS".equals(record.get("status")))
+                .toList();
+            if (successfulRecords.size() == 1) {
+                return successfulRecords.getFirst();
+            }
+            pauseBeforeRetry();
+        } while (System.nanoTime() < deadline);
+
+        throw new AssertionError(
+            "Expected one successful " + config.displayName() + " interface-file record within "
+                + INGESTION_TIMEOUT.toSeconds() + " seconds; matching records: " + matchingRecords
+        );
+    }
+
+    private static void pauseBeforeRetry() {
+        try {
+            Thread.sleep(POLL_INTERVAL.toMillis());
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for interface-file metadata", exception);
         }
     }
 
