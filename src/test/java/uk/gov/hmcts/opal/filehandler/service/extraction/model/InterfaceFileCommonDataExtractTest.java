@@ -2,19 +2,19 @@ package uk.gov.hmcts.opal.filehandler.service.extraction.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 
 class InterfaceFileCommonDataExtractTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     @Test
-    void shouldSerializeToExpectedSnakeCaseJsonStructure() throws IOException {
+    void shouldSerializeToExpectedSnakeCaseJsonStructure() {
         InterfaceFileCommonDataExtract extract = getTypicalData();
 
         JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(extract));
@@ -23,7 +23,7 @@ class InterfaceFileCommonDataExtractTest {
     }
 
     @Test
-    void shouldDeserializeFromExampleJson() throws IOException {
+    void shouldDeserializeFromExampleJson() {
         String json = """
             {
               "file_name": "a121_00350005_300000.dat",
@@ -78,5 +78,4 @@ class InterfaceFileCommonDataExtractTest {
     }
 
 }
-
 

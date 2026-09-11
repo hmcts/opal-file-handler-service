@@ -1,8 +1,11 @@
 package uk.gov.hmcts.opal.filehandler.support;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.models.BlobProperties;
 import java.io.ByteArrayOutputStream;
@@ -13,29 +16,38 @@ import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.util.DigestUtils;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
+import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
+import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
+import uk.gov.hmcts.opal.common.launchdarkly.config.LaunchDarklyProperties;
+import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
+import uk.gov.hmcts.opal.filehandler.service.AbstractInterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.service.CapsReportBaisFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 
-@SpringBootTest(properties = {
-    "spring.main.web-application-type=none",
-    "launchdarkly.default-flag-values.release-1c-banking-interfaces=true"
-})
+@SpringBootTest(properties = "spring.main.web-application-type=none")
 @Slf4j
 @Testcontainers
-public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractIntegrationTest {
+public abstract class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private Clock clock;
@@ -48,6 +60,17 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
 
     @Autowired
     protected BlobServiceClient blobServiceClient;
+
+    @Autowired
+    private LaunchDarklyProperties launchDarklyProperties;
+
+    protected abstract AbstractInterfaceFileProcessorService processor();
+
+    protected abstract BaisFileProcessorConfiguration processorConfiguration();
+
+    protected abstract BaisTestFile validFile();
+
+    protected abstract String unsupportedFileName();
 
     @DynamicPropertySource
     static void dynamicProperties(DynamicPropertyRegistry registry) throws IOException {
@@ -68,9 +91,124 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
         registry.add("opal.file-handler-service.sftp.bais.private-key", () -> privateKey);
     }
 
+    @BeforeEach
+    void setUpBaisContract() {
+        repository.deleteAll();
+
+        BlobContainerClient container = blobContainer();
+        container.createIfNotExists();
+        container.listBlobs().forEach(blob -> container.getBlobClient(blob.getName()).deleteIfExists());
+
+        deleteSftpFiles();
+
+        setFeatureFlag(FeatureFlags.RELEASE_1C_BANKING_INTERFACES, true);
+        setFeatureFlag(processorConfiguration().getFeatureFlag(), true);
+    }
+
+    @AfterEach
+    void tearDownBaisContract() {
+        deleteSftpFiles();
+    }
+
+    @Test
+    @DisplayName("BAIS processor feature flag has an offline default")
+    void shouldConfigureProcessorFeatureFlagDefault() {
+        assertThat(launchDarklyProperties.getDefaultFlagValues())
+            .containsKey(processorConfiguration().getFeatureFlag());
+    }
+
+    @ParameterizedTest(name = "banking interfaces enabled={0}, feature enabled={1}")
+    @CsvSource({
+        "false, true",
+        "true, false",
+        "false, false"
+    })
+    @DisplayName("AC1: processing requires both feature flags")
+    void shouldNotProcessWhenARequiredFeatureIsDisabled(
+        boolean bankingInterfacesEnabled,
+        boolean featureEnabled
+    ) {
+        BaisTestFile fixture = validFile();
+        // A real file proves disabled feature flags prevent ingestion and leave SFTP contents untouched.
+        uploadFixture(fixture.fileName());
+
+        setFeatureFlag(FeatureFlags.RELEASE_1C_BANKING_INTERFACES, bankingInterfacesEnabled);
+        setFeatureFlag(processorConfiguration().getFeatureFlag(), featureEnabled);
+
+        String expectedDisabledFeature = bankingInterfacesEnabled
+            ? processorConfiguration().getFeatureFlag()
+            : FeatureFlags.RELEASE_1C_BANKING_INTERFACES;
+
+        assertThatThrownBy(() -> processor().run(processorConfiguration()))
+            .isInstanceOf(FeatureDisabledException.class)
+            .hasMessage(expectedDisabledFeature + " is not enabled");
+
+        assertThat(repository.findAll()).isEmpty();
+        assertThat(blobContainer().listBlobs()).isEmpty();
+        assertThat(sftpClient.listRegularFiles(processorConfiguration().getSftpUsername()))
+            .containsExactly(fixture.fileName());
+    }
+
+    @Test
+    @DisplayName("Unsupported BAIS filenames remain on SFTP without processing")
+    void shouldIgnoreUnsupportedFileAndLeaveItOnSftp() {
+        uploadFixture(unsupportedFileName());
+
+        processor().run(processorConfiguration());
+
+        assertThat(repository.findAll()).isEmpty();
+        assertThat(blobContainer().listBlobs()).isEmpty();
+        assertThat(sftpClient.listRegularFiles(processorConfiguration().getSftpUsername()))
+            .containsExactly(unsupportedFileName());
+    }
+
+    @Test
+    @DisplayName("An empty BAIS SFTP directory completes without side effects")
+    void shouldSucceedWhenSftpDirectoryIsEmpty() {
+        assertThatCode(() -> processor().run(processorConfiguration())).doesNotThrowAnyException();
+
+        assertThat(repository.findAll()).isEmpty();
+        assertThat(blobContainer().listBlobs()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("A previously failed BAIS source file is retried and superseded")
+    void shouldRetryPreviouslyFailedSourceFile() throws IOException {
+        BaisTestFile fixture = validFile();
+        String checksum = DigestUtils.md5DigestAsHex(
+            new ClassPathResource(fixture.classpathResource()).getContentAsByteArray());
+        InterfaceFileEntity previousFailure = createFailedInterfaceFile(
+            fixture.fileName(), checksum, processorConfiguration().getSource());
+        uploadFixture(fixture.fileName());
+
+        processor().run(processorConfiguration());
+
+        InterfaceFileEntity supersededFailure = repository.findById(previousFailure.getInterfaceFileId())
+            .orElseThrow();
+        assertThat(supersededFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
+
+        List<InterfaceFileEntity> successfulFiles = repository.findAllByFileNameAndChecksumAndStatus(
+            fixture.fileName(), checksum, Status.SUCCESS);
+        assertThat(successfulFiles)
+            .singleElement()
+            .satisfies(successfulFile -> {
+                assertThat(successfulFile.getInterfaceFileId()).isNotEqualTo(previousFailure.getInterfaceFileId());
+                assertThat(successfulFile.getType()).isEqualTo(Type.SOURCE);
+                assertThat(successfulFile.getErrors()).isNull();
+                assertThat(successfulFile.getFilestoreUuid()).isNotNull();
+            });
+
+        assertBlobChecksum(fixture.fileName(), checksum, processorConfiguration().getContainerName());
+        assertNumberOfSftpFiles(processorConfiguration().getSftpUsername(), 0);
+    }
+
     public final void uploadResourceToSftp(String resourcePath, String containerPath) {
         TestContainerConfig.SFTP_CONTAINER.copyFileToContainer(
             MountableFile.forClasspathResource(resourcePath), containerPath);
+    }
+
+    protected final void uploadFixture(String destinationFileName) {
+        uploadResourceToSftp(validFile().classpathResource(), sftpPath(destinationFileName));
     }
 
     public final void assertNumberOfSftpFiles(String username, int expected) {
@@ -200,6 +338,27 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
             .build();
 
         return repository.save(entity);
+    }
+
+    protected final BlobContainerClient blobContainer() {
+        return blobServiceClient.getBlobContainerClient(processorConfiguration().getContainerName());
+    }
+
+    private String sftpPath(String fileName) {
+        return "/home/%s/%s".formatted(processorConfiguration().getSftpUsername(), fileName);
+    }
+
+    private void deleteSftpFiles() {
+        String username = processorConfiguration().getSftpUsername();
+        sftpClient.listRegularFiles(username).forEach(file -> sftpClient.deleteFile(username, file));
+    }
+
+    private void setFeatureFlag(String featureFlag, boolean enabled) {
+        assertThat(launchDarklyProperties.getDefaultFlagValues()).containsKey(featureFlag);
+        launchDarklyProperties.getDefaultFlagValues().put(featureFlag, enabled);
+    }
+
+    public record BaisTestFile(String fileName, String classpathResource) {
     }
 
 }

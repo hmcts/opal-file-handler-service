@@ -3,10 +3,17 @@ opal:
     enabled: false
   file-handler-service:
     file-types:
+      allpay:
+        sftp-username: AllPay
+      bteckoh-transfer:
+        sftp-username: BTEckoh
       bteckoh-report:
         sftp-username: BTEckoh-report
       caps-report:
         sftp-username: CAPS-report
+
+launchdarkly:
+  enabled: false
 
 user:
   service:

@@ -2,16 +2,16 @@ package uk.gov.hmcts.opal.filehandler.service.extraction.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 class TransactionTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     @ParameterizedTest
     @ValueSource(strings = {"44", "54"})
@@ -28,7 +28,7 @@ class TransactionTest {
     }
 
     @Test
-    void shouldSerializeUsingSnakeCase() throws IOException {
+    void shouldSerializeUsingSnakeCase() {
         Transaction transaction = getTypicalData();
 
         JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(transaction));
@@ -52,5 +52,4 @@ class TransactionTest {
         assertThat(json.get("date_entry_applied").asText()).isEqualTo("01/06/2026");
     }
 }
-
 

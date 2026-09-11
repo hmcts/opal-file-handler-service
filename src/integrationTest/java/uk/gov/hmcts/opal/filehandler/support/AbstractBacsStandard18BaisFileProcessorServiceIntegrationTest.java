@@ -1,0 +1,260 @@
+package uk.gov.hmcts.opal.filehandler.support;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import com.azure.storage.blob.BlobClient;
+import java.io.IOException;
+import java.util.HexFormat;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.DigestUtils;
+import tools.jackson.databind.ObjectMapper;
+import uk.gov.hmcts.opal.filehandler.entity.Domain;
+import uk.gov.hmcts.opal.filehandler.entity.Interface;
+import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
+import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
+import uk.gov.hmcts.opal.filehandler.entity.Status;
+import uk.gov.hmcts.opal.filehandler.entity.Type;
+import uk.gov.hmcts.opal.filehandler.service.queue.InterfaceFilePreprocessQueueService;
+import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
+
+public abstract class AbstractBacsStandard18BaisFileProcessorServiceIntegrationTest
+    extends AbstractBaisFileProcessorServiceIntegrationTest {
+
+    private static final long BUSINESS_UNIT_BANK_ACCOUNT_ID = 920003L;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private BusinessUnitBankAccountEntityTestData businessUnitBankAccountTestData;
+
+    protected abstract InterfaceFilePreprocessQueueService queueService();
+
+    protected abstract BacsStandard18Fixture validFixture();
+
+    @Override
+    protected final BaisTestFile validFile() {
+        BacsStandard18Fixture fixture = validFixture();
+        return new BaisTestFile(fixture.fileName(), fixture.classpathResource());
+    }
+
+    @BeforeEach
+    void setUpBacsStandard18Contract() {
+        businessUnitBankAccountTestData.clear();
+
+        BacsStandard18Fixture fixture = validFixture();
+        saveBusinessUnitBankAccount(fixture);
+
+        clearInvocations(queueService());
+    }
+
+    @AfterEach
+    void tearDownBacsStandard18Contract() {
+        businessUnitBankAccountTestData.clear();
+    }
+
+    @Test
+    @DisplayName("AC2: a valid BACS18 file is ingested, extracted, stored and queued")
+    void shouldIngestValidFile() throws IOException {
+        BacsStandard18Fixture fixture = validFixture();
+        final byte[] expectedSourceBytes =
+            new ClassPathResource(fixture.classpathResource()).getContentAsByteArray();
+        final byte[] expectedJsonBytes =
+            new ClassPathResource(fixture.expectedJsonResource()).getContentAsByteArray();
+
+        uploadFixture(fixture.fileName());
+        processor().run(processorConfiguration());
+
+        InterfaceFileEntity source = findOnly(Type.SOURCE, Status.SUCCESS);
+        InterfaceFileEntity sourceJson = findOnly(Type.SOURCE_JSON, Status.SUCCESS);
+
+        assertSource(source, fixture);
+        assertSourceJson(sourceJson, source, fixture);
+
+        byte[] sourceBytes = assertStoredBlob(source);
+        byte[] sourceJsonBytes = assertStoredBlob(sourceJson);
+        assertThat(sourceBytes).isEqualTo(expectedSourceBytes);
+        assertThat(objectMapper.readTree(sourceJsonBytes)).isEqualTo(objectMapper.readTree(expectedJsonBytes));
+
+        verify(queueService()).send(sourceJson.getInterfaceFileId());
+        assertNumberOfSftpFiles(processorConfiguration().getSftpUsername(), 0);
+    }
+
+    @Test
+    @DisplayName("Duplicate BACS18 files are recorded without repeat extraction or queueing")
+    void shouldRecordDuplicateWithoutCreatingAnotherSourceJson() {
+        uploadFixture(validFixture().fileName());
+        processor().run(processorConfiguration());
+
+        uploadFixture(validFixture().fileName());
+        processor().run(processorConfiguration());
+
+        List<InterfaceFileEntity> entities = repository.findAll();
+        assertThat(entities)
+            .filteredOn(entity -> entity.getType() == Type.SOURCE && entity.getStatus() == Status.SUCCESS)
+            .hasSize(1);
+        assertThat(entities)
+            .filteredOn(entity -> entity.getType() == Type.SOURCE && entity.getStatus() == Status.DUPLICATE)
+            .hasSize(1);
+        InterfaceFileEntity sourceJson = entities.stream()
+            .filter(entity -> entity.getType() == Type.SOURCE_JSON)
+            .findFirst()
+            .orElseThrow();
+        assertThat(entities).filteredOn(entity -> entity.getType() == Type.SOURCE_JSON).hasSize(1);
+        verify(queueService(), times(1)).send(sourceJson.getInterfaceFileId());
+        assertNumberOfSftpFiles(processorConfiguration().getSftpUsername(), 0);
+    }
+
+    @Test
+    @DisplayName("A processing failure retains the SFTP file and a later run recovers it")
+    void shouldRecoverAfterProcessingFailure() {
+        BacsStandard18Fixture fixture = validFixture();
+        businessUnitBankAccountTestData.clear();
+        uploadFixture(fixture.fileName());
+
+        processor().run(processorConfiguration());
+
+        InterfaceFileEntity failedSource = findOnly(Type.SOURCE, Status.FAILED);
+        assertThat(failedSource.getErrors())
+            .contains("Business unit bank account with sort code '%s' and account number '%s' could not be located"
+                .formatted(fixture.bankSortCode(), fixture.bankAccountNumber()));
+        assertStoredBlob(failedSource);
+        assertThat(repository.findAll()).filteredOn(entity -> entity.getType() == Type.SOURCE_JSON).isEmpty();
+        assertThat(sftpClient.listRegularFiles(processorConfiguration().getSftpUsername()))
+            .containsExactly(fixture.fileName());
+        verify(queueService(), never()).send(org.mockito.ArgumentMatchers.anyLong());
+
+        saveBusinessUnitBankAccount(fixture);
+        processor().run(processorConfiguration());
+
+        InterfaceFileEntity supersededSource = findOnly(Type.SOURCE, Status.FAILED_SUPERSEDED);
+        InterfaceFileEntity successfulSource = findOnly(Type.SOURCE, Status.SUCCESS);
+        InterfaceFileEntity successfulSourceJson = findOnly(Type.SOURCE_JSON, Status.SUCCESS);
+        assertThat(supersededSource.getInterfaceFileId()).isEqualTo(failedSource.getInterfaceFileId());
+        assertThat(successfulSource.getInterfaceFileId()).isNotEqualTo(failedSource.getInterfaceFileId());
+        assertThat(successfulSourceJson.getRelatedInterfaceFile().getInterfaceFileId())
+            .isEqualTo(successfulSource.getInterfaceFileId());
+        assertStoredBlob(successfulSource);
+        assertStoredBlob(successfulSourceJson);
+        verify(queueService()).send(successfulSourceJson.getInterfaceFileId());
+        assertNumberOfSftpFiles(processorConfiguration().getSftpUsername(), 0);
+    }
+
+    @Test
+    @DisplayName("A queue failure is recovered from blob storage on a later run")
+    void shouldRetryFailedSourceJsonFromBlobStorage() {
+        doThrow(new IllegalStateException("queue unavailable"))
+            .doNothing()
+            .when(queueService())
+            .send(org.mockito.ArgumentMatchers.anyLong());
+        uploadFixture(validFixture().fileName());
+
+        processor().run(processorConfiguration());
+
+        InterfaceFileEntity source = findOnly(Type.SOURCE, Status.SUCCESS);
+        InterfaceFileEntity failedSourceJson = findOnly(Type.SOURCE_JSON, Status.FAILED);
+        assertThat(failedSourceJson.getErrors()).contains("Queue send failed: queue unavailable");
+        assertStoredBlob(source);
+        assertStoredBlob(failedSourceJson);
+        verify(queueService()).send(failedSourceJson.getInterfaceFileId());
+        assertNumberOfSftpFiles(processorConfiguration().getSftpUsername(), 0);
+
+        processor().run(processorConfiguration());
+
+        InterfaceFileEntity supersededSourceJson = findOnly(Type.SOURCE_JSON, Status.FAILED_SUPERSEDED);
+        InterfaceFileEntity successfulSourceJson = findOnly(Type.SOURCE_JSON, Status.SUCCESS);
+        assertThat(supersededSourceJson.getInterfaceFileId()).isEqualTo(failedSourceJson.getInterfaceFileId());
+        assertThat(successfulSourceJson.getRelatedInterfaceFile().getInterfaceFileId())
+            .isEqualTo(source.getInterfaceFileId());
+        assertThat(repository.findAll()).filteredOn(entity -> entity.getType() == Type.SOURCE).hasSize(1);
+        assertStoredBlob(successfulSourceJson);
+        verify(queueService()).send(successfulSourceJson.getInterfaceFileId());
+        verify(queueService(), times(2)).send(org.mockito.ArgumentMatchers.anyLong());
+        assertNumberOfSftpFiles(processorConfiguration().getSftpUsername(), 0);
+    }
+
+    private void assertSource(InterfaceFileEntity source, BacsStandard18Fixture fixture) {
+        assertThat(source.getSource()).isEqualTo(fixture.source());
+        assertThat(source.getTarget()).isEqualTo(fixture.target());
+        assertThat(source.getType()).isEqualTo(Type.SOURCE);
+        assertThat(source.getStatus()).isEqualTo(Status.SUCCESS);
+        assertThat(source.getOpalDomain()).isEqualTo(fixture.domain());
+        assertThat(source.getFileName()).isEqualTo(fixture.fileName());
+        assertThat(source.getChecksum()).isEqualTo(fixture.checksum());
+        assertThat(source.getBusinessUnitCode()).containsExactly(fixture.businessUnitCode());
+        assertThat(source.getPaymentType()).isNull();
+        assertThat(source.getRelatedInterfaceFile()).isNull();
+        assertThat(source.getErrors()).isNull();
+    }
+
+    private void assertSourceJson(
+        InterfaceFileEntity sourceJson,
+        InterfaceFileEntity source,
+        BacsStandard18Fixture fixture
+    ) {
+        assertThat(sourceJson.getSource()).isEqualTo(fixture.source());
+        assertThat(sourceJson.getTarget()).isEqualTo(fixture.target());
+        assertThat(sourceJson.getType()).isEqualTo(Type.SOURCE_JSON);
+        assertThat(sourceJson.getStatus()).isEqualTo(Status.SUCCESS);
+        assertThat(sourceJson.getOpalDomain()).isEqualTo(fixture.domain());
+        assertThat(sourceJson.getFileName()).isEqualTo(fixture.fileName());
+        assertThat(sourceJson.getBusinessUnitCode()).containsExactly(fixture.businessUnitCode());
+        assertThat(sourceJson.getPaymentType()).isEqualTo(fixture.paymentType());
+        assertThat(sourceJson.getRelatedInterfaceFile().getInterfaceFileId()).isEqualTo(source.getInterfaceFileId());
+        assertThat(sourceJson.getErrors()).isNull();
+    }
+
+    private byte[] assertStoredBlob(InterfaceFileEntity entity) {
+        BlobClient blob = blobContainer().getBlobClient(entity.getFilestoreUuid().toString());
+        assertThat(blob.exists()).isTrue();
+
+        byte[] content = blob.downloadContent().toBytes();
+        assertThat(DigestUtils.md5DigestAsHex(content)).isEqualTo(entity.getChecksum());
+        assertThat(HexFormat.of().formatHex(blob.getProperties().getContentMd5())).isEqualTo(entity.getChecksum());
+        return content;
+    }
+
+    private InterfaceFileEntity findOnly(Type type, Status status) {
+        return repository.findAll().stream()
+            .filter(entity -> entity.getType() == type && entity.getStatus() == status)
+            .reduce((first, second) -> {
+                throw new AssertionError("Expected one " + type + " with status " + status);
+            })
+            .orElseThrow(() -> new AssertionError("Expected one " + type + " with status " + status));
+    }
+
+    private void saveBusinessUnitBankAccount(BacsStandard18Fixture fixture) {
+        businessUnitBankAccountTestData.saveBusinessUnitBankAccount(
+            BUSINESS_UNIT_BANK_ACCOUNT_ID,
+            fixture.businessUnitCode(),
+            fixture.domain(),
+            fixture.bankSortCode(),
+            fixture.bankAccountNumber());
+    }
+
+    public record BacsStandard18Fixture(
+        String fileName,
+        String classpathResource,
+        String expectedJsonResource,
+        String checksum,
+        Interface source,
+        Interface target,
+        String businessUnitCode,
+        Domain domain,
+        PaymentType paymentType,
+        String bankSortCode,
+        String bankAccountNumber
+    ) {
+    }
+}
