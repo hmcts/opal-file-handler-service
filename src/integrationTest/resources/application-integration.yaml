@@ -7,6 +7,9 @@ opal:
         sftp-username: BTEckoh-report
       caps-report:
         sftp-username: CAPS-report
+      bailiffs:
+        cder:
+          sftp-username: CDER
 
 user:
   service:

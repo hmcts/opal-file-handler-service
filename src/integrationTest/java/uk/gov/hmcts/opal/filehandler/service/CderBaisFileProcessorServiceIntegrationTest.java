@@ -29,8 +29,7 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
-    "opal.file-handler-service.file-types.bailiffs.cder.sftp-username=CDER",
-    "launchdarkly.default-flag-values[bailiffs.cder-file-transfer-Job]=true",
+    "launchdarkly.default-flag-values[bailiffs.cder-file-transfer-Job]=true"
 })
 public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
 
