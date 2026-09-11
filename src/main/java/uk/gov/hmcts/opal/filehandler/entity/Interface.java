@@ -12,9 +12,10 @@ public enum Interface {
     DWP(null),
     CDER(null),
     JACOBS(null),
-    MARSTON(null),
+    MARSTON("MarstonBaisFileBaisFileProcessorConfig"),
     BTECKOH_REPORT("BTEckohReportBaisFileProcessorConfig"),
     CAPS_REPORT("capsReportBaisFileProcessorConfig"),
+
     OPAL(null);
 
     private final String configComponentName;
