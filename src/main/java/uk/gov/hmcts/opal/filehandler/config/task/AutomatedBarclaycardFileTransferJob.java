@@ -5,22 +5,25 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.config.BarclaycardBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.service.BarclaycardBaisFileProcessorService;
 
 @Component
-@ConditionalOnProperty(name = "opal.automated-task", havingValue = "BarclaycardFileTransferJob")
+@ConditionalOnExpression(
+    "'${opal.automated-task}'.equals('BarclaycardFileTransferJob') or ${opal.testing-support-endpoints.enabled}"
+)
 @Slf4j
 @RequiredArgsConstructor
-public class AutomatedBarclaycardFileTransferJob implements ApplicationRunner {
+public class AutomatedBarclaycardFileTransferJob implements TaskConfiguration {
 
     private final BarclaycardBaisFileProcessorService service;
     private final BarclaycardBaisFileProcessorConfiguration configuration;
 
     @Override
-    public void run(ApplicationArguments args) throws IOException {
+    public void run() {
         log.info("Starting automated Barclaycard file transfer job");
 
         service.run(configuration);
