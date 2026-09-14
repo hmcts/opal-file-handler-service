@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.JacobsBaisFileProcessorConfiguration;
@@ -46,7 +46,7 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
     @Autowired
     private BusinessUnitBankAccountEntityTestData buBankAccountTestData;
 
-    @MockitoSpyBean
+    @MockitoBean
     private FinesInterfaceFilePreprocessQueueService queue;
 
     @BeforeEach
