@@ -9,20 +9,34 @@ import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.jms.core.JmsTemplate;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.ObjectMapper;
 
+@ExtendWith(MockitoExtension.class)
 class MaintenanceInterfaceFilePreprocessQueueServiceTest {
 
     private final Logger logger = (Logger) LoggerFactory.getLogger(
         MaintenanceInterfaceFilePreprocessQueueService.class);
     private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
+    @Mock
+    private JmsTemplate jmsTemplate;
+    @Mock
+    private ObjectMapper objectMapper;
     private MaintenanceInterfaceFilePreprocessQueueService service;
 
     @BeforeEach
     void setUp() {
         logAppender.start();
         logger.addAppender(logAppender);
-        service = new MaintenanceInterfaceFilePreprocessQueueService();
+        service = new MaintenanceInterfaceFilePreprocessQueueService(
+            jmsTemplate,
+            "banking-interfaces-preprocess-interface-file-maintenance",
+            objectMapper
+        );
     }
 
     @AfterEach

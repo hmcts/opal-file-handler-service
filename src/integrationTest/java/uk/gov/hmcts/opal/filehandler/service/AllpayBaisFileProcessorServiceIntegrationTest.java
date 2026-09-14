@@ -15,7 +15,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
@@ -45,7 +45,8 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
     @Autowired
     private AllpayBaisFileProcessorConfiguration allpayBaisFileProcessorConfiguration;
 
-    @MockitoSpyBean
+    //TODO - Remove mocked bean and replace with test container service bus for integration testing
+    @MockitoBean
     private MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService;
 
     @BeforeEach

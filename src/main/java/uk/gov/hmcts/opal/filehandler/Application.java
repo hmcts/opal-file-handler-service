@@ -4,10 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import uk.gov.hmcts.opal.common.config.ServiceBusProperties;
 import uk.gov.hmcts.opal.filehandler.config.FeignConfiguration;
 import uk.gov.hmcts.opal.filehandler.util.TaskRunnerUtil;
 
@@ -18,6 +20,7 @@ import uk.gov.hmcts.opal.filehandler.util.TaskRunnerUtil;
 @EnableCaching
 @Slf4j
 @ConfigurationPropertiesScan
+@EnableConfigurationProperties({ServiceBusProperties.class})
 @SuppressWarnings("HideUtilityClassConstructor") // Spring needs a constructor, its not a utility class
 public class Application {
 
