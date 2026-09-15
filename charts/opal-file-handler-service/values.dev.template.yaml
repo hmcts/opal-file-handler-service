@@ -86,6 +86,7 @@ blobstorage:
     containers:
       - bteckoh-report
       - caps-report
+      - dwp
       - cder
 bais-emulator:
   enabled: true
@@ -98,6 +99,7 @@ bais-emulator:
     containers:
       - bteckoh-report
       - caps-report
+      - dwp
       - cder
 bt-eckoh-report:
   image: ${IMAGE_NAME}
