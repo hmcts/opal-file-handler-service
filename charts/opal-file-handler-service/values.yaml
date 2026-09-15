@@ -274,8 +274,8 @@ barclaycard-transfer:
           alias: BAIS_SFTP_CONNECTION_HOST
         - name: bais-sftp-connection-port
           alias: BAIS_SFTP_CONNECTION_PORT
-        - name: bais-sftp-natwest-username
-          alias: BAIS_SFTP_NATWEST_USERNAME
+        - name: bais-sftp-barclaycard-username
+          alias: BAIS_SFTP_BARCLAYCARD_USERNAME
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
