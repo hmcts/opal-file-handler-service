@@ -9,7 +9,7 @@ public enum Interface {
     ALLPAY_DD(null),
     BARCLAYCARD("BarclaycardBaisFileProcessorConfig"),
     BTECKOH(null),
-    DWP(null),
+    DWP("dwpBaisFileProcessorConfig"),
     CDER(null),
     JACOBS(null),
     MARSTON(null),
