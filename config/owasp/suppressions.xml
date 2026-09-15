@@ -11,7 +11,7 @@
     <cve>CVE-2025-7962</cve>
   </suppress>
   <!--End of false positives section -->
-  <suppress until="2026-09-15Z">
+  <suppress until="2026-10-15Z">
     <notes><![CDATA[
     Reviewed 2026-05-27.
     CVE-2025-21199 applies to Microsoft Azure Agent Installer products under the CPE family
