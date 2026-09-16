@@ -168,6 +168,13 @@ opal:
         source: DWP
         target: OPAL
         sftp-username: ${BAIS_SFTP_DWP_USERNAME:}
+      natwest:
+        container-name: ${NATWEST_AZURE_STORAGE_CONTAINER:natwest}
+        feature-flag: natwest-file-transfer-Job
+        file-name-regex: (Y01A\.FPCAS\.#D\.C\d{6}\.D\d{6}|Y01A\.CARS\.#D\.SBURZ\d{2}\.D\d{6})
+        source: NATWEST
+        target: OPAL
+        sftp-username: ${BAIS_SFTP_NATWEST_USERNAME:}
       barclaycard:
         container-name: ${BARCLAYCARD_AZURE_STORAGE_CONTAINER:barclaycard}
         feature-flag: barclaycard-file-transfer-Job
@@ -213,6 +220,7 @@ launchdarkly:
     bteckoh-report-file-transfer-Job: ${BTECKOH_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     allpay-file-transfer-Job: ${ALLPAY_FILE_TRANSFER_JOB_ENABLED:false}
     dwp-file-transfer-job: ${DWP_FILE_TRANSFER_JOB_ENABLED:false}
+    natwest-file-transfer-Job: ${NATWEST_FILE_TRANSFER_JOB_ENABLED:false}
     barclaycard-file-transfer-Job: ${BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED:false}
 
 user:

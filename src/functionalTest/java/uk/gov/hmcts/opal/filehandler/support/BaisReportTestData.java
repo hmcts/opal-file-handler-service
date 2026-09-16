@@ -1,5 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.support;
 
+import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
+
 /**
  * Stable local report definitions used by BAIS ingestion functional scenarios.
  */
@@ -9,7 +11,7 @@ public final class BaisReportTestData {
         "BTEckoh",
         "BTECKOH_REPORT",
         "BTEckohReport",
-        "BTEckoh-report",
+        TestEnvironment.getReportSftpUsername("BTECKOH", "BTEckoh-report"),
         "BAIS_SFTP_BTECKOH_REPORT_USERNAME",
         "bteckoh-report",
         "BTECKOH_REPORT_AZURE_STORAGE_CONTAINER",
@@ -24,7 +26,7 @@ public final class BaisReportTestData {
         "CAPS",
         "CAPS_REPORT",
         "CAPSReport",
-        "CAPS-report",
+        TestEnvironment.getReportSftpUsername("CAPS", "CAPS-report"),
         "BAIS_SFTP_CAPS_REPORT_USERNAME",
         "caps-report",
         "CAPS_REPORT_AZURE_STORAGE_CONTAINER",
