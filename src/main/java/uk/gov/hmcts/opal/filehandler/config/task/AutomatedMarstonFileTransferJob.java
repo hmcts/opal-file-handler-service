@@ -9,7 +9,7 @@ import uk.gov.hmcts.opal.filehandler.service.MarstonBaisFileProcessorService;
 
 @Component
 @ConditionalOnExpression(
-"'${opal.automated-task}'.equals('MarstonFileTransferJob') "
+    "'${opal.automated-task}'.equals('MarstonFileTransferJob') "
     + "or ${opal.testing-support-endpoints.enabled:false}" )
 @Slf4j
 @RequiredArgsConstructor
