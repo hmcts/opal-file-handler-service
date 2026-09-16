@@ -2,6 +2,7 @@ package uk.gov.hmcts.opal.filehandler.support;
 
 import java.util.List;
 import java.util.UUID;
+import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 import uk.gov.hmcts.opal.filehandler.blob.BlobStorageClient;
 import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
 import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient.InterfaceFileRecord;
@@ -53,6 +54,10 @@ public class BaisReportFixture {
     }
 
     private void cleanDatabaseAndBlobs() {
+        if (TestEnvironment.isDatabaseManagedByPipeline()) {
+            return;
+        }
+
         BlobStorageClient blobStorageClient = new BlobStorageClient(config.blobContainerName());
         try (InterfaceFileTestDatabaseClient databaseClient = new InterfaceFileTestDatabaseClient()) {
             List<InterfaceFileRecord> records = databaseClient.findByFileName(config.fileName());

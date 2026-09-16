@@ -11,4 +11,4 @@ opal:
         sftp-username: NATWEST
 user:
   service:
-    url: http://localhost:4553
+    url: http://localhost:${INTEGRATION_WIREMOCK_PORT:4553}

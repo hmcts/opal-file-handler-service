@@ -73,7 +73,6 @@ public class TestContainerConfig {
         }
 
         sftpContainerBuilder.withCommand(command.toArray(new String[0]));
-        sftpContainerBuilder.setPortBindings(List.of("2222:22"));
 
         SFTP_CONTAINER = sftpContainerBuilder;
         SFTP_CONTAINER.start();
