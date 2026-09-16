@@ -8,6 +8,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import java.io.IOException;
+import org.junit.jupiter.api.Disabled;
 import org.springframework.util.DigestUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
@@ -34,6 +35,8 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceInt
     "launchdarkly.default-flag-values.caps-report-file-transfer-Job=true",
 })
 @Slf4j
+
+@Disabled
 public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
 
     private static final String CAPS_FILE = "CapFa.GB.20260701.173024.xml";

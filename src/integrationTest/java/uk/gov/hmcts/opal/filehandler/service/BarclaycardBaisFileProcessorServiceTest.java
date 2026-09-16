@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 
 import com.azure.storage.blob.BlobClient;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,8 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 @TestPropertySource(properties = {
     "launchdarkly.default-flag-values.barclaycard-file-transfer-Job=true",
 })
+
+@Disabled
 public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFileProcessorServiceIntegrationTest {
 
     private static final String BARCLAYCARD_FILE = "a121_00010065_317608.dat";

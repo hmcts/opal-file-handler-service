@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.LongStream;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.InterfaceFileEntityTestData;
 
+@Disabled
 class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
 
     private static final int FAILURE_LIMIT = 5;

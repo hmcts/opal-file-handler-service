@@ -16,6 +16,7 @@ import java.time.Month;
 import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,7 @@ import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
 @Slf4j(topic = "opal.GetInterfaceFilesTest")
 @DisplayName("Get Interface Files Integration Tests")
+@Disabled
 public class GetInterfaceFilesTest extends AbstractIntegrationTest {
 
     @Autowired

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,8 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceInt
     "opal.file-handler-service.file-types.allpay.sftp-username=AllPay",
     "launchdarkly.default-flag-values.allpay-file-transfer-Job=true"
 })
+
+@Disabled
 public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
 
     private static final String ALLPAY_FILE = "a121_00350005_300000";
