@@ -40,9 +40,13 @@ public class Application {
 
     @PostConstruct
     public void init() {
-        log.info("Application started");
-        JmsTemplate jmsTemplate = commonServiceBusJmsTemplate(commonServiceBusConnectionFactory());
-        jmsTemplate.convertAndSend("opal-common-servicebus-jms-template", "Test message");
+        try {
+            log.info("Application started");
+            JmsTemplate jmsTemplate = commonServiceBusJmsTemplate(commonServiceBusConnectionFactory());
+            jmsTemplate.convertAndSend("opal-common-servicebus-jms-template", "Test message");
+        } catch (Exception e) {
+          log.info(e.getMessage());
+        }
     }
 
     private ConnectionFactory commonServiceBusConnectionFactory() {
