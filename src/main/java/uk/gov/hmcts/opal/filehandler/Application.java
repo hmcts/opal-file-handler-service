@@ -38,36 +38,36 @@ public class Application {
         SpringApplication.run(Application.class, args);
     }
 
-    @PostConstruct
-    public void init() {
-        try {
-            log.info("Application started");
-            JmsTemplate jmsTemplate = commonServiceBusJmsTemplate(commonServiceBusConnectionFactory());
-            jmsTemplate.convertAndSend("opal-common-servicebus-jms-template", "Test message");
-        } catch (Throwable e) {
-            log.info(e.getMessage());
-        }
-    }
-
-    private ConnectionFactory commonServiceBusConnectionFactory() {
-        ManagedIdentityCredential credential =
-            new ManagedIdentityCredentialBuilder()
-                .build();
-
-        String host = "opal-servicebus-stg.servicebus.windows.net";
-
-        return new ServiceBusJmsConnectionFactory(
-            credential,
-            host,
-            null
-        );
-    }
-
-    private JmsTemplate commonServiceBusJmsTemplate(ConnectionFactory connectionFactory) {
-        JmsTemplate jmsTemplate = new JmsTemplate(connectionFactory);
-        jmsTemplate.setDeliveryPersistent(true);
-        jmsTemplate.setExplicitQosEnabled(true);
-        jmsTemplate.setSessionTransacted(true);
-        return jmsTemplate;
-    }
+//    @PostConstruct
+//    public void init() {
+//        try {
+//            log.info("Application started");
+//            JmsTemplate jmsTemplate = commonServiceBusJmsTemplate(commonServiceBusConnectionFactory());
+//            jmsTemplate.convertAndSend("opal-common-servicebus-jms-template", "Test message");
+//        } catch (Throwable e) {
+//            log.info(e.getMessage());
+//        }
+//    }
+//
+//    private ConnectionFactory commonServiceBusConnectionFactory() {
+//        ManagedIdentityCredential credential =
+//            new ManagedIdentityCredentialBuilder()
+//                .build();
+//
+//        String host = "opal-servicebus-stg.servicebus.windows.net";
+//
+//        return new ServiceBusJmsConnectionFactory(
+//            credential,
+//            host,
+//            null
+//        );
+//    }
+//
+//    private JmsTemplate commonServiceBusJmsTemplate(ConnectionFactory connectionFactory) {
+//        JmsTemplate jmsTemplate = new JmsTemplate(connectionFactory);
+//        jmsTemplate.setDeliveryPersistent(true);
+//        jmsTemplate.setExplicitQosEnabled(true);
+//        jmsTemplate.setSessionTransacted(true);
+//        return jmsTemplate;
+//    }
 }
