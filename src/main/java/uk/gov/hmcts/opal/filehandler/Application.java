@@ -45,7 +45,7 @@ public class Application {
             JmsTemplate jmsTemplate = commonServiceBusJmsTemplate(commonServiceBusConnectionFactory());
             jmsTemplate.convertAndSend("opal-common-servicebus-jms-template", "Test message");
         } catch (Throwable e) {
-          log.info(e.getMessage());
+            log.info(e.getMessage());
         }
     }
 
