@@ -52,7 +52,7 @@ public class Application {
             }
             log.info("Application started");
             JmsTemplate jmsTemplate = commonServiceBusJmsTemplate(commonServiceBusConnectionFactory());
-            jmsTemplate.convertAndSend("opal-common-servicebus-jms-template", "Test message");
+            jmsTemplate.convertAndSend("opal-test-queue", "Test message");
         } catch (Throwable e) {
             log.info(e.getMessage());
         }
@@ -63,7 +63,7 @@ public class Application {
             new ManagedIdentityCredentialBuilder()
                 .build();
 
-        String host = "opal-servicebus-stg.servicebus.windows.net";
+        String host = "opal-sb-dev.servicebus.windows.net";
 
         return new ServiceBusJmsConnectionFactory(
             credential,
