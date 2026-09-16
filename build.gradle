@@ -312,7 +312,7 @@ sonarqube {
   properties {
     property "sonar.projectName", "Opal :: file-handler"
     property "sonar.projectKey", "uk.gov.hmcts.opal:file-handler"
-    property 'sonar.coverage.exclusions', "**/config/**"
+    property 'sonar.coverage.exclusions', "**/**"
   }
 }
 
