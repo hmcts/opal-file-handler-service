@@ -21,6 +21,12 @@ springdoc:
   writer-with-order-by-keys: true
 
 spring:
+  jms:
+    servicebus:
+      enabled: false
+  autoconfigure:
+    exclude:
+      - com.azure.spring.cloud.autoconfigure.implementation.jms.ServiceBusJmsAutoConfiguration
   config:
     import: "optional:configtree:/mnt/secrets/opal/"
   application:
