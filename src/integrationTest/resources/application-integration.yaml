@@ -11,6 +11,9 @@ opal:
         sftp-username: NATWEST
       barclaycard:
         sftp-username: BARCLAYCARD
+      bailiffs:
+        jacobs:
+          sftp-username: Jacobs
 
 user:
   service:
