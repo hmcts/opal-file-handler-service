@@ -98,6 +98,7 @@ blobstorage:
       - caps-report
       - dwp
       - natwest
+      - jacobs
       - cder
 bais-emulator:
   enabled: true
@@ -112,6 +113,7 @@ bais-emulator:
       - caps-report
       - dwp
       - natwest
+      - jacobs
       - cder
 bt-eckoh-report:
   image: ${IMAGE_NAME}

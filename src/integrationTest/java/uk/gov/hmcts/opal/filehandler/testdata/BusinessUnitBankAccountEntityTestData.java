@@ -43,7 +43,6 @@ public class BusinessUnitBankAccountEntityTestData {
         return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitCode));
     }
 
-
     public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(
         long id, String businessUnitCode, String dwpCourtCode) {
         return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitCode, dwpCourtCode));

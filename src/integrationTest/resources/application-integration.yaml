@@ -10,6 +10,8 @@ opal:
       natwest:
         sftp-username: NATWEST
       bailiffs:
+        jacobs:
+          sftp-username: Jacobs
         cder:
           sftp-username: CDER
 
