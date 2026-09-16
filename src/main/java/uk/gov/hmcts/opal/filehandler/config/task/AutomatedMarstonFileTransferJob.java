@@ -10,7 +10,7 @@ import uk.gov.hmcts.opal.filehandler.service.MarstonBaisFileProcessorService;
 @Component
 @ConditionalOnExpression(
     "'${opal.automated-task}'.equals('MarstonFileTransferJob') "
-    + "or ${opal.testing-support-endpoints.enabled:false}" )
+    + "or ${opal.testing-support-endpoints.enabled:false}")
 @Slf4j
 @RequiredArgsConstructor
 public class AutomatedMarstonFileTransferJob implements TaskConfiguration {
