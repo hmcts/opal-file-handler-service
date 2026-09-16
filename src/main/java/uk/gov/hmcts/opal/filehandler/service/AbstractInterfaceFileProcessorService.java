@@ -24,6 +24,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobUploadException;
+import uk.gov.hmcts.opal.filehandler.exception.InvalidReportFileException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
@@ -46,6 +47,10 @@ public abstract class AbstractInterfaceFileProcessorService {
         InterfaceFileEntity fileEntity,
         InputStream inputStream
     );
+
+    protected void validateFile(InputStream inputStream) {
+        // Processors may validate their input format before it is uploaded.
+    }
 
     public void run(BaisFileProcessorConfiguration config) {
         featureFlagUtil.requireEnabledFeature(FeatureFlags.RELEASE_1C_BANKING_INTERFACES);
@@ -101,18 +106,18 @@ public abstract class AbstractInterfaceFileProcessorService {
             InterfaceFileEntity entity;
 
             try {
-                UUID fileStoreUuid = UUID.randomUUID();
-
-                interfaceFileBlobStoreService.uploadBaisFile(
-                    fileStoreUuid, config.getContainerName(), new ByteArrayInputStream(downloadedBytes), fileChecksum);
-
                 if (duplicate.isPresent()) {
-
-                    entity = createDuplicateInterfaceFile(
-                        config, fileName, fileChecksum, fileStoreUuid, duplicate.get());
+                    entity = createDuplicateInterfaceFile(config, fileName, fileChecksum, duplicate.get());
                 } else {
+                    validateFile(new ByteArrayInputStream(downloadedBytes));
+                    UUID fileStoreUuid = UUID.randomUUID();
+                    interfaceFileBlobStoreService.uploadBaisFile(
+                        fileStoreUuid, config.getContainerName(),
+                        new ByteArrayInputStream(downloadedBytes), fileChecksum);
                     entity = createNewInterfaceFile(config, fileName, fileChecksum, fileStoreUuid);
                 }
+            } catch (InvalidReportFileException e) {
+                entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
             } catch (BlobChecksumValidationException e) {
                 entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
             } catch (BlobUploadException e) {
@@ -134,7 +139,6 @@ public abstract class AbstractInterfaceFileProcessorService {
         BaisFileProcessorConfiguration config,
         String fileName,
         String fileChecksum,
-        UUID fileStoreUuid,
         InterfaceFileEntity duplicate
     ) {
         log.error("File with name '{}' and checksum '{}' for source '{}' is a duplicate of {}",
@@ -147,7 +151,7 @@ public abstract class AbstractInterfaceFileProcessorService {
             .fileName(fileName)
             .checksum(fileChecksum)
             .status(Status.DUPLICATE)
-            .filestoreUuid(fileStoreUuid)
+            .filestoreUuid(duplicate.getFilestoreUuid())
             .createdDatetime(LocalDateTime.now(clock))
             .opalDomain(Domain.MAINTENANCE)
             .errors(errorJson("File with name '%s' and checksum '%s' for source '%s' already processed skipping"
@@ -195,9 +199,8 @@ public abstract class AbstractInterfaceFileProcessorService {
 
     private InterfaceFileEntity saveInitialFile(InterfaceFileEntity entity) {
         return transactionTemplate.execute(transactionStatus -> {
-            InterfaceFileEntity savedEntity = interfaceFilesRepository.save(entity);
             supersedePreviousFailures(entity.getFileName(), entity.getChecksum());
-            return savedEntity;
+            return interfaceFilesRepository.save(entity);
         });
     }
 
