@@ -9,6 +9,8 @@ opal:
         sftp-username: CAPS-report
       natwest:
         sftp-username: NATWEST
+      barclaycard:
+        sftp-username: BARCLAYCARD
       bailiffs:
         jacobs:
           sftp-username: Jacobs

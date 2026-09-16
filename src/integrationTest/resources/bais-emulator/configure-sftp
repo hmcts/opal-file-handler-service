@@ -9,3 +9,4 @@ chown 1003:users /home/AllPay
 chown 1004:users /home/DWP
 chown 1005:users /home/NATWEST
 chown 1006:users /home/Jacobs
+chown 1007:users /home/BARCLAYCARD

@@ -99,6 +99,7 @@ blobstorage:
       - dwp
       - natwest
       - jacobs
+      - barclaycard
 bais-emulator:
   enabled: true
   azureName: "opalfilebaisapr${CHANGE_ID}"
@@ -113,6 +114,7 @@ bais-emulator:
       - dwp
       - natwest
       - jacobs
+      - barclaycard
 bt-eckoh-report:
   image: ${IMAGE_NAME}
   environment:
