@@ -6,7 +6,6 @@ import com.azure.servicebus.jms.ServiceBusJmsConnectionFactory;
 import jakarta.annotation.PostConstruct;
 import jakarta.jms.ConnectionFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
