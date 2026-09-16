@@ -379,7 +379,11 @@ dependencies {
   implementation 'org.springframework.boot:spring-boot-starter-cache'
   implementation 'org.springframework.boot:spring-boot-starter-integration'
   implementation 'org.springframework.security:spring-security-oauth2-authorization-server'
-  implementation("com.azure.spring:spring-cloud-azure-starter-servicebus-jms:7.4.0")
+  implementation("com.azure.spring:spring-cloud-azure-starter-servicebus-jms:7.4.0") {
+    // azure-identity-extensions 1.2.9 is transitively pulled by the starter and is CVE-flagged.
+    // Exclude it and rely on azure-identity directly for auth flows used by this service.
+    exclude group: 'com.azure', module: 'azure-identity-extensions'
+  }
   implementation 'org.springframework.cloud:spring-cloud-starter-openfeign', {
     exclude group: 'commons-fileupload', module: 'commons-fileupload'
   }
@@ -453,8 +457,9 @@ dependencies {
   testImplementation 'org.testcontainers:testcontainers-postgresql'
   testImplementation 'com.redis:testcontainers-redis'
 
-  //Version overrides for CVEs
-  implementation("com.azure:azure-identity:1.18.6")
+  // Version overrides for CVE remediation in Azure identity dependency chain.
+  implementation("com.azure:azure-identity:1.19.0-beta.2")
+  implementation("com.microsoft.azure:msal4j:1.26.0")
 
 }
 
