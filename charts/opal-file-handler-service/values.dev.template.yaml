@@ -98,6 +98,7 @@ blobstorage:
       - caps-report
       - dwp
       - natwest
+      - jacobs
 bais-emulator:
   enabled: true
   azureName: "opalfilebaisapr${CHANGE_ID}"
@@ -111,6 +112,7 @@ bais-emulator:
       - caps-report
       - dwp
       - natwest
+      - jacobs
 bt-eckoh-report:
   image: ${IMAGE_NAME}
   environment:

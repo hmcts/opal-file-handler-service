@@ -9,6 +9,10 @@ opal:
         sftp-username: CAPS-report
       natwest:
         sftp-username: NATWEST
+      bailiffs:
+        jacobs:
+          sftp-username: Jacobs
+
 user:
   service:
     url: http://localhost:${INTEGRATION_WIREMOCK_PORT:4553}

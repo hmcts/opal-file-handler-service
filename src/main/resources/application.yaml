@@ -175,6 +175,14 @@ opal:
         source: NATWEST
         target: OPAL
         sftp-username: ${BAIS_SFTP_NATWEST_USERNAME:}
+      bailiffs:
+        jacobs:
+          container-name: ${JACOBS_AZURE_STORAGE_CONTAINER:jacobs}
+          feature-flag: bailiffs.jacobs-file-transfer-Job
+          file-name-regex: ^\d{10}_dat_\d{10}_\d{8}_\d{6}\.txt$
+          source: JACOBS
+          target: OPAL
+          sftp-username: ${BAIS_SFTP_JACOBS_USERNAME:}
     sftp:
       bais:
         host: ${BAIS_SFTP_CONNECTION_HOST:localhost}
@@ -214,6 +222,8 @@ launchdarkly:
     allpay-file-transfer-Job: ${ALLPAY_FILE_TRANSFER_JOB_ENABLED:false}
     dwp-file-transfer-job: ${DWP_FILE_TRANSFER_JOB_ENABLED:false}
     natwest-file-transfer-Job: ${NATWEST_FILE_TRANSFER_JOB_ENABLED:false}
+    bailiffs:
+      jacobs-file-transfer-Job: ${JACOBS_FILE_TRANSFER_JOB_ENABLED:false}
 
 user:
   service:
