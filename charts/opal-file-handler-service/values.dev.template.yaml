@@ -97,6 +97,7 @@ blobstorage:
       - bteckoh-report
       - caps-report
       - dwp
+      - natwest
 bais-emulator:
   enabled: true
   azureName: "opalfilebaisapr${CHANGE_ID}"
@@ -109,6 +110,7 @@ bais-emulator:
       - bteckoh-report
       - caps-report
       - dwp
+      - natwest
 bt-eckoh-report:
   image: ${IMAGE_NAME}
   environment:
@@ -162,6 +164,7 @@ natwest-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl, classpath:db/migration/data/allEnvs, classpath:db/migration/data/nle, classpath:db/migration/data/dev
     RELEASE_1A_ENABLED: true
     RELEASE_1C_BANKING_INTERFACES_ENABLED: true
+    NATWEST_FILE_TRANSFER_JOB_ENABLED: true
 
 allpay-file-transfer:
   releaseNameOverride: opal-file-handler-service-pr-${CHANGE_ID}-allpay-file
