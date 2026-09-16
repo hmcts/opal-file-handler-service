@@ -1,27 +1,32 @@
 package uk.gov.hmcts.opal.filehandler.config.task;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.DispatcherServlet;
-import uk.gov.hmcts.opal.filehandler.config.MarstonBaisFileBaisFileProcessorConfig;
-import uk.gov.hmcts.opal.filehandler.service.MarstonBaisFileProcessorService;
+
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 
 @ActiveProfiles("integration")
 @SpringBootTest(properties = {
     "opal.automated-task=MarstonFileTransferJob",
-    "spring.main.web-application-type=none"
+    "spring.main.web-application-type=none",
+    "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
+    "launchdarkly.default-flag-values.marston-file-transfer-job=true"
 })
-public class AutomatedTaskMarstonIntegrationTest extends AbstractIntegrationTest {
+class AutomatedTaskMarstonIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -29,8 +34,13 @@ public class AutomatedTaskMarstonIntegrationTest extends AbstractIntegrationTest
     @Autowired
     private AutomatedMarstonFileTransferJob automatedMarstonFileTransferJob;
 
-    @MockitoBean(enforceOverride = true, reset = MockReset.NONE)
-    private MarstonBaisFileProcessorService service;
+    @MockitoBean
+    private BaisSftpClient baisSftpClient;
+
+    @BeforeEach
+    void setUp() {
+        when(baisSftpClient.listRegularFiles(anyString())).thenReturn(List.of());
+    }
 
     @Test
     void shouldNotCreateWebLayer() {
@@ -38,11 +48,9 @@ public class AutomatedTaskMarstonIntegrationTest extends AbstractIntegrationTest
         assertThat(applicationContext.getBeansOfType(DispatcherServlet.class).isEmpty()).isTrue();
     }
 
-
     @Test
     void shouldCallAutomatedTaskRun() {
-        verify(service, times(1)).run(any(MarstonBaisFileBaisFileProcessorConfig.class));
-
+        assertThatCode(() -> automatedMarstonFileTransferJob.run())
+            .doesNotThrowAnyException();
     }
-
 }

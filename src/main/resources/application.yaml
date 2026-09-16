@@ -237,6 +237,7 @@ launchdarkly:
     caps-report-file-transfer-Job: ${CAPS_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     bteckoh-report-file-transfer-Job: ${BTECKOH_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     allpay-file-transfer-Job: ${ALLPAY_FILE_TRANSFER_JOB_ENABLED:false}
+    marston-file-transfer-job: ${MARSTON_FILE_TRANSFER_JOB_ENABLED:false}
     dwp-file-transfer-job: ${DWP_FILE_TRANSFER_JOB_ENABLED:false}
     natwest-file-transfer-Job: ${NATWEST_FILE_TRANSFER_JOB_ENABLED:false}
     barclaycard-file-transfer-Job: ${BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED:false}
