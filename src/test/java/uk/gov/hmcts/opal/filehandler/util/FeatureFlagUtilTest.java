@@ -10,6 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
+import uk.gov.hmcts.opal.common.launchdarkly.config.LaunchDarklyProperties;
 import uk.gov.hmcts.opal.common.launchdarkly.service.FeatureToggleApi;
 
 @ExtendWith(MockitoExtension.class)
@@ -19,6 +20,9 @@ class FeatureFlagUtilTest {
 
     @Mock
     private FeatureToggleApi featureToggleApi;
+
+    @Mock
+    private LaunchDarklyProperties properties;
 
     @InjectMocks
     private FeatureFlagUtil featureFlagUtil;
@@ -30,7 +34,7 @@ class FeatureFlagUtilTest {
         FeatureDisabledException exc = assertThrows(FeatureDisabledException.class, () ->
             featureFlagUtil.requireEnabledFeature(TEST_FEATURE_FLAG));
 
-        assertThat(exc).hasMessage(TEST_FEATURE_FLAG + " is not enabled");
+        assertThat(exc).hasMessage("'" + TEST_FEATURE_FLAG + "' is not enabled");
     }
 
 }
