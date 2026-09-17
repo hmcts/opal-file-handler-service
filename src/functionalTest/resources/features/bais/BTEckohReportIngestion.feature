@@ -1,4 +1,4 @@
-@Ignore @Opal @JIRA-LABEL:file-handler-service @JIRA-STORY:PO-6382 @BteckohReportFixture
+@Opal @JIRA-LABEL:file-handler-service @JIRA-STORY:PO-6382 @BteckohReportFixture
 Feature: BTEckoh report ingestion
 
   Scenario: A valid BTEckoh report is ingested
