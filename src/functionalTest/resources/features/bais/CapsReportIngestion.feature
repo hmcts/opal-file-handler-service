@@ -1,4 +1,4 @@
-@Ignore @Opal @JIRA-LABEL:file-handler-service @JIRA-STORY:PO-6382 @CapsReportFixture
+@Opal @JIRA-LABEL:file-handler-service @JIRA-STORY:PO-6382 @CapsReportFixture
 Feature: CAPS report ingestion
 
   Scenario: A valid CAPS report is ingested
