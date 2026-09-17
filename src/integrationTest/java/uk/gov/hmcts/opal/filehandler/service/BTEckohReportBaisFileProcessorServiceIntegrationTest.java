@@ -84,7 +84,7 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 service.run(config));
 
-            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
+            assertThat(exception).hasMessage("'" + FeatureFlags.RELEASE_1C_BANKING_INTERFACES + "' is not enabled");
         }
 
     }
@@ -102,7 +102,7 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 service.run(config));
 
-            assertThat(exception).hasMessage("bteckoh-report-file-transfer-Job is not enabled");
+            assertThat(exception).hasMessage("'bteckoh-report-file-transfer-Job' is not enabled");
         }
 
     }
@@ -120,7 +120,7 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 service.run(config));
 
-            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
+            assertThat(exception).hasMessage("'" + FeatureFlags.RELEASE_1C_BANKING_INTERFACES + "' is not enabled");
         }
 
     }

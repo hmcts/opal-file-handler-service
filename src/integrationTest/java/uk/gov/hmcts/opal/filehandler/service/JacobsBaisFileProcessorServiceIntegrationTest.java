@@ -71,7 +71,7 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 service.run(configuration));
 
-            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
+            assertThat(exception).hasMessage("'" + FeatureFlags.RELEASE_1C_BANKING_INTERFACES + "' is not enabled");
         }
     }
 
@@ -88,7 +88,7 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 service.run(configuration));
 
-            assertThat(exception).hasMessage("bailiffs.jacobs-file-transfer-Job is not enabled");
+            assertThat(exception).hasMessage("'bailiffs.jacobs-file-transfer-Job' is not enabled");
         }
     }
 
@@ -105,7 +105,7 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 service.run(configuration));
 
-            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
+            assertThat(exception).hasMessage("'" + FeatureFlags.RELEASE_1C_BANKING_INTERFACES + "' is not enabled");
         }
     }
 

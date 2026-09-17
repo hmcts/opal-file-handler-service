@@ -85,7 +85,7 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration));
 
-            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
+            assertThat(exception).hasMessage("'" + FeatureFlags.RELEASE_1C_BANKING_INTERFACES + "' is not enabled");
         }
 
     }
@@ -103,7 +103,7 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration));
 
-            assertThat(exception).hasMessage("caps-report-file-transfer-Job is not enabled");
+            assertThat(exception).hasMessage("'caps-report-file-transfer-Job' is not enabled");
         }
 
     }
@@ -121,7 +121,7 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 capsReportBaisFileProcessorService.run(capsReportBaisFileProcessorConfiguration));
 
-            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
+            assertThat(exception).hasMessage("'" + FeatureFlags.RELEASE_1C_BANKING_INTERFACES + "' is not enabled");
         }
 
     }

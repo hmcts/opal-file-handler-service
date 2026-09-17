@@ -75,7 +75,7 @@ public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFilePro
             FeatureDisabledException exception = assertThrows(
                 FeatureDisabledException.class, () -> service.run(configuration)
             );
-            assertThat(exception).hasMessage("barclaycard-file-transfer-Job is not enabled");
+            assertThat(exception).hasMessage("'barclaycard-file-transfer-Job' is not enabled");
         }
     }
 
@@ -93,7 +93,7 @@ public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFilePro
                 service.run(configuration)
             );
 
-            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
+            assertThat(exception).hasMessage("'" + FeatureFlags.RELEASE_1C_BANKING_INTERFACES + "' is not enabled");
         }
     }
 

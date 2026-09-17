@@ -74,7 +74,7 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 natWestBaisFileProcessorService.run(natWestBaisFileProcessorConfiguration));
 
-            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
+            assertThat(exception).hasMessage("'" + FeatureFlags.RELEASE_1C_BANKING_INTERFACES + "' is not enabled");
         }
 
     }
@@ -92,7 +92,7 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 natWestBaisFileProcessorService.run(natWestBaisFileProcessorConfiguration));
 
-            assertThat(exception).hasMessage("natwest-file-transfer-Job is not enabled");
+            assertThat(exception).hasMessage("'natwest-file-transfer-Job' is not enabled");
         }
 
     }
@@ -110,7 +110,7 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 natWestBaisFileProcessorService.run(natWestBaisFileProcessorConfiguration));
 
-            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
+            assertThat(exception).hasMessage("'" + FeatureFlags.RELEASE_1C_BANKING_INTERFACES + "' is not enabled");
         }
 
     }

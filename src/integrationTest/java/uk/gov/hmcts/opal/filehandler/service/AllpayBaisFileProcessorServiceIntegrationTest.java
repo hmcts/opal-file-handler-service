@@ -68,7 +68,7 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 allpayBaisFileProcessorService.run(allpayBaisFileProcessorConfiguration));
 
-            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
+            assertThat(exception).hasMessage("'" + FeatureFlags.RELEASE_1C_BANKING_INTERFACES + "' is not enabled");
         }
 
     }
@@ -86,7 +86,7 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 allpayBaisFileProcessorService.run(allpayBaisFileProcessorConfiguration));
 
-            assertThat(exception).hasMessage("allpay-file-transfer-Job is not enabled");
+            assertThat(exception).hasMessage("'allpay-file-transfer-Job' is not enabled");
         }
 
     }
@@ -104,7 +104,7 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 allpayBaisFileProcessorService.run(allpayBaisFileProcessorConfiguration));
 
-            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
+            assertThat(exception).hasMessage("'" + FeatureFlags.RELEASE_1C_BANKING_INTERFACES + "' is not enabled");
         }
 
     }
