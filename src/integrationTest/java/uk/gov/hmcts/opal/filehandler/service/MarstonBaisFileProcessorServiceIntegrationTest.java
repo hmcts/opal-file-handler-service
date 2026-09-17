@@ -32,10 +32,9 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
-    "opal.file-handler-service.bailiffs.marston.sftp-username=MARSTON",
-    "launchdarkly.default-flag-values.marston-file-transfer-job=true",
+    "opal.file-handler-service.file-types.bailiffs.marston.sftp-username=MARSTON",
+    "launchdarkly.default-flag-values.marston-file-transfer-Job=true",
 })
-
 @Slf4j
 public class MarstonBaisFileProcessorServiceIntegrationTest   extends AbstractBaisFileProcessorServiceIntegrationTest {
 
@@ -85,12 +84,12 @@ public class MarstonBaisFileProcessorServiceIntegrationTest   extends AbstractBa
 
     @Nested
     @TestPropertySource(properties = {
-        "launchdarkly.default-flag-values.marston-file-transfer-job=false"
+        "launchdarkly.default-flag-values.marston-file-transfer-Job=false"
     })
     public class MarstonFileTransferJobDisabled {
 
         @Test
-        @DisplayName("AC1: Feature flag 'marston-file-transfer-job' is false")
+        @DisplayName("AC1: Feature flag 'marston-file-transfer-Job' is false")
         void marstonFileTransferJobIsDisabled() {
 
             FeatureDisabledException exception = assertThrows(
@@ -98,7 +97,7 @@ public class MarstonBaisFileProcessorServiceIntegrationTest   extends AbstractBa
                 () -> service.run(config));
 
             assertThat(exception)
-                .hasMessage("marston-file-transfer-job is not enabled");
+                .hasMessage("marston-file-transfer-Job is not enabled");
         }
     }
 

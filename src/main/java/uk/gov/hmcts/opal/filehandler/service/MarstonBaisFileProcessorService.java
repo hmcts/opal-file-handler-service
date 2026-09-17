@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
-import uk.gov.hmcts.opal.filehandler.config.MarstonBaisFileBaisFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.PacsTTPBaisExtractionService;
@@ -20,7 +19,6 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 public class MarstonBaisFileProcessorService
     extends AbstractBaisInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
 
-    private final MarstonBaisFileBaisFileProcessorConfig config;
 
     public MarstonBaisFileProcessorService(
         Clock clock,
@@ -32,8 +30,7 @@ public class MarstonBaisFileProcessorService
         ObjectMapper objectMapper,
         PacsTTPBaisExtractionService extractionService,
         FinesInterfaceFilePreprocessQueueService finesQueueService,
-        MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService,
-        MarstonBaisFileBaisFileProcessorConfig config
+        MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService
     ) {
         super(
             clock,
@@ -48,7 +45,6 @@ public class MarstonBaisFileProcessorService
             maintenanceQueueService
         );
 
-        this.config = config;
     }
 
 }

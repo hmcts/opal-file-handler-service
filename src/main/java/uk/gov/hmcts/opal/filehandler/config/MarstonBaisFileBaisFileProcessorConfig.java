@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component("marstonBaisFileBaisFileProcessorConfig")
-@ConfigurationProperties(prefix = "opal.file-handler-service.bailiffs.marston")
+@ConfigurationProperties(prefix = "opal.file-handler-service.file-types.bailiffs.marston")
 public class MarstonBaisFileBaisFileProcessorConfig  extends AbstractBaisFileProcessorConfiguration {
 
 }

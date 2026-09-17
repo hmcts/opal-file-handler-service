@@ -190,22 +190,20 @@ opal:
           source: JACOBS
           target: OPAL
           sftp-username: ${BAIS_SFTP_JACOBS_USERNAME:}
+        marston:
+          container-name: ${MARSTON_AZURE_STORAGE_CONTAINER:marston}
+          account-name: ${FILE_STORE_STORAGE_ACCOUNT_NAME:MARSTON}
+          feature-flag: marston-file-transfer-Job
+          file-name-regex: \d{10}_dat_\d{10}_\d{8}_\d{6}\.txt
+          source: MARSTON
+          target: OPAL
+          sftp-username: ${BAIS_SFTP_MARSTON_USERNAME:}
+
     sftp:
       bais:
         host: ${BAIS_SFTP_CONNECTION_HOST:localhost}
         port: ${BAIS_SFTP_CONNECTION_PORT:2222}
         private-key: ${BAIS_SFTP_PRIVATE_KEY:}
-
-    bailiffs:
-      marston:
-        container-name: ${MARSTON_AZURE_STORAGE_CONTAINER:marston}
-        account-name: ${FILE_STORE_STORAGE_ACCOUNT_NAME:MARSTON}
-        feature-flag: marston-file-transfer-job
-        file-name-regex: \d{10}_dat_\d{10}_\d{8}_\d{6}\.txt
-        source: MARSTON
-        target: OPAL
-        sftp-username: ${BAIS_SFTP_MARSTON_USERNAME:}
-
 logging:
   level:
     root: ${ROOT_LOG_LEVEL:INFO}
@@ -237,7 +235,7 @@ launchdarkly:
     caps-report-file-transfer-Job: ${CAPS_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     bteckoh-report-file-transfer-Job: ${BTECKOH_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     allpay-file-transfer-Job: ${ALLPAY_FILE_TRANSFER_JOB_ENABLED:false}
-    marston-file-transfer-job: ${MARSTON_FILE_TRANSFER_JOB_ENABLED:false}
+    marston-file-transfer-Job: ${MARSTON_FILE_TRANSFER_JOB_ENABLED:false}
     dwp-file-transfer-job: ${DWP_FILE_TRANSFER_JOB_ENABLED:false}
     natwest-file-transfer-Job: ${NATWEST_FILE_TRANSFER_JOB_ENABLED:false}
     barclaycard-file-transfer-Job: ${BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED:false}
