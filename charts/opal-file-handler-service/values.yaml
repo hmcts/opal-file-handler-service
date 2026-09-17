@@ -69,7 +69,7 @@ blobstorage:
 bais-emulator:
   enabled: false
 bt-eckoh-report:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
 #  schedule: '45 08 * * *'
@@ -105,7 +105,7 @@ bt-eckoh-report:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 caps-report:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '0 7 * * 4-5'
@@ -154,7 +154,7 @@ caps-report:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 natwest-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '0 5 * * *'
@@ -203,7 +203,7 @@ natwest-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 allpay-file-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '30 7 * * 1-5'
@@ -252,7 +252,7 @@ allpay-file-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 barclaycard-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '45 6 * * *'
@@ -301,7 +301,7 @@ barclaycard-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 bt-eckoh-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '30 5 * * 1-5'
@@ -350,7 +350,7 @@ bt-eckoh-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 dwp-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '30 20 * * *'
@@ -385,7 +385,7 @@ dwp-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 jacobs-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '45 5 * * 4'
@@ -438,7 +438,7 @@ jacobs-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 cder-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '0 6 * * 4'
@@ -473,7 +473,7 @@ cder-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 marston-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '25 5 * * 4'
