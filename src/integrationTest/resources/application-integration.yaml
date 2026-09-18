@@ -14,6 +14,8 @@ opal:
       bailiffs:
         jacobs:
           sftp-username: Jacobs
+        cder:
+          sftp-username: CDER
 
 user:
   service:

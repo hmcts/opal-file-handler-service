@@ -10,7 +10,7 @@ public enum Interface {
     BARCLAYCARD("BarclaycardBaisFileProcessorConfig"),
     BTECKOH(null),
     DWP("dwpBaisFileProcessorConfig"),
-    CDER(null),
+    CDER("cderBaisFileProcessorConfig"),
     JACOBS("JacobsBaisFileBaisFileProcessorConfig"),
     MARSTON(null),
     BTECKOH_REPORT("BTEckohReportBaisFileProcessorConfig"),
