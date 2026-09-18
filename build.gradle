@@ -10,7 +10,7 @@ plugins {
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
   id 'org.springframework.boot' version '4.1.1'
-  id 'io.github.ben-manes.versions' version '0.63.1'
+  id 'io.github.ben-manes.versions' version '0.64.0'
   id 'org.sonarqube' version '7.5.0.8588'
   id "org.openapi.generator" version "7.25.0"
   /*
@@ -363,7 +363,7 @@ dependencies {
   //HMCTS
   implementation 'uk.gov.hmcts:opal-common-lib:0.3.33'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
-  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.0'
+  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.1'
 
   //Spring Boot
   implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'

@@ -175,6 +175,13 @@ opal:
         source: NATWEST
         target: OPAL
         sftp-username: ${BAIS_SFTP_NATWEST_USERNAME:}
+      barclaycard:
+        container-name: ${BARCLAYCARD_AZURE_STORAGE_CONTAINER:barclaycard}
+        feature-flag: barclaycard-file-transfer-Job
+        file-name-regex: a121_\d{8}_\d{6}\.dat
+        source: BARCLAYCARD
+        target: OPAL
+        sftp-username: ${BAIS_SFTP_BARCLAYCARD_USERNAME:}
       bailiffs:
         jacobs:
           container-name: ${JACOBS_AZURE_STORAGE_CONTAINER:jacobs}
@@ -229,6 +236,7 @@ launchdarkly:
     allpay-file-transfer-Job: ${ALLPAY_FILE_TRANSFER_JOB_ENABLED:false}
     dwp-file-transfer-job: ${DWP_FILE_TRANSFER_JOB_ENABLED:false}
     natwest-file-transfer-Job: ${NATWEST_FILE_TRANSFER_JOB_ENABLED:false}
+    barclaycard-file-transfer-Job: ${BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED:false}
     bailiffs:
       jacobs-file-transfer-Job: ${JACOBS_FILE_TRANSFER_JOB_ENABLED:false}
       cder-file-transfer-Job: ${CDER_FILE_TRANSFER_JOB_ENABLED:false}

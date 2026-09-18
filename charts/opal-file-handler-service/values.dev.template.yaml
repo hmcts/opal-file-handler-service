@@ -99,6 +99,7 @@ blobstorage:
       - dwp
       - natwest
       - jacobs
+      - barclaycard
       - cder
 bais-emulator:
   enabled: true
@@ -114,6 +115,7 @@ bais-emulator:
       - dwp
       - natwest
       - jacobs
+      - barclaycard
       - cder
 bt-eckoh-report:
   image: ${IMAGE_NAME}
