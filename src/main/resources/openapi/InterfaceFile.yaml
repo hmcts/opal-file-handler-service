@@ -59,6 +59,11 @@ paths:
             items:
               $ref: '#/components/schemas/statusEnum'
         - in: query
+          name: business_unit_code
+          description: DB Mapping - interface_files.business_unit_code
+          schema:
+            type: string
+        - in: query
           name: from_date
           description: DB Mapping - interface_files.created_datetime
           schema:
@@ -70,11 +75,6 @@ paths:
           schema:
             type: string
             format: date-time
-        - in: query
-          name: business_unit_code
-          description: DB Mapping - interface_files.business_unit_code
-          schema:
-            type: string
       responses:
         '200':
           description: OK
