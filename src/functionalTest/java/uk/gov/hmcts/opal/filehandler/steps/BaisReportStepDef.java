@@ -88,6 +88,28 @@ public class BaisReportStepDef extends BaseStepDef {
         );
     }
 
+    @Then("the DWP JSON file contains the extracted payments and bank details")
+    public void dwpJsonContainsExtractedPayments() {
+        assertNotNull(successfulInterfaceFile, "Source metadata was not retrieved");
+        Map<String, Object> jsonFile = awaitSuccessfulInterfaceFile(forSource("DWP"), "SOURCE_JSON");
+        assertEquals("OPAL", jsonFile.get("target"));
+        assertEquals("MAINTENANCE", jsonFile.get("domain"));
+        assertNotNull(jsonFile.get("filestore_uuid"));
+        Response response = authorisedJsonRequest().accept("application/octet-stream").when()
+            .get(getTestUrl() + "/interface-files/" + jsonFile.get("interface_file_id") + "/content");
+        assertEquals(200, response.statusCode());
+        assertEquals(jsonFile.get("checksum"), DigestUtils.md5Hex(response.asByteArray()));
+        assertEquals(forSource("DWP").fileName(), response.jsonPath().getString("file_name"));
+        assertEquals("DWP1234567", response.jsonPath().getString("dwp_court_code"));
+        assertEquals("CASH", response.jsonPath().getString("payment_type"));
+        assertEquals("010101", response.jsonPath().getString("destination_details.bank_details.sort_code"));
+        assertEquals("12341234", response.jsonPath().getString("destination_details.bank_details.account_number"));
+        assertEquals(List.of(2125, 2125, 2125, 2125, 2001),
+            response.jsonPath().getList("transactions.amount"));
+        assertEquals(List.of("99", "99", "99", "99", "99"),
+            response.jsonPath().getList("transactions.transaction_code"));
+    }
+
     @Then("the configured {string} report no longer exists on bais")
     public void configuredReportNoLongerExists(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
