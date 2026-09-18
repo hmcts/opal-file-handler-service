@@ -26,8 +26,11 @@ public class InterfaceFileSpecsFactory {
         if (searchDto.getTarget() != null) {
             specs.add(equalsTarget(searchDto.getTarget()));
         }
-        if (searchDto.getType() != null) {
-            specs.add(equalsType(searchDto.getType()));
+        if (searchDto.getNotTarget() != null) {
+            specs.add(notEqualsTarget(searchDto.getNotTarget()));
+        }
+        if (searchDto.getTypes() != null) {
+            //specs.add(equalsType(searchDto.getType())); //TODO
         }
         if (searchDto.getDomain() != null) {
             specs.add(equalsOpalDomain(searchDto.getDomain()));
@@ -88,6 +91,11 @@ public class InterfaceFileSpecsFactory {
     private static Specification<InterfaceFileEntity> equalsTarget(Interface target) {
         return (root, query, builder)
             -> builder.equal(root.get(InterfaceFileEntity_.target).cast(String.class), target.toString());
+    }
+
+    private static Specification<InterfaceFileEntity> notEqualsTarget(Interface target) {
+        return (root, query, builder)
+            -> builder.notEqual(root.get(InterfaceFileEntity_.target).cast(String.class), target.toString());
     }
 
     private static Specification<InterfaceFileEntity> equalsType(Type type) {
