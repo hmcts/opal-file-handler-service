@@ -192,7 +192,6 @@ opal:
           sftp-username: ${BAIS_SFTP_JACOBS_USERNAME:}
         marston:
           container-name: ${MARSTON_AZURE_STORAGE_CONTAINER:marston}
-          account-name: ${FILE_STORE_STORAGE_ACCOUNT_NAME:MARSTON}
           feature-flag: marston-file-transfer-Job
           file-name-regex: \d{10}_dat_\d{10}_\d{8}_\d{6}\.txt
           source: MARSTON
