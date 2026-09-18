@@ -35,7 +35,7 @@ public class BTEckohBaisFileProcessorServiceIntegrationTest
 
     private static final String BANKING_INTERFACES_ENABLED_PROPERTY =
         "launchdarkly.default-flag-values.release-1c-banking-interfaces";
-    private static final String FEATURE_FLAG = "bteckoh-file-transfer-Job";
+    private static final String FEATURE_FLAG = "bteckoh-file-transfer-job";
     private static final String JOB_PROPERTY = "launchdarkly.default-flag-values." + FEATURE_FLAG;
 
     private static final String BUSINESS_UNIT_CODE = "AB01";
@@ -100,7 +100,7 @@ public class BTEckohBaisFileProcessorServiceIntegrationTest
     public class JobFeatureFlagIsDisabled {
 
         @Test
-        @DisplayName("Feature flag 'bteckoh-file-transfer-Job' is false")
+        @DisplayName("Feature flag 'bteckoh-file-transfer-job' is false")
         @JiraStory("PO-6428")
         @JiraEpic("PO-3497")
         void bankingInterfacesIsDisabled() {
