@@ -38,22 +38,22 @@ class PermissionUtilTest {
 
     @Test
     void checkPermissionReturnsTrue() {
-        when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
+        when(authToken.hasPermission(FileHandlerPermission.VIEW_INTERFACE_FILES)).thenReturn(true);
 
-        PermissionUtil.checkPermission(FileHandlerPermission.ViewInterfacesFile);
+        PermissionUtil.checkPermission(FileHandlerPermission.VIEW_INTERFACE_FILES);
 
         securityUtil.verify(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser);
     }
 
     @Test
     void checkPermissionFailedThrowsError() {
-        when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(false);
+        when(authToken.hasPermission(FileHandlerPermission.VIEW_INTERFACE_FILES)).thenReturn(false);
 
         Exception e = assertThrows(
             PermissionNotAllowedException.class,
-            () -> PermissionUtil.checkPermission(FileHandlerPermission.ViewInterfacesFile)
+            () -> PermissionUtil.checkPermission(FileHandlerPermission.VIEW_INTERFACE_FILES)
         );
-        assertEquals("[ViewInterfacesFile] permission(s) are not enabled for the user.", e.getMessage());
+        assertEquals("[VIEW_INTERFACE_FILES] permission(s) are not enabled for the user.", e.getMessage());
 
         securityUtil.verify(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser);
     }

@@ -55,7 +55,7 @@ public class GetInterfaceFileTest extends AbstractControllerIntegrationTest {
 
             setupApiTest(HttpMethod.GET, URI)
                 .clearPermissions()
-                .addPermission((short) 1, FileHandlerPermission.ViewInterfacesFile)
+                .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
                 .execute(interfaceFileEntity.getInterfaceFileId())
                 .assertSuccess(HttpStatus.OK)
                 .assertBody(expectedResponse);
@@ -78,7 +78,7 @@ public class GetInterfaceFileTest extends AbstractControllerIntegrationTest {
         void givenIdIsProvidedWhichDoesNotExistOnDb_shouldReturnError() {
             setupApiTest(HttpMethod.GET, URI)
                 .clearPermissions()
-                .addPermission((short) 1, FileHandlerPermission.ViewInterfacesFile)
+                .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
                 .execute(512)
                 .assertNotFound("Interface file with id 512 could not be located.");
         }
@@ -95,7 +95,7 @@ public class GetInterfaceFileTest extends AbstractControllerIntegrationTest {
         @DisplayName("API should return 404 when feature flag is off")
         void getInterfaceFile_shouldReturn404_whenFeatureFlagIsOff() throws Exception {
             setupApiTest(HttpMethod.GET, URI)
-                .addPermission((short) 1, FileHandlerPermission.ViewInterfacesFile)
+                .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
                 .execute(1L)
                 .assertFeatureFlagDisabledResponse();
         }
