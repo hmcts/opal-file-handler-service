@@ -18,7 +18,6 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.codec.digest.DigestUtils;
 import uk.gov.hmcts.opal.filehandler.sftp.SftpClient;
 import uk.gov.hmcts.opal.filehandler.support.BaisReportTestConfig;
 import uk.gov.hmcts.opal.filehandler.support.TestHttpClient.TestHttpResponse;
