@@ -44,14 +44,17 @@ public class InterfaceFilesController implements InterfaceFilesApi {
     public ResponseEntity<GetInterfaceFiles200Response> getInterfaceFiles(
         @Nullable InterfaceFileEnumInterfaceFile source,
         @Nullable InterfaceFileEnumInterfaceFile target,
-        @Nullable InterfaceFileTypeEnumInterfaceFile type,
+        @Nullable InterfaceFileEnumInterfaceFile notTarget,
+        @Nullable List<InterfaceFileTypeEnumInterfaceFile> type,
         @Nullable DomainEnumTypes domain,
         @Nullable StatusEnumInterfaceFile status,
+        @Nullable List<StatusEnumInterfaceFile> notStatus,
+        @Nullable String businessUnitCode,
         @Nullable LocalDateTime fromDate,
         @Nullable LocalDateTime toDate) {
 
-        SearchInterfaceFilesDto searchDto = searchMapper
-            .toSearchInterfaceFilesDto(source, target, type, domain, status, fromDate, toDate);
+        SearchInterfaceFilesDto searchDto = searchMapper.toSearchInterfaceFilesDto(
+            source, target, notTarget, type, domain, status, notStatus, businessUnitCode, fromDate, toDate);
         List<InterfaceFileObjectInterfaceFile> interfaceFileObjects = service.searchInterfaceFiles(searchDto);
         GetInterfaceFiles200Response response = GetInterfaceFiles200Response.builder()
             .interfaceFiles(interfaceFileObjects)
