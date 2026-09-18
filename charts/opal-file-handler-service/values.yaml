@@ -76,7 +76,6 @@ bt-eckoh-report:
   schedule: '*/1 * * * *'
   command: [ "java", "-jar", "/opt/app/opal-file-handler-service.jar" ]
   concurrencyPolicy: Forbid
-  suspend: true
   args:
     - AutomatedTask:BTEckohReport
   aadIdentityName: opal
