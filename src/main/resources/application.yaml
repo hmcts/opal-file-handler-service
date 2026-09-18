@@ -190,6 +190,13 @@ opal:
           source: JACOBS
           target: OPAL
           sftp-username: ${BAIS_SFTP_JACOBS_USERNAME:}
+        cder:
+          container-name: ${CDER_AZURE_STORAGE_CONTAINER:cder}
+          feature-flag: bailiffs.cder-file-transfer-job
+          file-name-regex: \d{10}_dat_\d{10}_\d{8}_\d{6}.txt
+          source: CDER
+          target: OPAL
+          sftp-username: ${BAIS_SFTP_CDER_USERNAME:}
     sftp:
       bais:
         host: ${BAIS_SFTP_CONNECTION_HOST:localhost}
@@ -232,6 +239,7 @@ launchdarkly:
     barclaycard-file-transfer-job: ${BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED:false}
     bailiffs:
       jacobs-file-transfer-job: ${JACOBS_FILE_TRANSFER_JOB_ENABLED:false}
+      cder-file-transfer-job: ${CDER_FILE_TRANSFER_JOB_ENABLED:false}
 
 user:
   service:
