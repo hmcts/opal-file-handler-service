@@ -9,18 +9,17 @@ import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
-import org.jspecify.annotations.Nullable;
 import org.springframework.web.bind.annotation.RestController;
+import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureToggle;
-import uk.gov.hmcts.opal.filehandler.service.InterfaceFilesService;
 import uk.gov.hmcts.opal.filehandler.mapper.SearchInterfaceFilesDtoMapper;
 import uk.gov.hmcts.opal.filehandler.service.InterfaceFilesService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.generated.http.api.InterfaceFilesApi;
-import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
 import uk.gov.hmcts.opal.generated.model.GetInterfaceFiles200Response;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileEnumInterfaceFile;
@@ -45,14 +44,17 @@ public class InterfaceFilesController implements InterfaceFilesApi {
     public ResponseEntity<GetInterfaceFiles200Response> getInterfaceFiles(
         @Nullable InterfaceFileEnumInterfaceFile source,
         @Nullable InterfaceFileEnumInterfaceFile target,
-        @Nullable InterfaceFileTypeEnumInterfaceFile type,
+        @Nullable InterfaceFileEnumInterfaceFile notTarget,
+        @Nullable List<InterfaceFileTypeEnumInterfaceFile> type,
         @Nullable DomainEnumTypes domain,
         @Nullable StatusEnumInterfaceFile status,
+        @Nullable List<StatusEnumInterfaceFile> notStatus,
+        @Nullable String businessUnitCode,
         @Nullable LocalDateTime fromDate,
         @Nullable LocalDateTime toDate) {
 
-        SearchInterfaceFilesDto searchDto = searchMapper
-            .toSearchInterfaceFilesDto(source, target, type, domain, status, fromDate, toDate);
+        SearchInterfaceFilesDto searchDto = searchMapper.toSearchInterfaceFilesDto(
+            source, target, notTarget, type, domain, status, notStatus, businessUnitCode, fromDate, toDate);
         List<InterfaceFileObjectInterfaceFile> interfaceFileObjects = service.searchInterfaceFiles(searchDto);
         GetInterfaceFiles200Response response = GetInterfaceFiles200Response.builder()
             .interfaceFiles(interfaceFileObjects)
