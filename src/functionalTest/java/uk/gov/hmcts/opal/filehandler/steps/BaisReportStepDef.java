@@ -18,6 +18,7 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.codec.digest.DigestUtils;
 import uk.gov.hmcts.opal.filehandler.sftp.SftpClient;
 import uk.gov.hmcts.opal.filehandler.support.BaisReportTestConfig;
 import uk.gov.hmcts.opal.filehandler.support.TestHttpClient.TestHttpResponse;
@@ -35,13 +36,13 @@ public class BaisReportStepDef extends BaseStepDef {
     private TestHttpResponse taskResponse;
     private Map<String, Object> successfulInterfaceFile;
 
-    @Given("^the configured (BTEckoh|CAPS) report is available on bais$")
+    @Given("the configured {string} report is available on bais")
     public void configuredReportIsAvailable(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.fileName(), true);
     }
 
-    @When("^the (BTEckoh|CAPS) report ingestion job is requested through testing support$")
+    @When("the {string} report ingestion job is requested through testing support")
     public void reportIngestionJobIsRequested(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         taskResponse = testSupportApiClient.post("/automated-jobs/" + config.automatedTaskName());
@@ -53,10 +54,10 @@ public class BaisReportStepDef extends BaseStepDef {
         assertEquals(202, taskResponse.statusCode(), "The testing-support endpoint did not accept the job");
     }
 
-    @Then("^a successful (BTECKOH_REPORT|CAPS_REPORT) interface file is stored$")
+    @Then("a successful {string} interface file is stored")
     public void successfulInterfaceFileIsStored(String source) {
         BaisReportTestConfig config = forSource(source);
-        successfulInterfaceFile = awaitSuccessfulInterfaceFile(config);
+        successfulInterfaceFile = awaitSuccessfulInterfaceFile(config, "SOURCE");
 
         assertEquals(config.source(), successfulInterfaceFile.get("source"));
         assertEquals("OPAL", successfulInterfaceFile.get("target"));
@@ -67,7 +68,7 @@ public class BaisReportStepDef extends BaseStepDef {
         assertNotNull(successfulInterfaceFile.get("filestore_uuid"));
     }
 
-    @Then("^the stored (BTEckoh|CAPS) report content matches the bais (workbook|file)$")
+    @Then("the stored {string} report content matches the bais {string}")
     public void storedReportContentMatches(String displayName, String fileDescription) throws IOException {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertNotNull(successfulInterfaceFile, "Successful interface-file metadata was not retrieved");
@@ -87,13 +88,35 @@ public class BaisReportStepDef extends BaseStepDef {
         );
     }
 
-    @Then("^the configured (BTEckoh|CAPS) report no longer exists on bais$")
+    @Then("the DWP JSON file contains the extracted payments and bank details")
+    public void dwpJsonContainsExtractedPayments() {
+        assertNotNull(successfulInterfaceFile, "Source metadata was not retrieved");
+        Map<String, Object> jsonFile = awaitSuccessfulInterfaceFile(forSource("DWP"), "SOURCE_JSON");
+        assertEquals("OPAL", jsonFile.get("target"));
+        assertEquals("MAINTENANCE", jsonFile.get("domain"));
+        assertNotNull(jsonFile.get("filestore_uuid"));
+        Response response = authorisedJsonRequest().accept("application/octet-stream").when()
+            .get(getTestUrl() + "/interface-files/" + jsonFile.get("interface_file_id") + "/content");
+        assertEquals(200, response.statusCode());
+        assertEquals(jsonFile.get("checksum"), DigestUtils.md5Hex(response.asByteArray()));
+        assertEquals(forSource("DWP").fileName(), response.jsonPath().getString("file_name"));
+        assertEquals("DWP1234567", response.jsonPath().getString("dwp_court_code"));
+        assertEquals("CASH", response.jsonPath().getString("payment_type"));
+        assertEquals("010101", response.jsonPath().getString("destination_details.bank_details.sort_code"));
+        assertEquals("12341234", response.jsonPath().getString("destination_details.bank_details.account_number"));
+        assertEquals(List.of(2125, 2125, 2125, 2125, 2001),
+            response.jsonPath().getList("transactions.amount"));
+        assertEquals(List.of("99", "99", "99", "99", "99"),
+            response.jsonPath().getList("transactions.transaction_code"));
+    }
+
+    @Then("the configured {string} report no longer exists on bais")
     public void configuredReportNoLongerExists(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.fileName(), false);
     }
 
-    private Map<String, Object> awaitSuccessfulInterfaceFile(BaisReportTestConfig config) {
+    private Map<String, Object> awaitSuccessfulInterfaceFile(BaisReportTestConfig config, String type) {
         long deadline = System.nanoTime() + INGESTION_TIMEOUT.toNanos();
         List<Map<String, Object>> matchingRecords = List.of();
         do {
@@ -109,6 +132,7 @@ public class BaisReportStepDef extends BaseStepDef {
                 .filter(record -> config.fileName().equals(record.get("file_name")))
                 .toList();
             List<Map<String, Object>> successfulRecords = matchingRecords.stream()
+                .filter(record -> type.equals(record.get("type")))
                 .filter(record -> "SUCCESS".equals(record.get("status")))
                 .toList();
             if (successfulRecords.size() == 1) {
