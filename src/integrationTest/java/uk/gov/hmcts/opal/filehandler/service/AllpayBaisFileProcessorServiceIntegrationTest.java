@@ -30,7 +30,7 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceInt
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
     "opal.file-handler-service.file-types.allpay.sftp-username=AllPay",
-    "launchdarkly.default-flag-values.allpay-file-transfer-Job=true"
+    "launchdarkly.default-flag-values.allpay-file-transfer-job=true"
 })
 public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
 
@@ -58,7 +58,7 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.allpay-file-transfer-Job=true"
+        "launchdarkly.default-flag-values.allpay-file-transfer-job=true"
     })
     public class BankingInterfacesDisabled {
 
@@ -76,17 +76,17 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
-        "launchdarkly.default-flag-values.allpay-file-transfer-Job=false"
+        "launchdarkly.default-flag-values.allpay-file-transfer-job=false"
     })
     public class AllpayFileTransferJobDisabled {
 
         @Test
-        @DisplayName("AC1: Feature flag 'allpay-file-transfer-Job' is false")
+        @DisplayName("AC1: Feature flag 'allpay-file-transfer-job' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 allpayBaisFileProcessorService.run(allpayBaisFileProcessorConfiguration));
 
-            assertThat(exception).hasMessage("allpay-file-transfer-Job is not enabled");
+            assertThat(exception).hasMessage("allpay-file-transfer-job is not enabled");
         }
 
     }
@@ -94,7 +94,7 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.allpay-file-transfer-Job=false"
+        "launchdarkly.default-flag-values.allpay-file-transfer-job=false"
     })
     public class BothFeatureFlagsDisabled {
 
