@@ -8,4 +8,5 @@ Feature: DWP file ingestion
     Then the testing-support request is accepted
     And a successful "DWP" interface file is stored
     And the stored "DWP" report content matches the bais "file"
+    And the DWP JSON file contains the extracted payments and bank details
     And the configured "DWP" report no longer exists on bais
