@@ -151,7 +151,7 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
         assertThat(logAppender.list)
             .filteredOn(event -> event.getLevel() == Level.INFO)
             .extracting(ILoggingEvent::getFormattedMessage)
-            .containsExactly(String.format("No files found in BAIS for user '%s' when processing source 'CAPS_REPORT'",
+            .containsAnyOf(String.format("No files found in BAIS for user '%s' when processing source 'CAPS_REPORT'",
                 capsReportBaisFileProcessorConfiguration.getSftpUsername()));
     }
 

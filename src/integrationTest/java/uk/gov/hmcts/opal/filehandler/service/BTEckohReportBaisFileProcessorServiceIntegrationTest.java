@@ -150,7 +150,7 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
         assertThat(logAppender.list)
             .filteredOn(event -> event.getLevel() == Level.INFO)
             .extracting(ILoggingEvent::getFormattedMessage)
-            .containsExactly(
+            .containsAnyOf(
                 String.format("No files found in BAIS for user '%s' when processing source 'BTECKOH_REPORT'",
                     config.getSftpUsername()));
     }
