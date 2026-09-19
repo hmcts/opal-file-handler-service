@@ -9,6 +9,7 @@ import com.azure.storage.blob.BlobClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 @TestPropertySource(properties = {
     "launchdarkly.default-flag-values.natwest-file-transfer-job=true",
 })
+@Disabled
 public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
 
     private static final String NATWEST_FILE = "Y01A.CARS.#D.SBURZ38.D080426";

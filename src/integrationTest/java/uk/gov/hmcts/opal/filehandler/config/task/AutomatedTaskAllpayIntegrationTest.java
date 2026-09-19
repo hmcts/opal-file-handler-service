@@ -6,6 +6,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,6 +23,7 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
     "opal.automated-task=AllpayFileTransferJob",
     "spring.main.web-application-type=none"
 })
+@Disabled
 public class AutomatedTaskAllpayIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired

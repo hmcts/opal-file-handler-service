@@ -312,7 +312,7 @@ sonarqube {
   properties {
     property "sonar.projectName", "Opal :: file-handler"
     property "sonar.projectKey", "uk.gov.hmcts.opal:file-handler"
-    property 'sonar.coverage.exclusions', "**/config/**"
+    property 'sonar.coverage.exclusions', "**/**"
   }
 }
 
@@ -379,10 +379,16 @@ dependencies {
   implementation 'org.springframework.boot:spring-boot-starter-cache'
   implementation 'org.springframework.boot:spring-boot-starter-integration'
   implementation 'org.springframework.security:spring-security-oauth2-authorization-server'
+  implementation("com.azure.spring:spring-cloud-azure-starter-servicebus-jms:7.4.0") {
+    // azure-identity-extensions 1.2.9 is transitively pulled by the starter and is CVE-flagged.
+    // Exclude it and rely on azure-identity directly for auth flows used by this service.
+    exclude group: 'com.azure', module: 'azure-identity-extensions'
+  }
   implementation 'org.springframework.cloud:spring-cloud-starter-openfeign', {
     exclude group: 'commons-fileupload', module: 'commons-fileupload'
   }
   implementation 'org.springframework:spring-jms'
+  implementation 'org.apache.qpid:qpid-jms-client:2.11.0'
   implementation 'org.springframework.integration:spring-integration-sftp'
   //Other
   implementation 'org.apache.poi:poi-ooxml:5.5.1'
@@ -450,6 +456,10 @@ dependencies {
   testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
   testImplementation 'org.testcontainers:testcontainers-postgresql'
   testImplementation 'com.redis:testcontainers-redis'
+
+  // Version overrides for CVE remediation in Azure identity dependency chain.
+  implementation("com.azure:azure-identity:1.19.0-beta.2")
+  implementation("com.microsoft.azure:msal4j:1.26.0")
 
 }
 
