@@ -146,12 +146,12 @@ paths:
                     - file_name
                   allOf:
                     - if:
-                      required:
-                        - type
-                      properties:
-                        type:
-                          not:
-                            const: SOURCE
+                        required:
+                          - type
+                        properties:
+                          type:
+                            not:
+                              const: SOURCE
                       then:
                         properties:
                           should_pre_process_file:
