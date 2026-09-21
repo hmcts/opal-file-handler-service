@@ -182,6 +182,13 @@ opal:
         source: BARCLAYCARD
         target: OPAL
         sftp-username: ${BAIS_SFTP_BARCLAYCARD_USERNAME:}
+      bteckoh-transfer:
+        container-name: ${BTECKOH_AZURE_STORAGE_CONTAINER:bteckoh}
+        feature-flag: bteckoh-file-transfer-job
+        file-name-regex: ^a121_\d{8}_\d{6}\.dat$
+        source: BTECKOH
+        target: OPAL
+        sftp-username: ${BAIS_SFTP_BTECKOH_USERNAME:}
       bailiffs:
         jacobs:
           container-name: ${JACOBS_AZURE_STORAGE_CONTAINER:jacobs}
@@ -243,6 +250,7 @@ launchdarkly:
     bteckoh-report-file-transfer-job: ${BTECKOH_REPORT_FILE_TRANSFER_JOB_ENABLED:false}
     allpay-file-transfer-job: ${ALLPAY_FILE_TRANSFER_JOB_ENABLED:false}
     dwp-file-transfer-job: ${DWP_FILE_TRANSFER_JOB_ENABLED:false}
+    bteckoh-file-transfer-job: ${BTECKOH_FILE_TRANSFER_JOB_ENABLED:false}
     natwest-file-transfer-job: ${NATWEST_FILE_TRANSFER_JOB_ENABLED:false}
     barclaycard-file-transfer-job: ${BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED:false}
     bailiffs:
