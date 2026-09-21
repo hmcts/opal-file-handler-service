@@ -5,6 +5,7 @@ import jakarta.persistence.criteria.Subquery;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -29,14 +30,20 @@ public class InterfaceFileSpecsFactory {
         if (searchDto.getNotTarget() != null) {
             specs.add(notEqualsTarget(searchDto.getNotTarget()));
         }
-        if (searchDto.getTypes() != null) {
-            //specs.add(equalsType(searchDto.getType())); //TODO
+        if (searchDto.getTypes() != null && !searchDto.getTypes().isEmpty()) {
+            specs.add(hasTypeIn(searchDto.getTypes()));
         }
         if (searchDto.getDomain() != null) {
             specs.add(equalsOpalDomain(searchDto.getDomain()));
         }
         if (searchDto.getStatus() != null) {
             specs.add(equalsStatus(searchDto.getStatus()));
+        }
+        if (searchDto.getNotStatuses() != null && !searchDto.getNotStatuses().isEmpty()) {
+            specs.add(hasStatusNotIn(searchDto.getNotStatuses()));
+        }
+        if (searchDto.getBusinessUnitCode() != null) {
+            specs.add(hasBusinessUnitCode(searchDto.getBusinessUnitCode()));
         }
         if (searchDto.getFromDate() != null) {
             specs.add(fromDate(searchDto.getFromDate()));
@@ -98,9 +105,9 @@ public class InterfaceFileSpecsFactory {
             -> builder.notEqual(root.get(InterfaceFileEntity_.target).cast(String.class), target.toString());
     }
 
-    private static Specification<InterfaceFileEntity> equalsType(Type type) {
+    private static Specification<InterfaceFileEntity> hasTypeIn(Set<Type> types) {
         return (root, query, builder)
-            -> builder.equal(root.get(InterfaceFileEntity_.type).cast(String.class), type.toString());
+            -> root.get(InterfaceFileEntity_.type).cast(String.class).in(types.stream().map(Type::toString));
     }
 
     private static Specification<InterfaceFileEntity> equalsOpalDomain(Domain domain) {
@@ -121,5 +128,17 @@ public class InterfaceFileSpecsFactory {
     private static Specification<InterfaceFileEntity> toDate(LocalDateTime toDate) {
         return (root, query, builder)
             -> builder.lessThanOrEqualTo(root.get(InterfaceFileEntity_.createdDatetime), toDate);
+    }
+
+    private static Specification<InterfaceFileEntity> hasStatusNotIn(Set<Status> statuses) {
+        return (root, query, builder)
+            -> root.get(InterfaceFileEntity_.STATUS).cast(String.class)
+                .in(statuses.stream().map(Status::toString))
+                .not();
+    }
+
+    private static Specification<InterfaceFileEntity> hasBusinessUnitCode(String businessUnitCode) {
+        return (root, query, builder)
+            -> builder.isMember(businessUnitCode, root.get(InterfaceFileEntity_.BUSINESS_UNIT_CODE));
     }
 }
