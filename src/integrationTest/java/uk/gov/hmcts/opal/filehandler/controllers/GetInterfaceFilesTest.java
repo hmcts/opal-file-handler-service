@@ -272,6 +272,31 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             assertThat(interfaceFiles).noneMatch(i -> i.getTarget() == InterfaceFileEnumInterfaceFile.OPAL);
         }
 
+        @Test
+        @DisplayName("PO-3947 - Filters interface files correctly by business_unit_code")
+        @JiraStory("PO-3947")
+        @JiraEpic("PO-3495")
+        void filtersInterfaceFilesCorrectlyByBusinessUnitCode_200() throws Exception {
+            String businessUnitCode = "BC01";
+            setupAuthorisedUser();
+            ResultActions result = mockMvc.perform(
+                get(URL)
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
+                    .param("business_unit_code", businessUnitCode));
+
+            String body = result.andReturn().getResponse().getContentAsString();
+            result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+            GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {
+            });
+
+            List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
+            assertThat(interfaceFiles).hasSizeGreaterThanOrEqualTo(1);
+            assertThat(interfaceFiles).allMatch(i -> i.getBusinessUnitCodes().contains(businessUnitCode));
+        }
+
         /* Commented out pending https://tools.hmcts.net/jira/browse/PO-8686
         @Test
         @DisplayName("PO-3947 – Forbidden without View Interface Files permission")
