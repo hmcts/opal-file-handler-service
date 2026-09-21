@@ -33,4 +33,10 @@ VALUES
      CURRENT_TIMESTAMP, null),
     (13, 'BTECKOH_REPORT', 'OPAL', 'SOURCE',
      'FILE_HANDLER', '2500-Payments-Report-Daily.xlsx', 'a5695e1e-bd9f-4a5b-ae15-9deeed2d1384', null, 'FAILED',
-     to_timestamp('2026-01-04 12:30:00', 'YYYY-MM-DD HH24:MI:SS'), '{"error":"malformed xlsx"}');
+     to_timestamp('2026-01-04 12:30:00', 'YYYY-MM-DD HH24:MI:SS'), '{"error":"malformed xlsx"}'),
+    (14, 'CAPS_REPORT', 'OPAL', 'SOURCE_JSON',
+    'FINES', 'CAPS-1.xml', '7359bcfb-1208-4791-884b-ed177c507fd0', null, 'INGESTED',
+    CURRENT_TIMESTAMP, null),
+    (15, 'CAPS_REPORT', 'OPAL', 'TRANSFORMED_JSON',
+     'MAINTENANCE', 'CAPS-2.xml', 'ee977bd9-4c3d-40b2-8f32-ac1f466f9aba', null, 'SUCCESS',
+     CURRENT_TIMESTAMP, null);

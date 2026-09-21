@@ -138,7 +138,9 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
                     .with(userStateStub.getAuthenticaitonRequestPostProcessor())
                     .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
                     .param("target", InterfaceFileEnumInterfaceFile.OPAL.getValue())
-                    .param("type", InterfaceFileTypeEnumInterfaceFile.SOURCE.getValue()));
+                    .param("type", String.join(",",
+                        InterfaceFileTypeEnumInterfaceFile.SOURCE.getValue(),
+                        InterfaceFileTypeEnumInterfaceFile.SOURCE_JSON.getValue())));
 
             String body = result.andReturn().getResponse().getContentAsString();
             result.andExpect(status().isOk())
@@ -147,10 +149,15 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {
             });
 
-            assertThat(response.getInterfaceFiles()).hasSizeGreaterThanOrEqualTo(1);
-            assertThat(response.getInterfaceFiles()).allMatch(
-                i -> i.getTarget() == InterfaceFileEnumInterfaceFile.OPAL
-                    && i.getType() == InterfaceFileTypeEnumInterfaceFile.SOURCE);
+            List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
+            assertThat(interfaceFiles).allMatch(
+                i -> i.getTarget() == InterfaceFileEnumInterfaceFile.OPAL);
+            assertThat(interfaceFiles).anyMatch(
+                i -> i.getType() == InterfaceFileTypeEnumInterfaceFile.SOURCE);
+            assertThat(interfaceFiles).anyMatch(
+                i -> i.getType() == InterfaceFileTypeEnumInterfaceFile.SOURCE_JSON);
+            assertThat(interfaceFiles).noneMatch(
+                i -> i.getType() == InterfaceFileTypeEnumInterfaceFile.TRANSFORMED_JSON);
         }
 
 
