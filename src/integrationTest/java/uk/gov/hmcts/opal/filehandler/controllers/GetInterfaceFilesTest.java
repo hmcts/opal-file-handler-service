@@ -248,6 +248,30 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
                 List.of(StatusEnumInterfaceFile.SUCCESS, StatusEnumInterfaceFile.FAILED));
         }
 
+        @Test
+        @DisplayName("PO-3947 - Filters interface files correctly by not_target")
+        @JiraStory("PO-3947")
+        @JiraEpic("PO-3495")
+        void filtersInterfaceFilesCorrectlyByNotTarget_200() throws Exception {
+            setupAuthorisedUser();
+            ResultActions result = mockMvc.perform(
+                get(URL)
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
+                    .param("not_target", InterfaceFileEnumInterfaceFile.OPAL.toString()));
+
+            String body = result.andReturn().getResponse().getContentAsString();
+            result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+            GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {
+            });
+
+            List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
+            assertThat(interfaceFiles).hasSizeGreaterThanOrEqualTo(1);
+            assertThat(interfaceFiles).noneMatch(i -> i.getTarget() == InterfaceFileEnumInterfaceFile.OPAL);
+        }
+
         /* Commented out pending https://tools.hmcts.net/jira/browse/PO-8686
         @Test
         @DisplayName("PO-3947 – Forbidden without View Interface Files permission")
