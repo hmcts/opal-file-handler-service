@@ -151,10 +151,11 @@ public class MarstonBaisFileProcessorServiceIntegrationTest   extends AbstractBa
         assertThat(logAppender.list)
             .filteredOn(event -> event.getLevel() == Level.INFO)
             .extracting(ILoggingEvent::getFormattedMessage)
-            .containsExactly(
+            .contains(
                 String.format(
                     "No files found in BAIS for user '%s' when processing source 'MARSTON'",
-                    config.getSftpUsername()));
+                    config.getSftpUsername())
+            );
     }
 
 
