@@ -10,7 +10,7 @@ plugins {
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
   id 'org.springframework.boot' version '4.1.1'
-  id 'io.github.ben-manes.versions' version '0.63.1'
+  id 'io.github.ben-manes.versions' version '0.64.0'
   id 'org.sonarqube' version '7.5.0.8588'
   id "org.openapi.generator" version "7.25.0"
   /*
@@ -363,7 +363,7 @@ dependencies {
   //HMCTS
   implementation 'uk.gov.hmcts:opal-common-lib:0.3.33'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
-  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.0'
+  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.1'
 
   //Spring Boot
   implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
@@ -394,7 +394,7 @@ dependencies {
   implementation 'org.apache.poi:poi-ooxml:5.5.1'
 
   implementation 'com.azure:azure-storage-blob:12.35.1'
-  implementation 'com.microsoft.azure:applicationinsights-web:3.7.9'
+  implementation 'com.microsoft.azure:applicationinsights-web:3.7.10'
 
   implementation 'commons-logging:commons-logging:1.4.0'
   implementation "org.apache.logging.log4j:log4j-api:${log4JVersion}"
@@ -419,7 +419,7 @@ dependencies {
   implementation 'com.azure:azure-storage-blob:12.35.1'
 
   //Annotation
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.8.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.10.Final'
 
   compileOnly 'org.projectlombok:lombok:1.18.48'
   annotationProcessor 'org.projectlombok:lombok:1.18.48'
@@ -446,9 +446,9 @@ dependencies {
   testImplementation "net.serenity-bdd:serenity-report-resources:${serenityVersion}"
   testImplementation "net.serenity-bdd:serenity-cucumber:${serenityVersion}"
   testImplementation "net.serenity-bdd:serenity-ensure:${serenityVersion}"
-  testImplementation 'com.hierynomus:sshj:0.40.0'
+  testImplementation 'com.hierynomus:sshj:0.41.1'
 
-  integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.3'
+  integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.4.2'
   integrationTestImplementation 'org.springframework.security:spring-security-test'
   integrationTestImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 

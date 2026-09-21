@@ -69,7 +69,7 @@ blobstorage:
 bais-emulator:
   enabled: false
 bt-eckoh-report:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '45 08 * * *'
@@ -97,6 +97,20 @@ bt-eckoh-report:
           alias: OPAL_FILE_HANDLER_DB_NAME
         - name: managed-redis-connection-string
           alias: REDIS_CONNECTION_STRING
+        - name: opal-file-handler-service-file-store-account-name
+          alias: FILE_STORE_STORAGE_ACCOUNT_NAME
+        - name: opal-file-handler-service-file-store-blob-endpoint
+          alias: FILE_STORE_STORAGE_URL
+        - name: opal-file-handler-service-file-store-access-key
+          alias: FILE_STORE_STORAGE_KEY
+        - name: bais-private-key
+          alias: BAIS_SFTP_PRIVATE_KEY
+        - name: bais-sftp-connection-host
+          alias: BAIS_SFTP_CONNECTION_HOST
+        - name: bais-sftp-connection-port
+          alias: BAIS_SFTP_CONNECTION_PORT
+        - name: bais-sftp-bteckoh-report-username
+          alias: BAIS_SFTP_BTECKOH_REPORT_USERNAME
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
@@ -104,7 +118,7 @@ bt-eckoh-report:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 caps-report:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '0 7 * * 4-5'
@@ -153,7 +167,7 @@ caps-report:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 natwest-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '0 5 * * *'
@@ -202,7 +216,7 @@ natwest-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 allpay-file-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '30 7 * * 1-5'
@@ -251,7 +265,7 @@ allpay-file-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 barclaycard-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '45 6 * * *'
@@ -300,7 +314,7 @@ barclaycard-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 bt-eckoh-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '30 5 * * 1-5'
@@ -308,6 +322,55 @@ bt-eckoh-transfer:
   concurrencyPolicy: Forbid
   args:
     - AutomatedTask:BTEckohFileTransferJob
+  aadIdentityName: opal
+  keyVaults:
+    opal:
+      secrets:
+        - name: app-insights-connection-string
+          alias: app-insights-connection-string
+        - name: launch-darkly-sdk-key
+          alias: LAUNCH_DARKLY_SDK_KEY
+        - name: file-handler-service-POSTGRES-HOST
+          alias: OPAL_FILE_HANDLER_DB_HOST
+        - name: file-handler-service-POSTGRES-PASS
+          alias: OPAL_FILE_HANDLER_DB_PASSWORD
+        - name: file-handler-service-POSTGRES-PORT
+          alias: OPAL_FILE_HANDLER_DB_PORT
+        - name: file-handler-service-POSTGRES-USER
+          alias: OPAL_FILE_HANDLER_DB_USERNAME
+        - name: file-handler-service-POSTGRES-DATABASE
+          alias: OPAL_FILE_HANDLER_DB_NAME
+        - name: managed-redis-connection-string
+          alias: REDIS_CONNECTION_STRING
+        - name: opal-file-handler-service-file-store-account-name
+          alias: FILE_STORE_STORAGE_ACCOUNT_NAME
+        - name: opal-file-handler-service-file-store-blob-endpoint
+          alias: FILE_STORE_STORAGE_URL
+        - name: opal-file-handler-service-file-store-access-key
+          alias: FILE_STORE_STORAGE_KEY
+        - name: bais-private-key
+          alias: BAIS_SFTP_PRIVATE_KEY
+        - name: bais-sftp-connection-host
+          alias: BAIS_SFTP_CONNECTION_HOST
+        - name: bais-sftp-connection-port
+          alias: BAIS_SFTP_CONNECTION_PORT
+        - name: bais-sftp-bteckoh-username
+          alias: BAIS_SFTP_BTECKOH_USERNAME
+  environment:
+    RUN_DB_MIGRATION_ON_STARTUP: false
+    OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
+    TESTING_SUPPORT_ENDPOINTS_ENABLED: false
+    FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
+
+dwp-transfer:
+  enabled: false
+  kind: CronJob
+  image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
+  schedule: '30 20 * * *'
+  command: ["java", "-jar", "/opt/app/opal-file-handler-service.jar"]
+  concurrencyPolicy: Forbid
+  args:
+    - AutomatedTask:DWPFileTransferJob
   aadIdentityName: opal
   keyVaults:
     opal:
@@ -348,43 +411,8 @@ bt-eckoh-transfer:
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
-dwp-transfer:
-  enabled: true
-  kind: CronJob
-  image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
-  schedule: '30 20 * * *'
-  command: ["java", "-jar", "/opt/app/opal-file-handler-service.jar"]
-  concurrencyPolicy: Forbid
-  args:
-    - AutomatedTask:DWPFileTransferJob
-  aadIdentityName: opal
-  keyVaults:
-    opal:
-      secrets:
-        - name: app-insights-connection-string
-          alias: app-insights-connection-string
-        - name: launch-darkly-sdk-key
-          alias: LAUNCH_DARKLY_SDK_KEY
-        - name: file-handler-service-POSTGRES-HOST
-          alias: OPAL_FILE_HANDLER_DB_HOST
-        - name: file-handler-service-POSTGRES-PASS
-          alias: OPAL_FILE_HANDLER_DB_PASSWORD
-        - name: file-handler-service-POSTGRES-PORT
-          alias: OPAL_FILE_HANDLER_DB_PORT
-        - name: file-handler-service-POSTGRES-USER
-          alias: OPAL_FILE_HANDLER_DB_USERNAME
-        - name: file-handler-service-POSTGRES-DATABASE
-          alias: OPAL_FILE_HANDLER_DB_NAME
-        - name: managed-redis-connection-string
-          alias: REDIS_CONNECTION_STRING
-  environment:
-    RUN_DB_MIGRATION_ON_STARTUP: false
-    OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
-    TESTING_SUPPORT_ENDPOINTS_ENABLED: false
-    FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
-
 jacobs-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '45 5 * * 4'
@@ -437,7 +465,7 @@ jacobs-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 cder-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '0 6 * * 4'
@@ -465,6 +493,20 @@ cder-transfer:
           alias: OPAL_FILE_HANDLER_DB_NAME
         - name: managed-redis-connection-string
           alias: REDIS_CONNECTION_STRING
+        - name: opal-file-handler-service-file-store-account-name
+          alias: FILE_STORE_STORAGE_ACCOUNT_NAME
+        - name: opal-file-handler-service-file-store-blob-endpoint
+          alias: FILE_STORE_STORAGE_URL
+        - name: opal-file-handler-service-file-store-access-key
+          alias: FILE_STORE_STORAGE_KEY
+        - name: bais-private-key
+          alias: BAIS_SFTP_PRIVATE_KEY
+        - name: bais-sftp-connection-host
+          alias: BAIS_SFTP_CONNECTION_HOST
+        - name: bais-sftp-connection-port
+          alias: BAIS_SFTP_CONNECTION_PORT
+        - name: bais-sftp-cder-username
+          alias: BAIS_SFTP_CDER_USERNAME
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
@@ -472,7 +514,7 @@ cder-transfer:
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
 
 marston-transfer:
-  enabled: true
+  enabled: false
   kind: CronJob
   image: 'hmctsprod.azurecr.io/opal/file-handler-service:latest'
   schedule: '25 5 * * 4'
