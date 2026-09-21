@@ -4,14 +4,14 @@ import lombok.Getter;
 
 @Getter
 public enum Interface {
-    NATWEST(null),
+    NATWEST("NatWestBaisFileBaisFileProcessorConfig"),
     ALLPAY("AllpayBaisFileBaisFileProcessorConfig"),
     ALLPAY_DD(null),
-    BARCLAYCARD(null),
-    BTECKOH(null),
-    DWP(null),
-    CDER(null),
-    JACOBS(null),
+    BARCLAYCARD("BarclaycardBaisFileProcessorConfig"),
+    BTECKOH("BTEckohBaisFileProcessorConfig"),
+    DWP("dwpBaisFileProcessorConfig"),
+    CDER("cderBaisFileProcessorConfig"),
+    JACOBS("JacobsBaisFileBaisFileProcessorConfig"),
     MARSTON(null),
     BTECKOH_REPORT("BTEckohReportBaisFileProcessorConfig"),
     CAPS_REPORT("capsReportBaisFileProcessorConfig"),

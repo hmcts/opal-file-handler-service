@@ -211,6 +211,17 @@ public final class TestEnvironment {
     }
 
     /**
+     * Returns the SFTP username for a report-specific functional test.
+     *
+     * @param reportName report identifier used in the environment-variable name.
+     * @param defaultUsername local shared-infrastructure username.
+     * @return configured deployed username or the local default.
+     */
+    public static String getReportSftpUsername(String reportName, String defaultUsername) {
+        return get("FUNCTIONAL_TEST_" + reportName + "_SFTP_USERNAME").orElse(defaultUsername);
+    }
+
+    /**
      * Returns the SFTP password used by reusable SFTP checks.
      *
      * @return configured SFTP password.

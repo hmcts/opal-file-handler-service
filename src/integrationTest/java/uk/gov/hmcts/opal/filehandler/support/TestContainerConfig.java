@@ -33,7 +33,8 @@ public class TestContainerConfig {
     private static final String AZURITE_ACCOUNT_KEY =
         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
-    private static final List<String> SFTP_USERS = List.of("CAPS-report", "BTEckoh-report", "AllPay");
+    private static final List<String> SFTP_USERS = List.of(
+        "CAPS-report", "BTEckoh-report", "AllPay", "DWP", "NATWEST", "Jacobs", "BARCLAYCARD", "CDER", "BTEckoh");
 
     static {
         POSTGRES_CONTAINER = new PostgreSQLContainer(DockerImageName.parse(POSTGRES_IMAGE))
@@ -73,7 +74,6 @@ public class TestContainerConfig {
         }
 
         sftpContainerBuilder.withCommand(command.toArray(new String[0]));
-        sftpContainerBuilder.setPortBindings(List.of("2222:22"));
 
         SFTP_CONTAINER = sftpContainerBuilder;
         SFTP_CONTAINER.start();

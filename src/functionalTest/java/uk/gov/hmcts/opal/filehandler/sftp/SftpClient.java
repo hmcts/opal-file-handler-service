@@ -82,6 +82,8 @@ public class SftpClient implements AutoCloseable {
         try {
             URL resource = Resources.getResource(resourcePath);
             byte[] content = Resources.toByteArray(resource);
+            // Upload fixture content without changing server-managed permissions or timestamps.
+            sftpClient.getFileTransfer().setPreserveAttributes(false);
             sftpClient.put(new ByteArraySourceFile(remoteFileName, content), remoteFileName);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to upload SFTP fixture: " + remoteFileName, e);

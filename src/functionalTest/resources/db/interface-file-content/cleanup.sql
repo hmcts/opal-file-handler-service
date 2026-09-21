@@ -9,3 +9,9 @@ WHERE interface_file_id IN (
     9000000000000009,
     9000000000000010
 );
+
+DELETE FROM public.interface_files
+WHERE file_name IN (
+    '2498-MCPLDB-MOJ-Payments-Report-Daily-2026-07-06-06-00-18.xlsx',
+    'CapFa.GB.20260701.173024.xml'
+);

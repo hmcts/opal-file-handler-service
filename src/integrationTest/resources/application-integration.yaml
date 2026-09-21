@@ -1,13 +1,24 @@
 opal:
   testing-support-endpoints:
     enabled: false
-  file-handling-service:
+  file-handler-service:
     file-types:
       bteckoh-report:
-        container-name: ${BTECKOH_REPORT_AZURE_STORAGE_CONTAINER:bteckoh-report}
+        sftp-username: BTEckoh-report
       caps-report:
-        container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}
+        sftp-username: CAPS-report
+      bteckoh-transfer:
+        sftp-username: BTEckoh
+      natwest:
+        sftp-username: NATWEST
+      barclaycard:
+        sftp-username: BARCLAYCARD
+      bailiffs:
+        jacobs:
+          sftp-username: Jacobs
+        cder:
+          sftp-username: CDER
 
 user:
   service:
-    url: http://localhost:4553
+    url: http://localhost:${INTEGRATION_WIREMOCK_PORT:4553}
