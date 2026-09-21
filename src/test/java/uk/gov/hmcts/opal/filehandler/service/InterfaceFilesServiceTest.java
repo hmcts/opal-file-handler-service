@@ -24,6 +24,7 @@ import org.springframework.data.jpa.domain.Specification;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
+import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
@@ -77,7 +78,7 @@ public class InterfaceFilesServiceTest {
     }
 
     @Test
-    void getInterfaceFile_shouldFetchAndMapResult() {
+    void getInterfaceFile_shouldCheckDomainAgnosticPermissionWhenEntityHasNoDomain() {
         try (MockedStatic<PermissionUtil> permissionUtil = mockStatic(PermissionUtil.class)) {
             Long id = 103L;
             InterfaceFileEntity entity = mock(InterfaceFileEntity.class);
@@ -90,7 +91,32 @@ public class InterfaceFilesServiceTest {
             InterfaceFileObjectInterfaceFile result = spyService.getInterfaceFile(id);
 
             assertEquals(mapped, result);
-            permissionUtil.verify(() -> PermissionUtil.checkPermission(FileHandlerPermission.VIEW_INTERFACE_FILES));
+            permissionUtil.verify(() ->
+                PermissionUtil.checkPermissionDomainAgnostic(FileHandlerPermission.VIEW_INTERFACE_FILES));
+            verify(spyService).getInterfaceFileEntity(id);
+            verify(mapper).toInterfaceFileObject(entity);
+        }
+    }
+
+    @Test
+    void getInterfaceFile_shouldCheckPermissionInEntityDomain() {
+        try (MockedStatic<PermissionUtil> permissionUtil = mockStatic(PermissionUtil.class)) {
+            Long id = 104L;
+            InterfaceFileEntity entity = mock(InterfaceFileEntity.class);
+            InterfaceFileObjectInterfaceFile mapped = mock(InterfaceFileObjectInterfaceFile.class);
+            InterfaceFilesService spyService = spy(service);
+
+            doReturn(entity).when(spyService).getInterfaceFileEntity(id);
+            when(entity.getOpalDomain()).thenReturn(Domain.FILE_HANDLER);
+            when(mapper.toInterfaceFileObject(entity)).thenReturn(mapped);
+
+            InterfaceFileObjectInterfaceFile result = spyService.getInterfaceFile(id);
+
+            assertEquals(mapped, result);
+            permissionUtil.verify(() -> PermissionUtil.checkPermissionInDomain(
+                FileHandlerPermission.VIEW_INTERFACE_FILES,
+                uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FILE_HANDLING
+            ));
             verify(spyService).getInterfaceFileEntity(id);
             verify(mapper).toInterfaceFileObject(entity);
         }

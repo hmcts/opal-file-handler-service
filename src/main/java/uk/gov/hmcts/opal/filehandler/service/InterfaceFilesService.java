@@ -76,9 +76,18 @@ public class InterfaceFilesService {
     }
 
     public InterfaceFileObjectInterfaceFile getInterfaceFile(Long id) {
-        PermissionUtil.checkPermission(FileHandlerPermission.VIEW_INTERFACE_FILES);
         InterfaceFileEntity entity = getInterfaceFileEntity(id);
+        checkAccessPermission(entity);
         return mapper.toInterfaceFileObject(entity);
+    }
+
+    private void checkAccessPermission(InterfaceFileEntity entity) {
+        if (entity.getOpalDomain() != null) {
+            PermissionUtil.checkPermissionInDomain(FileHandlerPermission.VIEW_INTERFACE_FILES,
+                entity.getOpalDomain().toCommonDomain());
+        } else {
+            PermissionUtil.checkPermissionDomainAgnostic(FileHandlerPermission.VIEW_INTERFACE_FILES);
+        }
     }
 
     public InterfaceFileEntity getInterfaceFileEntity(Long id) {
