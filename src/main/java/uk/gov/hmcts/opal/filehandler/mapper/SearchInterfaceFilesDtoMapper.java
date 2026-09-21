@@ -10,7 +10,9 @@ import uk.gov.hmcts.opal.generated.model.InterfaceFileEnumInterfaceFile;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileTypeEnumInterfaceFile;
 import uk.gov.hmcts.opal.generated.model.StatusEnumInterfaceFile;
 
-@Mapper(componentModel = "spring", nullValueMappingStrategy = NullValueMappingStrategy.RETURN_DEFAULT)
+@Mapper(componentModel = "spring",
+    nullValueMappingStrategy = NullValueMappingStrategy.RETURN_DEFAULT,
+    nullValueIterableMappingStrategy = NullValueMappingStrategy.RETURN_NULL)
 public interface SearchInterfaceFilesDtoMapper {
     SearchInterfaceFilesDto toSearchInterfaceFilesDto(InterfaceFileEnumInterfaceFile source,
         InterfaceFileEnumInterfaceFile target,
