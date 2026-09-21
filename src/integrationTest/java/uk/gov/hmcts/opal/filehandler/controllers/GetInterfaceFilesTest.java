@@ -215,6 +215,39 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             });
         }
 
+        @Test
+        @DisplayName("PO-3947 - Filters interface files correctly by not_status")
+        @JiraStory("PO-3947")
+        @JiraEpic("PO-3495")
+        void filtersInterfaceFilesCorrectlyByNotStatus_200() throws Exception {
+            setupAuthorisedUser();
+            List<StatusEnumInterfaceFile> notStatuses =
+                List.of(StatusEnumInterfaceFile.SUCCESS, StatusEnumInterfaceFile.FAILED);
+            ResultActions result = mockMvc.perform(
+                get(URL)
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
+                    .param("not_status", String.join(",",
+                        StatusEnumInterfaceFile.SUCCESS.getValue(),
+                        StatusEnumInterfaceFile.FAILED.getValue()))
+            );
+
+            String body = result.andReturn().getResponse().getContentAsString();
+            result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+            GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {
+            });
+
+            List<StatusEnumInterfaceFile> statusesReturned = response.getInterfaceFiles()
+                .stream()
+                .map(InterfaceFileObjectInterfaceFile::getStatus)
+                .toList();
+            assertThat(statusesReturned).hasSizeGreaterThanOrEqualTo(1);
+            assertThat(statusesReturned).isNotIn(
+                List.of(StatusEnumInterfaceFile.SUCCESS, StatusEnumInterfaceFile.FAILED));
+        }
+
         /* Commented out pending https://tools.hmcts.net/jira/browse/PO-8686
         @Test
         @DisplayName("PO-3947 – Forbidden without View Interface Files permission")

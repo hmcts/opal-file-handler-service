@@ -132,8 +132,8 @@ public class InterfaceFileSpecsFactory {
 
     private static Specification<InterfaceFileEntity> hasStatusNotIn(Set<Status> statuses) {
         return (root, query, builder)
-            -> root.get(InterfaceFileEntity_.STATUS).cast(String.class)
-                .in(statuses.stream().map(Status::toString))
+            -> root.get(InterfaceFileEntity_.STATUS)
+                .in(statuses)
                 .not();
     }
 
