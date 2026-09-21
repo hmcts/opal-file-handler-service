@@ -107,7 +107,7 @@ public class InterfaceFileSpecsFactory {
 
     private static Specification<InterfaceFileEntity> hasTypeIn(Set<Type> types) {
         return (root, query, builder)
-            -> root.get(InterfaceFileEntity_.type).cast(String.class).in(types.stream().map(Type::toString));
+            -> root.get(InterfaceFileEntity_.type).in(types);
     }
 
     private static Specification<InterfaceFileEntity> equalsOpalDomain(Domain domain) {
