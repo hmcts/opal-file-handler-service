@@ -236,6 +236,12 @@ public class UserStateStub {
                 .businessUnitUsers(businessUnitUsers)
                 .build()
         );
+        domains.put(
+            Domain.FINES,
+            DomainBusinessUnitUsers.builder()
+                .businessUnitUsers(businessUnitUsers)
+                .build()
+        );
 
         return UserStateV2.builder()
             .userId(500000000L)
