@@ -18,7 +18,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
-import uk.gov.hmcts.opal.filehandler.config.BarclaycardBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.CderBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -29,23 +29,23 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
-    "launchdarkly.default-flag-values.barclaycard-file-transfer-job=true",
+    "launchdarkly.default-flag-values[bailiffs.cder-file-transfer-job]=true"
 })
-public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFileProcessorServiceIntegrationTest {
+public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
 
-    private static final String BARCLAYCARD_FILE = "a121_00010065_317608.dat";
-    private static final String BARCLAYCARD_FILE_CHECKSUM = "3e7eb40eae410fee9a8d999bdcd7c302";
-    private static final String BARCLAYCARD_FILE_RESOURCE = "bais-emulator/" + BARCLAYCARD_FILE;
-    private static final String BARCLAYCARD_FILE_CONTAINER = "/home/BARCLAYCARD/" + BARCLAYCARD_FILE;
-    private static final String BUSINESS_UNIT_CODE = "BC12";
+    private static final String CDER_FILE = "0000031712_dat_0000098475_20260408_103500.txt";
+    private static final String CDER_FILE_CHECKSUM = "74efc9e50988e6694fa6dd55a8e739f0";
+    private static final String CDER_FILE_RESOURCE = "bais-emulator/" + CDER_FILE;
+    private static final String CDER_FILE_CONTAINER = "/home/CDER/" + CDER_FILE;
+    private static final String DWP_CODE = "0000031714";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
-    private BarclaycardBaisFileProcessorService service;
+    private CderBaisFileProcessorService service;
 
     @Autowired
-    private BarclaycardBaisFileProcessorConfiguration configuration;
+    private CderBaisFileProcessorConfiguration configuration;
 
     @Autowired
     private BusinessUnitBankAccountEntityTestData businessUnitBankAccountEntityTestData;
@@ -57,7 +57,7 @@ public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFilePro
     void setUp() {
         repository.deleteAll();
         businessUnitBankAccountEntityTestData.clear();
-        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount(1L, BUSINESS_UNIT_CODE);
+        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount(1L, "BC12", DWP_CODE);
         blobServiceClient.createBlobContainerIfNotExists(configuration.getContainerName());
     }
 
@@ -65,24 +65,42 @@ public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFilePro
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
-        "launchdarkly.default-flag-values.barclaycard-file-transfer-job=false"
+        "launchdarkly.default-flag-values[bailiffs.cder-file-transfer-job]=false"
     })
-    public class NatWestFileTransferJobDisabled {
+    public class CderFileTransferJobDisabled {
 
         @Test
-        @DisplayName("AC1: Feature flag 'barclaycard-file-transfer-job' is false")
-        void barclaycardFileTransferJobIsDisabled() {
+        @DisplayName("AC1: Feature flag 'bailiffs.cder-file-transfer-job' is false")
+        void cderFileTransferJobIsDisabled() {
             FeatureDisabledException exception = assertThrows(
                 FeatureDisabledException.class, () -> service.run(configuration)
             );
-            assertThat(exception).hasMessage("barclaycard-file-transfer-job is not enabled");
+            assertThat(exception).hasMessage("bailiffs.cder-file-transfer-job is not enabled");
         }
     }
 
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.barclays-file-transfer-job=false"
+        "launchdarkly.default-flag-values[bailiffs.cder-file-transfer-job]=true"
+    })
+    public class BankingInterfacesDisabled {
+
+        @Test
+        @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
+        void bankingInterfacesDisabled() {
+            FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
+                service.run(configuration)
+            );
+
+            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
+        }
+    }
+
+    @Nested
+    @TestPropertySource(properties = {
+        "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
+        "launchdarkly.default-flag-values[bailiffs.cder-file-transfer-job]=false"
     })
     public class BothFeatureFlagsDisabled {
 
@@ -98,21 +116,22 @@ public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFilePro
     }
 
     @Test
-    @DisplayName("AC2: When Barclaycard file is present it should be read and stored correctly")
-    void natWestBaisFileProcessorServiceShouldRunSuccessfully() throws Exception {
-        uploadResourceToSftp(BARCLAYCARD_FILE_RESOURCE, BARCLAYCARD_FILE_CONTAINER);
+    @DisplayName("AC2: When CDER file is present it should be read and stored correctly")
+    void cderFileProcessorServiceShouldRunSuccessfully() throws Exception {
+        uploadResourceToSftp(CDER_FILE_RESOURCE, CDER_FILE_CONTAINER);
 
         service.run(configuration);
 
         InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
-            BARCLAYCARD_FILE, BARCLAYCARD_FILE_CHECKSUM, Interface.BARCLAYCARD, Type.SOURCE, Domain.FINES);
+            CDER_FILE, CDER_FILE_CHECKSUM, Interface.CDER, Type.SOURCE, Domain.FINES);
         InterfaceFileEntity sourceJsonFile = assertSuccessfulSourceJsonInterfaceFile(
-            BARCLAYCARD_FILE, Interface.BARCLAYCARD, Domain.FINES, sourceFile.getInterfaceFileId());
-        assertBlobChecksum(BARCLAYCARD_FILE, BARCLAYCARD_FILE_CHECKSUM, configuration.getContainerName());
+            CDER_FILE, Interface.CDER, Domain.FINES, sourceFile.getInterfaceFileId());
+        assertBlobChecksum(CDER_FILE, CDER_FILE_CHECKSUM, configuration.getContainerName());
         assertSourceJsonContents(sourceJsonFile);
         assertNumberOfSftpFiles(configuration.getSftpUsername(), 0);
         verify(finesQueueService, times(1)).send(sourceJsonFile.getInterfaceFileId());
     }
+
 
     private void assertSourceJsonContents(InterfaceFileEntity sourceJson) throws Exception {
         BlobClient client = blobServiceClient
@@ -121,7 +140,7 @@ public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFilePro
 
         JsonNode json = objectMapper.readTree(client.downloadContent().toBytes());
 
-        assertThat(json.get("file_name").asText()).isEqualTo(BARCLAYCARD_FILE);
+        assertThat(json.get("file_name").asText()).isEqualTo(CDER_FILE);
         assertThat(json.get("payment_type").asText()).isEqualTo("CASH");
         assertThat(json.at("/destination_details/bank_details/sort_code").asText()).isEqualTo("560033");
         assertThat(json.at("/destination_details/bank_details/account_number").asText()).isEqualTo("27048527");
