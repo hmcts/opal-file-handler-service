@@ -12,7 +12,8 @@ public enum Interface {
     DWP("dwpBaisFileProcessorConfig"),
     CDER("cderBaisFileProcessorConfig"),
     JACOBS("JacobsBaisFileBaisFileProcessorConfig"),
-    MARSTON(null),
+    MARSTON("marstonBaisFileProcessorConfig"),
+    VARIANT_BANKING("variantBankingFileProcessorConfig"),
     BTECKOH_REPORT("BTEckohReportBaisFileProcessorConfig"),
     CAPS_REPORT("capsReportBaisFileProcessorConfig"),
     OPAL(null);
