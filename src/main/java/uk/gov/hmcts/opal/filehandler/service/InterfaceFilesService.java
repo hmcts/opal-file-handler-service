@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uk.gov.hmcts.opal.common.user.authorisation.model.Domain;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -82,7 +83,7 @@ public class InterfaceFilesService {
     }
 
     private void checkAccessPermission(InterfaceFileEntity entity) {
-        if (entity.getOpalDomain() != null) {
+        if (entity.getOpalDomain() != null && !Domain.FILE_HANDLING.equals(entity.getOpalDomain().toCommonDomain())) {
             PermissionUtil.checkPermissionInDomain(FileHandlerPermission.VIEW_INTERFACE_FILES,
                 entity.getOpalDomain().toCommonDomain());
         } else {
