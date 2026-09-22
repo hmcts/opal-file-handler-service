@@ -189,6 +189,13 @@ opal:
         source: VARIANT_BANKING
         target: OPAL
         sftp-username: ${BAIS_SFTP_VARIANT_BANKING_USERNAME:}
+      bteckoh-transfer:
+        container-name: ${BTECKOH_AZURE_STORAGE_CONTAINER:bteckoh}
+        feature-flag: bteckoh-file-transfer-job
+        file-name-regex: ^a121_\d{8}_\d{6}\.dat$
+        source: BTECKOH
+        target: OPAL
+        sftp-username: ${BAIS_SFTP_BTECKOH_USERNAME:}
       bailiffs:
         jacobs:
           container-name: ${JACOBS_AZURE_STORAGE_CONTAINER:jacobs}
