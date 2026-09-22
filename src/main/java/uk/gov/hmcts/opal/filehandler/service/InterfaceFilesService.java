@@ -3,6 +3,8 @@ package uk.gov.hmcts.opal.filehandler.service;
 import com.azure.core.util.BinaryData;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,6 +33,7 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
+import uk.gov.hmcts.opal.filehandler.util.MultipartFileUtil;
 import uk.gov.hmcts.opal.filehandler.util.StringUtil;
 import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
@@ -47,7 +50,8 @@ public class InterfaceFilesService {
     private final InterfaceFileBlobStoreService blobStoreService;
     private final Map<String, BaisFileProcessorConfiguration> configs;
     private final ObjectMapper objectMapper;
-    protected final InterfaceFileBlobStoreService interfaceFileBlobStoreService;
+    private final InterfaceFileBlobStoreService interfaceFileBlobStoreService;
+    private final Clock clock;
 
     private BaisFileProcessorConfiguration getConfig(Interface source) {
         return configs.get(source.getConfigComponentName());
@@ -97,25 +101,15 @@ public class InterfaceFilesService {
     @Transactional
     public InterfaceFileObjectInterfaceFile addInterfaceFile(MultipartFile file,
         AddInterfaceFileRequestMetadata metadata) {
-        String checksum;
 
-        try (InputStream stream = file.getInputStream()) {
-            checksum = StreamUtil.calculateChecksum(stream);
-        } catch (IOException e) {
-            throw new InternalServerErrorException("Internal Server Error",
-                "Failed to read file content for checksum calculation ", e);
-        }
-        List<InterfaceFileEntity> locatedDuplicates = repository.findByTypeAndChecksumAndFileName(
-            Type.valueOf(metadata.getType().name()),
-            checksum,
-            metadata.getFileName()
-        );
-
+        //Ensure the related interface file exists if provided
         InterfaceFileEntity relatedInterfaceFile = null;
         if (metadata.getRelatedInterfaceFileId() != null) {
             relatedInterfaceFile = getInterfaceFileEntity(metadata.getRelatedInterfaceFileId());
         }
+        String checksum = MultipartFileUtil.getChecksum(file);
 
+        //Create Interface File Entity with defaults
         InterfaceFileEntity interfaceFileEntity = InterfaceFileEntity.builder()
             .relatedInterfaceFile(relatedInterfaceFile)
             .source(Interface.valueOf(metadata.getSource()))
@@ -127,8 +121,16 @@ public class InterfaceFilesService {
             .paymentType(PaymentType.valueOf(metadata.getPaymentType()))
             .status(Status.SUCCESS)
             .checksum(checksum)
+            .createdDatetime(LocalDateTime.now(clock))
             .build();
 
+        //Check for duplicates
+        List<InterfaceFileEntity> locatedDuplicates = repository.findByTypeAndChecksumAndFileName(
+            Type.valueOf(metadata.getType().name()),
+            checksum,
+            metadata.getFileName()
+        );
+        //If no duplicates found, store the file in blob store
         if (locatedDuplicates.isEmpty()) {
             try (InputStream stream = file.getInputStream()) {
                 storeInterfaceFile(interfaceFileEntity, stream, checksum);
@@ -149,8 +151,6 @@ public class InterfaceFilesService {
 
         //TODO replace with actual call once PO-7205 is implemented
         return new InterfaceFileObjectInterfaceFile();
-
-
     }
 
     private boolean storeInterfaceFile(InterfaceFileEntity interfaceFileEntity, InputStream inputStream,
