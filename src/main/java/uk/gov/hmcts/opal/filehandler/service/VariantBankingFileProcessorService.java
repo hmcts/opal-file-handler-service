@@ -9,13 +9,15 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.VariantBacsStandard18BaisExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
-import uk.gov.hmcts.opal.filehandler.service.queue.InterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
+import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
+import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
 
 @Slf4j
 @Service
-public class VariantBankingFileProcessorService extends AbstractBaisInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract>{
+public class VariantBankingFileProcessorService
+    extends AbstractBaisInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract>{
 
     public VariantBankingFileProcessorService(
         Clock clock,
@@ -26,20 +28,11 @@ public class VariantBankingFileProcessorService extends AbstractBaisInterfaceFil
         TransactionTemplate transactionTemplate,
         ObjectMapper objectMapper,
         VariantBacsStandard18BaisExtractionService extractionService,
-        InterfaceFilePreprocessQueueService finesQueueService,
-        InterfaceFilePreprocessQueueService maintenanceQueueService
+        FinesInterfaceFilePreprocessQueueService finesQueueService,
+        MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService
     ) {
-        super(
-            clock,
-            featureFlagUtil,
-            baisSftpClient,
-            interfaceFileBlobStoreService,
-            interfaceFilesRepository,
-            transactionTemplate,
-            objectMapper,
-            extractionService,
-            finesQueueService,
-            maintenanceQueueService
-        );
+        super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
+            transactionTemplate, objectMapper, extractionService, finesQueueService, maintenanceQueueService);
     }
+
 }
