@@ -212,10 +212,20 @@ opal:
 
 logging:
   level:
-    root: TRACE
-    opal: TRACE
-    org.springframework.web: TRACE
-    org.springframework.web.servlet.mvc.method.annotation: TRACE
+    root: ${ROOT_LOG_LEVEL:INFO}
+    opal: ${OPAL_LOG_LEVEL:INFO}
+    org:
+      hibernate:
+        stat: INFO
+        SQL: INFO
+        SQL_SLOW: INFO
+        type:
+          descriptor:
+            sql:
+              BasicBinder: WARN
+        orm:
+          jdbc:
+            bind: INFO
 launchdarkly:
   sdk-key: ${LAUNCH_DARKLY_SDK_KEY:}
   offline-mode: ${LAUNCH_DARKLY_OFFLINE_MODE:false}
