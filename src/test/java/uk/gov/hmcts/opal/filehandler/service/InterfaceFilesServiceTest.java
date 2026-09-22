@@ -107,7 +107,7 @@ public class InterfaceFilesServiceTest {
             InterfaceFilesService spyService = spy(service);
 
             doReturn(entity).when(spyService).getInterfaceFileEntity(id);
-            when(entity.getOpalDomain()).thenReturn(Domain.FILE_HANDLER);
+            when(entity.getOpalDomain()).thenReturn(Domain.FINES);
             when(mapper.toInterfaceFileObject(entity)).thenReturn(mapped);
 
             InterfaceFileObjectInterfaceFile result = spyService.getInterfaceFile(id);
@@ -115,7 +115,7 @@ public class InterfaceFilesServiceTest {
             assertEquals(mapped, result);
             permissionUtil.verify(() -> PermissionUtil.checkPermissionInDomain(
                 FileHandlerPermission.VIEW_INTERFACE_FILES,
-                uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FILE_HANDLING
+                uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FINES
             ));
             verify(spyService).getInterfaceFileEntity(id);
             verify(mapper).toInterfaceFileObject(entity);
