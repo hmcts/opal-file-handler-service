@@ -1,11 +1,16 @@
 package uk.gov.hmcts.opal.filehandler.steps;
 
+import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Then;
+import java.util.Map;
+import org.junit.jupiter.api.function.Executable;
 import uk.gov.hmcts.opal.filehandler.support.TestHttpClient.TestHttpResponse;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static net.serenitybdd.rest.SerenityRest.lastResponse;
 import static net.serenitybdd.rest.SerenityRest.then;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -44,5 +49,36 @@ public class CommonResponseStepDef extends BaseStepDef {
         }
 
         assertTrue(lastResponse().getBody().asString().contains(expectedValue));
+    }
+
+    /**
+     * Asserts expected top-level JSON field values in the latest response.
+     * Use the value {@code null} when a field is expected to be JSON null.
+     *
+     * @param expectedFields expected JSON field names and values.
+     */
+    @Then("the response is as expected:")
+    public void responseIsAsExpected(DataTable expectedFields) {
+        Map<String, String> expectedValues = expectedFields.asMap(String.class, String.class);
+
+        assertAll(
+            "Unexpected response fields",
+            expectedValues.entrySet().stream()
+                .map(entry -> (Executable) () -> assertJsonField(entry.getKey(), entry.getValue()))
+                .toList()
+        );
+    }
+
+    private static void assertJsonField(String field, String expectedValue) {
+        Object actualValue = lastResponse().jsonPath().get(field);
+        if ("null".equals(expectedValue)) {
+            assertNull(actualValue, "Unexpected value for " + field);
+        } else {
+            assertEquals(
+                expectedValue,
+                String.valueOf(actualValue),
+                "Unexpected value for " + field
+            );
+        }
     }
 }
