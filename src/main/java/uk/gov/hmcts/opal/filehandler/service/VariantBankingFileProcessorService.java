@@ -17,7 +17,7 @@ import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePrepr
 @Slf4j
 @Service
 public class VariantBankingFileProcessorService
-    extends AbstractBaisInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract>{
+    extends AbstractBaisInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
 
     public VariantBankingFileProcessorService(
         Clock clock,
