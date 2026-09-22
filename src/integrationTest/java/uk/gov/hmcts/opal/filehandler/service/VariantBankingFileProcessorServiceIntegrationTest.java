@@ -17,7 +17,7 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceInt
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
     "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
-    "launchdarkly.default-flag-values.variant-banking=true"
+    "launchdarkly.default-flag-values.variant-banking-file-transfer-job=true"
 })
 class VariantBankingFileProcessorServiceIntegrationTest
     extends AbstractBaisFileProcessorServiceIntegrationTest {
@@ -31,7 +31,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.variant-banking=true"
+        "launchdarkly.default-flag-values.variant-banking-file-transfer-job=true"
     })
     class BankingInterfacesDisabled {
 
@@ -56,7 +56,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
-        "launchdarkly.default-flag-values.variant-banking=false"
+        "launchdarkly.default-flag-values.variant-banking-file-transfer-job=false"
     })
     class VariantBankingDisabled {
 
@@ -78,7 +78,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.variant-banking=false"
+        "launchdarkly.default-flag-values.variant-banking-file-transfer-job=false"
     })
     class BothFeatureFlagsDisabled {
 
