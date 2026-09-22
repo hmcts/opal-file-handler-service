@@ -183,6 +183,9 @@ paths:
                       $ref: '#/components/schemas/interfaceFileTypeEnum'
                     domain:
                       $ref: './types.yaml/#/components/schemas/domainEnum'
+                    payment_type:
+                       $ref: './types.yaml/#/components/schemas/paymentTypeEnum'
+                       description: DB Mapping - interface_files.payment_type
                     file_name:
                       type: string
                       maxLength: 200

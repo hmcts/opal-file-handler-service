@@ -1,6 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.entity;
 
 import lombok.Getter;
+import uk.gov.hmcts.opal.generated.model.InterfaceFileEnumInterfaceFile;
 
 @Getter
 public enum Interface {
@@ -21,5 +22,9 @@ public enum Interface {
 
     Interface(String configComponentName) {
         this.configComponentName = configComponentName;
+    }
+
+    public static Interface valueOf(InterfaceFileEnumInterfaceFile interfaceFileEnumInterfaceFile){
+        return Interface.valueOf(interfaceFileEnumInterfaceFile.name());
     }
 }

@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.springframework.util.DigestUtils;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class StreamUtil {
@@ -26,5 +27,10 @@ public class StreamUtil {
         } catch (Exception ex) {
             throw new IllegalArgumentException("BACS Standard 18 file could not be read", ex);
         }
+    }
+
+    @SuppressWarnings("java:S4790") // Used for checksum, not in a sensitive context
+    public static String calculateChecksum(InputStream stream) throws IOException {
+        return DigestUtils.md5DigestAsHex(stream);
     }
 }

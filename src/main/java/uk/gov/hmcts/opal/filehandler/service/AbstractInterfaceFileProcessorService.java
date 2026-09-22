@@ -29,6 +29,7 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
+import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -101,7 +102,7 @@ public abstract class AbstractInterfaceFileProcessorService {
             baisSftpClient.downloadFile(config.getSftpUsername(), fileName, downloadStream);
             downloadedBytes = downloadStream.toByteArray();
 
-            String fileChecksum = calculateChecksum(new ByteArrayInputStream(downloadedBytes));
+            String fileChecksum = StreamUtil.calculateChecksum(new ByteArrayInputStream(downloadedBytes));
             Optional<InterfaceFileEntity> duplicate = interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
                 fileName, fileChecksum, Status.SUCCESS);
 
@@ -254,10 +255,5 @@ public abstract class AbstractInterfaceFileProcessorService {
 
     protected String errorJson(String message) {
         return objectMapper.createObjectNode().put("message", message).toString();
-    }
-
-    @SuppressWarnings("java:S4790") // Used for checksum, not in a sensitive context
-    protected static String calculateChecksum(InputStream stream) throws IOException {
-        return DigestUtils.md5DigestAsHex(stream);
     }
 }
