@@ -36,6 +36,24 @@ Feature: Get Interface File
     When I call GET "/interface-files/9000000000000001" with an invalid token
     Then the response status code is 401
 
+  @JIRA-STORY:PO-7205 @JIRA-EPIC:PO-3495
+  Scenario: Rejects a request when the user has no view interface files permission
+    Given I am testing as the "opal-test-2@dev.platform.hmcts.net" user
+    When I call GET "/interface-files/9000000000000001"
+    Then the response status code is 403
+
+  @JIRA-STORY:PO-7205 @JIRA-EPIC:PO-3495
+  Scenario: Rejects an interface file request with an invalid ID format
+    When I call GET "/interface-files/110000000X"
+    Then the response status code is 406
+    And the response is as expected:
+      | detail    | Invalid parameter value format                                                                                                              |
+      | status    | 406                                                                                                                                         |
+      | title     | Not Acceptable                                                                                                                              |
+      | type      | https://hmcts.gov.uk/problems/type-mismatch                                                                                                 |
+      | retriable | false                                                                                                                                       |
+      | reason    | Method parameter 'id': Failed to convert value of type 'java.lang.String' to required type 'java.lang.Long'; For input string: "110000000X" |
+
   @Ignore @JIRA-STORY:PO-7205 @JIRA-EPIC:PO-3495
   Scenario: Returns feature disabled when the banking interface feature is disabled
     When I call GET "/interface-files/9000000000000001"
