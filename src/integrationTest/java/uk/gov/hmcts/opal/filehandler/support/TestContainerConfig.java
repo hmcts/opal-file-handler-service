@@ -35,7 +35,7 @@ public class TestContainerConfig {
 
     private static final List<String> SFTP_USERS =
         List.of("CAPS-report", "BTEckoh-report", "AllPay", "DWP", "NATWEST", "Jacobs", "BARCLAYCARD", "CDER",
-        "BTEckoh", "MARSTON", "VARIANT_BANKING" );
+        "BTEckoh", "MARSTON", "VARIANT_BANKING");
 
     static {
         POSTGRES_CONTAINER = new PostgreSQLContainer(DockerImageName.parse(POSTGRES_IMAGE))
