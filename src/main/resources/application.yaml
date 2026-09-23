@@ -182,6 +182,12 @@ opal:
         source: BARCLAYCARD
         target: OPAL
         sftp-username: ${BAIS_SFTP_BARCLAYCARD_USERNAME:}
+      variant-banking:
+        container-name: ${VARIANT_BANKING_AZURE_STORAGE_CONTAINER:variant-banking}
+        feature-flag: variant-banking
+        file-name-regex: ^a121_\d{6}_VB\d{3}_\d{2}\.dat$
+        source: VARIANT_BANKING
+        target: OPAL
       bteckoh-transfer:
         container-name: ${BTECKOH_AZURE_STORAGE_CONTAINER:bteckoh}
         feature-flag: bteckoh-file-transfer-job
