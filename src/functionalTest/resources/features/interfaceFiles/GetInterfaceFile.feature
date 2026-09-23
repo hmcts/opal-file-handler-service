@@ -35,6 +35,11 @@ Feature: Get Interface File
   Scenario: Rejects a request with an invalid token
     When I call GET "/interface-files/9000000000000001" with an invalid token
     Then the response status code is 401
+    And the response is as expected:
+      | type      | https://hmcts.gov.uk/problems/unauthorized |
+      | title     | Unauthorized                               |
+      | status    | 401                                        |
+      | retriable | false                                      |
 
   @JIRA-STORY:PO-7205 @JIRA-EPIC:PO-3495
   Scenario: Rejects a request when the user has no view interface files permission
