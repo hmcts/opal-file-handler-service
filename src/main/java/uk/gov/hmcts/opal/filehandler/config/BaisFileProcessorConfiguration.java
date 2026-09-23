@@ -3,7 +3,7 @@ package uk.gov.hmcts.opal.filehandler.config;
 import java.util.regex.Pattern;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 
-public interface BaisFileProcessorConfiguration extends FileProcessorConfiguration{
+public interface BaisFileProcessorConfiguration extends FileProcessorConfiguration {
 
     String getContainerName();
 
