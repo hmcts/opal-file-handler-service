@@ -147,8 +147,11 @@ public class InterfaceFilesService {
             if (metadata.getRelatedInterfaceFileId() != null) {
                 relatedInterfaceFile = getInterfaceFileEntity(metadata.getRelatedInterfaceFileId());
             }
+            Interface source = Interface.valueOf(metadata.getSource());
             InterfaceFileProcessorService processorService =
-                getProcessorService(Interface.valueOf(metadata.getSource()));
+                getProcessorService(source);
+            BaisFileProcessorConfiguration config = getConfig(source);
+
             InterfaceFileEntity entity = processorService.ingestFile(
                 file.getOriginalFilename(),
                 file.getBytes(),
@@ -156,7 +159,7 @@ public class InterfaceFilesService {
                 Interface.valueOf(metadata.getTarget()),
                 Type.valueOf(metadata.getType()),
                 Domain.valueOf(metadata.getDomain()),
-                null
+                config.getContainerName()
             );
             entity.setRelatedInterfaceFile(relatedInterfaceFile);
             entity.setPaymentType(PaymentType.valueOf(metadata.getPaymentType()));
