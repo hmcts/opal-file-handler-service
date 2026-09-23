@@ -1,0 +1,26 @@
+meta {
+  name: Get interface file - valid ID
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseURL}}/interface-files/{{interfaceFileId}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("returns the interface file", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.interface_file_id).to.equal(9000000000000001);
+    expect(res.body.file_name).to.equal("bteckoh-test-file.xlsx");
+    expect(res.body.source).to.equal("BTECKOH_REPORT");
+    expect(res.body.status).to.equal("SUCCESS");
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
