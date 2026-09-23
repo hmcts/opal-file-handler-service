@@ -42,6 +42,9 @@ public class InterfaceFilesServiceTest {
     @Mock
     private Specification<InterfaceFileEntity> specification;
 
+    @Mock
+    private List<InterfaceFileProcessorService> processorServicesList;
+
     @InjectMocks
     private InterfaceFilesService service;
 

@@ -7,7 +7,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -69,6 +68,7 @@ import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommo
 import uk.gov.hmcts.opal.filehandler.service.queue.InterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
+import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
 
 @ExtendWith(MockitoExtension.class)
 class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
@@ -391,10 +391,9 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
 
         @Test
         void shouldWrapChecksumReadFailure() {
-            try (MockedStatic<AbstractInterfaceFileProcessorService> checksum =
-                mockStatic(AbstractInterfaceFileProcessorService.class, CALLS_REAL_METHODS)) {
+            try (MockedStatic<StreamUtil> checksum = mockStatic(StreamUtil.class)) {
 
-                checksum.when(() -> AbstractInterfaceFileProcessorService.calculateChecksum(any(InputStream.class)))
+                checksum.when(() -> StreamUtil.calculateChecksum(any(InputStream.class)))
                     .thenThrow(new IOException("read failed"));
                 Throwable thrown =
                     catchThrowable(() -> service.calculateExtractChecksum("abc".getBytes(StandardCharsets.UTF_8)));

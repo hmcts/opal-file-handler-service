@@ -3,12 +3,10 @@ package uk.gov.hmcts.opal.filehandler.service;
 import com.azure.core.util.BinaryData;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import lombok.AllArgsConstructor;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.domain.Sort;
@@ -16,8 +14,8 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ClassUtils;
 import org.springframework.web.multipart.MultipartFile;
-import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -33,14 +31,11 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
-import uk.gov.hmcts.opal.filehandler.util.MultipartFileUtil;
-import uk.gov.hmcts.opal.filehandler.util.StringUtil;
-import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 
 @Service
-@AllArgsConstructor
+//@AllArgsConstructor
 @Slf4j
 public class InterfaceFilesService {
 
@@ -49,13 +44,40 @@ public class InterfaceFilesService {
     private final InterfaceFileMapper mapper;
     private final InterfaceFileBlobStoreService blobStoreService;
     private final Map<String, BaisFileProcessorConfiguration> configs;
-    private final ObjectMapper objectMapper;
-    private final InterfaceFileBlobStoreService interfaceFileBlobStoreService;
-    private final Clock clock;
+    private final Map<Class<? extends InterfaceFileProcessorService>, InterfaceFileProcessorService> processorServices;
+
+    public InterfaceFilesService(InterfaceFilesRepository repository,
+        InterfaceFileSpecsFactory specsFactory,
+        InterfaceFileMapper mapper,
+        InterfaceFileBlobStoreService blobStoreService,
+        Map<String, BaisFileProcessorConfiguration> configs,
+        List<InterfaceFileProcessorService> processorServicesList) {
+        this.repository = repository;
+        this.specsFactory = specsFactory;
+        this.mapper = mapper;
+        this.blobStoreService = blobStoreService;
+        this.configs = configs;
+
+        this.processorServices = processorServicesList.stream()
+            .collect(Collectors.toMap(
+                InterfaceFilesService::getProcessorClass,
+                Function.identity()
+            ));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Class<? extends InterfaceFileProcessorService> getProcessorClass(
+        InterfaceFileProcessorService processor) {
+
+        return (Class<? extends InterfaceFileProcessorService>)
+            ClassUtils.getUserClass(processor);
+    }
+
 
     private BaisFileProcessorConfiguration getConfig(Interface source) {
         return configs.get(source.getConfigComponentName());
     }
+
 
     @Transactional(readOnly = true)
     public List<InterfaceFileObjectInterfaceFile> searchInterfaceFiles(SearchInterfaceFilesDto request) {
@@ -98,79 +120,40 @@ public class InterfaceFilesService {
         return file.toStream();
     }
 
+    private InterfaceFileProcessorService getProcessorService(Interface sourceType) {
+        return processorServices.get(sourceType.getProcessorServiceClass());
+    }
+
     @Transactional
     public InterfaceFileObjectInterfaceFile addInterfaceFile(MultipartFile file,
         AddInterfaceFileRequestMetadata metadata) {
-
-        //Ensure the related interface file exists if provided
-        InterfaceFileEntity relatedInterfaceFile = null;
-        if (metadata.getRelatedInterfaceFileId() != null) {
-            relatedInterfaceFile = getInterfaceFileEntity(metadata.getRelatedInterfaceFileId());
-        }
-        String checksum = MultipartFileUtil.getChecksum(file);
-
-        //Create Interface File Entity with defaults
-        InterfaceFileEntity interfaceFileEntity = InterfaceFileEntity.builder()
-            .relatedInterfaceFile(relatedInterfaceFile)
-            .source(Interface.valueOf(metadata.getSource()))
-            .target(Interface.valueOf(metadata.getTarget()))
-            .type(Type.valueOf(metadata.getType().name()))
-            .opalDomain(Domain.valueOf(metadata.getDomain()))
-            .fileName(metadata.getFileName())
-            .businessUnitCode(new String[] {metadata.getBusinessUnitCode()})
-            .paymentType(PaymentType.valueOf(metadata.getPaymentType()))
-            .status(Status.SUCCESS)
-            .checksum(checksum)
-            .createdDatetime(LocalDateTime.now(clock))
-            .build();
-
-        //Check for duplicates
-        List<InterfaceFileEntity> locatedDuplicates = repository.findByTypeAndChecksumAndFileName(
-            Type.valueOf(metadata.getType().name()),
-            checksum,
-            metadata.getFileName()
-        );
-        //If no duplicates found, store the file in blob store
-        if (locatedDuplicates.isEmpty()) {
-            try (InputStream stream = file.getInputStream()) {
-                storeInterfaceFile(interfaceFileEntity, stream, checksum);
-            } catch (IOException e) {
-                throw new InternalServerErrorException("Internal Server Error",
-                    "Failed to read file content for checksum calculation ", e);
-            }
-        } else {
-            log.info("Duplicate file detected: {} with checksum: {} and type: {}", metadata.getFileName(), checksum,
-                metadata.getType().name());
-            interfaceFileEntity.setStatus(Status.DUPLICATE);
-            interfaceFileEntity.setErrors(StringUtil.toMessageJson(objectMapper,
-                "Duplicate file detected duplicate ids: " + locatedDuplicates.stream()
-                    .map(InterfaceFileEntity::getInterfaceFileId)
-                    .toList()));
-        }
-        interfaceFileEntity = repository.save(interfaceFileEntity);
-
-        //TODO replace with actual call once PO-7205 is implemented
-        return new InterfaceFileObjectInterfaceFile();
-    }
-
-    private boolean storeInterfaceFile(InterfaceFileEntity interfaceFileEntity, InputStream inputStream,
-        String fileChecksum) {
-        UUID fileStoreUuid = UUID.randomUUID();
         try {
-            interfaceFileBlobStoreService.uploadBaisFile(
-                fileStoreUuid,
-                getConfig(interfaceFileEntity.getSource()).getContainerName(),
-                inputStream,
-                fileChecksum);
-        } catch (Exception e) {
-            log.error("Failed to upload file to blob store for interface file with id: {}",
-                interfaceFileEntity.getInterfaceFileId(), e);
-            interfaceFileEntity.setStatus(Status.FAILED);
-            interfaceFileEntity.setErrors(
-                StringUtil.toMessageJson(objectMapper, "Failed to upload file to blob store"));
-            return false;
+            //Ensure the related interface file exists if provided
+            InterfaceFileEntity relatedInterfaceFile = null;
+            if (metadata.getRelatedInterfaceFileId() != null) {
+                relatedInterfaceFile = getInterfaceFileEntity(metadata.getRelatedInterfaceFileId());
+            }
+            InterfaceFileProcessorService processorService =
+                getProcessorService(Interface.valueOf(metadata.getSource()));
+            InterfaceFileEntity entity = processorService.ingestFile(
+                file.getOriginalFilename(),
+                file.getBytes(),
+                Interface.valueOf(metadata.getSource()),
+                Interface.valueOf(metadata.getTarget()),
+                Type.valueOf(metadata.getType()),
+                Domain.valueOf(metadata.getDomain()),
+                null
+            );
+            entity.setRelatedInterfaceFile(relatedInterfaceFile);
+            entity.setPaymentType(PaymentType.valueOf(metadata.getPaymentType()));
+            entity.setBusinessUnitCode(new String[] {metadata.getBusinessUnitCode()});
+            entity = repository.save(entity);
+            //TODO replace with actual call once PO-7205 is implemented
+            return new InterfaceFileObjectInterfaceFile();
+        } catch (IOException e) {
+            throw new InternalServerErrorException(
+                "Internal Server Error",
+                "Failed to read file content for interface file creation ", e);
         }
-        interfaceFileEntity.setFilestoreUuid(fileStoreUuid);
-        return true;
     }
 }

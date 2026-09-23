@@ -9,7 +9,7 @@ public enum Domain {
     FILE_HANDLER;
 
     public static Domain valueOf(DomainEnumTypes domain) {
-        if(domain == null){
+        if (domain == null) {
             return null;
         }
         return Domain.valueOf(domain.name());

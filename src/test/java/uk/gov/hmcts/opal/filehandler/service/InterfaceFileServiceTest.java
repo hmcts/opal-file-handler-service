@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import com.azure.core.util.BinaryData;
 import java.io.InputStream;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -60,6 +61,9 @@ class InterfaceFileServiceTest {
 
     @Mock
     private Map<String, BaisFileProcessorConfiguration> configs;
+
+    @Mock
+    private List<InterfaceFileProcessorService> processorServicesList;
 
     @InjectMocks
     private InterfaceFilesService interfaceFileService;

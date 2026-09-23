@@ -16,7 +16,7 @@ import uk.gov.hmcts.opal.filehandler.utils.ReportFileValidator;
 
 @Slf4j
 @Service
-public class CapsReportBaisFileProcessorService extends AbstractInterfaceFileProcessorService {
+public class CapsReportBaisFileProcessorService extends InterfaceFileProcessorService {
 
     public CapsReportBaisFileProcessorService(
         Clock clock,

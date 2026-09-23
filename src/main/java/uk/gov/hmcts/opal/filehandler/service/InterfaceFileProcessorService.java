@@ -2,11 +2,10 @@ package uk.gov.hmcts.opal.filehandler.service;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.time.LocalDateTime;
-import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -14,17 +13,17 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.util.DigestUtils;
+import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
+import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
-import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobUploadException;
-import uk.gov.hmcts.opal.filehandler.exception.InvalidReportFileException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
@@ -33,7 +32,8 @@ import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
 
 @Slf4j
 @RequiredArgsConstructor
-public abstract class AbstractInterfaceFileProcessorService {
+@Component
+public class InterfaceFileProcessorService {
 
     protected final Clock clock;
     private final FeatureFlagUtil featureFlagUtil;
@@ -43,11 +43,14 @@ public abstract class AbstractInterfaceFileProcessorService {
     private final TransactionTemplate transactionTemplate;
     protected final ObjectMapper objectMapper;
 
-    protected abstract void processFile(
+    protected void processFile(
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity fileEntity,
         InputStream inputStream
-    );
+    ) {
+        // Processors may implement their own processing logic for ingested files.
+        // This method is called after the file has been successfully ingested and stored in the blob store.
+    }
 
     protected void validateFile(InputStream inputStream) {
         // Processors may validate their input format before it is uploaded.
@@ -101,103 +104,75 @@ public abstract class AbstractInterfaceFileProcessorService {
         try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
             baisSftpClient.downloadFile(config.getSftpUsername(), fileName, downloadStream);
             downloadedBytes = downloadStream.toByteArray();
-
-            String fileChecksum = StreamUtil.calculateChecksum(new ByteArrayInputStream(downloadedBytes));
-            Optional<InterfaceFileEntity> duplicate = interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
-                fileName, fileChecksum, Status.SUCCESS);
-
-            InterfaceFileEntity entity;
-
-            try {
-                if (duplicate.isPresent()) {
-                    entity = createDuplicateInterfaceFile(config, fileName, fileChecksum, duplicate.get());
-                } else {
-                    validateFile(new ByteArrayInputStream(downloadedBytes));
-                    UUID fileStoreUuid = UUID.randomUUID();
-                    interfaceFileBlobStoreService.uploadBaisFile(
-                        fileStoreUuid, config.getContainerName(),
-                        new ByteArrayInputStream(downloadedBytes), fileChecksum);
-                    entity = createNewInterfaceFile(config, fileName, fileChecksum, fileStoreUuid);
-                }
-            } catch (InvalidReportFileException e) {
-                entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
-            } catch (BlobChecksumValidationException e) {
-                entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
-            } catch (BlobUploadException e) {
-                entity = createFailureInterfaceFile(config, fileName, fileChecksum,
-                    "Blob upload failed for file '%s': %s".formatted(fileName, e.getMessage()));
-            }
-
-            entity = saveInitialFile(entity);
-
-            if (entity.getStatus().equals(Status.INGESTED)) {
-                processIngestedFile(config, entity, new ByteArrayInputStream(downloadedBytes));
-            }
-
-            completeIngestion(config, fileName, entity);
         }
+
+        InterfaceFileEntity entity = ingestFile(
+            fileName, downloadedBytes,
+            config.getSource(),
+            config.getTarget(),
+            Type.SOURCE,
+            Domain.MAINTENANCE,//TODO check
+            config.getContainerName()
+        );
+        if (entity.getStatus().equals(Status.INGESTED)) {
+            processIngestedFile(config, entity, new ByteArrayInputStream(downloadedBytes));
+        }
+
+        completeIngestion(config, fileName, entity);
     }
 
-    private InterfaceFileEntity createDuplicateInterfaceFile(
-        BaisFileProcessorConfiguration config,
-        String fileName,
-        String fileChecksum,
-        InterfaceFileEntity duplicate
-    ) {
-        log.error("File with name '{}' and checksum '{}' for source '{}' is a duplicate of {}",
-            fileName, fileChecksum, config.getSource(), duplicate.getInterfaceFileId());
-
-        return InterfaceFileEntity.builder()
-            .type(Type.SOURCE)
-            .target(config.getTarget())
-            .source(config.getSource())
+    public InterfaceFileEntity ingestFile(
+        String fileName, byte[] sourceFileData,
+        Interface source,
+        Interface target,
+        Type type,
+        Domain domain,
+        String containerName
+    ) throws IOException {
+        String fileChecksum = StreamUtil.calculateChecksum(new ByteArrayInputStream(sourceFileData));
+        InterfaceFileEntity entity = InterfaceFileEntity.builder()
+            .type(type)
+            .source(source)
+            .target(target)
             .fileName(fileName)
             .checksum(fileChecksum)
-            .status(Status.DUPLICATE)
-            .filestoreUuid(duplicate.getFilestoreUuid())
             .createdDatetime(LocalDateTime.now(clock))
-            .opalDomain(Domain.MAINTENANCE)
-            .errors(errorJson("File with name '%s' and checksum '%s' for source '%s' already processed skipping"
-                .formatted(fileName, fileChecksum, config.getSource())))
+            .opalDomain(domain)
             .build();
-    }
-
-    private InterfaceFileEntity createNewInterfaceFile(
-        BaisFileProcessorConfiguration config,
-        String fileName,
-        String fileChecksum,
-        UUID fileStoreUuid
-    ) {
-        return InterfaceFileEntity.builder()
-            .type(Type.SOURCE)
-            .target(config.getTarget())
-            .source(config.getSource())
-            .fileName(fileName)
-            .checksum(fileChecksum)
-            .status(Status.INGESTED)
-            .filestoreUuid(fileStoreUuid)
-            .createdDatetime(LocalDateTime.now(clock))
-            .opalDomain(Domain.MAINTENANCE)
-            .build();
-    }
-
-    private InterfaceFileEntity createFailureInterfaceFile(
-        BaisFileProcessorConfiguration config,
-        String fileName,
-        String fileChecksum,
-        String failureMessage
-    ) {
-        return InterfaceFileEntity.builder()
-            .type(Type.SOURCE)
-            .target(config.getTarget())
-            .source(config.getSource())
-            .fileName(fileName)
-            .checksum(fileChecksum)
-            .status(Status.FAILED)
-            .createdDatetime(LocalDateTime.now(clock))
-            .opalDomain(Domain.MAINTENANCE)
-            .errors(errorJson(failureMessage))
-            .build();
+        Optional<InterfaceFileEntity> duplicateOpt = interfaceFilesRepository
+            .findByTypeAndFileNameAndChecksumAndStatus(
+                type, fileName, fileChecksum, Status.SUCCESS);
+        try {
+            if (duplicateOpt.isPresent()) {
+                InterfaceFileEntity duplicate = duplicateOpt.get();
+                String errorMessage = "File with name '%s' and checksum '%s' for source '%s' is a duplicate of %s"
+                    .formatted(fileName, fileChecksum, source, duplicate.getInterfaceFileId());
+                log.error(errorMessage);
+                entity.setErrors(
+                    errorJson(errorMessage));
+                entity.setStatus(Status.DUPLICATE);
+                entity.setFilestoreUuid(duplicate.getFilestoreUuid());
+            } else {
+                validateFile(new ByteArrayInputStream(sourceFileData));
+                UUID fileStoreUuid = UUID.randomUUID();
+                interfaceFileBlobStoreService.uploadBaisFile(
+                    fileStoreUuid, containerName,
+                    new ByteArrayInputStream(sourceFileData), fileChecksum);
+                entity.setFilestoreUuid(fileStoreUuid);
+                entity.setStatus(Status.INGESTED);
+            }
+        } catch (Exception e) {
+            String errorMessage;
+            if (e instanceof BlobUploadException) {
+                errorMessage = "Blob upload failed for file '%s': %s".formatted(fileName, e.getMessage());
+            } else {
+                errorMessage = e.getMessage();
+            }
+            log.error(errorMessage, fileChecksum, e);
+            entity.setErrors(errorJson(errorMessage));
+            entity.setStatus(Status.FAILED);
+        }
+        return saveInitialFile(entity);
     }
 
     private InterfaceFileEntity saveInitialFile(InterfaceFileEntity entity) {

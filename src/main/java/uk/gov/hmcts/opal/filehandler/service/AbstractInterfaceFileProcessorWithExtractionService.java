@@ -29,7 +29,7 @@ import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
 
 @Slf4j
 public abstract class AbstractInterfaceFileProcessorWithExtractionService<T extends InterfaceFileCommonDataExtract>
-    extends AbstractInterfaceFileProcessorService {
+    extends InterfaceFileProcessorService {
 
     @Value("${opal.file-handler-service.extraction-service.max-retries:5}")
     protected int maxRetries;

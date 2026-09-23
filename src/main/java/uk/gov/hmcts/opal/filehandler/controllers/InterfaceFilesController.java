@@ -72,6 +72,7 @@ public class InterfaceFilesController implements InterfaceFilesApi {
 
         return ResponseEntity.ok(new InputStreamResource(stream));
     }
+
     @FeatureToggle(feature = FeatureFlags.RELEASE_1C_BANKING_INTERFACES,
         defaultValueProperty = FeatureFlags.RELEASE_1C_BANKING_INTERFACES_ENABLED_PROPERTY)
     @Override
@@ -79,7 +80,6 @@ public class InterfaceFilesController implements InterfaceFilesApi {
         MultipartFile file,
         AddInterfaceFileRequestMetadata metadata
     ) {
-        System.out.println("TMP: I am here");
         InterfaceFileObjectInterfaceFile interfaceFileObject = service.addInterfaceFile(file, metadata);
         return ResponseEntity.status(HttpStatus.CREATED).body(interfaceFileObject);
     }
