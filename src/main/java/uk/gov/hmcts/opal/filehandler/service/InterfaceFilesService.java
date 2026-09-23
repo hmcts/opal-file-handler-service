@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
-import uk.gov.hmcts.opal.common.user.authorisation.model.Domain;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -33,8 +32,8 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
-import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
+import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 
 @Service
@@ -93,14 +92,6 @@ public class InterfaceFilesService {
         return mapper.toInterfaceFileObjects(interfacesFiles);
     }
 
-    private InterfaceFileEntity getInterfaceFileEntity(Long id) {
-        return repository.findById(id)
-            .orElseThrow(
-                () -> new InterfaceFileNotFoundException(
-                    String.format("Interface file with id %d could not be located.", id)
-                )
-            );
-    }
 
     public InputStream getInterfaceFilesContent(Long id) {
         // TODO: permission check is removed from this api, to be re-added in PO-8686
@@ -130,7 +121,7 @@ public class InterfaceFilesService {
     }
 
     private void checkAccessPermission(InterfaceFileEntity entity) {
-        if (entity.getOpalDomain() != null && !Domain.FILE_HANDLING.equals(entity.getOpalDomain().toCommonDomain())) {
+        if (entity.getOpalDomain() != null && !entity.getOpalDomain().equals(Domain.FILE_HANDLER)) {
             PermissionUtil.checkPermissionInDomain(FileHandlerPermission.VIEW_INTERFACE_FILES,
                 entity.getOpalDomain().toCommonDomain());
         } else {
@@ -171,8 +162,7 @@ public class InterfaceFilesService {
             entity.setPaymentType(PaymentType.valueOf(metadata.getPaymentType()));
             entity.setBusinessUnitCode(new String[] {metadata.getBusinessUnitCode()});
             entity = repository.save(entity);
-            //TODO replace with actual call once PO-7205 is implemented
-            return new InterfaceFileObjectInterfaceFile();
+            return getInterfaceFile(entity.getInterfaceFileId());
         } catch (IOException e) {
             throw new InternalServerErrorException(
                 "Internal Server Error",
