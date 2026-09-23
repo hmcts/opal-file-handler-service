@@ -26,7 +26,7 @@ public class CommonResponseStepDef extends BaseStepDef {
     @Then("the response status code is {int}")
     @Then("the response status is {int}")
     public void responseStatusCodeIs(int statusCode) {
-        TestHttpResponse rawResponse = scenarioContext().consumeLatestHttpResponse();
+        TestHttpResponse rawResponse = scenarioContext().getLatestHttpResponse();
         if (rawResponse != null) {
             assertEquals(statusCode, rawResponse.statusCode(), "Unexpected HTTP status");
             return;
@@ -60,6 +60,18 @@ public class CommonResponseStepDef extends BaseStepDef {
     @Then("the response is as expected:")
     public void responseIsAsExpected(DataTable expectedFields) {
         Map<String, String> expectedValues = expectedFields.asMap(String.class, String.class);
+        TestHttpResponse rawResponse = scenarioContext().consumeLatestHttpResponse();
+
+        if (rawResponse != null) {
+            assertAll(
+                "Unexpected response fields",
+                expectedValues.entrySet().stream()
+                    .map(entry -> (Executable) () -> assertRawJsonField(
+                        rawResponse, entry.getKey(), entry.getValue()))
+                    .toList()
+            );
+            return;
+        }
 
         assertAll(
             "Unexpected response fields",
@@ -67,6 +79,15 @@ public class CommonResponseStepDef extends BaseStepDef {
                 .map(entry -> (Executable) () -> assertJsonField(entry.getKey(), entry.getValue()))
                 .toList()
         );
+    }
+
+    private static void assertRawJsonField(TestHttpResponse response, String field, String expectedValue) {
+        String actualValue = response.jsonPath(field);
+        if ("null".equals(expectedValue)) {
+            assertNull(actualValue, "Unexpected value for " + field);
+        } else {
+            assertEquals(expectedValue, actualValue, "Unexpected value for " + field);
+        }
     }
 
     private static void assertJsonField(String field, String expectedValue) {
