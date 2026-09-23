@@ -10,26 +10,26 @@ Feature: Get Interface Files
     Then the response status code is 200
     And at least 4 interface files are returned
     And the interface file with filestore UUID "f0000000-0000-0000-0000-000000000003" has details:
-      | source           | BTECKOH_REPORT                        |
-      | target           | OPAL                                  |
-      | type             | SOURCE                                |
-      | domain           | FILE_HANDLER                          |
-      | status           | FAILED                                |
-      | file_name        | 2500-Payments-Report-Daily.xlsx       |
-      | errors           | {"error":"malformed xlsx"}            |
-      | created_datetime | 2026-01-04T12:30:00                   |
-      | checksum         | null                                  |
+      | source           | BTECKOH_REPORT                  |
+      | target           | OPAL                            |
+      | type             | SOURCE                          |
+      | domain           | FILE_HANDLER                    |
+      | status           | FAILED                          |
+      | file_name        | 2500-Payments-Report-Daily.xlsx |
+      | errors           | {"error":"malformed xlsx"}      |
+      | created_datetime | 2026-01-04T12:30:00             |
+      | checksum         | null                            |
 
   @JIRA-STORY:PO-3947 @JIRA-EPIC:PO-3495
   Scenario: Applies all interface file filters together
     When I request interface files with filters:
-      | source    | CAPS_REPORT         |
-      | target    | OPAL                |
-      | type      | SOURCE              |
-      | domain    | MAINTENANCE         |
-      | status    | INGESTED            |
-      | from_date | 2099-01-01T20:00    |
-      | to_date   | 2099-01-01T20:00    |
+      | source    | CAPS_REPORT      |
+      | target    | OPAL             |
+      | type      | SOURCE           |
+      | domain    | MAINTENANCE      |
+      | status    | INGESTED         |
+      | from_date | 2099-01-01T20:00 |
+      | to_date   | 2099-01-01T20:00 |
     Then the response status code is 200
     And exactly 1 interface files are returned
     And every returned interface file has details:

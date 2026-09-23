@@ -15,6 +15,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureToggle;
@@ -67,9 +68,16 @@ public class InterfaceFilesController implements InterfaceFilesApi {
     @FeatureToggle(feature = FeatureFlags.RELEASE_1C_BANKING_INTERFACES,
         defaultValueProperty = FeatureFlags.RELEASE_1C_BANKING_INTERFACES_ENABLED_PROPERTY)
     @Override
+    public ResponseEntity<InterfaceFileObjectInterfaceFile> getInterfaceFile(Long id) {
+        InterfaceFileObjectInterfaceFile interfaceFileObject = service.getInterfaceFile(id);
+        return ResponseEntity.ok(interfaceFileObject);
+    }
+
+    @FeatureToggle(feature = FeatureFlags.RELEASE_1C_BANKING_INTERFACES,
+        defaultValueProperty = FeatureFlags.RELEASE_1C_BANKING_INTERFACES_ENABLED_PROPERTY)
+    @Override
     public ResponseEntity<Resource> getInterfaceFileContent(Long id) {
         InputStream stream = service.getInterfaceFilesContent(id);
-
         return ResponseEntity.ok(new InputStreamResource(stream));
     }
 
