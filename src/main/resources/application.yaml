@@ -188,7 +188,6 @@ opal:
         file-name-regex: ^a121_\d{6}_VB\d{3}_\d{2}\.dat$
         source: VARIANT_BANKING
         target: OPAL
-        sftp-username: ${BAIS_SFTP_VARIANT_BANKING_USERNAME:}
       bteckoh-transfer:
         container-name: ${BTECKOH_AZURE_STORAGE_CONTAINER:bteckoh}
         feature-flag: bteckoh-file-transfer-job
