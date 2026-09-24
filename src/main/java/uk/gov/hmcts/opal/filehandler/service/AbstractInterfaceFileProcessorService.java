@@ -102,8 +102,7 @@ public abstract class AbstractInterfaceFileProcessorService {
             downloadedBytes = downloadStream.toByteArray();
 
             String fileChecksum = calculateChecksum(new ByteArrayInputStream(downloadedBytes));
-            Optional<InterfaceFileEntity> duplicate = interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
-                fileName, fileChecksum, Status.SUCCESS);
+            Optional<InterfaceFileEntity> duplicate = findDuplicateFile(fileName, fileChecksum);
 
             InterfaceFileEntity entity;
 
@@ -259,5 +258,47 @@ public abstract class AbstractInterfaceFileProcessorService {
     @SuppressWarnings("java:S4790") // Used for checksum, not in a sensitive context
     protected static String calculateChecksum(InputStream stream) throws IOException {
         return DigestUtils.md5DigestAsHex(stream);
+    }
+
+    /**
+     * Processes a Variant Banking file uploaded via the Add Interface Files API.
+     */
+    protected void ingestUploadedFile(BaisFileProcessorConfiguration config, String fileName, byte[] fileBytes)
+        throws IOException {
+
+        String fileChecksum = calculateChecksum(new ByteArrayInputStream(fileBytes));
+
+        Optional<InterfaceFileEntity> duplicate = findDuplicateFile(fileName, fileChecksum);
+        InterfaceFileEntity entity;
+
+        try {
+            if (duplicate.isPresent()) {
+                entity = createDuplicateInterfaceFile(config, fileName, fileChecksum, duplicate.get());
+            } else {
+                validateFile(new ByteArrayInputStream(fileBytes));
+
+                UUID fileStoreUuid = UUID.randomUUID();
+                interfaceFileBlobStoreService.uploadBaisFile(fileStoreUuid, config.getContainerName(),
+                    new ByteArrayInputStream(fileBytes), fileChecksum);
+
+                entity = createNewInterfaceFile(config, fileName, fileChecksum, fileStoreUuid);
+            }
+        } catch (InvalidReportFileException e) {
+            entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
+        } catch (BlobChecksumValidationException e) {
+            entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
+        } catch (BlobUploadException e) {
+            entity = createFailureInterfaceFile(config, fileName, fileChecksum, "Blob upload failed for file '%s': %s"
+                    .formatted(fileName, e.getMessage()));
+        }
+
+        entity = saveInitialFile(entity);
+        if (entity.getStatus().equals(Status.INGESTED)) {
+            processIngestedFile(config, entity, new ByteArrayInputStream(fileBytes));
+        }
+    }
+
+    protected Optional<InterfaceFileEntity> findDuplicateFile(String fileName, String fileChecksum) {
+        return interfaceFilesRepository.findByFileNameAndChecksumAndStatus(fileName, fileChecksum, Status.SUCCESS);
     }
 }
