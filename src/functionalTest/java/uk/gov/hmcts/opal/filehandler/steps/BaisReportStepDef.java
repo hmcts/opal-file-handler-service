@@ -67,6 +67,29 @@ public class BaisReportStepDef extends BaseStepDef {
         assertNotNull(successfulInterfaceFile.get("filestore_uuid"));
     }
 
+    @Then("^the stored (BTEckoh|CAPS) report can be retrieved by interface file ID$")
+    public void storedReportCanBeRetrievedByInterfaceFileId(String displayName) {
+        assertNotNull(successfulInterfaceFile, "Successful interface-file metadata was not retrieved");
+        long interfaceFileId = ((Number) successfulInterfaceFile.get("interface_file_id")).longValue();
+
+        Response response = authorisedJsonRequest()
+            .when()
+            .get(getTestUrl() + "/interface-files/" + interfaceFileId);
+
+        assertEquals(200, response.statusCode(), "Interface-file details could not be retrieved by ID");
+
+        Map<String, Object> responseBody = response.jsonPath().getMap("$");
+        assertEquals(interfaceFileId, ((Number) responseBody.get("interface_file_id")).longValue());
+        assertEquals(forDisplayName(displayName).source(), responseBody.get("source"));
+        assertEquals("OPAL", responseBody.get("target"));
+        assertEquals("SOURCE", responseBody.get("type"));
+        assertEquals("MAINTENANCE", responseBody.get("domain"));
+        assertEquals(forDisplayName(displayName).fileName(), responseBody.get("file_name"));
+        assertEquals(forDisplayName(displayName).checksum(), responseBody.get("checksum"));
+        assertEquals(successfulInterfaceFile.get("filestore_uuid"), responseBody.get("filestore_uuid"));
+        assertEquals("SUCCESS", responseBody.get("status"));
+    }
+
     @Then("^the stored (BTEckoh|CAPS) report content matches the bais (workbook|file)$")
     public void storedReportContentMatches(String displayName, String fileDescription) throws IOException {
         BaisReportTestConfig config = forDisplayName(displayName);

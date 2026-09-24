@@ -12,6 +12,8 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uk.gov.hmcts.opal.common.user.authorisation.model.Domain;
+import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -23,6 +25,7 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
+import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 
 @Service
@@ -44,7 +47,7 @@ public class InterfaceFilesService {
     @Transactional(readOnly = true)
     public List<InterfaceFileObjectInterfaceFile> searchInterfaceFiles(SearchInterfaceFilesDto request) {
         // Permissions to be dealt with by: https://tools.hmcts.net/jira/browse/PO-8686
-        // PermissionUtil.checkPermissions(FileHandlerPermission.ViewInterfacesFile);
+        // PermissionUtil.checkPermissions(FileHandlerPermission.VIEW_INTERFACE_FILES);
 
         Specification<InterfaceFileEntity> specs = specsFactory.createSearchSpecs(request);
         Sort sort = Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime));
@@ -54,14 +57,9 @@ public class InterfaceFilesService {
 
     public InputStream getInterfaceFilesContent(Long id) {
         // TODO: permission check is removed from this api, to be re-added in PO-8686
-        // PermissionUtil.checkPermission(FileHandlerPermission.ViewInterfacesFile);
+        // PermissionUtil.checkPermission(FileHandlerPermission.VIEW_INTERFACE_FILES);
 
-        InterfaceFileEntity entity = repository.findById(id)
-            .orElseThrow(
-                () -> new InterfaceFileNotFoundException(
-                    String.format("Interface file with id %d could not be located.", id)
-                )
-            );
+        InterfaceFileEntity entity = getInterfaceFileEntity(id);
 
         if (entity.getStatus() != Status.SUCCESS) {
             throw new InvalidInterfaceFileStatusException(
@@ -76,6 +74,26 @@ public class InterfaceFilesService {
         BinaryData file = blobStoreService.fetchInterfaceFile(id, entity.getFilestoreUuid(), containerName);
 
         return file.toStream();
+    }
+
+    public InterfaceFileObjectInterfaceFile getInterfaceFile(Long id) {
+        InterfaceFileEntity entity = getInterfaceFileEntity(id);
+        checkAccessPermission(entity);
+        return mapper.toInterfaceFileObject(entity);
+    }
+
+    private void checkAccessPermission(InterfaceFileEntity entity) {
+        if (entity.getOpalDomain() != null && !Domain.FILE_HANDLING.equals(entity.getOpalDomain().toCommonDomain())) {
+            PermissionUtil.checkPermissionInDomain(FileHandlerPermission.VIEW_INTERFACE_FILES,
+                entity.getOpalDomain().toCommonDomain());
+        } else {
+            PermissionUtil.checkPermissionDomainAgnostic(FileHandlerPermission.VIEW_INTERFACE_FILES);
+        }
+    }
+
+    public InterfaceFileEntity getInterfaceFileEntity(Long id) {
+        return repository.findById(id)
+            .orElseThrow(() -> new InterfaceFileNotFoundException(id));
     }
 
 }

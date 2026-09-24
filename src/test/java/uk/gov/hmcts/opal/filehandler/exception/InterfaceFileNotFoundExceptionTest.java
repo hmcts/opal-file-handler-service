@@ -12,11 +12,26 @@ import org.springframework.http.HttpStatus;
 class InterfaceFileNotFoundExceptionTest {
 
     @Test
-    void isCreatedCorrectly() {
-        InterfaceFileNotFoundException e = new InterfaceFileNotFoundException("some detailed reason");
+    void isCreatedCorrectlyWhenDetailedReasonIsProvided() {
+        String detailedReason = "some detailed reason";
+        InterfaceFileNotFoundException e = new InterfaceFileNotFoundException(detailedReason);
 
         assertAll(
             () -> assertEquals("404 NOT_FOUND \"some detailed reason\"", e.getMessage()),
+            () -> assertEquals(detailedReason, e.getReason()),
+            () -> assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode())
+        );
+    }
+
+    @Test
+    void isCreatedCorrectlyWhenIdIsProvided() {
+        Long id = 512L;
+        String detailedReason = "Interface file with id 512 could not be located.";
+        InterfaceFileNotFoundException e = new InterfaceFileNotFoundException(id);
+
+        assertAll(
+            () -> assertEquals("404 NOT_FOUND \"" + detailedReason + "\"", e.getMessage()),
+            () -> assertEquals(detailedReason, e.getReason()),
             () -> assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode())
         );
     }
