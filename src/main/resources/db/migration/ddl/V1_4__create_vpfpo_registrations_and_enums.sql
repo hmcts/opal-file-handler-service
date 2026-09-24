@@ -37,7 +37,6 @@ CREATE TABLE vpfpo_registrations (
     lja_code                    SMALLINT,
     cto_code                    INTEGER,
     ticket_number               VARCHAR(16),
-    business_unit_code          VARCHAR(4),
     defendant_account_id        BIGINT,
     errors                      JSON,
     retry_count                 SMALLINT NOT NULL DEFAULT 0,
@@ -54,7 +53,6 @@ COMMENT ON COLUMN vpfpo_registrations.acknowledgement_file_name IS 'Name of the 
 COMMENT ON COLUMN vpfpo_registrations.lja_code IS 'PSA/LJA code.';
 COMMENT ON COLUMN vpfpo_registrations.cto_code IS 'Central Ticket Office initiating the registration.';
 COMMENT ON COLUMN vpfpo_registrations.ticket_number IS 'Fixed penalty notice ticket number.';
-COMMENT ON COLUMN vpfpo_registrations.business_unit_code IS 'Business Unit Code (Accounting Division) related to the PSA/LJA code.';
 COMMENT ON COLUMN vpfpo_registrations.defendant_account_id IS 'Primary key value of the created Defendant Account in the Opal domain service.';
 COMMENT ON COLUMN vpfpo_registrations.errors IS 'JSON array containing processing errors.';
 COMMENT ON COLUMN vpfpo_registrations.retry_count IS 'Number of retries made to process the registration.';
