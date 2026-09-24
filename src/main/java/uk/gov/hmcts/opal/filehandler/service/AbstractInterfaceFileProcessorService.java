@@ -102,7 +102,8 @@ public abstract class AbstractInterfaceFileProcessorService {
             downloadedBytes = downloadStream.toByteArray();
 
             String fileChecksum = calculateChecksum(new ByteArrayInputStream(downloadedBytes));
-            Optional<InterfaceFileEntity> duplicate = findDuplicateFile(fileName, fileChecksum);
+            Optional<InterfaceFileEntity> duplicate = interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
+                fileName, fileChecksum, Status.SUCCESS);
 
             InterfaceFileEntity entity;
 
