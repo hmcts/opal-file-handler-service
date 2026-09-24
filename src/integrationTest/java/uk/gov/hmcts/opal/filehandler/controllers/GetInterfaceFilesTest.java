@@ -63,6 +63,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @Test
         @DisplayName("PO-3947 - Returns interface files correctly")
         @JiraStory("PO-3947")
+        @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         void returnsAllInterfaceFiles_200() throws Exception {
             setupAuthorisedUser();
@@ -102,6 +103,36 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         }
 
         @Test
+        @DisplayName("PO-8669 - Returns the associated business units for each interface file")
+        @JiraStory("PO-8669")
+        @JiraEpic("PO-3495")
+        void returnsAssociatedBusinessUnitsForEachInterfaceFile_200() throws Exception {
+            setupAuthorisedUser();
+            ResultActions result = mockMvc.perform(
+                get(URL)
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken()));
+
+            result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+            GetInterfaceFiles200Response response = objectMapper.readValue(
+                result.andReturn().getResponse().getContentAsString(), new TypeReference<>() {
+                });
+
+            List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
+            assertThat(interfaceFiles).isNotEmpty().allSatisfy(interfaceFile ->
+                assertThat(interfaceFile.getBusinessUnitCodes()).isNotNull());
+
+            InterfaceFileObjectInterfaceFile fileWithMultipleBusinessUnits = interfaceFiles.stream()
+                .filter(file -> file.getInterfaceFileId().equals(10L))
+                .findFirst()
+                .orElseThrow();
+            assertThat(fileWithMultipleBusinessUnits.getBusinessUnitCodes())
+                .containsExactly("AB01", "BC01", "DD03");
+        }
+
+        @Test
         @DisplayName("PO-3947 - Filters interface files correctly by status and source")
         @JiraStory("PO-3947")
         @JiraEpic("PO-3495")
@@ -130,6 +161,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @Test
         @DisplayName("PO-3947 - Filters interface files correctly by target and type")
         @JiraStory("PO-3947")
+        @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         void filtersInterfaceFilesCorrectlyByTargetAndType_200() throws Exception {
             setupAuthorisedUser();
@@ -218,6 +250,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @Test
         @DisplayName("PO-3947 - Filters interface files correctly by not_status")
         @JiraStory("PO-3947")
+        @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         void filtersInterfaceFilesCorrectlyByNotStatus_200() throws Exception {
             setupAuthorisedUser();
@@ -251,6 +284,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @Test
         @DisplayName("PO-3947 - Filters interface files correctly by not_target")
         @JiraStory("PO-3947")
+        @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         void filtersInterfaceFilesCorrectlyByNotTarget_200() throws Exception {
             setupAuthorisedUser();
@@ -275,6 +309,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @Test
         @DisplayName("PO-3947 - Filters interface files correctly by business_unit_code")
         @JiraStory("PO-3947")
+        @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         void filtersInterfaceFilesCorrectlyByBusinessUnitCode_200() throws Exception {
             String businessUnitCode = "BC01";
@@ -325,6 +360,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @Test
         @DisplayName("PO-3947 - Feature flag off test")
         @JiraStory("PO-3947")
+        @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         void getInterfaceFiles_FeatureOff_404() throws Exception {
             setupAuthorisedUser();
