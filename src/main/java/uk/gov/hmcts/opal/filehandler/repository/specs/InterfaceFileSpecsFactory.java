@@ -1,10 +1,13 @@
 package uk.gov.hmcts.opal.filehandler.repository.specs;
 
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -26,14 +29,23 @@ public class InterfaceFileSpecsFactory {
         if (searchDto.getTarget() != null) {
             specs.add(equalsTarget(searchDto.getTarget()));
         }
-        if (searchDto.getType() != null) {
-            specs.add(equalsType(searchDto.getType()));
+        if (searchDto.getNotTarget() != null) {
+            specs.add(notEqualsTarget(searchDto.getNotTarget()));
+        }
+        if (searchDto.getTypes() != null && !searchDto.getTypes().isEmpty()) {
+            specs.add(hasTypeIn(searchDto.getTypes()));
         }
         if (searchDto.getDomain() != null) {
             specs.add(equalsOpalDomain(searchDto.getDomain()));
         }
         if (searchDto.getStatus() != null) {
             specs.add(equalsStatus(searchDto.getStatus()));
+        }
+        if (searchDto.getNotStatuses() != null && !searchDto.getNotStatuses().isEmpty()) {
+            specs.add(hasStatusNotIn(searchDto.getNotStatuses()));
+        }
+        if (searchDto.getBusinessUnitCode() != null) {
+            specs.add(hasBusinessUnitCode(searchDto.getBusinessUnitCode()));
         }
         if (searchDto.getFromDate() != null) {
             specs.add(fromDate(searchDto.getFromDate()));
@@ -90,9 +102,14 @@ public class InterfaceFileSpecsFactory {
             -> builder.equal(root.get(InterfaceFileEntity_.target).cast(String.class), target.toString());
     }
 
-    private static Specification<InterfaceFileEntity> equalsType(Type type) {
+    private static Specification<InterfaceFileEntity> notEqualsTarget(Interface target) {
         return (root, query, builder)
-            -> builder.equal(root.get(InterfaceFileEntity_.type).cast(String.class), type.toString());
+            -> builder.notEqual(root.get(InterfaceFileEntity_.target).cast(String.class), target.toString());
+    }
+
+    private static Specification<InterfaceFileEntity> hasTypeIn(Set<Type> types) {
+        return (root, query, builder)
+            -> root.get(InterfaceFileEntity_.type).in(types);
     }
 
     private static Specification<InterfaceFileEntity> equalsOpalDomain(Domain domain) {
@@ -113,5 +130,27 @@ public class InterfaceFileSpecsFactory {
     private static Specification<InterfaceFileEntity> toDate(LocalDateTime toDate) {
         return (root, query, builder)
             -> builder.lessThanOrEqualTo(root.get(InterfaceFileEntity_.createdDatetime), toDate);
+    }
+
+    private static Specification<InterfaceFileEntity> hasStatusNotIn(Set<Status> statuses) {
+        return (root, query, builder)
+            -> root.get(InterfaceFileEntity_.STATUS)
+                .in(statuses)
+                .not();
+    }
+
+    private static Specification<InterfaceFileEntity> hasBusinessUnitCode(String businessUnitCode) {
+        return (root, query, builder) -> {
+            // Note - the postgres array_position function actually returns null when the item does not exist,
+            // but hibernate is wrapping the call in a "coalesce" and returning 0 instead, which works because
+            // postgres arrays are not zero indexed.
+            //
+            // (I also tried using isMember() instead of native SQL function, but hibernate seemed to be recognising
+            // the field as a string instead of a string array so it did not work.)
+            Expression<Collection<String>> pathExp = root.get(InterfaceFileEntity_.BUSINESS_UNIT_CODE);
+            Expression<String> valueExp = builder.literal(businessUnitCode);
+            Expression<Integer> funcExp = builder.function("array_position", Integer.class, pathExp, valueExp);
+            return builder.notEqual(funcExp, 0);
+        };
     }
 }

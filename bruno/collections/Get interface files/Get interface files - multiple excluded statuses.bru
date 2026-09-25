@@ -1,0 +1,29 @@
+meta {
+  name: Multiple excluded status values
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseURL}}/interface-files?business_unit_code={{businessUnitCode}}&not_status={{excludedStatusesMultiple}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("does not return files with excluded statuses", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.interface_files).to.be.an("array");
+
+    const excludedStatuses = bru.getEnvVar("excludedStatusesMultiple").split(",");
+    res.body.interface_files.forEach((file) => {
+      expect(excludedStatuses).to.not.include(file.status);
+    });
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

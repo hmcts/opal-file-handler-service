@@ -4,7 +4,7 @@ Feature: Get Interface Files
   Background:
     Given I am testing as the "opal-test@dev.platform.hmcts.net" user
 
-  @JIRA-STORY:PO-3947 @JIRA-EPIC:PO-3495
+  @JIRA-STORY:PO-3947 @JIRA-STORY:PO-8669 @JIRA-EPIC:PO-3495
   Scenario: Returns interface files correctly
     When I request all interface files
     Then the response status code is 200
@@ -19,6 +19,66 @@ Feature: Get Interface Files
       | errors           | {"error":"malformed xlsx"}      |
       | created_datetime | 2026-01-04T12:30:00             |
       | checksum         | null                            |
+
+  @JIRA-STORY:PO-8669 @JIRA-EPIC:PO-3495
+  Scenario: Returns business unit codes for each interface file
+    When I request all interface files
+    Then the response status code is 200
+    And the interface file with filestore UUID "f0000000-0000-0000-0000-000000000001" has details:
+      | business_unit_codes | [AB01] |
+
+  @JIRA-STORY:PO-8669 @JIRA-EPIC:PO-3495
+  Scenario: Filters interface files by business unit code
+    When I request interface files with filters:
+      | business_unit_code | BC01 |
+    Then the response status code is 200
+    And at least 1 interface files are returned
+    And every returned interface file has at least one business unit code
+    And every returned interface file contains business unit code "BC01"
+
+  @JIRA-STORY:PO-8669 @JIRA-EPIC:PO-3495
+  Scenario: Filters interface files by multiple types
+    When I request interface files with filters:
+      | business_unit_code | BC01                         |
+      | type               | SOURCE_JSON,TRANSFORMED_JSON |
+    Then the response status code is 200
+    And at least 1 interface files are returned
+    And every returned interface file has a type in "SOURCE_JSON,TRANSFORMED_JSON"
+    And every returned interface file contains business unit code "BC01"
+
+  @JIRA-STORY:PO-8669 @JIRA-EPIC:PO-3495
+  Scenario: Excludes interface files with multiple statuses
+    When I request interface files with filters:
+      | business_unit_code | BC01                       |
+      | not_status         | FAILED,FAILED_SUPERSEDED |
+    Then the response status code is 200
+    And at least 1 interface files are returned
+    And no returned interface file has a status in "FAILED,FAILED_SUPERSEDED"
+    And every returned interface file contains business unit code "BC01"
+
+  @JIRA-STORY:PO-8669 @JIRA-EPIC:PO-3495
+  Scenario: Excludes interface files with the requested target
+    When I request interface files with filters:
+      | business_unit_code | BC01          |
+      | not_target         | BTECKOH_REPORT |
+    Then the response status code is 200
+    And at least 1 interface files are returned
+    And no returned interface file has target "BTECKOH_REPORT"
+    And every returned interface file contains business unit code "BC01"
+
+  @JIRA-STORY:PO-8669 @JIRA-EPIC:PO-3495
+  Scenario: Applies multiple types and exclusion filters together
+    When I request interface files with filters:
+      | type               | SOURCE_JSON,TRANSFORMED_JSON |
+      | not_status         | FAILED                       |
+      | not_target         | BTECKOH_REPORT               |
+      | business_unit_code | BC01                         |
+    Then the response status code is 200
+    And exactly 2 interface files are returned
+    And every returned interface file has a type in "SOURCE_JSON,TRANSFORMED_JSON"
+    And no returned interface file has a status in "FAILED"
+    And no returned interface file has target "BTECKOH_REPORT"
+    And every returned interface file contains business unit code "BC01"
 
   @JIRA-STORY:PO-3947 @JIRA-EPIC:PO-3495
   Scenario: Applies all interface file filters together
