@@ -25,10 +25,11 @@ import uk.gov.hmcts.opal.filehandler.service.extraction.ExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
+import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
 
 @Slf4j
 public abstract class AbstractInterfaceFileProcessorWithExtractionService<T extends InterfaceFileCommonDataExtract>
-    extends AbstractInterfaceFileProcessorService {
+    extends InterfaceFileProcessorService {
 
     @Value("${opal.file-handler-service.extraction-service.max-retries:5}")
     protected int maxRetries;
@@ -166,7 +167,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
 
     String calculateExtractChecksum(byte[] jsonBytes) {
         try {
-            return calculateChecksum(new ByteArrayInputStream(jsonBytes));
+            return StreamUtil.calculateChecksum(new ByteArrayInputStream(jsonBytes));
         } catch (IOException e) {
             throw new IllegalStateException("Unable to calculate SOURCE_JSON checksum", e);
         }

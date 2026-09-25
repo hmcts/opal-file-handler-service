@@ -57,7 +57,7 @@ import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @ExtendWith(MockitoExtension.class)
-class AbstractInterfaceFileProcessorServiceTest {
+class InterfaceFileProcessorServiceTest {
 
     private static final String TEST_FEATURE_FLAG = "test-feature-flag";
     private static final String SFTP_USERNAME = "sftp-username";
@@ -91,7 +91,7 @@ class AbstractInterfaceFileProcessorServiceTest {
     private ObjectMapper objectMapper;
     private List<Status> savedStatuses;
 
-    private final Logger logger = (Logger) LoggerFactory.getLogger(AbstractInterfaceFileProcessorService.class);
+    private final Logger logger = (Logger) LoggerFactory.getLogger(InterfaceFileProcessorService.class);
     private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 
     @BeforeEach
@@ -203,8 +203,8 @@ class AbstractInterfaceFileProcessorServiceTest {
                 .opalDomain(Domain.MAINTENANCE)
                 .build();
 
-            when(repository.findByFileNameAndChecksumAndStatus(
-                MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.of(duplicate));
+            when(repository.findByTypeAndFileNameAndChecksumAndStatus(
+                Type.SOURCE, MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.of(duplicate));
 
             service.run(config);
 
@@ -212,12 +212,12 @@ class AbstractInterfaceFileProcessorServiceTest {
             assertThat(savedStatuses).containsExactly(Status.DUPLICATE);
             assertThat(service.lastSavedEntity.getFilestoreUuid()).isEqualTo(FILE_UUID);
             verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
-            assertThat(errorLogs()).contains(
-                "File with name 'matching-file.dat' and checksum '3685d7f2b30e9b34b8d3e5496fb45506' for source "
-                    + "'CAPS_REPORT' is a duplicate of 123");
+            String errorMessage = "File with name 'matching-file.dat' "
+                + "and checksum '3685d7f2b30e9b34b8d3e5496fb45506' for source "
+                + "'CAPS_REPORT' is a duplicate of 123";
+            assertThat(errorLogs()).contains(errorMessage);
             assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
-                .isEqualTo("File with name 'matching-file.dat' and checksum '3685d7f2b30e9b34b8d3e5496fb45506' "
-                    + "for source 'CAPS_REPORT' already processed skipping");
+                .isEqualTo(errorMessage);
             verify(baisSftpClient).deleteFile(SFTP_USERNAME, MATCHING_FILE);
         }
 
@@ -312,8 +312,8 @@ class AbstractInterfaceFileProcessorServiceTest {
 
         @Test
         void uploadedFileHasChecksumFailureResultsInFailedEntity() {
-            when(repository.findByFileNameAndChecksumAndStatus(
-                MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.empty());
+            when(repository.findByTypeAndFileNameAndChecksumAndStatus(
+                Type.SOURCE, MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.empty());
 
             doThrow(new BlobChecksumValidationException(
                 FILE_UUID, CHECKSUM, "00000000000000000000000000000000"))
@@ -338,8 +338,8 @@ class AbstractInterfaceFileProcessorServiceTest {
             outputStream.write(FILE_CONTENT);
             return null;
         }).when(baisSftpClient).downloadFile(eq(SFTP_USERNAME), any(), any());
-        lenient().when(repository.findByFileNameAndChecksumAndStatus(
-            any(), eq(CHECKSUM), eq(Status.SUCCESS))).thenReturn(Optional.empty());
+        lenient().when(repository.findByTypeAndFileNameAndChecksumAndStatus(
+            any(), any(), eq(CHECKSUM), eq(Status.SUCCESS))).thenReturn(Optional.empty());
         lenient().when(repository.findAllByFileNameAndChecksumAndStatus(
             any(), eq(CHECKSUM), eq(Status.FAILED))).thenReturn(List.of());
         lenient().when(baisSftpClient.deleteFile(eq(SFTP_USERNAME), any())).thenReturn(true);
@@ -387,7 +387,7 @@ class AbstractInterfaceFileProcessorServiceTest {
             .toList();
     }
 
-    private static class TestProcessor extends AbstractInterfaceFileProcessorService {
+    private static class TestProcessor extends InterfaceFileProcessorService {
 
         private int processCount;
         private RuntimeException processingFailure;

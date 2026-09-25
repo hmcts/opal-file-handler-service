@@ -14,7 +14,7 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 import uk.gov.hmcts.opal.filehandler.utils.ReportFileValidator;
 
 @Service
-public class BTEckohReportBaisFileProcessorService extends AbstractInterfaceFileProcessorService {
+public class BTEckohReportBaisFileProcessorService extends InterfaceFileProcessorService {
 
     public BTEckohReportBaisFileProcessorService(
         Clock clock,
