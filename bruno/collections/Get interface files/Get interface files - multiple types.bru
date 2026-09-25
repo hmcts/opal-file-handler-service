@@ -1,0 +1,30 @@
+meta {
+  name: Multiple type values
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseURL}}/interface-files?business_unit_code={{businessUnitCode}}&type={{interfaceFileTypes}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("returns files matching one of the requested types", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.interface_files).to.be.an("array");
+    expect(res.body.number_of_results).to.be.greaterThan(0);
+
+    const allowedTypes = bru.getEnvVar("interfaceFileTypes").split(",");
+    res.body.interface_files.forEach((file) => {
+      expect(allowedTypes).to.include(file.type);
+    });
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
