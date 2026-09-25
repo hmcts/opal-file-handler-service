@@ -38,7 +38,7 @@ ext {
   serenityVersion = "5.3.11"
   cucumberVersion = "7.34.8"
   log4JVersion = "2.26.1"
-  logbackVersion = "1.6.3"
+  logbackVersion = "1.6.4"
 }
 
 def logPublishedHtmlReport = { String label, String reportDirectory ->
