@@ -204,6 +204,14 @@ opal:
           source: CDER
           target: OPAL
           sftp-username: ${BAIS_SFTP_CDER_USERNAME:}
+        marston:
+          container-name: ${MARSTON_AZURE_STORAGE_CONTAINER:marston}
+          feature-flag: marston-file-transfer-Job
+          file-name-regex: \d{10}_dat_\d{10}_\d{8}_\d{6}\.txt
+          source: MARSTON
+          target: OPAL
+          sftp-username: ${BAIS_SFTP_MARSTON_USERNAME:}
+
     sftp:
       bais:
         host: ${BAIS_SFTP_CONNECTION_HOST:localhost}
