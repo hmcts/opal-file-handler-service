@@ -15,6 +15,7 @@ public enum Interface {
     MARSTON(null),
     BTECKOH_REPORT("BTEckohReportBaisFileProcessorConfig"),
     CAPS_REPORT("capsReportBaisFileProcessorConfig"),
+    VARIANT_BANKING("VariantBankingBaisFileProcessorConfiguration"),
     OPAL(null);
 
     private final String configComponentName;
