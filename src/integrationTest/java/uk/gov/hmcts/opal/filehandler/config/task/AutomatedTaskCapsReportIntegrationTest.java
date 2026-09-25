@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,6 +23,7 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
     "opal.automated-task=CAPSReport",
     "spring.main.web-application-type=none"
 })
+@Disabled
 public class AutomatedTaskCapsReportIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired

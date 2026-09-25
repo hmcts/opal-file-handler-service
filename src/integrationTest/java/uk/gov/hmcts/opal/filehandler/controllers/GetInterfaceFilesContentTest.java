@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.URL;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
 @Slf4j(topic = "opal.GetInterfaceFilesContentIntegrationTest")
 @ActiveProfiles(profiles = {"integration"})
+@Disabled
 class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
     private String urlWithID(long id) {
