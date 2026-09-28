@@ -136,8 +136,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
         @Test
         @DisplayName(
         "AC3: Duplicate detection uses filename only when checksum differs")
-        void shouldMarkDuplicateWhenFilenameMatchesAndChecksumDiffers()
-        throws Exception {
+        void shouldMarkDuplicateWhenFilenameMatchesAndChecksumDiffers() throws Exception {
 
         InterfaceFileEntity existingFile = InterfaceFileEntity.builder()
             .source(Interface.VARIANT_BANKING)
