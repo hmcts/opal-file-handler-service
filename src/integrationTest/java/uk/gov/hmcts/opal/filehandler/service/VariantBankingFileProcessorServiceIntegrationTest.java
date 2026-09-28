@@ -131,13 +131,12 @@ class VariantBankingFileProcessorServiceIntegrationTest
             byte[] fileBytes = "variant-banking-test-content".getBytes();
             service.processUploadedFile(config,"VB001.dat", fileBytes);
             assertThat(repository.findAll()).isNotEmpty();
-        }
+     }
 
-    @Test
-    @DisplayName(
-        "AC3: Duplicate detection uses filename only when checksum differs"
-    )
-    void shouldMarkDuplicateWhenFilenameMatchesAndChecksumDiffers()
+        @Test
+        @DisplayName(
+        "AC3: Duplicate detection uses filename only when checksum differs")
+        void shouldMarkDuplicateWhenFilenameMatchesAndChecksumDiffers()
         throws Exception {
 
         InterfaceFileEntity existingFile = InterfaceFileEntity.builder()
