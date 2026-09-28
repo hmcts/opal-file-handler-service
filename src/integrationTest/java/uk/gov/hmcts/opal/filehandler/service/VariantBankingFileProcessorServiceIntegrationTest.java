@@ -3,6 +3,7 @@ package uk.gov.hmcts.opal.filehandler.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +15,11 @@ import org.springframework.test.context.TestPropertySource;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.VariantBankingFileProcessorConfig;
+import uk.gov.hmcts.opal.filehandler.entity.Domain;
+import uk.gov.hmcts.opal.filehandler.entity.Interface;
+import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
+import uk.gov.hmcts.opal.filehandler.entity.Status;
+import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
 
 @ActiveProfiles("integration")
@@ -117,30 +123,41 @@ class VariantBankingFileProcessorServiceIntegrationTest
         assertThat(files).isEmpty();
     }
 
-    //  Test are commented until VARIANT_BANKING is added to the sql script
-    //    @Test
-    //    @DisplayName("AC2: Uploaded file is accepted for processing")
-    //    void shouldProcessUploadedFile() throws Exception {
-    //
-    //        byte[] fileBytes = "variant-banking-test-content".getBytes();
-    //        service.processUploadedFile(config,"VB001.dat", fileBytes);
-    //        assertThat(repository.findAll()).isNotEmpty();
-    //    }
-    //
-    //    @Test
-    //    @DisplayName(
-    //        "AC3: Duplicate detection uses filename only when checksum differs"
-    //    )
-    //    void shouldMarkDuplicateWhenFilenameMatchesAndChecksumDiffers()
-    //        throws Exception {
-    //
-    //        InterfaceFileEntity existingFile = InterfaceFileEntity.builder()
-    //                .fileName("VB001.dat").checksum("existing-checksum").status(Status.SUCCESS).build();
-    //        repository.save(existingFile);
-    //        byte[] fileBytes = "different-content".getBytes();
-    //
-    //        service.processUploadedFile(config,"VB001.dat", fileBytes);
-    //
-    //        assertThat(repository.findAll()).anyMatch(file ->file.getStatus().equals(Status.DUPLICATE));
-    //    }
+
+        @Test
+        @DisplayName("AC2: Uploaded file is accepted for processing")
+        void shouldProcessUploadedFile() throws Exception {
+
+            byte[] fileBytes = "variant-banking-test-content".getBytes();
+            service.processUploadedFile(config,"VB001.dat", fileBytes);
+            assertThat(repository.findAll()).isNotEmpty();
+        }
+
+    @Test
+    @DisplayName(
+        "AC3: Duplicate detection uses filename only when checksum differs"
+    )
+    void shouldMarkDuplicateWhenFilenameMatchesAndChecksumDiffers()
+        throws Exception {
+
+        InterfaceFileEntity existingFile = InterfaceFileEntity.builder()
+            .source(Interface.VARIANT_BANKING)
+            .target(Interface.OPAL)
+            .type(Type.SOURCE)
+            .opalDomain(Domain.MAINTENANCE)
+            .fileName("VB001.dat")
+            .checksum("existing-checksum")
+            .status(Status.SUCCESS)
+            .createdDatetime(LocalDateTime.now())
+            .build();
+
+        repository.save(existingFile);
+
+        byte[] fileBytes = "different-content".getBytes();
+
+        service.processUploadedFile(config, "VB001.dat", fileBytes);
+
+        assertThat(repository.findAll())
+            .anyMatch(file -> file.getStatus().equals(Status.DUPLICATE));
+    }
 }
