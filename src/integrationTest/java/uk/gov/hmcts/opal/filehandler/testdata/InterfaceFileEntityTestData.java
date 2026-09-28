@@ -3,6 +3,7 @@ package uk.gov.hmcts.opal.filehandler.testdata;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.TimeZone;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ public class InterfaceFileEntityTestData {
             .opalDomain(Domain.FINES)
             .fileName(fileName)
             .status(Status.INGESTED)
-            .createdDatetime(LocalDateTime.now(clock))
+            .createdDatetime(LocalDateTime.now(clock).truncatedTo(ChronoUnit.MICROS))
             .build());
     }
 
