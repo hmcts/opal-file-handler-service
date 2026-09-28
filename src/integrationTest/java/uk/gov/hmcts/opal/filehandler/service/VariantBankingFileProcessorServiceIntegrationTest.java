@@ -124,38 +124,37 @@ class VariantBankingFileProcessorServiceIntegrationTest
     }
 
 
-     @Test
-     @DisplayName("AC2: Uploaded file is accepted for processing")
-     void shouldProcessUploadedFile() throws Exception {
+    @Test
+    @DisplayName("AC2: Uploaded file is accepted for processing")
+    void shouldProcessUploadedFile() throws Exception {
 
-         byte[] fileBytes = "variant-banking-test-content".getBytes();
-         service.processUploadedFile(config,"VB001.dat", fileBytes);
-         assertThat(repository.findAll()).isNotEmpty();
-     }
-
-     @Test
-     @DisplayName(
-     "AC3: Duplicate detection uses filename only when checksum differs")
-     void shouldMarkDuplicateWhenFilenameMatchesAndChecksumDiffers() throws Exception {
-
-         InterfaceFileEntity existingFile = InterfaceFileEntity.builder()
-            .source(Interface.VARIANT_BANKING)
-            .target(Interface.OPAL)
-            .type(Type.SOURCE)
-            .opalDomain(Domain.MAINTENANCE)
-            .fileName("VB001.dat")
-            .checksum("existing-checksum")
-            .status(Status.SUCCESS)
-            .createdDatetime(LocalDateTime.now())
-            .build();
-
-          repository.save(existingFile);
-
-        byte[] fileBytes = "different-content".getBytes();
-
-        service.processUploadedFile(config, "VB001.dat", fileBytes);
-
-        assertThat(repository.findAll())
-            .anyMatch(file -> file.getStatus().equals(Status.DUPLICATE));
+        byte[] fileBytes = "variant-banking-test-content".getBytes();
+        service.processUploadedFile(config,"VB001.dat", fileBytes);
+        assertThat(repository.findAll()).isNotEmpty();
     }
+
+    @Test
+    @DisplayName("AC3: Duplicate detection uses filename only when checksum differs")
+    void shouldMarkDuplicateWhenFilenameMatchesAndChecksumDiffers() throws Exception {
+
+        InterfaceFileEntity existingFile = InterfaceFileEntity.builder()
+           .source(Interface.VARIANT_BANKING)
+           .target(Interface.OPAL)
+           .type(Type.SOURCE)
+           .opalDomain(Domain.MAINTENANCE)
+           .fileName("VB001.dat")
+           .checksum("existing-checksum")
+           .status(Status.SUCCESS)
+           .createdDatetime(LocalDateTime.now())
+           .build();
+
+         repository.save(existingFile);
+
+       byte[] fileBytes = "different-content".getBytes();
+
+       service.processUploadedFile(config, "VB001.dat", fileBytes);
+
+       assertThat(repository.findAll())
+            .anyMatch(file -> file.getStatus().equals(Status.DUPLICATE));
+   }
 }
