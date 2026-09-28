@@ -78,12 +78,12 @@ class InterfaceFileServiceTest {
 
     void withPermissions() {
         securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-        // when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(true);
+        // when(authToken.hasPermission(FileHandlerPermission.VIEW_INTERFACE_FILES)).thenReturn(true);
     }
 
     void withoutPermissions() {
         securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-        // when(authToken.hasPermission(FileHandlerPermission.ViewInterfacesFile)).thenReturn(false);
+        // when(authToken.hasPermission(FileHandlerPermission.VIEW_INTERFACE_FILES)).thenReturn(false);
     }
 
     @AfterEach
@@ -138,7 +138,7 @@ class InterfaceFileServiceTest {
             PermissionNotAllowedException.class,
             () -> interfaceFileService.getInterfaceFilesContent(1L)
         );
-        assertEquals("[ViewInterfacesFile] permission(s) are not enabled for the user.", e.getMessage());
+        assertEquals("[VIEW_INTERFACE_FILES] permission(s) are not enabled for the user.", e.getMessage());
     }
     */
 
