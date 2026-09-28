@@ -48,7 +48,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
     protected void authorizeWithPermission() {
         userStateStub.setupWithNoPermissions();
-        userStateStub.addPermissions((short) 1, FileHandlerPermission.ViewInterfacesFile);
+        userStateStub.addPermissions((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES);
     }
 
     protected void authoriseNoPermissions() {

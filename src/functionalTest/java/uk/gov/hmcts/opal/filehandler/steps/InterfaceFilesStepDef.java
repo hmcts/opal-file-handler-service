@@ -13,6 +13,9 @@ import io.cucumber.java.en.When;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Defines Cucumber steps for retrieving interface-file metadata.
@@ -173,6 +176,85 @@ public class InterfaceFilesStepDef extends BaseStepDef {
     }
 
     /**
+     * Asserts that every returned interface file contains the supplied business-unit code.
+     *
+     * @param businessUnitCode expected business-unit code.
+     */
+    @Then("every returned interface file contains business unit code {string}")
+    public void everyReturnedInterfaceFileContainsBusinessUnitCode(String businessUnitCode) {
+        List<Map<String, Object>> interfaceFiles = getInterfaceFiles();
+        assertTrue(!interfaceFiles.isEmpty(), "No interface files were returned");
+        interfaceFiles.forEach(interfaceFile -> {
+            Object businessUnitCodes = interfaceFile.get("business_unit_codes");
+            assertTrue(
+                businessUnitCodes instanceof List<?> codes && codes.contains(businessUnitCode),
+                "Interface file " + interfaceFile.get("interface_file_id")
+                    + " does not contain business unit code " + businessUnitCode
+            );
+        });
+    }
+
+    /**
+     * Asserts that every returned interface file includes at least one business-unit code.
+     */
+    @Then("every returned interface file has at least one business unit code")
+    public void everyReturnedInterfaceFileHasAtLeastOneBusinessUnitCode() {
+        List<Map<String, Object>> interfaceFiles = getInterfaceFiles();
+        assertTrue(!interfaceFiles.isEmpty(), "No interface files were returned");
+        interfaceFiles.forEach(interfaceFile -> {
+            Object businessUnitCodes = interfaceFile.get("business_unit_codes");
+            assertTrue(
+                businessUnitCodes instanceof List<?> codes && !codes.isEmpty(),
+                "Interface file " + interfaceFile.get("interface_file_id")
+                    + " does not contain a business unit code"
+            );
+        });
+    }
+
+    /**
+     * Asserts that every returned interface file has one of the supplied types.
+     *
+     * @param types comma-separated allowed types.
+     */
+    @Then("every returned interface file has a type in {string}")
+    public void everyReturnedInterfaceFileHasTypeIn(String types) {
+        Set<String> allowedTypes = commaSeparatedValues(types);
+        List<Map<String, Object>> interfaceFiles = getInterfaceFiles();
+        assertTrue(!interfaceFiles.isEmpty(), "No interface files were returned");
+        interfaceFiles.forEach(interfaceFile -> assertTrue(
+            allowedTypes.contains(String.valueOf(interfaceFile.get("type"))),
+            "Unexpected type for interface file " + interfaceFile.get("interface_file_id")
+        ));
+    }
+
+    /**
+     * Asserts that no returned interface file has one of the supplied statuses.
+     *
+     * @param statuses comma-separated excluded statuses.
+     */
+    @Then("no returned interface file has a status in {string}")
+    public void noReturnedInterfaceFileHasStatusIn(String statuses) {
+        Set<String> excludedStatuses = commaSeparatedValues(statuses);
+        getInterfaceFiles().forEach(interfaceFile -> assertTrue(
+            !excludedStatuses.contains(String.valueOf(interfaceFile.get("status"))),
+            "Excluded status returned for interface file " + interfaceFile.get("interface_file_id")
+        ));
+    }
+
+    /**
+     * Asserts that no returned interface file has the excluded target.
+     *
+     * @param target excluded target.
+     */
+    @Then("no returned interface file has target {string}")
+    public void noReturnedInterfaceFileHasTarget(String target) {
+        getInterfaceFiles().forEach(interfaceFile -> assertTrue(
+            !target.equals(interfaceFile.get("target")),
+            "Excluded target returned for interface file " + interfaceFile.get("interface_file_id")
+        ));
+    }
+
+    /**
      * Asserts that every returned interface file was created within the inclusive date range.
      *
      * @param fromDate earliest expected creation date.
@@ -256,5 +338,11 @@ public class InterfaceFilesStepDef extends BaseStepDef {
         return getInterfaceFiles().stream()
             .map(interfaceFile -> LocalDateTime.parse(String.valueOf(interfaceFile.get("created_datetime"))))
             .toList();
+    }
+
+    private static Set<String> commaSeparatedValues(String values) {
+        return Stream.of(values.split(","))
+            .map(String::trim)
+            .collect(Collectors.toSet());
     }
 }

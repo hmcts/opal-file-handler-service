@@ -28,10 +28,18 @@ paths:
           schema:
             $ref: '#/components/schemas/interfaceFileEnum'
         - in: query
+          name: not_target
+          description: DB Mapping - interface_files.target
+          schema:
+            $ref: '#/components/schemas/interfaceFileEnum'
+        - in: query
           name: type
+          explode: false
           description: DB Mapping - interface_files.type
           schema:
-            $ref: '#/components/schemas/interfaceFileTypeEnum'
+            type: array
+            items:
+              $ref: '#/components/schemas/interfaceFileTypeEnum'
         - in: query
           name: domain
           description: DB Mapping - interface_files.domain
@@ -42,6 +50,19 @@ paths:
           description: DB Mapping - interface_files.status
           schema:
             $ref: '#/components/schemas/statusEnum'
+        - in: query
+          name: not_status
+          explode: false
+          description: DB Mapping - interface_files.status
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/statusEnum'
+        - in: query
+          name: business_unit_code
+          description: DB Mapping - interface_files.business_unit_code
+          schema:
+            type: string
         - in: query
           name: from_date
           description: DB Mapping - interface_files.created_datetime
@@ -100,6 +121,63 @@ paths:
                 $ref: './common.yaml#/components/schemas/ProblemDetail'
         422:
           description: Too many results returned. Please narrow your search criteria and try again. (More then 500 results returned)
+          content:
+            application/json+problem:
+              schema:
+                $ref: './common.yaml#/components/schemas/ProblemDetail'
+        500:
+          description: Internal server error
+          content:
+            application/json+problem:
+              schema:
+                $ref: './common.yaml#/components/schemas/ProblemDetail'
+        503:
+          description: Service unavailable
+          content:
+            application/json+problem:
+              schema:
+                $ref: './common.yaml#/components/schemas/ProblemDetail'
+
+  /interface-files/{id}:
+    get:
+      tags:
+        - Interface Files
+      summary: Get Interface File
+      description: The Get Interface File API will be used to return a single Interface File metadata record held in the File Handling Data Store. (User must have the View Interface Files permission)
+      operationId: getInterfaceFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: './types.yaml/#/components/schemas/BigInt'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/interfaceFileObject'
+        400:
+          description: Bad request
+          content:
+            application/json+problem:
+              schema:
+                $ref: './common.yaml#/components/schemas/ProblemDetail'
+        401:
+          description: Unauthorized
+          content:
+            application/json+problem:
+              schema:
+                $ref: './common.yaml#/components/schemas/ProblemDetail'
+        403:
+          description: Forbidden
+          content:
+            application/json+problem:
+              schema:
+                $ref: './common.yaml#/components/schemas/ProblemDetail'
+        404:
+          description: Not Found
           content:
             application/json+problem:
               schema:
@@ -205,6 +283,11 @@ components:
           type: string
           maxLength: 32
           description: DB Mapping - interface_files.checksum (MD5 checksum)
+        business_unit_codes:
+          type: array
+          description: DB Mapping - interface_files.business_unit_code (MD5 checksum)
+          items:
+            type: string
         source:
           $ref: '#/components/schemas/interfaceFileEnum'
         target:
