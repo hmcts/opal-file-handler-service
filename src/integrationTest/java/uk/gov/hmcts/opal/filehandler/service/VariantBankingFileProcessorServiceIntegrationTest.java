@@ -138,23 +138,23 @@ class VariantBankingFileProcessorServiceIntegrationTest
     void shouldMarkDuplicateWhenFilenameMatchesAndChecksumDiffers() throws Exception {
 
         InterfaceFileEntity existingFile = InterfaceFileEntity.builder()
-           .source(Interface.VARIANT_BANKING)
-           .target(Interface.OPAL)
-           .type(Type.SOURCE)
-           .opalDomain(Domain.MAINTENANCE)
-           .fileName("VB001.dat")
-           .checksum("existing-checksum")
-           .status(Status.SUCCESS)
-           .createdDatetime(LocalDateTime.now())
-           .build();
+            .source(Interface.VARIANT_BANKING)
+            .target(Interface.OPAL)
+            .type(Type.SOURCE)
+            .opalDomain(Domain.MAINTENANCE)
+            .fileName("VB001.dat")
+            .checksum("existing-checksum")
+            .status(Status.SUCCESS)
+            .createdDatetime(LocalDateTime.now())
+            .build();
 
-         repository.save(existingFile);
+        repository.save(existingFile);
 
-       byte[] fileBytes = "different-content".getBytes();
+        byte[] fileBytes = "different-content".getBytes();
 
-       service.processUploadedFile(config, "VB001.dat", fileBytes);
+        service.processUploadedFile(config, "VB001.dat", fileBytes);
 
-       assertThat(repository.findAll())
+        assertThat(repository.findAll())
             .anyMatch(file -> file.getStatus().equals(Status.DUPLICATE));
-   }
+    }
 }
