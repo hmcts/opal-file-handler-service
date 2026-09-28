@@ -104,7 +104,7 @@ public class InterfaceFileSpecsFactory {
 
     private static Specification<InterfaceFileEntity> notEqualsTarget(Interface target) {
         return (root, query, builder)
-            -> builder.notEqual(root.get(InterfaceFileEntity_.target).cast(String.class), target.toString());
+            -> builder.notEqual(root.get(InterfaceFileEntity_.target), target);
     }
 
     private static Specification<InterfaceFileEntity> hasTypeIn(Set<Type> types) {
