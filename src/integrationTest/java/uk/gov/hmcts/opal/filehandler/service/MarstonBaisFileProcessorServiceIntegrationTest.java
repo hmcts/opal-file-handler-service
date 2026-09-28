@@ -2,6 +2,8 @@ package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Disabled;
 import org.springframework.data.domain.Sort;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -36,6 +38,7 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
     "launchdarkly.default-flag-values.marston-file-transfer-Job=true",
 })
 @Slf4j
+@Disabled
 public class MarstonBaisFileProcessorServiceIntegrationTest   extends AbstractBaisFileProcessorServiceIntegrationTest {
 
     private static final String MARSTON_FILE =

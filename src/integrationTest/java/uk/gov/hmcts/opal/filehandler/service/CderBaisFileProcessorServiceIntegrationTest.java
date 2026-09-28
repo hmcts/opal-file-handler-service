@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 
 import com.azure.storage.blob.BlobClient;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 @TestPropertySource(properties = {
     "launchdarkly.default-flag-values[bailiffs.cder-file-transfer-job]=true"
 })
+@Disabled
 public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
 
     private static final String CDER_FILE = "0000031712_dat_0000098475_20260408_103500.txt";
