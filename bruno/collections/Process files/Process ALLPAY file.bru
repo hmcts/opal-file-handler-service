@@ -1,0 +1,33 @@
+meta {
+  name: Process ALLPAY file
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseURL}}/testing-support/automated-jobs/AllpayFileTransferJob
+  body: none
+  auth: bearer
+}
+
+script:pre-request {
+  const response = await bru.sendRequest({ method: "GET", url: `${bru.getEnvVar("userURL")}/testing-support/token/user`, headers: { "X-User-Email": bru.getEnvVar("userEmail") } });
+  if (response.status !== 200) throw new Error(`Could not obtain bearer token: HTTP ${response.status}`);
+  const payload = response.data ?? response.body;
+  const body = typeof payload === "string" ? JSON.parse(payload) : payload;
+  if (!body?.access_token) throw new Error("Could not obtain bearer token: access_token was not returned");
+  bru.setVar("BEARER_TOKEN", body.access_token);
+}
+
+auth:bearer {
+  token: {{BEARER_TOKEN}}
+}
+
+headers {
+  Content-Digest: sha-512=:z4PhNX7vuL3xVChQ1m2AB9Yg5AULVxXcg/SpIdNs6c5H0NE8XYXysP+DGNKHfuwvY7kxvUdBeoGlODJ6+SfaPg==:
+}
+
+tests {
+  test("accepts the ALLPAY processing request", function() { expect(res.status).to.equal(202); });
+}
+

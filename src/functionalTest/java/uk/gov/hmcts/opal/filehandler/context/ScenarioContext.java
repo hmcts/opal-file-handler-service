@@ -118,6 +118,15 @@ public class ScenarioContext {
     }
 
     /**
+     * Returns the latest remembered raw HTTP response without clearing it.
+     *
+     * @return latest remembered raw HTTP response, or {@code null} when none has been recorded.
+     */
+    public TestHttpResponse getLatestHttpResponse() {
+        return latestHttpResponse;
+    }
+
+    /**
      * Returns and clears the latest remembered raw HTTP response.
      *
      * @return latest remembered raw HTTP response, or {@code null} when none has been recorded.

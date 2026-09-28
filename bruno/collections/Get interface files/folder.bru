@@ -1,0 +1,41 @@
+meta {
+  name: Get interface files
+  seq: 1
+}
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{BEARER_TOKEN}}
+}
+
+script:pre-request {
+  function getTokenExpiresAt(token) {
+    try {
+      const encodedPayload = token.split(".")[1];
+      const base64Payload = encodedPayload.replace(/-/g, "+").replace(/_/g, "/")
+        .padEnd(Math.ceil(encodedPayload.length / 4) * 4, "=");
+      const payload = JSON.parse(atob(base64Payload));
+      return typeof payload.exp === "number" ? payload.exp * 1000 : null;
+    } catch {
+      return null;
+    }
+  }
+
+  const token = bru.getVar("BEARER_TOKEN") || bru.getEnvVar("BEARER_TOKEN");
+  if (token) {
+    return;
+  }
+
+  const response = await bru.sendRequest({
+    method: "GET",
+    url: `${bru.getEnvVar("userURL")}/testing-support/token/user`,
+    headers: { "X-User-Email": bru.getEnvVar("userEmail") }
+  });
+  if (response.status !== 200) throw new Error(`Could not obtain bearer token: HTTP ${response.status}`);
+  const payload = response.data ?? response.body;
+  const body = typeof payload === "string" ? JSON.parse(payload) : payload;
+  if (!body?.access_token) throw new Error("Could not obtain bearer token: access_token was not returned");
+  bru.setVar("BEARER_TOKEN", body.access_token);
+}
