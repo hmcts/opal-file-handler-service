@@ -78,7 +78,9 @@ public class InterfaceFilesService {
         BinaryData file = blobStoreService.fetchInterfaceFile(id, entity.getFilestoreUuid(), containerName);
 
         UserStateV2 userState = userStateService.getUserStateFromSecurityContext();
-        loggingService.logPdpl(id, userState);
+        if (!userState.isSystemUser()) {
+            loggingService.logPdpl(id, userState);
+        }
 
         return file.toStream();
     }
