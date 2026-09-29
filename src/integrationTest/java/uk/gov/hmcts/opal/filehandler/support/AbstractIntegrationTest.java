@@ -4,6 +4,8 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import java.io.IOException;
+import java.net.ServerSocket;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
@@ -27,9 +29,21 @@ import uk.hmcts.zephyr.automation.junit5.extension.ZephyrAutomationExtension;
 @Slf4j
 public class AbstractIntegrationTest {
 
-    private static final int WIREMOCK_PORT =
-        Integer.parseInt(System.getenv().getOrDefault("INTEGRATION_WIREMOCK_PORT", "4553"));
+    private static final int WIREMOCK_PORT = resolveWireMockPort();
     private static final WireMockServer WIREMOCK_SERVER = new WireMockServer(options().port(WIREMOCK_PORT));
+
+    private static int resolveWireMockPort() {
+        String configuredPort = System.getenv("INTEGRATION_WIREMOCK_PORT");
+        if (configuredPort != null && !configuredPort.isBlank()) {
+            return Integer.parseInt(configuredPort);
+        }
+
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to allocate a port for integration-test WireMock", e);
+        }
+    }
 
     protected UserStateStub userStateStub;
 
@@ -70,6 +84,7 @@ public class AbstractIntegrationTest {
         registry.add("spring.datasource.username", TestContainerConfig.POSTGRES_CONTAINER::getUsername);
         registry.add("spring.datasource.password", TestContainerConfig.POSTGRES_CONTAINER::getPassword);
         registry.add("spring.data.redis.url", TestContainerConfig.REDIS_CONTAINER::getRedisURI);
+        registry.add("user.service.url", () -> "http://localhost:" + WIREMOCK_PORT);
         registry.add(
             "opal.file-handler-service.file-store.connection-string",
             TestContainerConfig::azuriteConnectionString

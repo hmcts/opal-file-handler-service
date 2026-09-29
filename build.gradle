@@ -195,6 +195,8 @@ tasks.named('sonarResolver') {
 tasks.withType(Test).configureEach {
   useJUnitPlatform()
   failFast = true
+  systemProperty 'spring.test.context.cache.maxSize', 4
+  maxHeapSize = "2g"
 
   testLogging {
     exceptionFormat = 'full'
