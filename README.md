@@ -82,6 +82,17 @@ docker image rm <image-id>
 
 There is no need to remove postgres and java or similar core images.
 
+### Functional test tasks
+
+Use the standard functional suite for normal functional coverage:
+
+```bash / zsh
+  ./gradlew clean functional
+```
+
+This runs the default functional suite and publishes the Serenity
+functional report under `/functional-test-report/`.
+
 ## Nightly Jenkins pipeline
 
 `Jenkinsfile_nightly` runs on weekdays using `H 07 * * 1-5`. The shared HMCTS nightly
