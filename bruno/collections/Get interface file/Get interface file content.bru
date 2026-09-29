@@ -1,0 +1,26 @@
+meta {
+  name: Get interface file content - valid ID
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseURL}}/interface-files/{{interfaceFileId}}/content
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("returns the interface file content", function() {
+    expect(res.status).to.equal(200);
+  });
+}
+
+vars:pre-request {
+  interfaceFileId: 1
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
