@@ -1,6 +1,8 @@
 package uk.gov.hmcts.opal.filehandler;
 
+import com.azure.core.credential.AccessToken;
 import com.azure.core.credential.TokenCredential;
+import com.azure.core.credential.TokenRequestContext;
 import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.identity.ManagedIdentityCredential;
 import com.azure.identity.ManagedIdentityCredentialBuilder;
@@ -70,6 +72,19 @@ public class Application {
                     "2d883a38-dcc7-4cf2-8741-6ff5148f452e"
                 )
                 .build();
+
+        AccessToken token = credential
+            .getToken(
+                new TokenRequestContext()
+                    .addScopes("https://servicebus.azure.net/.default")
+            )
+            .block();
+
+        log.info(
+            "Successfully obtained Service Bus token, expires at {}",
+            token.getExpiresAt()
+        );
+
         String host = "opal-sb-dev.servicebus.windows.net";
 
         return new ServiceBusJmsConnectionFactory(
