@@ -13,6 +13,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.opal.common.user.authorisation.model.Domain;
+import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -24,6 +25,7 @@ import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
+import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
@@ -36,6 +38,8 @@ public class InterfaceFilesService {
     private final InterfaceFileSpecsFactory specsFactory;
     private final InterfaceFileMapper mapper;
     private final InterfaceFileBlobStoreService blobStoreService;
+    private final UserStateService userStateService;
+    private final InterfaceFilesPdplLoggingService loggingService;
 
     @Autowired
     private final Map<String, BaisFileProcessorConfiguration> configs;
@@ -72,6 +76,9 @@ public class InterfaceFilesService {
         String containerName = config.getContainerName();
 
         BinaryData file = blobStoreService.fetchInterfaceFile(id, entity.getFilestoreUuid(), containerName);
+
+        UserStateV2 userState = userStateService.getUserStateFromSecurityContext();
+        loggingService.logPdpl(id, userState);
 
         return file.toStream();
     }

@@ -39,9 +39,16 @@ import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.InvalidInterfaceFileStatusException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
+import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingService;
 
 @ExtendWith(MockitoExtension.class)
 class InterfaceFileServiceTest {
+
+    @Mock
+    private UserStateService userStateService;
+
+    @Mock
+    private InterfaceFilesPdplLoggingService loggingService;
 
     @Mock
     private InterfaceFilesRepository repository;
@@ -101,6 +108,7 @@ class InterfaceFileServiceTest {
             Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.SUCCESS))
         );
         when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report"))).thenReturn(mockData);
+        when(userStateService.getUserStateFromSecurityContext()).thenReturn(null);
 
         InputStream response = interfaceFileService.getInterfaceFilesContent(1L);
 
@@ -119,6 +127,7 @@ class InterfaceFileServiceTest {
             Optional.of(buildEntity(1L, uuid, Interface.CAPS_REPORT, Status.SUCCESS))
         );
         when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("caps-report"))).thenReturn(mockData);
+        when(userStateService.getUserStateFromSecurityContext()).thenReturn(null);
 
         InputStream response = interfaceFileService.getInterfaceFilesContent(1L);
 

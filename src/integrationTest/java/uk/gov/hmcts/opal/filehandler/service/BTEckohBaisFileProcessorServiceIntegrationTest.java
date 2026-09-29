@@ -53,7 +53,7 @@ public class BTEckohBaisFileProcessorServiceIntegrationTest
     @Autowired
     private BusinessUnitBankAccountEntityTestData businessUnitBankAccountEntityTestData;
 
-    @MockitoBean
+    @MockitoBean(name = "commonServiceBusJmsTemplate")
     private JmsTemplate jmsTemplate;
 
     @BeforeEach
