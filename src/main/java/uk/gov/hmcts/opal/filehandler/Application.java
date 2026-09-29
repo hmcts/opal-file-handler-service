@@ -1,5 +1,7 @@
 package uk.gov.hmcts.opal.filehandler;
 
+import com.azure.core.credential.TokenCredential;
+import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.identity.ManagedIdentityCredential;
 import com.azure.identity.ManagedIdentityCredentialBuilder;
 import com.azure.servicebus.jms.ServiceBusJmsConnectionFactory;
@@ -59,10 +61,15 @@ public class Application {
     }
 
     private ConnectionFactory commonServiceBusConnectionFactory() {
-        ManagedIdentityCredential credential =
-            new ManagedIdentityCredentialBuilder()
+//        ManagedIdentityCredential credential =
+//            new ManagedIdentityCredentialBuilder()
+//                .build();
+        TokenCredential credential =
+            new DefaultAzureCredentialBuilder()
+                .managedIdentityClientId(
+                    "2d883a38-dcc7-4cf2-8741-6ff5148f452e"
+                )
                 .build();
-
         String host = "opal-sb-dev.servicebus.windows.net";
 
         return new ServiceBusJmsConnectionFactory(
