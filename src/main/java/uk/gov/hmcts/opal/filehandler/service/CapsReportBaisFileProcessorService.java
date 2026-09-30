@@ -12,7 +12,7 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
-import uk.gov.hmcts.opal.filehandler.utils.ReportFileValidator;
+import uk.gov.hmcts.opal.filehandler.util.ReportFileValidator;
 
 @Slf4j
 @Service

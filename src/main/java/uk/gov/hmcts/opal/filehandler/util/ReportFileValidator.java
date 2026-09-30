@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandler.utils;
+package uk.gov.hmcts.opal.filehandler.util;
 
 import java.io.IOException;
 import java.io.InputStream;

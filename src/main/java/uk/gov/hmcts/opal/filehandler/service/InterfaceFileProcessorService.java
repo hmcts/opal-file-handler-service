@@ -29,7 +29,7 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
-import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
+import uk.gov.hmcts.opal.filehandler.util.StreamUtil;
 
 @Slf4j
 @RequiredArgsConstructor

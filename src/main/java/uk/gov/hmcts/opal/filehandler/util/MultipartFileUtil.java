@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
-import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
 
 public class MultipartFileUtil {
 

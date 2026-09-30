@@ -37,7 +37,6 @@ import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 
 @Service
-//@AllArgsConstructor
 @Slf4j
 public class InterfaceFilesService {
 

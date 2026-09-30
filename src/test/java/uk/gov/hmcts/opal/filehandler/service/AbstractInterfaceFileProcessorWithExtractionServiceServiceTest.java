@@ -56,7 +56,7 @@ import uk.gov.hmcts.opal.filehandler.service.extraction.ExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
-import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
+import uk.gov.hmcts.opal.filehandler.util.StreamUtil;
 
 @ExtendWith(MockitoExtension.class)
 class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
