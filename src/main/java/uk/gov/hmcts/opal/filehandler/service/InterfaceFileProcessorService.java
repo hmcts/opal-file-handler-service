@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
+import uk.gov.hmcts.opal.common.exception.DownstreamServiceUnavailableException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -171,6 +172,11 @@ public class InterfaceFileProcessorService {
             log.error(errorMessage, fileChecksum, e);
             entity.setErrors(errorJson(errorMessage));
             entity.setStatus(Status.FAILED);
+
+            if (e instanceof BlobUploadException) {
+                saveInitialFile(entity);
+                throw new DownstreamServiceUnavailableException(errorMessage, e);
+            }
         }
         return saveInitialFile(entity);
     }

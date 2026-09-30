@@ -29,4 +29,8 @@ public class AbstractControllerIntegrationTest extends AbstractIntegrationTest {
     protected ApiTest setupApiTest(HttpMethod method, String uriTemplate) {
         return new ApiTest(objectMapper, mockMvc, method, uriTemplate);
     }
+
+    protected FileUploadApiTest setupFileUploadApiTest(HttpMethod method, String uriTemplate) {
+        return new FileUploadApiTest(objectMapper, mockMvc, method, uriTemplate);
+    }
 }
