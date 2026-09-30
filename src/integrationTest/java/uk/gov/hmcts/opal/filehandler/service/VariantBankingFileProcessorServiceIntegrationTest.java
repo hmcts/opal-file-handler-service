@@ -309,7 +309,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
             .toList();
 
         assertThat(dwpSourceFiles).hasSize(2);
-
+        assertThat(firstFile).isNotNull();
         assertThat(dwpSourceFiles)
             .extracting(InterfaceFileEntity::getStatus)
             .containsExactlyInAnyOrder(
