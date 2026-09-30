@@ -63,6 +63,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @Test
         @DisplayName("PO-3947 - Returns interface files correctly")
         @JiraStory("PO-3947")
+        @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         void returnsAllInterfaceFiles_200() throws Exception {
             setupAuthorisedUser();
@@ -102,6 +103,36 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         }
 
         @Test
+        @DisplayName("PO-8669 - Returns the associated business units for each interface file")
+        @JiraStory("PO-8669")
+        @JiraEpic("PO-3495")
+        void returnsAssociatedBusinessUnitsForEachInterfaceFile_200() throws Exception {
+            setupAuthorisedUser();
+            ResultActions result = mockMvc.perform(
+                get(URL)
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken()));
+
+            result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+            GetInterfaceFiles200Response response = objectMapper.readValue(
+                result.andReturn().getResponse().getContentAsString(), new TypeReference<>() {
+                });
+
+            List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
+            assertThat(interfaceFiles).isNotEmpty().allSatisfy(interfaceFile ->
+                assertThat(interfaceFile.getBusinessUnitCodes()).isNotNull());
+
+            InterfaceFileObjectInterfaceFile fileWithMultipleBusinessUnits = interfaceFiles.stream()
+                .filter(file -> file.getInterfaceFileId().equals(10L))
+                .findFirst()
+                .orElseThrow();
+            assertThat(fileWithMultipleBusinessUnits.getBusinessUnitCodes())
+                .containsExactly("AB01", "BC01", "DD03");
+        }
+
+        @Test
         @DisplayName("PO-3947 - Filters interface files correctly by status and source")
         @JiraStory("PO-3947")
         @JiraEpic("PO-3495")
@@ -130,6 +161,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @Test
         @DisplayName("PO-3947 - Filters interface files correctly by target and type")
         @JiraStory("PO-3947")
+        @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         void filtersInterfaceFilesCorrectlyByTargetAndType_200() throws Exception {
             setupAuthorisedUser();
@@ -138,7 +170,9 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
                     .with(userStateStub.getAuthenticaitonRequestPostProcessor())
                     .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
                     .param("target", InterfaceFileEnumInterfaceFile.OPAL.getValue())
-                    .param("type", InterfaceFileTypeEnumInterfaceFile.SOURCE.getValue()));
+                    .param("type", String.join(",",
+                        InterfaceFileTypeEnumInterfaceFile.SOURCE.getValue(),
+                        InterfaceFileTypeEnumInterfaceFile.SOURCE_JSON.getValue())));
 
             String body = result.andReturn().getResponse().getContentAsString();
             result.andExpect(status().isOk())
@@ -147,10 +181,15 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {
             });
 
-            assertThat(response.getInterfaceFiles()).hasSizeGreaterThanOrEqualTo(1);
-            assertThat(response.getInterfaceFiles()).allMatch(
-                i -> i.getTarget() == InterfaceFileEnumInterfaceFile.OPAL
-                    && i.getType() == InterfaceFileTypeEnumInterfaceFile.SOURCE);
+            List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
+            assertThat(interfaceFiles).allMatch(
+                i -> i.getTarget() == InterfaceFileEnumInterfaceFile.OPAL);
+            assertThat(interfaceFiles).anyMatch(
+                i -> i.getType() == InterfaceFileTypeEnumInterfaceFile.SOURCE);
+            assertThat(interfaceFiles).anyMatch(
+                i -> i.getType() == InterfaceFileTypeEnumInterfaceFile.SOURCE_JSON);
+            assertThat(interfaceFiles).noneMatch(
+                i -> i.getType() == InterfaceFileTypeEnumInterfaceFile.TRANSFORMED_JSON);
         }
 
 
@@ -208,6 +247,91 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             });
         }
 
+        @Test
+        @DisplayName("PO-3947 - Filters interface files correctly by not_status")
+        @JiraStory("PO-3947")
+        @JiraStory("PO-8669")
+        @JiraEpic("PO-3495")
+        void filtersInterfaceFilesCorrectlyByNotStatus_200() throws Exception {
+            setupAuthorisedUser();
+            List<StatusEnumInterfaceFile> notStatuses =
+                List.of(StatusEnumInterfaceFile.SUCCESS, StatusEnumInterfaceFile.FAILED);
+            ResultActions result = mockMvc.perform(
+                get(URL)
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
+                    .param("not_status", String.join(",",
+                        StatusEnumInterfaceFile.SUCCESS.getValue(),
+                        StatusEnumInterfaceFile.FAILED.getValue()))
+            );
+
+            String body = result.andReturn().getResponse().getContentAsString();
+            result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+            GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {
+            });
+
+            List<StatusEnumInterfaceFile> statusesReturned = response.getInterfaceFiles()
+                .stream()
+                .map(InterfaceFileObjectInterfaceFile::getStatus)
+                .toList();
+            assertThat(statusesReturned).hasSizeGreaterThanOrEqualTo(1);
+            assertThat(statusesReturned).isNotIn(
+                List.of(StatusEnumInterfaceFile.SUCCESS, StatusEnumInterfaceFile.FAILED));
+        }
+
+        @Test
+        @DisplayName("PO-3947 - Filters interface files correctly by not_target")
+        @JiraStory("PO-3947")
+        @JiraStory("PO-8669")
+        @JiraEpic("PO-3495")
+        void filtersInterfaceFilesCorrectlyByNotTarget_200() throws Exception {
+            setupAuthorisedUser();
+            ResultActions result = mockMvc.perform(
+                get(URL)
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
+                    .param("not_target", InterfaceFileEnumInterfaceFile.OPAL.toString()));
+
+            String body = result.andReturn().getResponse().getContentAsString();
+            result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+            GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {
+            });
+
+            List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
+            assertThat(interfaceFiles).hasSizeGreaterThanOrEqualTo(1);
+            assertThat(interfaceFiles).noneMatch(i -> i.getTarget() == InterfaceFileEnumInterfaceFile.OPAL);
+        }
+
+        @Test
+        @DisplayName("PO-3947 - Filters interface files correctly by business_unit_code")
+        @JiraStory("PO-3947")
+        @JiraStory("PO-8669")
+        @JiraEpic("PO-3495")
+        void filtersInterfaceFilesCorrectlyByBusinessUnitCode_200() throws Exception {
+            String businessUnitCode = "BC01";
+            setupAuthorisedUser();
+            ResultActions result = mockMvc.perform(
+                get(URL)
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
+                    .param("business_unit_code", businessUnitCode));
+
+            String body = result.andReturn().getResponse().getContentAsString();
+            result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+            GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {
+            });
+
+            List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
+            assertThat(interfaceFiles).hasSizeGreaterThanOrEqualTo(1);
+            assertThat(interfaceFiles).allMatch(i -> i.getBusinessUnitCodes().contains(businessUnitCode));
+        }
+
         /* Commented out pending https://tools.hmcts.net/jira/browse/PO-8686
         @Test
         @DisplayName("PO-3947 – Forbidden without View Interface Files permission")
@@ -236,6 +360,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @Test
         @DisplayName("PO-3947 - Feature flag off test")
         @JiraStory("PO-3947")
+        @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         void getInterfaceFiles_FeatureOff_404() throws Exception {
             setupAuthorisedUser();

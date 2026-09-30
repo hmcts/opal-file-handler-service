@@ -37,6 +37,17 @@ public final class BaisReportTestData {
         "test-data/caps-report/caps-test-file.xml"
     );
 
+    public static final BaisReportTestConfig DWP = new BaisReportTestConfig(
+        "DWP", "DWP", "DWPFileTransferJob",
+        TestEnvironment.getReportSftpUsername("DWP", "DWP"),
+        "BAIS_SFTP_DWP_USERNAME", "dwp", "DWP_AZURE_STORAGE_CONTAINER",
+        "DWP_FILE_TRANSFER_JOB_ENABLED",
+        "0000015232_dat_0000000612_08011008_111355.txt",
+        "0000015232_dat_0000000612_08011008_111355.csv",
+        "bdbbd6c4e0daba273d9387f466acb6b9",
+        "test-data/dwp/0000015232_dat_0000000612_08011008_111355.txt"
+    );
+
     private BaisReportTestData() {
     }
 
@@ -50,6 +61,7 @@ public final class BaisReportTestData {
         return switch (displayName) {
             case "BTEckoh" -> BTECKOH;
             case "CAPS" -> CAPS;
+            case "DWP" -> DWP;
             default -> throw new IllegalArgumentException("Unsupported BAIS report: " + displayName);
         };
     }
@@ -64,6 +76,7 @@ public final class BaisReportTestData {
         return switch (source) {
             case "BTECKOH_REPORT" -> BTECKOH;
             case "CAPS_REPORT" -> CAPS;
+            case "DWP" -> DWP;
             default -> throw new IllegalArgumentException("Unsupported BAIS report source: " + source);
         };
     }
