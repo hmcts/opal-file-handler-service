@@ -5,6 +5,7 @@ import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
 import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.servicebus.jms.ServiceBusJmsConnectionFactory;
+import com.azure.servicebus.jms.ServiceBusJmsConnectionFactorySettings;
 import jakarta.annotation.PostConstruct;
 import jakarta.jms.ConnectionFactory;
 import java.util.List;
@@ -35,6 +36,10 @@ import uk.gov.hmcts.opal.filehandler.util.TaskRunnerUtil;
 @SuppressWarnings("HideUtilityClassConstructor") // Spring needs a constructor, its not a utility class
 public class Application {
 
+    private static final String DEFAULT_MANAGED_IDENTITY_CLIENT_ID = "2d883a38-dcc7-4cf2-8741-6ff5148f452e";
+    private static final String DEFAULT_SERVICE_BUS_HOST = "opal-servicebus-stg.servicebus.windows.net";
+    private static final String DEFAULT_TEST_QUEUE = "opal-test-queue";
+
     public static void main(final String[] args) {
         if (TaskRunnerUtil.isAutomatedTask(args)) {
             System.exit(TaskRunnerUtil.runAutomatedTaskWithSpring(args));
@@ -48,27 +53,33 @@ public class Application {
 
     @PostConstruct
     public void init() {
+        if (List.of(env.getActiveProfiles()).contains("integration")) {
+            return;
+        }
+
+        String queueName = env.getProperty("SERVICEBUS_MI_TEST_QUEUE_NAME", DEFAULT_TEST_QUEUE);
+
         try {
-            if (List.of(env.getActiveProfiles()).contains("integration")) {
-                return;
-            }
-            log.info("Application started");
+            log.info("Testing Service Bus JMS managed identity authentication");
             JmsTemplate jmsTemplate = commonServiceBusJmsTemplate(commonServiceBusConnectionFactory());
-            jmsTemplate.convertAndSend("opal-test-queue", "Test message");
-        } catch (Throwable e) {
-            log.info(e.getMessage());
+            jmsTemplate.convertAndSend(queueName, "Test message");
+            log.info("Service Bus JMS managed identity authentication test message sent to {}", queueName);
+        } catch (RuntimeException e) {
+            log.error("Service Bus JMS managed identity authentication test failed for queue {}", queueName, e);
+            throw e;
         }
     }
 
     private ConnectionFactory commonServiceBusConnectionFactory() {
-        //        ManagedIdentityCredential credential =
-        //            new ManagedIdentityCredentialBuilder()
-        //                .build();
+        String managedIdentityClientId = env.getProperty(
+            "SERVICEBUS_MI_CLIENT_ID",
+            DEFAULT_MANAGED_IDENTITY_CLIENT_ID
+        );
+        String host = env.getProperty("SERVICEBUS_MI_HOST", DEFAULT_SERVICE_BUS_HOST);
+
         TokenCredential credential =
             new DefaultAzureCredentialBuilder()
-                .managedIdentityClientId(
-                    "2d883a38-dcc7-4cf2-8741-6ff5148f452e"
-                )
+                .managedIdentityClientId(managedIdentityClientId)
                 .build();
 
         AccessToken token = credential
@@ -79,17 +90,24 @@ public class Application {
             .block();
 
         log.info(
-            "Successfully obtained Service Bus token, expires at {}",
+            "Successfully obtained Service Bus token for host {}, expires at {}",
+            host,
             token.getExpiresAt()
         );
 
-        String host = "opal-sb-dev.servicebus.windows.net";
+        ServiceBusJmsConnectionFactorySettings settings = new ServiceBusJmsConnectionFactorySettings();
+        settings.setStartupMaxReconnectAttempts(1);
+        settings.setMaxReconnectAttempts(1);
+        settings.setWarnAfterReconnectAttempts(1);
 
-        return new ServiceBusJmsConnectionFactory(
+        ServiceBusJmsConnectionFactory connectionFactory = new ServiceBusJmsConnectionFactory(
             credential,
             host,
-            null
+            settings
         );
+        log.info("Created Service Bus JMS connection factory with remote URI {}", connectionFactory.getRemoteConnectionUri());
+
+        return connectionFactory;
     }
 
     private JmsTemplate commonServiceBusJmsTemplate(ConnectionFactory connectionFactory) {
