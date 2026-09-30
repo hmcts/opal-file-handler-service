@@ -4,8 +4,6 @@ import com.azure.core.credential.AccessToken;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
 import com.azure.identity.DefaultAzureCredentialBuilder;
-import com.azure.identity.ManagedIdentityCredential;
-import com.azure.identity.ManagedIdentityCredentialBuilder;
 import com.azure.servicebus.jms.ServiceBusJmsConnectionFactory;
 import jakarta.annotation.PostConstruct;
 import jakarta.jms.ConnectionFactory;
@@ -63,9 +61,9 @@ public class Application {
     }
 
     private ConnectionFactory commonServiceBusConnectionFactory() {
-//        ManagedIdentityCredential credential =
-//            new ManagedIdentityCredentialBuilder()
-//                .build();
+        //        ManagedIdentityCredential credential =
+        //            new ManagedIdentityCredentialBuilder()
+        //                .build();
         TokenCredential credential =
             new DefaultAzureCredentialBuilder()
                 .managedIdentityClientId(
