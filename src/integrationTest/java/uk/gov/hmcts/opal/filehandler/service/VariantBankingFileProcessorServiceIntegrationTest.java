@@ -99,8 +99,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
 
     @Nested
     @JiraStory("PO-8744")
-    @JiraStory("PO-8685")
-    @JiraEpic("PO-6394")
+    @JiraEpic("PO-3952")
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
         "launchdarkly.default-flag-values.variant-banking=false"
