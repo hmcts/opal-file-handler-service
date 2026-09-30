@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,6 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
+import uk.gov.hmcts.opal.filehandler.config.DWPBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.VariantBankingFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -23,6 +25,7 @@ import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import org.springframework.core.io.ClassPathResource;
+import uk.gov.hmcts.opal.filehandler.repository.BusinessUnitBankAccountRepository;
 import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -32,9 +35,12 @@ import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
 import static org.mockito.Mockito.verify;
 
+
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
-    "launchdarkly.default-flag-values.variant-banking=true"
+    "launchdarkly.default-flag-values.variant-banking=true",
+    "launchdarkly.default-flag-values.dwp-file-transfer-job=true",
+    "opal.file-handler-service.file-types.dwp.sftp-username=DWP"
 })
 @DisplayName("Variant Banking File Processor Service Integration Tests")
 class VariantBankingFileProcessorServiceIntegrationTest
@@ -46,8 +52,17 @@ class VariantBankingFileProcessorServiceIntegrationTest
     @Autowired
     private VariantBankingFileProcessorConfig config;
 
+    @Autowired
+    DWPBaisFileProcessorService dwpBaisFileProcessorService;
+
+    @Autowired
+    DWPBaisFileProcessorConfiguration dwpConfig;
+
     @MockitoBean
     private MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService;
+
+    @Autowired
+    BusinessUnitBankAccountRepository businessUnitBankAccountRepository;
 
     @Autowired
     private BusinessUnitBankAccountEntityTestData businessUnitBankAccountEntityTestData;
@@ -81,6 +96,8 @@ class VariantBankingFileProcessorServiceIntegrationTest
 
         @Test
         @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
+        @JiraStory("PO-8744")
+        @JiraEpic("PO-3952")
         void bankingInterfacesIsDisabled() {
 
             FeatureDisabledException exception =
@@ -98,8 +115,6 @@ class VariantBankingFileProcessorServiceIntegrationTest
     }
 
     @Nested
-    @JiraStory("PO-8744")
-    @JiraEpic("PO-3952")
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
         "launchdarkly.default-flag-values.variant-banking=false"
@@ -108,6 +123,8 @@ class VariantBankingFileProcessorServiceIntegrationTest
 
         @Test
         @DisplayName("AC1: Feature flag 'variant-banking' is false")
+        @JiraStory("PO-8744")
+        @JiraEpic("PO-3952")
         void variantBankingIsDisabled() {
 
             FeatureDisabledException exception =
@@ -130,6 +147,8 @@ class VariantBankingFileProcessorServiceIntegrationTest
 
         @Test
         @DisplayName("AC1: Both feature flags are false")
+        @JiraStory("PO-8744")
+        @JiraEpic("PO-3952")
         void bothFeatureFlagsAreDisabled() {
 
             FeatureDisabledException exception =
@@ -146,25 +165,40 @@ class VariantBankingFileProcessorServiceIntegrationTest
         }
     }
 
+
     @Test
     @DisplayName("AC2: Uploaded file is accepted for processing")
     void shouldProcessUploadedFile() throws Exception {
 
         byte[] fileBytes = new ClassPathResource("bais-emulator/a121_240101VB001_01.dat")
             .getInputStream().readAllBytes();
-
         service.processUploadedFile(config,"a121_240101VB001_01.dat", fileBytes);
 
-        InterfaceFileEntity entity = assertSuccessfulInterfaceFileByFileName(
-            "a121_240101VB001_01.dat",
+        InterfaceFileEntity sourceJsonEntity = assertSuccessfulInterfaceFileByFileName(
+                "a121_240101VB001_01.dat",
+                Interface.VARIANT_BANKING,
+                Type.SOURCE_JSON,
+                Domain.MAINTENANCE
+            );
+
+        assertSuccessfulSourceJsonInterfaceFile(
+            sourceJsonEntity.getFileName(),
+            Interface.VARIANT_BANKING,
+            Domain.MAINTENANCE,
+            sourceJsonEntity.getRelatedInterfaceFile().getInterfaceFileId()
+        );
+
+        InterfaceFileEntity entity = assertSuccessfulInterfaceFile(
+            sourceJsonEntity.getFileName(),
+            sourceJsonEntity.getChecksum(),
             Interface.VARIANT_BANKING,
             Type.SOURCE_JSON,
             Domain.MAINTENANCE
         );
 
         verify(maintenanceQueueService, times(1)).send(eq(entity.getInterfaceFileId()));
-
         assertBlobChecksum(entity.getFileName(), entity.getChecksum(), config.getContainerName());
+
     }
 
     @Test
@@ -200,41 +234,101 @@ class VariantBankingFileProcessorServiceIntegrationTest
     }
 
     @Test
-    @DisplayName("AC4: Processed files use VARIANT_BANKING as source and OPAL as target")
-    void shouldUseConfiguredSourceAndTarget() throws Exception {
+    @DisplayName("AC4: Existing processors are unaffected by non Variant Banking changes")
+    void shouldProcessExistingInterfaceFilesUnchanged() {
 
-        byte[] fileBytes = new ClassPathResource("bais-emulator/a121_240101VB001_01.dat").getInputStream()
-            .readAllBytes();
+        businessUnitbanking();
+        blobServiceClient.createBlobContainerIfNotExists(dwpConfig.getContainerName());
 
-        service.processUploadedFile(config,"a121_240101VB001_01.dat", fileBytes);
+        String file = "0000015232_dat_0000000612_08011008_111356.txt";
+        String checksum = "bdbbd6c4e0daba273d9387f466acb6b9";
+        String resource = "bais-emulator/" + file;
+        String container = "/home/DWP/" + file;
 
-        InterfaceFileEntity entity = repository.findAll()
-            .stream()
-            .findFirst()
-            .orElseThrow();
+        uploadResourceToSftp(resource, container);
+        businessUnitBankAccountRepository.findAll()
+            .forEach(System.out::println);
+        dwpBaisFileProcessorService.run(dwpConfig);
 
-        assertThat(entity.getSource()).isEqualTo(Interface.VARIANT_BANKING);
-        assertThat(entity.getTarget()).isEqualTo(Interface.OPAL);
-    }
-
-    @Test
-    @DisplayName("AC5: Valid Variant Banking filename is accepted for processing")
-    void shouldAcceptValidVariantBankingFilename() throws Exception {
-
-        byte[] fileBytes = new ClassPathResource(
-            "bais-emulator/a121_240101VB001_01.dat")
-            .getInputStream()
-            .readAllBytes();
-
-        service.processUploadedFile(config,"a121_240101VB001_01.dat", fileBytes);
-
-        InterfaceFileEntity entity = assertSuccessfulInterfaceFileByFileName(
-            "a121_240101VB001_01.dat",
-                Interface.VARIANT_BANKING,
-                Type.SOURCE_JSON,
+        InterfaceFileEntity parentEntity =
+            assertSuccessfulInterfaceFile(
+                file,
+                checksum,
+                Interface.DWP,
+                Type.SOURCE,
                 Domain.MAINTENANCE
             );
 
-        assertThat(entity.getFileName()).isEqualTo("a121_240101VB001_01.dat");
+        InterfaceFileEntity childEntity = assertSuccessfulSourceJsonInterfaceFile(
+                file,
+                Interface.DWP,
+                Domain.MAINTENANCE,
+                parentEntity.getInterfaceFileId()
+            );
+        assertThat(childEntity.getStatus()).isEqualTo(Status.SUCCESS);
+
+    }
+
+    @Test
+    @DisplayName("AC5: Duplicate detection remains specific to Variant Banking")
+    void shouldOnlyApplyFilenameOnlyDuplicateCheckToVariantBanking() {
+
+        businessUnitbanking();
+
+        blobServiceClient.createBlobContainerIfNotExists(
+            dwpConfig.getContainerName()
+        );
+
+        String file = "0000015232_dat_0000000612_08011008_111356.txt";
+        String checksum = "bdbbd6c4e0daba273d9387f466acb6b9";
+        String resource = "bais-emulator/" + file;
+        String container = "/home/DWP/" + file;
+
+        // First processing
+        uploadResourceToSftp(resource, container);
+        dwpBaisFileProcessorService.run(dwpConfig);
+
+        InterfaceFileEntity firstFile =
+            assertSuccessfulInterfaceFile(
+                file,
+                checksum,
+                Interface.DWP,
+                Type.SOURCE,
+                Domain.MAINTENANCE
+            );
+
+        // Process duplicate
+        uploadResourceToSftp(resource, container);
+        dwpBaisFileProcessorService.run(dwpConfig);
+
+
+        List<InterfaceFileEntity> dwpSourceFiles = repository.findAll()
+            .stream()
+            .filter(f -> f.getSource() == Interface.DWP)
+            .filter(f -> f.getType() == Type.SOURCE)
+            .toList();
+
+        assertThat(dwpSourceFiles).hasSize(2);
+
+        assertThat(dwpSourceFiles)
+            .extracting(InterfaceFileEntity::getStatus)
+            .containsExactlyInAnyOrder(
+                Status.SUCCESS,
+                Status.DUPLICATE
+            );
+    }
+
+    private void businessUnitbanking() {
+        businessUnitBankAccountEntityTestData
+            .saveAndFlushBusinessUnitBankAccount(
+                BusinessUnitBankAccountEntity.builder()
+                    .id(2L)
+                    .businessUnitCode("DW01")
+                    .domain(Domain.MAINTENANCE)
+                    .bankSortCode("010101")
+                    .bankAccountNumber("12341234")
+                    .dwpCourtCode("DWP1234567")
+                    .build()
+            );
     }
 }
