@@ -1,14 +1,19 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Clock;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
+import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
+import uk.gov.hmcts.opal.filehandler.exception.BlobUploadException;
+import uk.gov.hmcts.opal.filehandler.exception.InvalidReportFileException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.VariantBacsStandard18BaisExtractionService;
@@ -60,4 +65,41 @@ public class VariantBankingFileProcessorService
         ingestUploadedFile(config, fileName, fileBytes);
     }
 
+    /**
+     * Processes a Variant Banking file uploaded via the Add Interface Files API.
+     */
+    protected void ingestUploadedFile(BaisFileProcessorConfiguration config, String fileName, byte[] fileBytes)
+        throws IOException {
+
+        String fileChecksum = calculateChecksum(new ByteArrayInputStream(fileBytes));
+
+        Optional<InterfaceFileEntity> duplicate = findDuplicateFile(fileName, fileChecksum);
+        InterfaceFileEntity entity;
+
+        try {
+            if (duplicate.isPresent()) {
+                entity = createDuplicateInterfaceFile(config, fileName, fileChecksum, duplicate.get());
+            } else {
+                validateFile(new ByteArrayInputStream(fileBytes));
+
+                UUID fileStoreUuid = UUID.randomUUID();
+                interfaceFileBlobStoreService.uploadBaisFile(fileStoreUuid, config.getContainerName(),
+                    new ByteArrayInputStream(fileBytes), fileChecksum);
+
+                entity = createNewInterfaceFile(config, fileName, fileChecksum, fileStoreUuid);
+            }
+        } catch (InvalidReportFileException e) {
+            entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
+        } catch (BlobChecksumValidationException e) {
+            entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
+        } catch (BlobUploadException e) {
+            entity = createFailureInterfaceFile(config, fileName, fileChecksum, "Blob upload failed for file '%s': %s"
+                .formatted(fileName, e.getMessage()));
+        }
+
+        entity = saveInitialFile(entity);
+        if (entity.getStatus().equals(Status.INGESTED)) {
+            processIngestedFile(config, entity, new ByteArrayInputStream(fileBytes));
+        }
+    }
 }

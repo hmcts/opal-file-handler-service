@@ -251,6 +251,7 @@ launchdarkly:
     bteckoh-file-transfer-job: ${BTECKOH_FILE_TRANSFER_JOB_ENABLED:false}
     natwest-file-transfer-job: ${NATWEST_FILE_TRANSFER_JOB_ENABLED:false}
     barclaycard-file-transfer-job: ${BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED:false}
+    variant-banking: ${VARIANT_BANKING_ENABLED:false}
     bailiffs:
       jacobs-file-transfer-job: ${JACOBS_FILE_TRANSFER_JOB_ENABLED:false}
       cder-file-transfer-job: ${CDER_FILE_TRANSFER_JOB_ENABLED:false}
