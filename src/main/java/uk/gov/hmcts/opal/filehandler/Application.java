@@ -105,7 +105,8 @@ public class Application {
             host,
             settings
         );
-        log.info("Created Service Bus JMS connection factory with remote URI {}", connectionFactory.getRemoteConnectionUri());
+        log.info("Created Service Bus JMS connection factory with remote URI {}",
+            connectionFactory.getRemoteConnectionUri());
 
         return connectionFactory;
     }
