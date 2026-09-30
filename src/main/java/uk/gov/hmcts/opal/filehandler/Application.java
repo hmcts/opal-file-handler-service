@@ -99,7 +99,8 @@ public class Application {
 
         String remoteUri = "amqps://%s?jms.sendTimeout=10000&amqp.idleTimeout=30000&jms.prefetchPolicy.all=0"
             .formatted(host);
-        JmsConnectionFactory connectionFactory = new JmsConnectionFactory(AAD_TOKEN_USERNAME, token.getToken(), remoteUri);
+        JmsConnectionFactory connectionFactory =
+            new JmsConnectionFactory(AAD_TOKEN_USERNAME, token.getToken(), remoteUri);
         connectionFactory.setExtension(
             JmsConnectionExtensions.USERNAME_OVERRIDE.toString(),
             (connection, uri) -> AAD_TOKEN_USERNAME
