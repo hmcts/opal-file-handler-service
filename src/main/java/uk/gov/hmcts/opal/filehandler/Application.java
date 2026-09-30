@@ -4,12 +4,12 @@ import com.azure.core.credential.AccessToken;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
 import com.azure.identity.DefaultAzureCredentialBuilder;
-import com.azure.servicebus.jms.ServiceBusJmsConnectionFactory;
-import com.azure.servicebus.jms.ServiceBusJmsConnectionFactorySettings;
 import jakarta.annotation.PostConstruct;
 import jakarta.jms.ConnectionFactory;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.qpid.jms.JmsConnectionExtensions;
+import org.apache.qpid.jms.JmsConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -39,6 +39,8 @@ public class Application {
     private static final String DEFAULT_MANAGED_IDENTITY_CLIENT_ID = "2d883a38-dcc7-4cf2-8741-6ff5148f452e";
     private static final String DEFAULT_SERVICE_BUS_HOST = "opal-servicebus-stg.servicebus.windows.net";
     private static final String DEFAULT_TEST_QUEUE = "opal-test-queue";
+    private static final String SERVICE_BUS_SCOPE = "https://servicebus.azure.net/.default";
+    private static final String AAD_TOKEN_USERNAME = "$jwt";
 
     public static void main(final String[] args) {
         if (TaskRunnerUtil.isAutomatedTask(args)) {
@@ -85,7 +87,7 @@ public class Application {
         AccessToken token = credential
             .getToken(
                 new TokenRequestContext()
-                    .addScopes("https://servicebus.azure.net/.default")
+                    .addScopes(SERVICE_BUS_SCOPE)
             )
             .block();
 
@@ -95,18 +97,21 @@ public class Application {
             token.getExpiresAt()
         );
 
-        ServiceBusJmsConnectionFactorySettings settings = new ServiceBusJmsConnectionFactorySettings();
-        settings.setStartupMaxReconnectAttempts(1);
-        settings.setMaxReconnectAttempts(1);
-        settings.setWarnAfterReconnectAttempts(1);
-
-        ServiceBusJmsConnectionFactory connectionFactory = new ServiceBusJmsConnectionFactory(
-            credential,
-            host,
-            settings
+        String remoteUri = "amqps://%s?jms.sendTimeout=10000&amqp.idleTimeout=30000&jms.prefetchPolicy.all=0"
+            .formatted(host);
+        JmsConnectionFactory connectionFactory = new JmsConnectionFactory(AAD_TOKEN_USERNAME, token.getToken(), remoteUri);
+        connectionFactory.setExtension(
+            JmsConnectionExtensions.USERNAME_OVERRIDE.toString(),
+            (connection, uri) -> AAD_TOKEN_USERNAME
         );
-        log.info("Created Service Bus JMS connection factory with remote URI {}",
-            connectionFactory.getRemoteConnectionUri());
+        connectionFactory.setExtension(
+            JmsConnectionExtensions.PASSWORD_OVERRIDE.toString(),
+            (connection, uri) -> credential
+                .getToken(new TokenRequestContext().addScopes(SERVICE_BUS_SCOPE))
+                .block()
+                .getToken()
+        );
+        log.info("Created Qpid JMS connection factory with remote URI {}", remoteUri);
 
         return connectionFactory;
     }
