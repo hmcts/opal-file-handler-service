@@ -30,4 +30,18 @@ public record BaisReportTestConfig(
     String checksum,
     String resourcePath
 ) {
+
+    /**
+     * Returns the domain expected for the source interface-file record.
+     * Banking and bailiff interfaces are routed to Fines using their configured business-unit
+     * bank accounts; the remaining report fixtures use Maintenance.
+     *
+     * @return expected OPAL domain.
+     */
+    public String expectedDomain() {
+        return switch (source) {
+            case "BARCLAYCARD", "NATWEST", "JACOBS", "CDER", "MARSTON" -> "FINES";
+            default -> "MAINTENANCE";
+        };
+    }
 }

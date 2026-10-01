@@ -59,6 +59,7 @@ public class BaisReportFixture {
         }
 
         BlobStorageClient blobStorageClient = new BlobStorageClient(config.blobContainerName());
+        blobStorageClient.createContainerIfNotExists();
         try (InterfaceFileTestDatabaseClient databaseClient = new InterfaceFileTestDatabaseClient()) {
             List<InterfaceFileRecord> records = databaseClient.findByFileName(config.fileName());
             records.stream()

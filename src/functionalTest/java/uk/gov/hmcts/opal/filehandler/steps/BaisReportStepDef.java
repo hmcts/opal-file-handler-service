@@ -35,11 +35,23 @@ public class BaisReportStepDef extends BaseStepDef {
     private final TestSupportApiClient testSupportApiClient = new TestSupportApiClient();
     private TestHttpResponse taskResponse;
     private Map<String, Object> successfulInterfaceFile;
+    private Map<String, Object> duplicateInterfaceFile;
 
     @Given("the configured {string} report is available on bais")
     public void configuredReportIsAvailable(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.fileName(), true);
+    }
+
+    @Given("the configured {string} report has already been processed")
+    public void configuredReportHasAlreadyBeenProcessed(String displayName) {
+        // Initialise the default test user so this composite step can be used independently.
+        BearerTokenStepDef.getToken();
+        configuredReportIsAvailable(displayName);
+        reportIngestionJobIsRequested(displayName);
+        testingSupportRequestIsAccepted();
+        successfulInterfaceFileIsStored(forDisplayName(displayName).source());
+        configuredReportNoLongerExists(displayName);
     }
 
     @When("the {string} report ingestion job is requested through testing support")
@@ -51,7 +63,11 @@ public class BaisReportStepDef extends BaseStepDef {
     @Then("the testing-support request is accepted")
     public void testingSupportRequestIsAccepted() {
         assertNotNull(taskResponse, "The testing-support endpoint was not called");
-        assertEquals(202, taskResponse.statusCode(), "The testing-support endpoint did not accept the job");
+        assertEquals(
+            202,
+            taskResponse.statusCode(),
+            "The testing-support endpoint did not accept the job. Response body: " + taskResponse.body()
+        );
     }
 
     @Then("a successful {string} interface file is stored")
@@ -62,7 +78,7 @@ public class BaisReportStepDef extends BaseStepDef {
         assertEquals(config.source(), successfulInterfaceFile.get("source"));
         assertEquals("OPAL", successfulInterfaceFile.get("target"));
         assertEquals("SOURCE", successfulInterfaceFile.get("type"));
-        assertEquals("MAINTENANCE", successfulInterfaceFile.get("domain"));
+        assertEquals(config.expectedDomain(), successfulInterfaceFile.get("domain"));
         assertEquals(config.fileName(), successfulInterfaceFile.get("file_name"));
         assertEquals(config.checksum(), successfulInterfaceFile.get("checksum"));
         assertNotNull(successfulInterfaceFile.get("filestore_uuid"));
@@ -139,7 +155,43 @@ public class BaisReportStepDef extends BaseStepDef {
         assertSftpFilePresence(config, config.fileName(), false);
     }
 
+    @When("the configured {string} report is placed on bais")
+    public void configuredReportIsPlacedOnBais(String displayName) {
+        BaisReportTestConfig config = forDisplayName(displayName);
+        try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
+            sftpClient.uploadResource(config.resourcePath(), config.fileName());
+        }
+    }
+
+    @Then("a duplicate {string} interface file is recorded")
+    public void duplicateInterfaceFileIsRecorded(String source) {
+        BaisReportTestConfig config = forSource(source);
+        duplicateInterfaceFile = awaitInterfaceFile(config, "SOURCE", "DUPLICATE");
+        assertEquals(config.source(), duplicateInterfaceFile.get("source"));
+        assertEquals(config.fileName(), duplicateInterfaceFile.get("file_name"));
+        assertEquals(config.checksum(), duplicateInterfaceFile.get("checksum"));
+    }
+
+    @Then("the duplicate {string} interface file reuses the original blob")
+    public void duplicateInterfaceFileReusesOriginalBlob(String source) {
+        assertNotNull(successfulInterfaceFile, "Successful interface-file metadata was not retrieved");
+        assertNotNull(duplicateInterfaceFile, "Duplicate interface-file metadata was not retrieved");
+        assertEquals(
+            successfulInterfaceFile.get("filestore_uuid"),
+            duplicateInterfaceFile.get("filestore_uuid"),
+            "The duplicate should reuse the original blob rather than upload another blob"
+        );
+    }
+
     private Map<String, Object> awaitSuccessfulInterfaceFile(BaisReportTestConfig config, String type) {
+        return awaitInterfaceFile(config, type, "SUCCESS");
+    }
+
+    private Map<String, Object> awaitInterfaceFile(
+        BaisReportTestConfig config,
+        String type,
+        String status
+    ) {
         long deadline = System.nanoTime() + INGESTION_TIMEOUT.toNanos();
         List<Map<String, Object>> matchingRecords = List.of();
         do {
@@ -156,16 +208,16 @@ public class BaisReportStepDef extends BaseStepDef {
                 .toList();
             List<Map<String, Object>> successfulRecords = matchingRecords.stream()
                 .filter(record -> type.equals(record.get("type")))
-                .filter(record -> "SUCCESS".equals(record.get("status")))
+                .filter(record -> status.equals(record.get("status")))
                 .toList();
-            if (successfulRecords.size() == 1) {
+            if (!successfulRecords.isEmpty()) {
                 return successfulRecords.getFirst();
             }
             pauseBeforeRetry();
         } while (System.nanoTime() < deadline);
 
         throw new AssertionError(
-            "Expected one successful " + config.displayName() + " interface-file record within "
+            "Expected a " + status + " " + config.displayName() + " interface-file record within "
                 + INGESTION_TIMEOUT.toSeconds() + " seconds; matching records: " + matchingRecords
         );
     }
