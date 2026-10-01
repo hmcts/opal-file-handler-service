@@ -65,7 +65,7 @@ public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFil
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
-        "launchdarkly.default-flag-values.bailiffs-cder-file-transfer-job]=false"
+        "launchdarkly.default-flag-values.bailiffs-cder-file-transfer-job=false"
     })
     public class CderFileTransferJobDisabled {
 
