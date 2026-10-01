@@ -24,7 +24,7 @@ import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
     "opal.automated-task=MarstonFileTransferJob",
     "spring.main.web-application-type=none",
     "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
-    "launchdarkly.default-flag-values.marston-file-transfer-Job=true"
+    "launchdarkly.default-flag-values.bailiffs-marston-file-transfer-job=true"
 })
 class AutomatedTaskMarstonIntegrationTest extends AbstractIntegrationTest {
 
