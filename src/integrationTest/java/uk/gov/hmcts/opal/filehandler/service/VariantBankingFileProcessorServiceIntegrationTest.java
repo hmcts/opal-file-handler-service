@@ -168,6 +168,8 @@ class VariantBankingFileProcessorServiceIntegrationTest
 
     @Test
     @DisplayName("AC2: Uploaded file is accepted for processing")
+    @JiraStory("PO-8744")
+    @JiraEpic("PO-3952")
     void shouldProcessUploadedFile() throws Exception {
 
         byte[] fileBytes = new ClassPathResource("bais-emulator/a121_240101VB001_01.dat")
@@ -203,6 +205,8 @@ class VariantBankingFileProcessorServiceIntegrationTest
 
     @Test
     @DisplayName("AC3: Duplicate detection uses filename only when checksum differs")
+    @JiraStory("PO-8744")
+    @JiraEpic("PO-3952")
     void shouldMarkDuplicateWhenFilenameMatchesAndChecksumDiffers() throws Exception {
 
         InterfaceFileEntity existingFile = InterfaceFileEntity.builder()
@@ -235,12 +239,14 @@ class VariantBankingFileProcessorServiceIntegrationTest
 
     @Test
     @DisplayName("AC4: Existing processors are unaffected by non Variant Banking changes")
+    @JiraStory("PO-8744")
+    @JiraEpic("PO-3952")
     void shouldProcessExistingInterfaceFilesUnchanged() {
 
         businessUnitbanking();
         blobServiceClient.createBlobContainerIfNotExists(dwpConfig.getContainerName());
 
-        String file = "0000015232_dat_0000000612_08011008_111356.txt";
+        String file = "0000015232_dat_0000000612_08011008_111355.txt";
         String checksum = "bdbbd6c4e0daba273d9387f466acb6b9";
         String resource = "bais-emulator/" + file;
         String container = "/home/DWP/" + file;
@@ -271,6 +277,8 @@ class VariantBankingFileProcessorServiceIntegrationTest
 
     @Test
     @DisplayName("AC5: Duplicate detection remains specific to Variant Banking")
+    @JiraStory("PO-8744")
+    @JiraEpic("PO-3952")
     void shouldOnlyApplyFilenameOnlyDuplicateCheckToVariantBanking() {
 
         businessUnitbanking();
@@ -279,7 +287,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
             dwpConfig.getContainerName()
         );
 
-        String file = "0000015232_dat_0000000612_08011008_111356.txt";
+        String file = "0000015232_dat_0000000612_08011008_111355.txt";
         String checksum = "bdbbd6c4e0daba273d9387f466acb6b9";
         String resource = "bais-emulator/" + file;
         String container = "/home/DWP/" + file;
