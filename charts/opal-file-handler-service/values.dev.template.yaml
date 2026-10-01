@@ -100,7 +100,9 @@ blobstorage:
       - bteckoh-report
       - caps-report
       - dwp
+      - allpay
       - natwest
+      - marston
       - jacobs
       - barclaycard
       - cder
@@ -117,7 +119,9 @@ bais-emulator:
       - bteckoh-report
       - caps-report
       - dwp
+      - allpay-report
       - natwest
+      - marston
       - jacobs
       - barclaycard
       - cder

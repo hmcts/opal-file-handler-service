@@ -11,7 +11,7 @@ public final class BaisReportTestData {
         "BTEckoh",
         "BTECKOH_REPORT",
         "BTEckohReport",
-        TestEnvironment.getReportSftpUsername("BTECKOH", "BTEckoh-report"),
+        TestEnvironment.getReportSftpUsername("BTECKOH_REPORT", "BTEckoh-report"),
         "BAIS_SFTP_BTECKOH_REPORT_USERNAME",
         "bteckoh-report",
         "BTECKOH_REPORT_AZURE_STORAGE_CONTAINER",
