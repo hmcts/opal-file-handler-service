@@ -68,7 +68,6 @@ class VariantBankingFileProcessorServiceIntegrationTest
     private BusinessUnitBankAccountEntityTestData businessUnitBankAccountEntityTestData;
 
 
-
     @BeforeEach
     void setUp() {
         repository.deleteAll();
@@ -247,15 +246,14 @@ class VariantBankingFileProcessorServiceIntegrationTest
         blobServiceClient.createBlobContainerIfNotExists(dwpConfig.getContainerName());
 
         String file = "0000015232_dat_0000000612_08011008_111355.txt";
-        String checksum = "bdbbd6c4e0daba273d9387f466acb6b9";
         String resource = "bais-emulator/" + file;
         String container = "/home/DWP/" + file;
 
         uploadResourceToSftp(resource, container);
-        businessUnitBankAccountRepository.findAll()
-            .forEach(System.out::println);
+        businessUnitBankAccountRepository.findAll().forEach(System.out::println);
         dwpBaisFileProcessorService.run(dwpConfig);
 
+        String checksum = "bdbbd6c4e0daba273d9387f466acb6b9";
         InterfaceFileEntity parentEntity =
             assertSuccessfulInterfaceFile(
                 file,
@@ -288,23 +286,18 @@ class VariantBankingFileProcessorServiceIntegrationTest
         );
 
         String file = "0000015232_dat_0000000612_08011008_111355.txt";
-        String checksum = "bdbbd6c4e0daba273d9387f466acb6b9";
         String resource = "bais-emulator/" + file;
         String container = "/home/DWP/" + file;
+
 
         // First processing
         uploadResourceToSftp(resource, container);
         dwpBaisFileProcessorService.run(dwpConfig);
 
-        InterfaceFileEntity firstFile =
-            assertSuccessfulInterfaceFile(
-                file,
-                checksum,
-                Interface.DWP,
-                Type.SOURCE,
-                Domain.MAINTENANCE
-            );
-
+        String checksum = "bdbbd6c4e0daba273d9387f466acb6b9";
+        InterfaceFileEntity firstFile = assertSuccessfulInterfaceFile(file, checksum, Interface.DWP,
+                Type.SOURCE, Domain.MAINTENANCE);
+        assertThat(firstFile).isNotNull();
         // Process duplicate
         uploadResourceToSftp(resource, container);
         dwpBaisFileProcessorService.run(dwpConfig);
@@ -317,7 +310,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
             .toList();
 
         assertThat(dwpSourceFiles).hasSize(2);
-        assertThat(firstFile).isNotNull();
+
         assertThat(dwpSourceFiles)
             .extracting(InterfaceFileEntity::getStatus)
             .containsExactlyInAnyOrder(
@@ -337,6 +330,6 @@ class VariantBankingFileProcessorServiceIntegrationTest
                     .bankAccountNumber("12341234")
                     .dwpCourtCode("DWP1234567")
                     .build()
-            );
+        );
     }
 }
