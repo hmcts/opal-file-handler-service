@@ -34,6 +34,12 @@ def stagingEnvironment = [
 def secrets = [
   'opal-${env}': [
     secret('jiraAuthToken', 'JIRA_AUTH_TOKEN'),
+    secret('bais-private-key', 'FUNCTIONAL_TEST_SFTP_PRIVATE_KEY'),
+    secret('bais-sftp-connection-host', 'FUNCTIONAL_TEST_SFTP_HOST'),
+    secret('bais-sftp-connection-port', 'FUNCTIONAL_TEST_SFTP_PORT'),
+    secret('bais-sftp-dwp-username', 'FUNCTIONAL_TEST_DWP_SFTP_USERNAME'),
+    secret('bais-sftp-caps-report-username', 'FUNCTIONAL_TEST_CAPS_SFTP_USERNAME'),
+    secret('bais-sftp-bteckoh-report-username', 'FUNCTIONAL_TEST_BTECKOH_SFTP_USERNAME'),
     secret('file-handler-service-POSTGRES-HOST', 'OPAL_FILE_HANDLER_DB_HOST'),
     secret('file-handler-service-POSTGRES-PORT', 'OPAL_FILE_HANDLER_DB_PORT'),
     secret('file-handler-service-POSTGRES-DATABASE', 'OPAL_FILE_HANDLER_DB_NAME'),
@@ -72,7 +78,7 @@ def configureFunctionalTestEnvironment = { valuesFile ->
   String containerName = blobValues?.containerName?.toString()?.trim()
 
   if (!containerName) {
-    throw new RuntimeException("Missing functional-test blob container in ${valuesFile}")
+    steps.error("Missing functional-test blob container in ${valuesFile}")
   }
 
   List<String> missingVariables = []
@@ -102,7 +108,7 @@ def configureFunctionalTestEnvironment = { valuesFile ->
   }
 
   if (!missingVariables.isEmpty()) {
-    throw new RuntimeException(
+    steps.error(
       "Missing staging functional-test secrets: ${missingVariables.join(', ')}"
     )
   }
@@ -155,14 +161,14 @@ def ensureReportOutputExists = { reportLabel, targetDirectory, candidateDirector
     }
   }
 
-  throw new RuntimeException(
+  steps.error(
     "${reportLabel} was not generated in any expected report location: ${candidateDirectories.join(', ')}"
   )
 }
 
 def ensureArtifactExists = { artifactLabel, artifactPath ->
   if (!steps.fileExists(artifactPath)) {
-    throw new RuntimeException("${artifactLabel} was not generated at ${artifactPath}")
+    steps.error("${artifactLabel} was not generated at ${artifactPath}")
   }
 }
 
@@ -177,18 +183,14 @@ def copyJunitResultsIfPresent = { targetDirectory, sourceDirectory ->
 }
 
 def publishFunctionalResults = {
+  copyJunitResultsIfPresent('functional-output', 'build/test-results/functional')
+  steps.junit allowEmptyResults: true, testResults: 'functional-output/test-results/**/*.xml'
+
   ensureReportOutputExists(
     'Functional Tests Report',
     'functional-output',
     ['functional-test-report', 'build/reports/tests/functional']
   )
-  ensureArtifactExists(
-    'Functional Zephyr report',
-    'functional-output/zephyr/cucumber-functional.json'
-  )
-  copyJunitResultsIfPresent('functional-output', 'build/test-results/functional')
-
-  steps.junit allowEmptyResults: true, testResults: 'functional-output/test-results/**/*.xml'
   steps.archiveArtifacts allowEmptyArchive: true, artifacts: 'functional-output/**/*'
   publishHTML target: [
     allowMissing         : true,
@@ -198,21 +200,21 @@ def publishFunctionalResults = {
     reportFiles          : 'index.html',
     reportName           : 'Serenity Functional Test Report'
   ]
+  ensureArtifactExists(
+    'Functional Zephyr report',
+    'functional-output/zephyr/cucumber-functional.json'
+  )
 }
 
 def publishIntegrationResults = {
+  copyJunitResultsIfPresent('integration-output', 'build/test-results/integration')
+  steps.junit allowEmptyResults: true, testResults: 'integration-output/test-results/**/*.xml'
+
   ensureReportOutputExists(
     'Integration Tests Report',
     'integration-output',
     ['build/reports/tests/integration']
   )
-  ensureArtifactExists(
-    'Integration Zephyr report',
-    'integration-output/zephyr/Junit5Report-IntegrationTest.json'
-  )
-  copyJunitResultsIfPresent('integration-output', 'build/test-results/integration')
-
-  steps.junit allowEmptyResults: true, testResults: 'integration-output/test-results/**/*.xml'
   steps.archiveArtifacts allowEmptyArchive: true, artifacts: 'integration-output/**/*'
   publishHTML target: [
     allowMissing         : true,
@@ -222,21 +224,21 @@ def publishIntegrationResults = {
     reportFiles          : 'index.html',
     reportName           : 'Integration Tests Report'
   ]
+  ensureArtifactExists(
+    'Integration Zephyr report',
+    'integration-output/zephyr/Junit5Report-IntegrationTest.json'
+  )
 }
 
 def publishSmokeResults = {
+  copyJunitResultsIfPresent('smoke-output', 'build/test-results/smoke')
+  steps.junit allowEmptyResults: true, testResults: 'smoke-output/test-results/**/*.xml'
+
   ensureReportOutputExists(
     'Smoke Tests Report',
     'smoke-output',
     ['smoke-test-report', 'build/reports/tests/smoke']
   )
-  ensureArtifactExists(
-    'Smoke Zephyr report',
-    'smoke-output/zephyr/cucumber-smoke.json'
-  )
-  copyJunitResultsIfPresent('smoke-output', 'build/test-results/smoke')
-
-  steps.junit allowEmptyResults: true, testResults: 'smoke-output/test-results/**/*.xml'
   steps.archiveArtifacts allowEmptyArchive: true, artifacts: 'smoke-output/**/*'
   publishHTML target: [
     allowMissing         : true,
@@ -246,6 +248,10 @@ def publishSmokeResults = {
     reportFiles          : 'index.html',
     reportName           : 'Serenity Smoke Test Report'
   ]
+  ensureArtifactExists(
+    'Smoke Zephyr report',
+    'smoke-output/zephyr/cucumber-smoke.json'
+  )
 }
 
 def runIntegrationZephyrExecution = { stageName ->
