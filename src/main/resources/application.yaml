@@ -206,7 +206,7 @@ opal:
           sftp-username: ${BAIS_SFTP_CDER_USERNAME:}
         marston:
           container-name: ${MARSTON_AZURE_STORAGE_CONTAINER:marston}
-          feature-flag: marston-file-transfer-Job
+          feature-flag: marston-file-transfer-job
           file-name-regex: \d{10}_dat_\d{10}_\d{8}_\d{6}\.txt
           source: MARSTON
           target: OPAL
@@ -253,9 +253,9 @@ launchdarkly:
     bteckoh-file-transfer-job: ${BTECKOH_FILE_TRANSFER_JOB_ENABLED:false}
     natwest-file-transfer-job: ${NATWEST_FILE_TRANSFER_JOB_ENABLED:false}
     barclaycard-file-transfer-job: ${BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED:false}
-    bailiffs:
-      jacobs-file-transfer-job: ${JACOBS_FILE_TRANSFER_JOB_ENABLED:false}
-      cder-file-transfer-job: ${CDER_FILE_TRANSFER_JOB_ENABLED:false}
+    '[bailiffs.jacobs-file-transfer-job]': ${JACOBS_FILE_TRANSFER_JOB_ENABLED:false}
+    '[bailiffs.cder-file-transfer-job]': ${CDER_FILE_TRANSFER_JOB_ENABLED:false}
+    marston-file-transfer-job: ${MARSTON_FILE_TRANSFER_JOB_ENABLED:false}
 
 user:
   service:

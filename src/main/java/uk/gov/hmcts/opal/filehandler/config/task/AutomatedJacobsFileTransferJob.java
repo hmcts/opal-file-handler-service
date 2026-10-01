@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.config.JacobsBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.service.JacobsBaisFileProcessorService;
 
-@Component("automatedJacobsFileTransfer")
+@Component("automatedJacobsFileTransferJob")
 @ConditionalOnExpression(
     "'${opal.automated-task}'.equals('JacobsFileTransferJob') or ${opal.testing-support-endpoints.enabled}"
 )
