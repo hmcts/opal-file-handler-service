@@ -14,7 +14,7 @@ WHERE interface_file_id IN (
 
 INSERT INTO public.interface_files
     (interface_file_id, source, target, type, opal_domain, file_name, filestore_uuid, checksum,
-     status, created_datetime, errors, business_unit_code, createdBy)
+     status, created_datetime, errors, business_unit_code, created_by)
 VALUES
     (9000000000000001, 'BTECKOH_REPORT', 'BTECKOH_REPORT', 'SOURCE', 'FILE_HANDLER',
      'bteckoh-test-file.xlsx',
