@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
@@ -56,6 +57,18 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
 
     @Autowired
     private InterfaceFilesService interfaceFilesService;
+
+    @Autowired
+    protected TestSystemUserAuthenticationService testSystemUserAuthenticationService;
+
+    @BeforeEach
+    protected void setupAuth() {
+        if (userStateStub == null) {
+            userStateStub = createUserStateStub();
+        }
+        testSystemUserAuthenticationService = new TestSystemUserAuthenticationService();
+        testSystemUserAuthenticationService.testSetupAsSystemUser(userStateStub);
+    }
 
     @DynamicPropertySource
     static void dynamicProperties(DynamicPropertyRegistry registry) throws IOException {
@@ -133,8 +146,10 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
                         InterfaceFileEntity::getTarget,
                         InterfaceFileEntity::getType,
                         InterfaceFileEntity::getOpalDomain,
-                        InterfaceFileEntity::getStatus)
-                    .containsExactly(fileName, checksum, source, Interface.OPAL, type, domain, Status.SUCCESS);
+                        InterfaceFileEntity::getStatus,
+                        InterfaceFileEntity::getCreatedBy)
+                    .containsExactly(fileName, checksum, source, Interface.OPAL, type, domain, Status.SUCCESS,
+                        userStateStub.getUserState().getUserId());
                 assertThat(entity.getErrors()).isNull();
             });
 
@@ -163,9 +178,10 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
                         InterfaceFileEntity::getType,
                         InterfaceFileEntity::getOpalDomain,
                         InterfaceFileEntity::getStatus,
+                        InterfaceFileEntity::getCreatedBy,
                         related -> related.getRelatedInterfaceFile().getInterfaceFileId())
                     .containsExactly(fileName, source, Interface.OPAL, Type.SOURCE_JSON, domain, Status.SUCCESS,
-                        relatedInterfaceFileId);
+                        userStateStub.getUserState().getUserId(), relatedInterfaceFileId);
                 assertThat(entity.getChecksum()).isNotBlank();
                 assertThat(entity.getFilestoreUuid()).isNotNull();
                 assertThat(entity.getErrors()).isNull();
@@ -231,6 +247,7 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
             .createdDatetime(LocalDateTime.now(clock))
             .status(Status.FAILED)
             .errors("{\"message\": \"something went wrong\"}")
+            .createdBy(-1L)
             .build();
 
         return repository.save(entity);

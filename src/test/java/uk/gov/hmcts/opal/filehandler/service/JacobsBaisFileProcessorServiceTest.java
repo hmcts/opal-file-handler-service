@@ -86,7 +86,7 @@ public class JacobsBaisFileProcessorServiceTest {
 
         when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of());
 
-        service.processFile(config, sourceFile, inputStream);
+        service.processFile(config, sourceFile, inputStream, -1L);
 
         assertThat(sourceFile.getStatus()).isEqualTo(Status.SUCCESS_NO_TRANSACTIONS);
         verify(extractionService).extractStandardData(sourceFile, inputStream);
@@ -103,6 +103,7 @@ public class JacobsBaisFileProcessorServiceTest {
             .fileName(FILE_NAME + fileEnding)
             .status(Status.INGESTED)
             .createdDatetime(LocalDateTime.now())
+            .createdBy(-1L)
             .build();
     }
 }

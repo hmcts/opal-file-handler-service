@@ -32,6 +32,7 @@ public class InterfaceFileEntityTestData {
             .fileName(fileName)
             .status(Status.INGESTED)
             .createdDatetime(LocalDateTime.now(clock).truncatedTo(ChronoUnit.MICROS))
+            .createdBy(-1L)
             .build());
     }
 

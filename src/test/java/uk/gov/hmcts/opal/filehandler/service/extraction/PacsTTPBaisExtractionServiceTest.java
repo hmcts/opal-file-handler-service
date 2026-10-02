@@ -306,6 +306,7 @@ class PacsTTPBaisExtractionServiceTest {
             .fileName(FILE_NAME)
             .status(Status.INGESTED)
             .createdDatetime(LocalDateTime.now())
+            .createdBy(-1L)
             .build();
     }
 }

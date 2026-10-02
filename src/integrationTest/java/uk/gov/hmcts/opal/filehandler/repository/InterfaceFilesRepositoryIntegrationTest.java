@@ -240,6 +240,7 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
             .checksum("checksum-" + fileName)
             .status(Status.SUCCESS)
             .createdDatetime(LocalDateTime.now())
+            .createdBy(-1L)
             .build();
     }
 
@@ -260,6 +261,7 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
             .createdDatetime(LocalDateTime.now())
             .businessUnitCode(new String[] {"BC12"})
             .relatedInterfaceFile(sourceFile)
+            .createdBy(-1L)
             .build();
     }
 

@@ -97,4 +97,8 @@ public class InterfaceFileEntity {
     @JoinColumn(name = "related_interface_file_id")
     private InterfaceFileEntity relatedInterfaceFile;
 
+    @Column(nullable = false)
+    @NonNull
+    private Long createdBy;
+
 }
