@@ -2,12 +2,15 @@ package uk.gov.hmcts.opal.filehandler.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.opal.common.dto.ToJsonString.toJsonString;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +45,7 @@ import uk.hmcts.zephyr.automation.junit5.annotations.JiraEpic;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
 @Slf4j
-@DisplayName("Add Interface File")
+@DisplayName("Interface Files Controller Integration Tests - Add Interface File")
 @ActiveProfiles(profiles = {"integration"})
 @Import(IntegrationSecurityConfiguration.class)
 public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
@@ -247,7 +250,8 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             InterfaceFileEntity originalEntity = buildEntity(
                 "some-file-name", "d553f8f289bd08e5c513de5c000c0374", Status.SUCCESS, null, null);
             insertInterfaceFileEntity(originalEntity);
-            String originalVersion = utilBlobStoreService.getBlobVersion(
+            utilBlobStoreService.storeBlob(fileContents, "bteckoh-report", uuid.toString());
+            final String originalVersion = utilBlobStoreService.getBlobVersion(
                 "bteckoh-report", originalEntity.getFilestoreUuid().toString());
 
             InterfaceFileObjectInterfaceFile expectedResponse = buildExpectedResponse(
@@ -270,10 +274,115 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
 
             assertResponse(expectedResponse, response);
             assertDuplicateExistsInDatabase("some-file-name", "d553f8f289bd08e5c513de5c000c0374");
+            assertEquals(uuid, response.getFilestoreUuid());
+            assertAddedToBlobStorage("bteckoh-report", uuid.toString());
             assertEquals(
                 originalVersion,
                 utilBlobStoreService.getBlobVersion("bteckoh-report", originalEntity.getFilestoreUuid().toString())
             );
+        }
+
+        @Test
+        @JiraStory("PO-6453")
+        @JiraEpic("PO-3947")
+        @DisplayName("AC4 - Repeating an INGESTED file creates a new record and blob")
+        void ingestedFileIsNotDuplicate() {
+            InterfaceFileEntity original = buildEntity("some-file-name",
+                "d553f8f289bd08e5c513de5c000c0374", Status.INGESTED, null, null);
+            insertInterfaceFileEntity(original);
+            utilBlobStoreService.storeBlob(fileContents, "bteckoh-report", uuid.toString());
+
+            InterfaceFileObjectInterfaceFile response = uploadContent(fileContents,
+                buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
+
+            assertEquals(StatusEnumInterfaceFile.INGESTED, response.getStatus());
+            assertNotEquals(original.getInterfaceFileId(), response.getInterfaceFileId());
+            assertNotEquals(uuid, response.getFilestoreUuid());
+            assertEquals(2, repository.count());
+            assertEquals(Status.INGESTED, repository.findById(original.getInterfaceFileId()).orElseThrow().getStatus());
+            assertAddedToBlobStorage("bteckoh-report", response.getFilestoreUuid().toString());
+            assertAddedToBlobStorage("bteckoh-report", uuid.toString());
+        }
+
+        @Test
+        @JiraStory("PO-6453")
+        @JiraEpic("PO-3947")
+        @DisplayName("AC2 - Invalid BTEckoh JSON is recorded as FAILED without a blob reference")
+        void invalidContentIsRecordedAsFailed() {
+            InterfaceFileObjectInterfaceFile response = uploadContent(
+                "{}".getBytes(StandardCharsets.UTF_8),
+                buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
+
+            assertEquals(StatusEnumInterfaceFile.FAILED, response.getStatus());
+            assertNull(response.getFilestoreUuid());
+            assertTrue(response.getErrors() != null && !response.getErrors().isBlank());
+            assertEquals(1, repository.count());
+            InterfaceFileEntity stored = repository.findById(response.getInterfaceFileId()).orElseThrow();
+            assertEquals(Status.FAILED, stored.getStatus());
+            assertNull(stored.getFilestoreUuid());
+        }
+
+        @Test
+        @JiraStory("PO-6453")
+        @JiraEpic("PO-3947")
+        @DisplayName("AC2 - Different metadata and multipart filenames are accepted")
+        void differentMetadataFilenameIsAccepted() {
+            AddInterfaceFileRequestMetadata metadata = buildMetaData(
+                InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null);
+            metadata.setFileName("different-metadata-name.xlsx");
+            InterfaceFileObjectInterfaceFile response = uploadContent(fileContents, metadata);
+
+            assertEquals(StatusEnumInterfaceFile.INGESTED, response.getStatus());
+            assertEquals("some-file-name", response.getFileName());
+            assertEquals(response.getFileName(), repository.findById(response.getInterfaceFileId())
+                .orElseThrow().getFileName());
+            assertAddedToBlobStorage("bteckoh-report", response.getFilestoreUuid().toString());
+        }
+
+        @Test
+        @JiraStory("PO-6453")
+        @JiraEpic("PO-3947")
+        @DisplayName("AC2 - Reject a multipart upload without the required file")
+        void rejectsMissingFilePart() {
+            String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
+            setupFileUploadApiTest(HttpMethod.POST, URI)
+                .includeMultipartBody("metadata", "metadata.json", "application/json",
+                    metadata.getBytes(StandardCharsets.UTF_8))
+                .includeContentDigest()
+                .clearPermissions()
+                .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
+                .execute()
+                .assertStatus(HttpStatus.BAD_REQUEST);
+            assertDatabaseUnchanged();
+        }
+
+        @Test
+        @JiraStory("PO-6453")
+        @JiraEpic("PO-3947")
+        @DisplayName("AC2 - Reject a multipart upload without the required metadata")
+        void rejectsMissingMetadataPart() {
+            setupFileUploadApiTest(HttpMethod.POST, URI)
+                .includeMultipartBody("file", "some-file-name", "application/octet-stream", fileContents)
+                .includeContentDigest()
+                .clearPermissions()
+                .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
+                .execute()
+                .assertStatus(HttpStatus.BAD_REQUEST);
+            assertDatabaseUnchanged();
+        }
+
+        private InterfaceFileObjectInterfaceFile uploadContent(
+            byte[] content, AddInterfaceFileRequestMetadata metadata) {
+            return setupFileUploadApiTest(HttpMethod.POST, URI)
+                .includeMultipartBody("file", "some-file-name", "application/octet-stream", content)
+                .includeMultipartBody("metadata", "metadata.json", "application/json",
+                    toJsonString(metadata).getBytes(StandardCharsets.UTF_8))
+                .includeContentDigest()
+                .clearPermissions()
+                .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
+                .execute()
+                .assertSuccess(HttpStatus.CREATED)
+                .getResponseBodyAsObject(InterfaceFileObjectInterfaceFile.class);
         }
 
     }
