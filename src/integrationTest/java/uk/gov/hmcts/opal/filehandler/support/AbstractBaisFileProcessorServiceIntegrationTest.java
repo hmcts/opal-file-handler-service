@@ -251,4 +251,44 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
         return repository.save(entity);
     }
 
+    public final InterfaceFileEntity assertSuccessfulInterfaceFileByFileName(
+        String fileName,
+        Interface source,
+        Type type,
+        Domain domain
+    ) {
+
+        List<InterfaceFileEntity> entities = repository.findAll().stream()
+            .filter(entity -> fileName.equals(entity.getFileName()))
+            .filter(entity -> entity.getStatus() == Status.SUCCESS)
+            .toList();
+
+        assertThat(entities)
+            .singleElement()
+            .satisfies(entity -> {
+                assertThat(entity)
+                    .extracting(
+                        InterfaceFileEntity::getFileName,
+                        InterfaceFileEntity::getSource,
+                        InterfaceFileEntity::getTarget,
+                        InterfaceFileEntity::getType,
+                        InterfaceFileEntity::getOpalDomain,
+                        InterfaceFileEntity::getStatus
+                    )
+                    .containsExactly(
+                        fileName,
+                        source,
+                        Interface.OPAL,
+                        type,
+                        domain,
+                        Status.SUCCESS
+                    );
+
+                assertThat(entity.getChecksum()).isNotBlank();
+                assertThat(entity.getFilestoreUuid()).isNotNull();
+                assertThat(entity.getErrors()).isNull();
+            });
+
+        return entities.getFirst();
+    }
 }
