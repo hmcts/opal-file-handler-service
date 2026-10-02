@@ -133,3 +133,43 @@ will then be timer-triggered.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
+
+### PO-6453 upload regression tests
+
+Run the upload scenarios through the existing functional runner:
+
+```bash
+./gradlew functional '-Dcucumber.filter.tags=@JIRA-STORY:PO-6453'
+./gradlew integration --tests '*AddInterfaceFileTest*'
+```
+
+`TEST_URL` must point to the file-handler application with the banking-interface feature enabled.
+The existing `OPAL_USER_SERVICE_API_URL` token service must issue tokens trusted by that application.
+The scenarios reuse `opal-test@dev.platform.hmcts.net` and the existing no-permission user
+`opal-test-2@dev.platform.hmcts.net`. They require direct access to the application's database through
+`FUNCTIONAL_TEST_DB_URL`, `FUNCTIONAL_TEST_DB_USERNAME` and `FUNCTIONAL_TEST_DB_PASSWORD` (or the existing
+application database fallbacks), plus the existing `FUNCTIONAL_TEST_BLOB_*` settings targeting its
+BTEckoh container. The container must already exist. Local defaults use PostgreSQL and Azurite.
+A pipeline that only seeds data inside a database pod must also provide this direct database access;
+these tests do not bypass persistence assertions when `FUNCTIONAL_TEST_DB_MANAGED_BY_PIPELINE` is set.
+
+Each scenario generates a unique `po-6453-<UUID>.xlsx` filename and cleans up only its own database
+records and blobs. The duplicate scenario explicitly changes its first upload to `SUCCESS` as a
+fixture precondition; it does not claim to test downstream processing to that state.
+
+The assertions use `201 Created`, matching the OpenAPI contract and supplied developer clarification.
+The ticket's quoted E2E.01/E2E.03 text says `200` and should be reconciled. Only a prior `SUCCESS`
+record qualifies as a duplicate; an `INGESTED` repeat creates another file. Invalid BTEckoh JSON is
+expected to produce `201 FAILED`, not a successful JSON ingestion.
+
+AC1 (disabled feature) and AC3 (blob upload failure/503 with database rollback) remain covered by the
+existing isolated integration fixtures. Deployed E2E.02 needs a dedicated failure environment or an
+approved fault-injection mechanism; the functional suite does not delete a shared blob container or
+stop shared services. No deployed E2E.02 scenario is registered until that prerequisite is available.
+The Create Interface File permission in the API description also differs from the implementation's
+View Interface Files permission. The tests do not change application authorisation or claim to resolve
+that mismatch. The linked TDIA Test and QA section was unavailable when this coverage was added.
+
+Required-part integration regressions currently expose a product defect: omitting either `file` or
+`metadata` raises `MissingServletRequestPartException`, which the shared servlet-exception handler
+maps to 500 instead of the expected 400. Both assertions remain enabled; production code is unchanged.
