@@ -479,6 +479,27 @@ withPipeline(type, product, component) {
             executeFunctionalTestDatabaseScript(
                     releaseName, product, 'src/functionalTest/resources/db/dwp/setup.sql'
             )
+            executeFunctionalTestDatabaseScript(
+                    releaseName, product, 'src/functionalTest/resources/db/bteckoh-transfer/setup.sql'
+            )
+            executeFunctionalTestDatabaseScript(
+                    releaseName, product, 'src/functionalTest/resources/db/natwest/setup.sql'
+            )
+            executeFunctionalTestDatabaseScript(
+                    releaseName, product, 'src/functionalTest/resources/db/barclaycard/setup.sql'
+            )
+            executeFunctionalTestDatabaseScript(
+                    releaseName, product, 'src/functionalTest/resources/db/allpay/setup.sql'
+            )
+            executeFunctionalTestDatabaseScript(
+                    releaseName, product, 'src/functionalTest/resources/db/jacobs/setup.sql'
+            )
+            executeFunctionalTestDatabaseScript(
+                    releaseName, product, 'src/functionalTest/resources/db/cder/setup.sql'
+            )
+            executeFunctionalTestDatabaseScript(
+                    releaseName, product, 'src/functionalTest/resources/db/marston/setup.sql'
+            )
             env.FUNCTIONAL_TEST_DB_MANAGED_BY_PIPELINE = 'true'
         }
     }
@@ -496,6 +517,34 @@ withPipeline(type, product, component) {
                     executeFunctionalTestDatabaseScript(
                             "opal-${component}-pr-${env.CHANGE_ID}", product,
                             'src/functionalTest/resources/db/dwp/cleanup.sql'
+                    )
+                    executeFunctionalTestDatabaseScript(
+                            "opal-${component}-pr-${env.CHANGE_ID}", product,
+                            'src/functionalTest/resources/db/bteckoh-transfer/cleanup.sql'
+                    )
+                    executeFunctionalTestDatabaseScript(
+                            "opal-${component}-pr-${env.CHANGE_ID}", product,
+                            'src/functionalTest/resources/db/natwest/cleanup.sql'
+                    )
+                    executeFunctionalTestDatabaseScript(
+                            "opal-${component}-pr-${env.CHANGE_ID}", product,
+                            'src/functionalTest/resources/db/barclaycard/cleanup.sql'
+                    )
+                    executeFunctionalTestDatabaseScript(
+                            "opal-${component}-pr-${env.CHANGE_ID}", product,
+                            'src/functionalTest/resources/db/allpay/cleanup.sql'
+                    )
+                    executeFunctionalTestDatabaseScript(
+                            "opal-${component}-pr-${env.CHANGE_ID}", product,
+                            'src/functionalTest/resources/db/jacobs/cleanup.sql'
+                    )
+                    executeFunctionalTestDatabaseScript(
+                            "opal-${component}-pr-${env.CHANGE_ID}", product,
+                            'src/functionalTest/resources/db/cder/cleanup.sql'
+                    )
+                    executeFunctionalTestDatabaseScript(
+                            "opal-${component}-pr-${env.CHANGE_ID}", product,
+                            'src/functionalTest/resources/db/marston/cleanup.sql'
                     )
                     executeFunctionalTestDatabaseScript(
                             "opal-${component}-pr-${env.CHANGE_ID}",
