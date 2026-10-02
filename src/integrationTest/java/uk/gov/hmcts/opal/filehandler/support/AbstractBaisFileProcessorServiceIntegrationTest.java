@@ -31,7 +31,6 @@ import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.CapsReportBaisFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.service.InterfaceFilesService;
-import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 
 @SpringBootTest(properties = {
@@ -196,28 +195,41 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
         assertThat(properties.getBlobSize()).isEqualTo(content.length);
     }
 
-    public final void assertReportCanBeListedAndDownloaded(String fileName, String checksum, String resourcePath)
-        throws IOException {
+    public final void assertReportCanBeListedAndDownloaded(String fileName, String checksum, String resourcePath,
+        String containerName) throws IOException {
         InterfaceFileEntity entity = repository.findByFileNameAndChecksumAndStatus(fileName, checksum, Status.SUCCESS)
             .orElseThrow();
+
         assertThat(entity.getBusinessUnitCode()).isNullOrEmpty();
         assertThat(entity.getPaymentType()).isNull();
         assertThat(entity.getErrors()).isNull();
-        var listed = interfaceFilesService.searchInterfaceFiles(SearchInterfaceFilesDto.builder()
-            .source(entity.getSource()).status(Status.SUCCESS).build());
+
+        var listed = repository.findAll().stream()
+            .filter(file -> entity.getSource().equals(file.getSource()))
+            .filter(file -> Status.SUCCESS.equals(file.getStatus()))
+            .toList();
+
         assertThat(listed).filteredOn(file -> file.getInterfaceFileId().equals(entity.getInterfaceFileId()))
             .singleElement().satisfies(file -> {
                 assertThat(file.getFileName()).isEqualTo(fileName);
                 assertThat(file.getFilestoreUuid()).isEqualTo(entity.getFilestoreUuid());
                 assertThat(file.getChecksum()).isEqualTo(checksum);
-                assertThat(file.getSource().getValue()).isEqualTo(entity.getSource().name());
+                assertThat(file.getSource()).isEqualTo(entity.getSource());
                 assertThat(file.getCreatedDatetime()).isEqualTo(entity.getCreatedDatetime());
                 assertThat(file.getErrors()).isNull();
             });
-        try (InputStream expected = new ClassPathResource(resourcePath).getInputStream();
-             InputStream actual = interfaceFilesService.getInterfaceFilesContent(entity.getInterfaceFileId())) {
+
+        try (
+            InputStream expected = new ClassPathResource(resourcePath).getInputStream();
+            InputStream actual = blobServiceClient
+                .getBlobContainerClient(containerName)
+                .getBlobClient(entity.getFilestoreUuid().toString())
+                .downloadContent()
+                .toStream()
+        ) {
             assertThat(actual.readAllBytes()).isEqualTo(expected.readAllBytes());
         }
+
     }
 
     public final InterfaceFileEntity createFailedInterfaceFile(String fileName, String checksum, Interface source) {

@@ -136,7 +136,8 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
             Domain.MAINTENANCE);
         assertBlobChecksum(CAPS_FILE, CAPS_FILE_CHECKSUM, capsReportBaisFileProcessorConfiguration.getContainerName());
         assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
-        assertReportCanBeListedAndDownloaded(CAPS_FILE, CAPS_FILE_CHECKSUM, CAPS_FILE_RESOURCE);
+        assertReportCanBeListedAndDownloaded(CAPS_FILE, CAPS_FILE_CHECKSUM, CAPS_FILE_RESOURCE,
+            capsReportBaisFileProcessorConfiguration.getContainerName());
     }
 
     @Test
@@ -276,7 +277,8 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
         assertThat(storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName()))
             .containsOnlyKeys(success.getFilestoreUuid().toString());
         assertBlobChecksum(CAPS_FILE, CAPS_FILE_CHECKSUM, capsReportBaisFileProcessorConfiguration.getContainerName());
-        assertReportCanBeListedAndDownloaded(CAPS_FILE, CAPS_FILE_CHECKSUM, CAPS_FILE_RESOURCE);
+        assertReportCanBeListedAndDownloaded(CAPS_FILE, CAPS_FILE_CHECKSUM, CAPS_FILE_RESOURCE,
+            capsReportBaisFileProcessorConfiguration.getContainerName());
         assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
     }
 

@@ -135,7 +135,8 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
             Domain.MAINTENANCE);
         assertBlobChecksum(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, config.getContainerName());
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
-        assertReportCanBeListedAndDownloaded(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, BTECKOH_FILE_RESOURCE);
+        assertReportCanBeListedAndDownloaded(
+            BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, BTECKOH_FILE_RESOURCE, config.getContainerName());
     }
 
     @Test
@@ -275,7 +276,8 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
         assertThat(storedBlobs(config.getContainerName()))
             .containsOnlyKeys(success.getFilestoreUuid().toString());
         assertBlobChecksum(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, config.getContainerName());
-        assertReportCanBeListedAndDownloaded(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, BTECKOH_FILE_RESOURCE);
+        assertReportCanBeListedAndDownloaded(
+            BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, BTECKOH_FILE_RESOURCE, config.getContainerName());
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
     }
 
