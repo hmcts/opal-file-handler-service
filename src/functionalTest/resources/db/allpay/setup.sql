@@ -12,3 +12,4 @@ WHERE NOT EXISTS (
     SELECT 1 FROM public.business_unit_bank_account
     WHERE bank_sort_code = '010101'
       AND bank_account_number = '12341234'
+);
