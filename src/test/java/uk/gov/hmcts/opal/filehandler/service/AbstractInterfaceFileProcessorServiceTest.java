@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.TransactionStatus;
@@ -41,6 +43,8 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
+import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
+import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -94,6 +98,9 @@ class AbstractInterfaceFileProcessorServiceTest {
     private final Logger logger = (Logger) LoggerFactory.getLogger(AbstractInterfaceFileProcessorService.class);
     private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 
+    MockedStatic<SecurityUtil> mockedSecurityUtil;
+    OpalJwtAuthenticationToken mockedToken = mock(OpalJwtAuthenticationToken.class);
+
     @BeforeEach
     void setUp() {
         objectMapper = JsonMapper.builder().build();
@@ -117,12 +124,15 @@ class AbstractInterfaceFileProcessorServiceTest {
         lenient().when(config.getTarget()).thenReturn(Interface.OPAL);
         lenient().when(config.getContainerName()).thenReturn(CONTAINER);
         lenient().when(config.getFileNameRegex()).thenReturn(Pattern.compile("matching-.*\\.dat"));
+
+        mockedSecurityUtil = mockStatic(SecurityUtil.class);
     }
 
     @AfterEach
     void tearDown() {
         logger.detachAppender(logAppender);
         logAppender.stop();
+        mockedSecurityUtil.close();
     }
 
     @Nested
@@ -182,6 +192,9 @@ class AbstractInterfaceFileProcessorServiceTest {
         void shouldProcessFilesReturnedBySelectFilesToProcess() {
             String selectedFile = "selected-by-override.txt";
             service.stubFilesToProcess(selectedFile);
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(-1L);
 
             service.run(config);
 
@@ -201,7 +214,12 @@ class AbstractInterfaceFileProcessorServiceTest {
                 .status(Status.SUCCESS)
                 .createdDatetime(LocalDateTime.now(CLOCK))
                 .opalDomain(Domain.MAINTENANCE)
+                .createdBy(-1L)
                 .build();
+
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(-1L);
 
             when(repository.findByFileNameAndChecksumAndStatus(
                 MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.of(duplicate));
@@ -225,6 +243,10 @@ class AbstractInterfaceFileProcessorServiceTest {
         void shouldRecordUploadFailureAndSupersedePreviousFailures() {
             InterfaceFileEntity firstFailure = failedEntity(10L);
             InterfaceFileEntity secondFailure = failedEntity(11L);
+
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(-1L);
 
             when(repository.findAllByFileNameAndChecksumAndStatus(
                 MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(firstFailure, secondFailure));
@@ -253,6 +275,10 @@ class AbstractInterfaceFileProcessorServiceTest {
                 MATCHING_FILE, CHECKSUM, Status.FAILED)).thenAnswer(invocation ->
                     service.lastSavedEntity == null ? List.of(previousFailure) : List.of(service.lastSavedEntity));
 
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(-1L);
+
             service.run(config);
 
             assertThat(savedStatuses).containsExactly(Status.FAILED);
@@ -272,6 +298,10 @@ class AbstractInterfaceFileProcessorServiceTest {
                 MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(previousFailure));
             service.processingFailure = new IllegalStateException("invalid \"record\"");
 
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(-1L);
+
             service.run(config);
 
             assertThat(savedStatuses).containsExactly(Status.INGESTED, Status.FAILED);
@@ -289,6 +319,10 @@ class AbstractInterfaceFileProcessorServiceTest {
             when(repository.findAllByFileNameAndChecksumAndStatus(
                 MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(firstFailure, secondFailure));
 
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(-1L);
+
             service.run(config);
 
             assertThat(service.lastProcessConfig).isSameAs(config);
@@ -301,6 +335,10 @@ class AbstractInterfaceFileProcessorServiceTest {
             String firstFile = "matching-first.dat";
             String secondFile = "matching-second.dat";
             service.stubFilesToProcess(firstFile, secondFile);
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(-1L);
+
             doThrow(new BaisSftpFileDownloadException("first download failed"))
                 .when(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(firstFile), any());
 
@@ -314,6 +352,10 @@ class AbstractInterfaceFileProcessorServiceTest {
         void uploadedFileHasChecksumFailureResultsInFailedEntity() {
             when(repository.findByFileNameAndChecksumAndStatus(
                 MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.empty());
+
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(-1L);
 
             doThrow(new BlobChecksumValidationException(
                 FILE_UUID, CHECKSUM, "00000000000000000000000000000000"))
@@ -377,6 +419,7 @@ class AbstractInterfaceFileProcessorServiceTest {
             .status(Status.FAILED)
             .createdDatetime(LocalDateTime.now(CLOCK))
             .opalDomain(Domain.MAINTENANCE)
+            .createdBy(-1L)
             .build();
     }
 
@@ -432,7 +475,8 @@ class AbstractInterfaceFileProcessorServiceTest {
         protected void processFile(
             BaisFileProcessorConfiguration config,
             InterfaceFileEntity fileEntity,
-            InputStream inputStream
+            InputStream inputStream,
+            long creatorId
         ) {
             processCount++;
             lastProcessConfig = config;

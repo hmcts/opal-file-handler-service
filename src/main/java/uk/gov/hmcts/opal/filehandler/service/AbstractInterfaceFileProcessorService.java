@@ -2,11 +2,10 @@ package uk.gov.hmcts.opal.filehandler.service;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.time.LocalDateTime;
-import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -16,7 +15,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.DigestUtils;
+import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
+import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -45,7 +46,8 @@ public abstract class AbstractInterfaceFileProcessorService {
     protected abstract void processFile(
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity fileEntity,
-        InputStream inputStream
+        InputStream inputStream,
+        long creatorId
     );
 
     protected void validateFile(InputStream inputStream) {
@@ -55,12 +57,12 @@ public abstract class AbstractInterfaceFileProcessorService {
     public void run(BaisFileProcessorConfiguration config) {
         featureFlagUtil.requireEnabledFeature(FeatureFlags.RELEASE_1C_BANKING_INTERFACES);
         featureFlagUtil.requireEnabledFeature(config.getFeatureFlag());
-
+        
         List<String> baisFiles = selectFilesToProcess(config);
 
         for (String fileName : baisFiles) {
             try {
-                ingestFile(config, fileName);
+                ingestFile(config, fileName, getCurrentUserId());
             } catch (IOException | RuntimeException e) {
                 log.error("Failed to ingest file '{}'", fileName, e);
             }
@@ -94,7 +96,7 @@ public abstract class AbstractInterfaceFileProcessorService {
         return matchingFiles;
     }
 
-    private void ingestFile(BaisFileProcessorConfiguration config, String fileName) throws IOException {
+    private void ingestFile(BaisFileProcessorConfiguration config, String fileName, Long creatorId) throws IOException {
         final byte[] downloadedBytes;
 
         try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
@@ -109,28 +111,28 @@ public abstract class AbstractInterfaceFileProcessorService {
 
             try {
                 if (duplicate.isPresent()) {
-                    entity = createDuplicateInterfaceFile(config, fileName, fileChecksum, duplicate.get());
+                    entity = createDuplicateInterfaceFile(config, fileName, fileChecksum, duplicate.get(), creatorId);
                 } else {
                     validateFile(new ByteArrayInputStream(downloadedBytes));
                     UUID fileStoreUuid = UUID.randomUUID();
                     interfaceFileBlobStoreService.uploadBaisFile(
                         fileStoreUuid, config.getContainerName(),
                         new ByteArrayInputStream(downloadedBytes), fileChecksum);
-                    entity = createNewInterfaceFile(config, fileName, fileChecksum, fileStoreUuid);
+                    entity = createNewInterfaceFile(config, fileName, fileChecksum, fileStoreUuid, creatorId);
                 }
             } catch (InvalidReportFileException e) {
-                entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
+                entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage(), creatorId);
             } catch (BlobChecksumValidationException e) {
-                entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
+                entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage(), creatorId);
             } catch (BlobUploadException e) {
                 entity = createFailureInterfaceFile(config, fileName, fileChecksum,
-                    "Blob upload failed for file '%s': %s".formatted(fileName, e.getMessage()));
+                    "Blob upload failed for file '%s': %s".formatted(fileName, e.getMessage()), creatorId);
             }
 
             entity = saveInitialFile(entity);
 
             if (entity.getStatus().equals(Status.INGESTED)) {
-                processIngestedFile(config, entity, new ByteArrayInputStream(downloadedBytes));
+                processIngestedFile(config, entity, new ByteArrayInputStream(downloadedBytes), creatorId);
             }
 
             completeIngestion(config, fileName, entity);
@@ -141,7 +143,8 @@ public abstract class AbstractInterfaceFileProcessorService {
         BaisFileProcessorConfiguration config,
         String fileName,
         String fileChecksum,
-        InterfaceFileEntity duplicate
+        InterfaceFileEntity duplicate,
+        Long creatorId
     ) {
         log.error("File with name '{}' and checksum '{}' for source '{}' is a duplicate of {}",
             fileName, fileChecksum, config.getSource(), duplicate.getInterfaceFileId());
@@ -158,6 +161,7 @@ public abstract class AbstractInterfaceFileProcessorService {
             .opalDomain(Domain.MAINTENANCE)
             .errors(errorJson("File with name '%s' and checksum '%s' for source '%s' already processed skipping"
                 .formatted(fileName, fileChecksum, config.getSource())))
+            .createdBy(creatorId)
             .build();
     }
 
@@ -165,7 +169,8 @@ public abstract class AbstractInterfaceFileProcessorService {
         BaisFileProcessorConfiguration config,
         String fileName,
         String fileChecksum,
-        UUID fileStoreUuid
+        UUID fileStoreUuid,
+        Long creatorId
     ) {
         return InterfaceFileEntity.builder()
             .type(Type.SOURCE)
@@ -177,6 +182,7 @@ public abstract class AbstractInterfaceFileProcessorService {
             .filestoreUuid(fileStoreUuid)
             .createdDatetime(LocalDateTime.now(clock))
             .opalDomain(Domain.MAINTENANCE)
+            .createdBy(creatorId)
             .build();
     }
 
@@ -184,7 +190,8 @@ public abstract class AbstractInterfaceFileProcessorService {
         BaisFileProcessorConfiguration config,
         String fileName,
         String fileChecksum,
-        String failureMessage
+        String failureMessage,
+        Long creatorId
     ) {
         return InterfaceFileEntity.builder()
             .type(Type.SOURCE)
@@ -196,6 +203,7 @@ public abstract class AbstractInterfaceFileProcessorService {
             .createdDatetime(LocalDateTime.now(clock))
             .opalDomain(Domain.MAINTENANCE)
             .errors(errorJson(failureMessage))
+            .createdBy(creatorId)
             .build();
     }
 
@@ -209,10 +217,13 @@ public abstract class AbstractInterfaceFileProcessorService {
     private void processIngestedFile(
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity entity,
-        InputStream inputStream
+        InputStream inputStream,
+        long creatorId
     ) {
         try {
-            transactionTemplate.executeWithoutResult(transactionStatus -> processFile(config, entity, inputStream));
+            transactionTemplate.executeWithoutResult(transactionStatus -> {
+                processFile(config, entity, inputStream, creatorId);
+            });
         } catch (RuntimeException e) {
             transactionTemplate.executeWithoutResult(transactionStatus -> {
                 entity.setStatus(Status.FAILED);
@@ -259,5 +270,9 @@ public abstract class AbstractInterfaceFileProcessorService {
     @SuppressWarnings("java:S4790") // Used for checksum, not in a sensitive context
     protected static String calculateChecksum(InputStream stream) throws IOException {
         return DigestUtils.md5DigestAsHex(stream);
+    }
+
+    protected long getCurrentUserId() {
+        return SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser().getUserId();
     }
 }
