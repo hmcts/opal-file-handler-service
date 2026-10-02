@@ -83,8 +83,7 @@ public class InterfaceFilesService {
 
     @Transactional(readOnly = true)
     public List<InterfaceFileObjectInterfaceFile> searchInterfaceFiles(SearchInterfaceFilesDto request) {
-        // Permissions to be dealt with by: https://tools.hmcts.net/jira/browse/PO-8686
-        // PermissionUtil.checkPermissions(FileHandlerPermission.VIEW_INTERFACE_FILES);
+        PermissionUtil.checkPermission(FileHandlerPermission.VIEW_INTERFACE_FILES);
 
         Specification<InterfaceFileEntity> specs = specsFactory.createSearchSpecs(request);
         Sort sort = Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime));
@@ -94,10 +93,8 @@ public class InterfaceFilesService {
 
 
     public InputStream getInterfaceFilesContent(Long id) {
-        // TODO: permission check is removed from this api, to be re-added in PO-8686
-        // PermissionUtil.checkPermission(FileHandlerPermission.ViewInterfacesFile);
-
         InterfaceFileEntity entity = getInterfaceFileEntity(id);
+        checkAccessPermission(entity);
 
         if (entity.getStatus() != Status.SUCCESS) {
             throw new InvalidInterfaceFileStatusException(
