@@ -35,7 +35,7 @@ public class BTEckohReportBaisFileProcessorService extends AbstractInterfaceFile
 
     @Override
     protected void processFile(BaisFileProcessorConfiguration config, InterfaceFileEntity fileEntity,
-        InputStream inputStream) {
+        InputStream inputStream, long creatorId) {
 
     }
 }

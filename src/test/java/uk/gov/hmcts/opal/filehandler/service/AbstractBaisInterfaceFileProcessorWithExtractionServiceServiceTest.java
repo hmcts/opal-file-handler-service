@@ -13,6 +13,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.LongStream;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -50,6 +52,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
+import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
+import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -105,9 +109,13 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
     @Mock
     private InterfaceFilePreprocessQueueService maintenanceQueueService;
 
+    MockedStatic<SecurityUtil> mockedSecurityUtil;
+    OpalJwtAuthenticationToken mockedToken = mock(OpalJwtAuthenticationToken.class);
+
     private ObjectMapper objectMapper;
     private TestProcessor service;
     private InterfaceFileEntity sourceFile;
+    private static final long CREATOR_ID = -1L;
 
     @BeforeEach
     void setUp() {
@@ -129,6 +137,13 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
         lenient().when(config.getTarget()).thenReturn(Interface.OPAL);
         lenient().when(config.getContainerName()).thenReturn(CONTAINER);
         lenient().when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockedSecurityUtil = mockStatic(SecurityUtil.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        mockedSecurityUtil.close();
     }
 
     @Nested
@@ -136,11 +151,14 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
 
         @Test
         void shouldSetSourceStatusToSuccessNoTransactionsWhenNoExtractsReturned() {
-            TestProcessor processor = spy(service);
             InputStream inputStream = new ByteArrayInputStream("source".getBytes(StandardCharsets.UTF_8));
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of());
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(CREATOR_ID);
 
-            processor.processFile(config, sourceFile, inputStream);
+            TestProcessor processor = spy(service);
+            processor.processFile(config, sourceFile, inputStream, CREATOR_ID);
 
             assertThat(sourceFile.getStatus()).isEqualTo(Status.SUCCESS_NO_TRANSACTIONS);
             verify(repository).save(sourceFile);
@@ -148,7 +166,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             verify(extractionService, never()).getBusinessUnitBankAccount(any());
             verify(processor, never()).validateSupportedDomain(any(), any());
             verify(processor, never()).updateSourceBusinessUnitAndDomain(any(), any(), any());
-            verify(processor, never()).createAndUploadSourceJson(any(), any(), any());
+            verify(processor, never()).createAndUploadSourceJson(any(), any(), any(), anyLong());
             verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
             verify(finesQueueService, never()).send(any());
             verify(maintenanceQueueService, never()).send(any());
@@ -164,13 +182,17 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
             when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
-            doReturn(sourceJson).when(processor).createAndUploadSourceJson(config, sourceFile, extract);
+            doReturn(sourceJson).when(processor).createAndUploadSourceJson(config, sourceFile, extract, CREATOR_ID);
 
-            processor.processFile(config, sourceFile, inputStream);
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(CREATOR_ID);
+
+            processor.processFile(config, sourceFile, inputStream, CREATOR_ID);
 
             assertThat(sourceFile.getBusinessUnitCode()).containsExactly("BC12");
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
-            verify(processor).createAndUploadSourceJson(config, sourceFile, extract);
+            verify(processor).createAndUploadSourceJson(config, sourceFile, extract, CREATOR_ID);
             verify(finesQueueService).send(200L);
             verify(maintenanceQueueService, never()).send(any());
             verify(repository).save(sourceFile);
@@ -186,11 +208,11 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
             when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
 
-            processor.processFile(config, sourceFile, inputStream);
+            processor.processFile(config, sourceFile, inputStream, CREATOR_ID);
 
             assertThat(sourceFile.getBusinessUnitCode()).containsExactly("065");
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
-            verify(processor, never()).createAndUploadSourceJson(any(), any(), any());
+            verify(processor, never()).createAndUploadSourceJson(any(), any(), any(), anyLong());
             verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
             verify(finesQueueService, never()).send(any());
             verify(maintenanceQueueService, never()).send(any());
@@ -214,15 +236,20 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(first, second));
             when(extractionService.getBusinessUnitBankAccount(first)).thenReturn(firstBusinessUnit);
             when(extractionService.getBusinessUnitBankAccount(second)).thenReturn(secondBusinessUnit);
-            doReturn(firstSourceJson).when(processor).createAndUploadSourceJson(config, sourceFile, first);
-            doReturn(secondSourceJson).when(processor).createAndUploadSourceJson(config, sourceFile, second);
+            doReturn(firstSourceJson).when(processor).createAndUploadSourceJson(config, sourceFile, first, CREATOR_ID);
+            doReturn(secondSourceJson).when(processor)
+                .createAndUploadSourceJson(config, sourceFile, second, CREATOR_ID);
 
-            processor.processFile(config, sourceFile, inputStream);
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(CREATOR_ID);
+
+            processor.processFile(config, sourceFile, inputStream, CREATOR_ID);
 
             assertThat(sourceFile.getBusinessUnitCode()).containsExactly("BC12", "MN01");
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.MAINTENANCE);
-            verify(processor).createAndUploadSourceJson(config, sourceFile, first);
-            verify(processor).createAndUploadSourceJson(config, sourceFile, second);
+            verify(processor).createAndUploadSourceJson(config, sourceFile, first, CREATOR_ID);
+            verify(processor).createAndUploadSourceJson(config, sourceFile, second, CREATOR_ID);
             verify(finesQueueService).send(200L);
             verify(maintenanceQueueService).send(201L);
             verify(repository).save(sourceFile);
@@ -238,10 +265,14 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
             when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
 
-            assertThatThrownBy(() -> processor.processFile(config, sourceFile, inputStream))
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(CREATOR_ID);
+
+            assertThatThrownBy(() -> processor.processFile(config, sourceFile, inputStream, CREATOR_ID))
                 .isInstanceOf(UnexpectedDomainException.class);
 
-            verify(processor, never()).createAndUploadSourceJson(any(), any(), any());
+            verify(processor, never()).createAndUploadSourceJson(any(), any(), any(), anyLong());
             verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
             verify(finesQueueService, never()).send(any());
             verify(maintenanceQueueService, never()).send(any());
@@ -414,7 +445,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             InterfaceFileCommonDataExtract extract = extract();
 
             InterfaceFileEntity sourceJson = service.createSourceJson(
-                config, sourceFile, extract, new String[] {"BC12"}, Domain.FINES, "checksum");
+                config, sourceFile, extract, new String[] {"BC12"}, Domain.FINES, "checksum", CREATOR_ID);
 
             assertThat(sourceJson.getSource()).isEqualTo(Interface.NATWEST);
             assertThat(sourceJson.getTarget()).isEqualTo(Interface.OPAL);
@@ -557,6 +588,10 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             when(blobStoreService.fetchInterfaceFile(anyLong(), any(UUID.class), anyString()))
                 .thenReturn(BinaryData.fromBytes("hello world".getBytes()));
 
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(CREATOR_ID);
+
             service.selectFilesToProcess(config);
 
             verify(blobStoreService, times(1)).fetchInterfaceFile(
@@ -596,6 +631,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             .status(Status.INGESTED)
             .filestoreUuid(FILE_UUID)
             .createdDatetime(LocalDateTime.now(CLOCK))
+            .createdBy(-1L)
             .build();
     }
 
@@ -615,6 +651,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             .status(status)
             .createdDatetime(LocalDateTime.now(CLOCK))
             .relatedInterfaceFile(sourceFile)
+            .createdBy(-1L)
             .build();
     }
 

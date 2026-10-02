@@ -61,7 +61,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
                 sourceFile.getFilestoreUuid(),
                 config.getContainerName()).toStream();
 
-            processFile(config, sourceFile, sourceStream);
+            processFile(config, sourceFile, sourceStream, getCurrentUserId());
         }
 
         return super.selectFilesToProcess(config);
@@ -71,7 +71,8 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
     protected void processFile(
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
-        InputStream inputStream
+        InputStream inputStream,
+        long creatorId
     ) {
         List<T> extracts = extractionService.extractStandardData(sourceInterfaceFile, inputStream);
 
@@ -83,7 +84,8 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
 
         for (T extract : extracts) {
             if (preProcessExtract(config, sourceInterfaceFile, extract)) {
-                InterfaceFileEntity sourceJson = createAndUploadSourceJson(config, sourceInterfaceFile, extract);
+                InterfaceFileEntity sourceJson = createAndUploadSourceJson(
+                    config, sourceInterfaceFile, extract, creatorId);
                 if (sourceJson != null) {
                     postProcessExtract(config, sourceJson, extract);
                 }
@@ -95,7 +97,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
 
 
     InterfaceFileEntity createAndUploadSourceJson(BaisFileProcessorConfiguration config,
-        InterfaceFileEntity sourceInterfaceFile, T extract) {
+        InterfaceFileEntity sourceInterfaceFile, T extract, long creatorId) {
         byte[] jsonBytes = objectMapper.writeValueAsBytes(extract);
         String checksum = calculateExtractChecksum(jsonBytes);
 
@@ -109,7 +111,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
             config, sourceInterfaceFile, extract,
             getBusinessUnitsFromExtract(config, extract),
             getDomainFromExtract(config, extract),
-            checksum);
+            checksum, creatorId);
 
         uploadSourceJson(config, sourceJson, jsonBytes);
         return interfaceFilesRepository.save(sourceJson);
@@ -178,7 +180,8 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
         T extract,
         String[] businessUnitCodes,
         Domain domain,
-        String checksum
+        String checksum,
+        long creatorId
     ) {
         return InterfaceFileEntity.builder()
             .source(config.getSource())
@@ -192,6 +195,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
             .relatedInterfaceFile(sourceInterfaceFile)
             .businessUnitCode(businessUnitCodes)
             .paymentType(extract.getPaymentType())
+            .createdBy(creatorId)
             .build();
     }
 

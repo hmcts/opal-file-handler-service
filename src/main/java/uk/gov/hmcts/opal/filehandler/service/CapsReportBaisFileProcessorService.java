@@ -40,7 +40,8 @@ public class CapsReportBaisFileProcessorService extends AbstractInterfaceFilePro
     public void processFile(
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity fileEntity,
-        InputStream inputStream) {
+        InputStream inputStream,
+        long creatorId) {
         // Not Required
     }
 
