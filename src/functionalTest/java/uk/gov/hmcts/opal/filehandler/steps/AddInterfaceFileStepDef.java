@@ -154,7 +154,8 @@ public class AddInterfaceFileStepDef extends BaseStepDef {
     @Then("the rejected upload has validation errors and no blob reference")
     public void invalidUploadHasNoBlob() {
         String errors = lastResponse().jsonPath().getString("errors");
-        assertTrue(errors != null && !errors.isBlank(), "Expected BTEckoh validation errors");
+        assertTrue(errors != null && errors.contains("BTEckoh report was not a valid XLSX workbook"),
+            "Expected the BTEckoh XLSX validation error");
         assertNull(lastResponse().jsonPath().getString("filestore_uuid"));
     }
 

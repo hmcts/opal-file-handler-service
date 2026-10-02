@@ -315,7 +315,8 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
 
             assertEquals(StatusEnumInterfaceFile.FAILED, response.getStatus());
             assertNull(response.getFilestoreUuid());
-            assertTrue(response.getErrors() != null && !response.getErrors().isBlank());
+            assertTrue(response.getErrors() != null
+                && response.getErrors().contains("BTEckoh report was not a valid XLSX workbook"));
             assertEquals(1, repository.count());
             InterfaceFileEntity stored = repository.findById(response.getInterfaceFileId()).orElseThrow();
             assertEquals(Status.FAILED, stored.getStatus());
