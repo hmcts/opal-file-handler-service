@@ -27,9 +27,11 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.opal.filehandler.mapper.SearchInterfaceFilesDtoMapper;
 import uk.gov.hmcts.opal.filehandler.service.InterfaceFilesService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
+import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
 import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
 import uk.gov.hmcts.opal.generated.model.GetInterfaceFiles200Response;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileEnumInterfaceFile;
@@ -144,5 +146,39 @@ public class InterfaceFilesControllerTest {
             () -> assertEquals("payload",
                 new String(response.getBody().getInputStream().readAllBytes(), StandardCharsets.UTF_8))
         );
+    }
+
+    @Test
+    void addInterfaceFile_returns201WithResponseBody() {
+        MultipartFile file = mock(MultipartFile.class);
+        AddInterfaceFileRequestMetadata metadata = mock(AddInterfaceFileRequestMetadata.class);
+        InterfaceFileObjectInterfaceFile expected = mock(InterfaceFileObjectInterfaceFile.class);
+        when(service.addInterfaceFile(file, metadata)).thenReturn(expected);
+
+        ResponseEntity<InterfaceFileObjectInterfaceFile> response = controller.addInterfaceFile(file, metadata);
+
+        verify(service).addInterfaceFile(file, metadata);
+        verifyNoMoreInteractions(service);
+        assertAll(
+            () -> assertEquals(HttpStatus.CREATED, response.getStatusCode()),
+            () -> assertSame(expected, response.getBody())
+        );
+    }
+
+    @Test
+    void addInterfaceFile_propagatesServiceException() {
+        MultipartFile file = mock(MultipartFile.class);
+        AddInterfaceFileRequestMetadata metadata = mock(AddInterfaceFileRequestMetadata.class);
+        RuntimeException expected = new RuntimeException("upload failed");
+        when(service.addInterfaceFile(file, metadata)).thenThrow(expected);
+
+        RuntimeException exception = assertThrows(
+            RuntimeException.class,
+            () -> controller.addInterfaceFile(file, metadata)
+        );
+
+        assertSame(expected, exception);
+        verify(service).addInterfaceFile(file, metadata);
+        verifyNoMoreInteractions(service);
     }
 }
