@@ -42,6 +42,7 @@ import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileTypeEnumInterfaceFile;
 import uk.gov.hmcts.opal.generated.model.PaymentTypeEnumTypes;
 import uk.gov.hmcts.opal.generated.model.StatusEnumInterfaceFile;
+import uk.hmcts.zephyr.automation.junit5.annotations.JiraDefect;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraEpic;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
@@ -345,6 +346,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("AC2 - Reject a multipart upload without the required file")
+        @JiraDefect("PO-10908")
         @Disabled("PO-10908: missing multipart parts return 500; re-enable when fixed to return 400")
         void rejectsMissingFilePart() {
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
@@ -363,6 +365,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("AC2 - Reject a multipart upload without the required metadata")
+        @JiraDefect("PO-10908")
         @Disabled("PO-10908: missing multipart parts return 500; re-enable when fixed to return 400")
         void rejectsMissingMetadataPart() {
             setupFileUploadApiTest(HttpMethod.POST, URI)
