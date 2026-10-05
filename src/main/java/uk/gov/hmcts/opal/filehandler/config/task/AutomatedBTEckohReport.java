@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.service.BTEckohReportBaisFileProcessorService;
 
-@Component
+@Component("automatedBTEckohReport")
 @ConditionalOnExpression(
     "'${opal.automated-task}'.equals('BTEckohReport') or ${opal.testing-support-endpoints.enabled}"
 )
