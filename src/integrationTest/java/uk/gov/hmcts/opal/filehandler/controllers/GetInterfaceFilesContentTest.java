@@ -175,8 +175,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
             ParticipantIdentifier individual = logDetails.getIndividuals().getFirst();
             assertEquals("1", individual.getIdentifier());
-            // TODO: Update to FILE_HANDLER_INTERFACE_FILE when the logging-service database enum supports it.
-            assertEquals(PdplIdentifierType.OPAL_USER_ID, individual.getType());
+            assertEquals(PdplIdentifierType.FILE_HANDLER_INTERFACE_FILE, individual.getType());
 
             assertBlobStorageUnchanged();
         }

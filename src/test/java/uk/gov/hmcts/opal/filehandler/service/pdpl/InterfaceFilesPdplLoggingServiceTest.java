@@ -67,7 +67,6 @@ class InterfaceFilesPdplLoggingServiceTest {
 
         ParticipantIdentifier individual = logDetails.getIndividuals().getFirst();
         assertEquals(Long.toString(INTERFACE_FILE_ID), individual.getIdentifier());
-        // TODO: Update to FILE_HANDLER_INTERFACE_FILE when the logging-service database enum supports it.
-        assertEquals(PdplIdentifierType.OPAL_USER_ID, individual.getType());
+        assertEquals(PdplIdentifierType.FILE_HANDLER_INTERFACE_FILE, individual.getType());
     }
 }

@@ -33,9 +33,8 @@ public class InterfaceFilesPdplLoggingService {
             .type(PdplIdentifierType.OPAL_USER_ID)
             .build();
 
-        // TODO: need to update PdplIdentifierType -> requires db migration
         List<ParticipantIdentifier> individuals = List.of(
-            new ParticipantIdentifier(interfaceFileId.toString(), PdplIdentifierType.OPAL_USER_ID)
+            new ParticipantIdentifier(interfaceFileId.toString(), PdplIdentifierType.FILE_HANDLER_INTERFACE_FILE)
         );
 
         PersonalDataProcessingLogDetails logDetails = PersonalDataProcessingLogDetails.builder()

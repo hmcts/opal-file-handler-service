@@ -3,7 +3,8 @@ package uk.gov.hmcts.opal.filehandler.entity;
 import uk.gov.hmcts.opal.logging.integration.dto.IdentifierType;
 
 public enum PdplIdentifierType implements IdentifierType {
-    OPAL_USER_ID;
+    OPAL_USER_ID,
+    FILE_HANDLER_INTERFACE_FILE;
 
     @Override
     public String getType() {
