@@ -111,9 +111,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         @JiraEpic("PO-3495")
         void get_respondsWith200AndFileContents(boolean isSystemUser) throws Exception {
             authorizeWithPermission(); // Auto enforcement permission
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
@@ -142,9 +140,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         @JiraEpic("PO-3495")
         void get_respondsWith200AndFileContents_CapsContainer(boolean isSystemUser) throws Exception {
             authorizeWithPermission(); // Auto enforcement permission
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
@@ -173,9 +169,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         @JiraEpic("PO-3495")
         void get_respondsWith404WhenNotInDB(boolean isSystemUser) throws Exception {
             authorizeWithPermission();
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
@@ -201,9 +195,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         @JiraEpic("PO-3495")
         void get_respondsWith422WithInvalidStatus(boolean isSystemUser) throws Exception {
             authorizeWithPermission();
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
@@ -230,9 +222,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         @JiraEpic("PO-3495")
         void get_respondsWith500WhenBlobNotFound(boolean isSystemUser) throws Exception {
             authorizeWithPermission();
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
@@ -293,9 +283,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         @JiraEpic("PO-3495")
         void getAllEnforcementAccountTypes_FeatureOff_404(boolean isSystemUser) throws Exception {
             authorizeWithPermission(); // Auto enforcement permission
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
