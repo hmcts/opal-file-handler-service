@@ -3,10 +3,12 @@ package uk.gov.hmcts.opal.filehandler.service;
 import com.azure.core.util.BinaryData;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.domain.Sort;
@@ -17,11 +19,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
+import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
+import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity_;
 import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
@@ -82,11 +86,21 @@ public class InterfaceFilesService {
 
     @Transactional(readOnly = true)
     public List<InterfaceFileObjectInterfaceFile> searchInterfaceFiles(SearchInterfaceFilesDto request) {
-        PermissionUtil.checkPermission(FileHandlerPermission.VIEW_INTERFACE_FILES);
+        PermissionUtil.checkPermissionDomainAgnostic(FileHandlerPermission.VIEW_INTERFACE_FILES);
 
         Specification<InterfaceFileEntity> specs = specsFactory.createSearchSpecs(request);
+        Set<Domain> allowedDomains = permittedDomains();
+        Set<uk.gov.hmcts.opal.filehandler.entity.Domain> allowedFileDomains =
+            Arrays.stream(uk.gov.hmcts.opal.filehandler.entity.Domain.values())
+                .filter(domain -> allowedDomains.contains(domain.toCommonDomain()))
+                .collect(Collectors.toSet());
+
+        specs = specs.and((root, query, builder) ->
+            root.get(InterfaceFileEntity_.opalDomain).in(allowedFileDomains));
+
         Sort sort = Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime));
         List<InterfaceFileEntity> interfacesFiles = repository.findAll(specs, sort);
+
         return mapper.toInterfaceFileObjects(interfacesFiles);
     }
 
@@ -128,6 +142,19 @@ public class InterfaceFilesService {
     public InterfaceFileEntity getInterfaceFileEntity(Long id) {
         return repository.findById(id)
             .orElseThrow(() -> new InterfaceFileNotFoundException(id));
+    }
+
+    private Set<Domain> permittedDomains() {
+        return SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser()
+            .getUserState()
+            .getDomains()
+            .entrySet()
+            .stream()
+            .filter(entry -> entry.getValue() != null)
+            .filter(entry ->
+                entry.getValue().anyBusinessUnitUserHasAnyPermission(FileHandlerPermission.VIEW_INTERFACE_FILES))
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toSet());
     }
 
     private InterfaceFileProcessorService getProcessorService(Interface sourceType) {

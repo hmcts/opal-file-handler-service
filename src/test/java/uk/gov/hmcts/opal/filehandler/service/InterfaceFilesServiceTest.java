@@ -9,6 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -28,6 +29,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.domain.Specification;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
+import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
+import uk.gov.hmcts.opal.common.user.authorisation.model.DomainBusinessUnitUsers;
+import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
@@ -76,21 +80,31 @@ public class InterfaceFilesServiceTest {
 
     @Test
     public void getInterfaceFiles_shouldOrchestrateCallsCorrectly() {
-        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class)) {
-            // Removed pending https://tools.hmcts.net/jira/browse/PO-8686
-            //when(authToken.hasPermission(FileHandlerPermission.VIEW_INTERFACE_FILES)).thenReturn(true);
+        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
+             MockedStatic<PermissionUtil> permissionUtil = mockStatic(PermissionUtil.class)) {
             securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
+            UserStateV2 userState = mock(UserStateV2.class);
+            DomainBusinessUnitUsers domainUsers = mock(DomainBusinessUnitUsers.class);
+            when(authToken.getUserState()).thenReturn(userState);
+            when(userState.getDomains()).thenReturn(Map.of(
+                uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FINES, domainUsers));
+            when(domainUsers.anyBusinessUnitUserHasAnyPermission(FileHandlerPermission.VIEW_INTERFACE_FILES))
+                .thenReturn(true);
             List<InterfaceFileEntity> interfaceFiles = List.of(
                 mock(InterfaceFileEntity.class)
             );
             SearchInterfaceFilesDto searchDto = new SearchInterfaceFilesDto();
             when(specsFactory.createSearchSpecs(searchDto)).thenReturn(specification);
+            when(specification.and(org.mockito.ArgumentMatchers.<Specification<InterfaceFileEntity>>any()))
+                .thenReturn(specification);
             when(repository.findAll(
                 specification, Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime)))
             ).thenReturn(interfaceFiles);
 
             service.searchInterfaceFiles(searchDto);
 
+            permissionUtil.verify(() ->
+                PermissionUtil.checkPermissionDomainAgnostic(FileHandlerPermission.VIEW_INTERFACE_FILES));
             verify(mapper).toInterfaceFileObjects(interfaceFiles);
         }
     }
@@ -137,6 +151,25 @@ public class InterfaceFilesServiceTest {
             ));
             verify(spyService).getInterfaceFileEntity(id);
             verify(mapper).toInterfaceFileObject(entity);
+        }
+    }
+
+    @Test
+    void getInterfaceFile_shouldCheckPermissionInFileHandlingDomain() {
+        try (MockedStatic<PermissionUtil> permissionUtil = mockStatic(PermissionUtil.class)) {
+            Long id = 105L;
+            InterfaceFileEntity entity = mock(InterfaceFileEntity.class);
+            InterfaceFilesService spyService = spy(service);
+
+            doReturn(entity).when(spyService).getInterfaceFileEntity(id);
+            when(entity.getOpalDomain()).thenReturn(Domain.FILE_HANDLER);
+
+            spyService.getInterfaceFile(id);
+
+            permissionUtil.verify(() -> PermissionUtil.checkPermissionInDomain(
+                FileHandlerPermission.VIEW_INTERFACE_FILES,
+                uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FILE_HANDLING
+            ));
         }
     }
 
@@ -297,12 +330,15 @@ public class InterfaceFilesServiceTest {
             .fileName("metadata-file-name.dat");
     }
 
-    /* Removed pending https://tools.hmcts.net/jira/browse/PO-8686
     @Test
     public void getInterfaceFiles_unauthorisedUser_shouldThrowPermissionsException() {
         try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class)) {
-            when(authToken.hasPermission(FileHandlerPermission.VIEW_INTERFACE_FILES)).thenReturn(false);
             securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
+            when(authToken.getUserState()).thenReturn(UserStateV2.builder()
+                .userId(1L)
+                .username("test")
+                .domains(Map.of())
+                .build());
 
             assertThrows(PermissionNotAllowedException.class, () ->
                 service.searchInterfaceFiles(new SearchInterfaceFilesDto())
@@ -312,6 +348,5 @@ public class InterfaceFilesServiceTest {
             verifyNoInteractions(mapper);
         }
     }
-    */
 
 }

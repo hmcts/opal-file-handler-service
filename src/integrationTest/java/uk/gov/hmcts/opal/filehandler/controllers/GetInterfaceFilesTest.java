@@ -30,6 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
+import uk.gov.hmcts.opal.common.user.authorisation.model.Domain;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
@@ -70,9 +71,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @ValueSource(booleans = { false, true })
         void returnsAllInterfaceFiles_200(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             ResultActions result = mockMvc.perform(
                 get(URL)
@@ -116,9 +115,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @ValueSource(booleans = { false, true })
         void returnsAssociatedBusinessUnitsForEachInterfaceFile_200(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             ResultActions result = mockMvc.perform(
                 get(URL)
@@ -151,9 +148,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @ValueSource(booleans = { false, true })
         void filtersInterfaceFilesCorrectlyBySourceAndStatus_200(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             ResultActions result = mockMvc.perform(
                 get(URL)
@@ -183,9 +178,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @ValueSource(booleans = { false, true })
         void filtersInterfaceFilesCorrectlyByTargetAndType_200(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             ResultActions result = mockMvc.perform(
                 get(URL)
@@ -222,9 +215,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @ValueSource(booleans = { false, true })
         void filtersInterfaceFilesCorrectlyByDomain_200(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             ResultActions result = mockMvc.perform(
                 get(URL)
@@ -243,6 +234,35 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             assertThat(response.getInterfaceFiles()).allMatch(i -> i.getDomain() == DomainEnumTypes.FINES);
         }
 
+        @DisplayName("Only returns files in permitted domains")
+        @JiraEpic("PO-3947")
+        @JiraStory("PO-8686")
+        @ParameterizedTest
+        @ValueSource(booleans = { false, true })
+        void returnsOnlyPermittedDomainFiles(boolean isSystemUser) throws Exception {
+            setupAuthorisedUser();
+
+            // The stub shares its business-unit list across domains; leave the permission only in FINES.
+            userStateStub.getUserState().getDomains().get(Domain.FILE_HANDLING).setBusinessUnitUsers(List.of());
+            userStateStub.isSystemUser(isSystemUser);
+
+            ResultActions result = mockMvc.perform(
+                get(URL)
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken()));
+
+            String body = result.andReturn().getResponse().getContentAsString();
+            result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+            GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {});
+
+            assertThat(response.getInterfaceFiles())
+                .extracting(InterfaceFileObjectInterfaceFile::getInterfaceFileId)
+                .containsExactlyInAnyOrder(10L, 12L, 14L);
+            assertThat(response.getInterfaceFiles()).allMatch(file -> file.getDomain() == DomainEnumTypes.FINES);
+        }
+
         @DisplayName("PO-3947 - Filters interface files correctly by to and from dates")
         @JiraStory("PO-3947")
         @JiraEpic("PO-3495")
@@ -253,9 +273,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             LocalDateTime toDate = LocalDateTime.of(2026, Month.JANUARY, 4, 12, 30);
 
             setupAuthorisedUser();
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             ResultActions result = mockMvc.perform(
                 get(URL)
@@ -287,9 +305,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @ValueSource(booleans = { false, true })
         void filtersInterfaceFilesCorrectlyByNotStatus_200(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             List<StatusEnumInterfaceFile> notStatuses =
                 List.of(StatusEnumInterfaceFile.SUCCESS, StatusEnumInterfaceFile.FAILED);
@@ -326,9 +342,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @ValueSource(booleans = { false, true })
         void filtersInterfaceFilesCorrectlyByNotTarget_200(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             ResultActions result = mockMvc.perform(
                 get(URL)
@@ -358,9 +372,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             String businessUnitCode = "BC01";
 
             setupAuthorisedUser();
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             ResultActions result = mockMvc.perform(
                 get(URL)
@@ -387,10 +399,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @ValueSource(booleans = { false, true })
         void forbiddenWithoutInterfaceFilesPermission_403(boolean isSystemUser) throws Exception {
             userStateStub.setupWithNoPermissions();
-
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             ResultActions result = mockMvc.perform(
                 get(URL)
@@ -428,9 +437,5 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
     private void setupAuthorisedUser() {
         userStateStub.setupWithNoPermissions();
         userStateStub.addPermissions((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES);
-    }
-
-    private void makeUserSystemUser() {
-        userStateStub.isSystemUser(true);
     }
 }
