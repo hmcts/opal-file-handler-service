@@ -1,4 +1,4 @@
-@Opal @JIRA-LABEL:file-handler-service @JIRA-STORY:PO-6453 @JIRA-EPIC:PO-3947 @AddInterfaceFileFixture
+@Opal @JIRA-LABEL:file-handler-service @JIRA-STORY:PO-6453 @JIRA-EPIC:PO-3497 @AddInterfaceFileFixture
 Feature: Add Interface File
 
   # AC2/AC4: 201 matches the OpenAPI contract and developer clarification; the ticket E2E text says 200.
