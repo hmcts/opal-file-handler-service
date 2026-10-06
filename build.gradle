@@ -2,7 +2,7 @@ import org.flywaydb.gradle.task.FlywayMigrateTask
 
 buildscript {
   dependencies {
-    classpath("org.flywaydb:flyway-database-postgresql:13.7.0")
+    classpath("org.flywaydb:flyway-database-postgresql:13.9.0")
   }
 }
 plugins {
@@ -18,7 +18,7 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'org.flywaydb.flyway' version '13.7.0'
+  id 'org.flywaydb.flyway' version '13.9.0'
   id 'net.serenity-bdd.serenity-gradle-plugin' version '5.3.9'
 }
 
@@ -38,7 +38,7 @@ ext {
   serenityVersion = "5.3.11"
   cucumberVersion = "7.34.9"
   log4JVersion = "2.26.1"
-  logbackVersion = "1.6.3"
+  logbackVersion = "1.6.5"
 }
 
 def logPublishedHtmlReport = { String label, String reportDirectory ->
@@ -365,7 +365,7 @@ dependencies {
   implementation 'uk.gov.hmcts:opal-common-lib:0.3.34'
   implementation 'uk.gov.hmcts:spring-exception-handler:1.0.3'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
-  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.1'
+  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.2'
 
   //Spring Boot
   implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
@@ -398,8 +398,8 @@ dependencies {
   implementation "ch.qos.logback:logback-classic:${logbackVersion}"
   implementation "ch.qos.logback:logback-core:${logbackVersion}"
 
-  implementation 'org.flywaydb:flyway-core:13.7.0'
-  runtimeOnly 'org.flywaydb:flyway-database-postgresql:13.7.0', {
+  implementation 'org.flywaydb:flyway-core:13.9.0'
+  runtimeOnly 'org.flywaydb:flyway-database-postgresql:13.9.0', {
     exclude group: 'org.flywaydb', module: 'flyway-core'
   }
 
@@ -415,7 +415,7 @@ dependencies {
   implementation 'com.azure:azure-storage-blob:12.35.1'
 
   //Annotation
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.10.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.12.Final'
 
   compileOnly 'org.projectlombok:lombok:1.18.48'
   annotationProcessor 'org.projectlombok:lombok:1.18.48'
