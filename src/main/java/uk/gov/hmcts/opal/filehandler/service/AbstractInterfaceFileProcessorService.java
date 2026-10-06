@@ -102,8 +102,7 @@ public abstract class AbstractInterfaceFileProcessorService {
             downloadedBytes = downloadStream.toByteArray();
 
             String fileChecksum = calculateChecksum(new ByteArrayInputStream(downloadedBytes));
-            Optional<InterfaceFileEntity> duplicate = interfaceFilesRepository.findByFileNameAndChecksumAndStatus(
-                fileName, fileChecksum, Status.SUCCESS);
+            Optional<InterfaceFileEntity> duplicate = findDuplicateFile(fileName, fileChecksum);
 
             InterfaceFileEntity entity;
 
@@ -137,7 +136,7 @@ public abstract class AbstractInterfaceFileProcessorService {
         }
     }
 
-    private InterfaceFileEntity createDuplicateInterfaceFile(
+    protected InterfaceFileEntity createDuplicateInterfaceFile(
         BaisFileProcessorConfiguration config,
         String fileName,
         String fileChecksum,
@@ -161,7 +160,7 @@ public abstract class AbstractInterfaceFileProcessorService {
             .build();
     }
 
-    private InterfaceFileEntity createNewInterfaceFile(
+    protected InterfaceFileEntity createNewInterfaceFile(
         BaisFileProcessorConfiguration config,
         String fileName,
         String fileChecksum,
@@ -180,7 +179,7 @@ public abstract class AbstractInterfaceFileProcessorService {
             .build();
     }
 
-    private InterfaceFileEntity createFailureInterfaceFile(
+    protected InterfaceFileEntity createFailureInterfaceFile(
         BaisFileProcessorConfiguration config,
         String fileName,
         String fileChecksum,
@@ -199,14 +198,14 @@ public abstract class AbstractInterfaceFileProcessorService {
             .build();
     }
 
-    private InterfaceFileEntity saveInitialFile(InterfaceFileEntity entity) {
+    protected InterfaceFileEntity saveInitialFile(InterfaceFileEntity entity) {
         return transactionTemplate.execute(transactionStatus -> {
             supersedePreviousFailures(entity.getFileName(), entity.getChecksum());
             return interfaceFilesRepository.save(entity);
         });
     }
 
-    private void processIngestedFile(
+    protected void processIngestedFile(
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity entity,
         InputStream inputStream
@@ -259,5 +258,9 @@ public abstract class AbstractInterfaceFileProcessorService {
     @SuppressWarnings("java:S4790") // Used for checksum, not in a sensitive context
     protected static String calculateChecksum(InputStream stream) throws IOException {
         return DigestUtils.md5DigestAsHex(stream);
+    }
+
+    protected Optional<InterfaceFileEntity> findDuplicateFile(String fileName, String fileChecksum) {
+        return interfaceFilesRepository.findByFileNameAndChecksumAndStatus(fileName, fileChecksum, Status.SUCCESS);
     }
 }
