@@ -478,8 +478,8 @@ withPipeline(type, product, component) {
                                 + "'opal-${component}-pr-${env.CHANGE_ID}-postgresql-0'",
                         returnStdout: true
                 ).trim()
-                env.FUNCTIONAL_TEST_DB_URL = "jdbc:postgresql://127.0.0.1:${port}/"
-                        + env.OPAL_FILE_HANDLER_DB_NAME + (env.OPAL_FILE_HANDLER_DB_OPTIONS ?: '')
+                env.FUNCTIONAL_TEST_DB_URL = "jdbc:postgresql://127.0.0.1:${port}/" +
+                        env.OPAL_FILE_HANDLER_DB_NAME + (env.OPAL_FILE_HANDLER_DB_OPTIONS ?: '')
             }
         }
     }
