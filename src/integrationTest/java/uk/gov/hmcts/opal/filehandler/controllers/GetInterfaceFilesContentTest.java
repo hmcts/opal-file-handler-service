@@ -56,10 +56,6 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         userStateStub.setupWithNoPermissions();
     }
 
-    private void makeUserSystemUser() {
-        userStateStub.isSystemUser(true);
-    }
-
     protected void assertBlobStorageUnchanged() {
         assertEquals(
             bteckohReportOriginalVersion,
@@ -250,9 +246,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         @JiraEpic("PO-3495")
         void get_respondsWith403WhenPermissionsMissing(boolean isSystemUser) throws Exception {
             authoriseNoPermissions();
-            if (isSystemUser) {
-                makeUserSystemUser();
-            }
+            userStateStub.isSystemUser(isSystemUser);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
