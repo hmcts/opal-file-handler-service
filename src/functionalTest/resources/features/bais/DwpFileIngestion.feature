@@ -1,4 +1,4 @@
-@Opal @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @JIRA-STORY:PO-6436 @PO-7228 @BaisReportFixture
+@Opal @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @JIRA-STORY:PO-6436 @BaisReportFixture
 Feature: DWP file ingestion
 
   # The fixture maps DWP1234567 to business unit DW01 and its MAINTENANCE bank account.

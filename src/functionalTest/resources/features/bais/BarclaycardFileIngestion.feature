@@ -1,4 +1,4 @@
-@Opal @PO-7228 @PO-6427 @BaisReportFixture
+@Opal @PO-6427 @BaisReportFixture
 Feature: Barclaycard file ingestion
 
   Scenario: A valid Barclaycard file is ingested
