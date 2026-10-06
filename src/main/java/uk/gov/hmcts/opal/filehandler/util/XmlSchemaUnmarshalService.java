@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandler.utils;
+package uk.gov.hmcts.opal.filehandler.util;
 
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;

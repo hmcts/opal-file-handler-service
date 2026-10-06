@@ -52,7 +52,7 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
     @Autowired
     private BTEckohReportBaisFileProcessorConfiguration config;
 
-    private final Logger logger = (Logger) LoggerFactory.getLogger(AbstractInterfaceFileProcessorService.class);
+    private final Logger logger = (Logger) LoggerFactory.getLogger(InterfaceFileProcessorService.class);
     private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 
     @BeforeEach

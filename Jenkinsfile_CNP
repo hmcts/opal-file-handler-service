@@ -463,6 +463,27 @@ withPipeline(type, product, component) {
         publishIntegrationResults()
     }
 
+    before('functionalTest:dev') {
+        onPR {
+            withAksClient('dev', 'dev', product) {
+                def kubectl = new Kubectl(this, 'dev', product)
+                kubectl.login()
+                // Reapply PR credentials after the functional stage's team-secret injection.
+                configureFunctionalTestDatabase(
+                        devValuesFile, "opal-${component}-pr-${env.CHANGE_ID}", product
+                )
+                // This hook runs on the functional-test agent, not the deployment agent.
+                String port = steps.sh(
+                        script: "bash src/functionalTest/resources/db/port-forward.sh start '${product}' "
+                                + "'opal-${component}-pr-${env.CHANGE_ID}-postgresql-0'",
+                        returnStdout: true
+                ).trim()
+                env.FUNCTIONAL_TEST_DB_URL = "jdbc:postgresql://127.0.0.1:${port}/" +
+                        env.OPAL_FILE_HANDLER_DB_NAME + (env.OPAL_FILE_HANDLER_DB_OPTIONS ?: '')
+            }
+        }
+    }
+
     afterAlways('functionalTest:dev') {
         try {
             onPR {
@@ -481,7 +502,14 @@ withPipeline(type, product, component) {
                 }
             }
         } finally {
-            publishFunctionalResults()
+            try {
+                onPR {
+                    steps.sh 'bash src/functionalTest/resources/db/port-forward.sh stop'
+                    env.FUNCTIONAL_TEST_DB_URL = ''
+                }
+            } finally {
+                publishFunctionalResults()
+            }
         }
     }
 

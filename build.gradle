@@ -194,7 +194,7 @@ tasks.named('sonarResolver') {
 
 tasks.withType(Test).configureEach {
   useJUnitPlatform()
-  failFast = true
+  failFast = false
 
   testLogging {
     exceptionFormat = 'full'
@@ -225,7 +225,7 @@ tasks.register('integration', Test) {
   group = "Verification"
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
   classpath = sourceSets.integrationTest.runtimeClasspath
-  failFast = true
+  failFast = false
 }
 
 
@@ -363,6 +363,7 @@ dependencies {
   openapiImplementation "tools.jackson.dataformat:jackson-dataformat-yaml"
   //HMCTS
   implementation 'uk.gov.hmcts:opal-common-lib:0.3.35'
+  implementation 'uk.gov.hmcts:spring-exception-handler:1.0.3'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
   testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.2'
 

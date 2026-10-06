@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.hamcrest.Matchers;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,13 +22,13 @@ import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 @RequiredArgsConstructor
 public class ApiTest {
 
-    private final ObjectMapper objectMapper;
-    private final MockMvc mockMvc;
-    private final HttpMethod method;
-    private final String uriTemplate;
-    private final UserStateStub userStateStub = new UserStateStub();
+    protected final ObjectMapper objectMapper;
+    protected final MockMvc mockMvc;
+    protected final HttpMethod method;
+    protected final String uriTemplate;
+    protected final UserStateStub userStateStub = new UserStateStub();
     private MockHttpServletRequestBuilder requestBuilder;
-    private boolean addAuthorisationHeader = true;
+    protected boolean addAuthorisationHeader = true;
 
     public ApiTest clearPermissions() {
         userStateStub.setupWithNoPermissions();
@@ -62,6 +63,7 @@ public class ApiTest {
         if (requestBuilder == null) {
             build(uriVariables);
         }
+
         return new Response(mockMvc.perform(requestBuilder));
     }
 
@@ -114,7 +116,7 @@ public class ApiTest {
 
         @SneakyThrows
         public <T> T getResponseBodyAsObject(Class<T> obj) {
-            return objectMapper.convertValue(resultActions.andReturn().getResponse()
+            return objectMapper.readValue(resultActions.andReturn().getResponse()
                     .getContentAsString(), obj);
         }
 
@@ -146,6 +148,15 @@ public class ApiTest {
             assertResponse(jsonPath("$.operation_id").exists());
 
             assertResponse(jsonPath("$.retriable").value(false));
+            return this;
+        }
+
+        public Response assertProblemDetails(HttpStatus status, String problemDetail, String title, boolean retriable) {
+            assertError(status);
+            assertResponse(jsonPath("$.detail").value(Matchers.containsString(problemDetail)));
+            assertResponse(jsonPath("$.title").value(title));
+            assertResponse(jsonPath("$.operation_id").exists());
+            assertResponse(jsonPath("$.retriable").value(retriable));
             return this;
         }
     }

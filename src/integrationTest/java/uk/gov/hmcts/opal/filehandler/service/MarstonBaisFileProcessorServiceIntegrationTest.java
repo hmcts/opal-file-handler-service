@@ -62,7 +62,7 @@ public class MarstonBaisFileProcessorServiceIntegrationTest   extends AbstractBa
     private FinesInterfaceFilePreprocessQueueService finesQueueService;
 
     private final Logger logger =
-        (Logger) LoggerFactory.getLogger(AbstractInterfaceFileProcessorService.class);
+        (Logger) LoggerFactory.getLogger(InterfaceFileProcessorService.class);
 
     private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 
