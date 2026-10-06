@@ -175,3 +175,10 @@ Required-part integration regressions currently expose a product defect: omittin
 maps to 500 instead of the expected 400. Tracked in [PO-10908](https://hmcts.atlassian.net/browse/PO-10908). Only these two tests are temporarily
 disabled with defect-linked reasons; their 400 assertions are preserved. Remove their `@Disabled`
 annotations and rerun them when PO-10908 is fixed. Production code is unchanged.
+
+PR functional tests run on a Jenkins VM outside Kubernetes. Before the dev functional stage,
+Jenkins opens a loopback-only `kubectl port-forward` to that PR's PostgreSQL pod and sets
+`FUNCTIONAL_TEST_DB_URL` to its dynamically allocated local port. The tunnel is stopped after
+functional tests (including failures) and has a 45-minute maximum lifetime for aborted builds.
+Database persistence assertions and scenario cleanup remain enabled; pipeline-managed shared
+fixtures continue to use in-pod SQL. Staging and local connections are unchanged.
