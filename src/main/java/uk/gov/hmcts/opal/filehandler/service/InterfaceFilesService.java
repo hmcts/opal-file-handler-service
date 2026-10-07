@@ -159,8 +159,12 @@ public class InterfaceFilesService {
     public InterfaceFileObjectInterfaceFile addInterfaceFile(MultipartFile file,
         AddInterfaceFileRequestMetadata metadata) {
 
-        PermissionUtil.checkPermissionInDomain(FileHandlerPermission.CREATE_INTERFACE_FILES,
-            Domain.valueOf(metadata.getDomain()).toCommonDomain());
+        if (metadata.getDomain() != null) {
+            PermissionUtil.checkPermissionInDomain(
+                FileHandlerPermission.CREATE_INTERFACE_FILES, Domain.valueOf(metadata.getDomain()).toCommonDomain());
+        } else {
+            PermissionUtil.checkPermission(FileHandlerPermission.CREATE_INTERFACE_FILES);
+        }
 
         try {
             //Ensure the related interface file exists if provided
