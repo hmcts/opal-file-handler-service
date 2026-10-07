@@ -121,12 +121,17 @@ def blobStorageAccountNamePrefix = "opalfilebaisapr"
 def blobStorageSftpUsers = [
         [container_name: "bteckoh-report", user_name: "bteckohreport"],
         [container_name: "caps-report", user_name: "capsreport"],
+        [container_name: "allpay-report", user_name: "allpay"],
+        [container_name: "natwest", user_name: "natwest"],
+        [container_name: "marston", user_name: "marston"],
+        [container_name: "bteckoh", user_name: "bteckoh"],
+        [container_name: "barclaycard", user_name: "barclaycard"],
+        [container_name: "jacobs", user_name: "jacobs"],
+        [container_name: "cder", user_name: "cder"],
         [container_name: "dwp", user_name: "dwp"]
 ]
 def devValuesFile = "charts/opal-file-handler-service/values.dev.template.yaml"
 def stgValuesFile = "charts/opal-file-handler-service/values.stg.template.yaml"
-def functionalTestDatabaseSetupScript = 'src/functionalTest/resources/db/interface-file-content/setup.sql'
-def functionalTestDatabaseCleanupScript = 'src/functionalTest/resources/db/interface-file-content/cleanup.sql'
 
 def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, List<Map<String, String>> storageSftpUsers) {
     // Keep the orchestration in Groovy and use shell only for az CLI calls.
@@ -184,9 +189,16 @@ def configureFunctionalTestBais(String storageAccountNamePrefix) {
     String storageAccount = "${storageAccountNamePrefix}${env.CHANGE_ID}"
     env.FUNCTIONAL_TEST_SFTP_HOST = "${storageAccount}.blob.core.windows.net"
     env.FUNCTIONAL_TEST_SFTP_PORT = '22'
-    env.FUNCTIONAL_TEST_DWP_SFTP_USERNAME = "${storageAccount}.dwp"
-    env.FUNCTIONAL_TEST_CAPS_SFTP_USERNAME = "${storageAccount}.capsreport"
-    env.FUNCTIONAL_TEST_BTECKOH_SFTP_USERNAME = "${storageAccount}.bteckohreport"
+    env.BAIS_SFTP_DWP_USERNAME = "${storageAccount}.dwp"
+    env.BAIS_SFTP_CAPS_REPORT_USERNAME = "${storageAccount}.capsreport"
+    env.BAIS_SFTP_BTECKOH_REPORT_USERNAME = "${storageAccount}.bteckohreport"
+    env.BAIS_SFTP_ALLPAY_USERNAME = "${storageAccount}.allpay"
+    env.BAIS_SFTP_NATWEST_USERNAME = "${storageAccount}.natwest"
+    env.BAIS_SFTP_MARSTON_USERNAME = "${storageAccount}.marston"
+    env.BAIS_SFTP_BTECKOH_USERNAME = "${storageAccount}.bteckoh"
+    env.BAIS_SFTP_BARCLAYCARD_USERNAME = "${storageAccount}.barclaycard"
+    env.BAIS_SFTP_JACOBS_USERNAME = "${storageAccount}.jacobs"
+    env.BAIS_SFTP_CDER_USERNAME = "${storageAccount}.cder"
     steps.echo "Configured functional-test BAIS SFTP account ${storageAccount}"
 }
 
@@ -205,7 +217,10 @@ def configureFunctionalTestBlobStorage(String valuesFile) {
     String storageAccount = blobStorage.azureName?.toString()?.replace('${CHANGE_ID}', changeId)
     String resourceGroup = blobStorage.resourceGroup?.toString()?.trim()
     List containers = (blobStorage.setup as Map)?.containers as List
-    List<String> requiredContainers = ['bteckoh-report', 'caps-report', 'dwp']
+    List<String> requiredContainers = [
+            'bteckoh-report', 'caps-report', 'allpay', 'natwest', 'marston',
+            'bteckoh', 'barclaycard', 'jacobs', 'cder', 'dwp'
+    ]
 
     if (!storageAccount || !resourceGroup || !containers?.containsAll(requiredContainers)) {
         throw new RuntimeException("Missing functional-test blob storage values in ${valuesFile}")
@@ -308,7 +323,6 @@ def configureStagingFunctionalTestEnvironment(String valuesFile) {
 
     configureFunctionalTestUserService(valuesFile)
     env.FUNCTIONAL_TEST_BLOB_CONTAINER_NAME = containerName
-    env.FUNCTIONAL_TEST_DB_MANAGED_BY_PIPELINE = 'false'
     steps.echo "Configured staging functional-test database and blob container ${containerName}"
 }
 
@@ -346,35 +360,6 @@ def configureFunctionalTestDatabase(String valuesFile, String releaseName, Strin
     steps.echo "Configured functional-test database ${databaseName} on ${env.OPAL_FILE_HANDLER_DB_HOST}"
 }
 
-def executeFunctionalTestDatabaseScript(
-        String releaseName,
-        String namespace,
-        String scriptPath
-) {
-    String databasePod = "${releaseName}-postgresql-0"
-
-    if (!steps.fileExists(scriptPath)) {
-        throw new RuntimeException("Functional-test database script does not exist: ${scriptPath}")
-    }
-
-    steps.echo "Executing ${scriptPath} in database pod ${databasePod}"
-    steps.sh """
-      set -eu
-      kubectl --namespace '${namespace}' wait --for=condition=Ready \
-        'pod/${databasePod}' --timeout=120s
-
-      set +x
-      kubectl --namespace '${namespace}' exec --stdin 'pod/${databasePod}' -- \
-        env PGPASSWORD="\$OPAL_FILE_HANDLER_DB_PASSWORD" \
-        psql --set=ON_ERROR_STOP=1 \
-          --host=127.0.0.1 \
-          --port="\$OPAL_FILE_HANDLER_DB_PORT" \
-          --username="\$OPAL_FILE_HANDLER_DB_USERNAME" \
-          --dbname="\$OPAL_FILE_HANDLER_DB_NAME" \
-          --file=- < '${scriptPath}'
-    """
-}
-
 def secrets = [
         'opal-${env}': [
                 secret('bais-private-key', 'FUNCTIONAL_TEST_SFTP_PRIVATE_KEY')
@@ -403,9 +388,16 @@ def stagingFunctionalTestSecrets = [
                 secret('bais-private-key', 'FUNCTIONAL_TEST_SFTP_PRIVATE_KEY'),
                 secret('bais-sftp-connection-host', 'FUNCTIONAL_TEST_SFTP_HOST'),
                 secret('bais-sftp-connection-port', 'FUNCTIONAL_TEST_SFTP_PORT'),
-                secret('bais-sftp-dwp-username', 'FUNCTIONAL_TEST_DWP_SFTP_USERNAME'),
-                secret('bais-sftp-caps-report-username', 'FUNCTIONAL_TEST_CAPS_SFTP_USERNAME'),
-                secret('bais-sftp-bteckoh-report-username', 'FUNCTIONAL_TEST_BTECKOH_SFTP_USERNAME')
+                secret('bais-sftp-dwp-username', 'BAIS_SFTP_DWP_USERNAME'),
+                secret('bais-sftp-caps-report-username', 'BAIS_SFTP_CAPS_REPORT_USERNAME'),
+                secret('bais-sftp-bteckoh-report-username', 'BAIS_SFTP_BTECKOH_REPORT_USERNAME'),
+                secret('bais-sftp-allpay-report-username', 'BAIS_SFTP_ALLPAY_USERNAME'),
+                secret('bais-sftp-natwest-username', 'BAIS_SFTP_NATWEST_USERNAME'),
+                secret('bais-sftp-marston-username', 'BAIS_SFTP_MARSTON_USERNAME'),
+                secret('bais-sftp-bteckoh-username', 'BAIS_SFTP_BTECKOH_USERNAME'),
+                secret('bais-sftp-barclaycard-username', 'BAIS_SFTP_BARCLAYCARD_USERNAME'),
+                secret('bais-sftp-jacobs-username', 'BAIS_SFTP_JACOBS_USERNAME'),
+                secret('bais-sftp-cder-username', 'BAIS_SFTP_CDER_USERNAME')
         ]
 ]
 
@@ -447,15 +439,6 @@ withPipeline(type, product, component) {
                     releaseName,
                     product
             )
-            executeFunctionalTestDatabaseScript(
-                    releaseName,
-                    product,
-                    functionalTestDatabaseSetupScript
-            )
-            executeFunctionalTestDatabaseScript(
-                    releaseName, product, 'src/functionalTest/resources/db/dwp/setup.sql'
-            )
-            env.FUNCTIONAL_TEST_DB_MANAGED_BY_PIPELINE = 'true'
         }
     }
 
@@ -487,29 +470,11 @@ withPipeline(type, product, component) {
     afterAlways('functionalTest:dev') {
         try {
             onPR {
-                withAksClient('dev', 'dev', product) {
-                    def kubectl = new Kubectl(this, 'dev', product)
-                    kubectl.login()
-                    executeFunctionalTestDatabaseScript(
-                            "opal-${component}-pr-${env.CHANGE_ID}", product,
-                            'src/functionalTest/resources/db/dwp/cleanup.sql'
-                    )
-                    executeFunctionalTestDatabaseScript(
-                            "opal-${component}-pr-${env.CHANGE_ID}",
-                            product,
-                            functionalTestDatabaseCleanupScript
-                    )
-                }
+                steps.sh 'bash src/functionalTest/resources/db/port-forward.sh stop'
+                env.FUNCTIONAL_TEST_DB_URL = ''
             }
         } finally {
-            try {
-                onPR {
-                    steps.sh 'bash src/functionalTest/resources/db/port-forward.sh stop'
-                    env.FUNCTIONAL_TEST_DB_URL = ''
-                }
-            } finally {
-                publishFunctionalResults()
-            }
+            publishFunctionalResults()
         }
     }
 

@@ -62,6 +62,13 @@ public class BlobStorageClient {
     }
 
     /**
+     * Ensures the report-specific container exists before the application processes a fixture.
+     */
+    public void createContainerIfNotExists() {
+        containerClient.createIfNotExists();
+    }
+
+    /**
      * Removes a blob when it exists.
      *
      * @param blobName blob name to remove.
