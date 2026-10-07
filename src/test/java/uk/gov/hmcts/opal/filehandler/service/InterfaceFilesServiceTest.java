@@ -241,7 +241,7 @@ public class InterfaceFilesServiceTest {
     void addInterfaceFile_savesEnrichedEntityAndReturnsMappedFile() throws IOException {
         DWPBaisFileProcessorService processorService = mock(DWPBaisFileProcessorService.class);
         BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
-        InterfaceFilesService spyService = spy(serviceWithProcessor(processorService, config));
+        InterfaceFilesService uploadService = serviceWithProcessor(processorService, config);
         MultipartFile file = mock(MultipartFile.class);
         byte[] fileBytes = "file-content".getBytes();
         InterfaceFileEntity relatedInterfaceFile = InterfaceFileEntity.builder()
@@ -270,24 +270,31 @@ public class InterfaceFilesServiceTest {
             "dwp-container"
         )).thenReturn(ingestedEntity);
         when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
-        doReturn(mapped).when(spyService).getInterfaceFile(24L);
+        when(repository.findById(24L)).thenReturn(Optional.of(ingestedEntity));
+        when(mapper.toInterfaceFileObject(ingestedEntity)).thenReturn(mapped);
 
-        InterfaceFileObjectInterfaceFile result = spyService.addInterfaceFile(file, metadata);
+        try (MockedStatic<SecurityUtil> ignored = authenticateWithPermission(
+            uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FINES,
+            FileHandlerPermission.CREATE_INTERFACE_FILES)) {
+            InterfaceFileObjectInterfaceFile result = uploadService.addInterfaceFile(file, metadata);
 
-        assertEquals(mapped, result);
-        assertEquals(relatedInterfaceFile, ingestedEntity.getRelatedInterfaceFile());
-        assertEquals(PaymentType.CHEQUE, ingestedEntity.getPaymentType());
-        assertArrayEquals(new String[] {"1234"}, ingestedEntity.getBusinessUnitCode());
-        verify(repository).findById(15L);
-        verify(repository).save(ingestedEntity);
-        verify(spyService).getInterfaceFile(24L);
+            assertEquals(mapped, result);
+            assertEquals(relatedInterfaceFile, ingestedEntity.getRelatedInterfaceFile());
+            assertEquals(PaymentType.CHEQUE, ingestedEntity.getPaymentType());
+            assertArrayEquals(new String[] {"1234"}, ingestedEntity.getBusinessUnitCode());
+
+            verify(repository).findById(15L);
+            verify(repository).save(ingestedEntity);
+            verify(repository).findById(24L);
+            verify(mapper).toInterfaceFileObject(ingestedEntity);
+        }
     }
 
     @Test
     void addInterfaceFile_savesEntityWithoutRelatedFileWhenNoRelatedIdProvided() throws IOException {
         DWPBaisFileProcessorService processorService = mock(DWPBaisFileProcessorService.class);
         BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
-        InterfaceFilesService spyService = spy(serviceWithProcessor(processorService, config));
+        InterfaceFilesService uploadService = serviceWithProcessor(processorService, config);
         MultipartFile file = mock(MultipartFile.class);
         byte[] fileBytes = "source-file".getBytes();
         InterfaceFileEntity ingestedEntity = InterfaceFileEntity.builder()
@@ -311,16 +318,22 @@ public class InterfaceFilesServiceTest {
             "dwp-container"
         )).thenReturn(ingestedEntity);
         when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
-        doReturn(mapped).when(spyService).getInterfaceFile(25L);
+        when(repository.findById(25L)).thenReturn(Optional.of(ingestedEntity));
+        when(mapper.toInterfaceFileObject(ingestedEntity)).thenReturn(mapped);
 
-        InterfaceFileObjectInterfaceFile result = spyService.addInterfaceFile(file, metadata);
+        try (MockedStatic<SecurityUtil> ignored = authenticateWithPermission(
+            uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FINES,
+            FileHandlerPermission.CREATE_INTERFACE_FILES)) {
+            InterfaceFileObjectInterfaceFile result = uploadService.addInterfaceFile(file, metadata);
 
-        assertEquals(mapped, result);
-        assertNull(ingestedEntity.getRelatedInterfaceFile());
-        assertEquals(PaymentType.CASH, ingestedEntity.getPaymentType());
-        assertArrayEquals(new String[] {"9876"}, ingestedEntity.getBusinessUnitCode());
-        verify(repository).save(ingestedEntity);
-        verify(spyService).getInterfaceFile(25L);
+            assertEquals(mapped, result);
+            assertNull(ingestedEntity.getRelatedInterfaceFile());
+            assertEquals(PaymentType.CASH, ingestedEntity.getPaymentType());
+            assertArrayEquals(new String[] {"9876"}, ingestedEntity.getBusinessUnitCode());
+            verify(repository).save(ingestedEntity);
+            verify(repository).findById(25L);
+            verify(mapper).toInterfaceFileObject(ingestedEntity);
+        }
     }
 
     @Test
@@ -334,16 +347,77 @@ public class InterfaceFilesServiceTest {
 
         when(file.getBytes()).thenThrow(ioException);
 
-        InternalServerErrorException exception = assertThrows(
-            InternalServerErrorException.class,
-            () -> service.addInterfaceFile(file, addInterfaceFileMetadata())
-        );
+        try (MockedStatic<SecurityUtil> ignored = authenticateWithPermission(
+            uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FINES,
+            FileHandlerPermission.CREATE_INTERFACE_FILES)) {
+            InternalServerErrorException exception = assertThrows(
+                InternalServerErrorException.class,
+                () -> service.addInterfaceFile(file, addInterfaceFileMetadata()));
 
-        assertEquals(ioException, exception.getCause());
-        assertEquals(
-            "Failed to read file content for interface file creation ",
-            exception.getMessage()
-        );
+            assertEquals(ioException, exception.getCause());
+            assertEquals(
+                "Failed to read file content for interface file creation ",
+                exception.getMessage());
+        }
+    }
+
+    @Test
+    void addInterfaceFile_rejectsViewPermissionWithoutCreatePermission() {
+        MultipartFile file = mock(MultipartFile.class);
+
+        try (MockedStatic<SecurityUtil> ignored = authenticateWithPermission(
+            uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FINES,
+            FileHandlerPermission.VIEW_INTERFACE_FILES)) {
+            PermissionNotAllowedException exception = assertThrows(PermissionNotAllowedException.class,
+                () -> service.addInterfaceFile(file, addInterfaceFileMetadata()));
+            assertEquals("[CREATE_INTERFACE_FILES] permission(s) are not enabled for the user.",
+                exception.getMessage());
+        }
+
+        verifyNoInteractions(file, repository);
+    }
+
+    @Test
+    void addInterfaceFile_rejectsCreatePermissionInDifferentDomain() {
+        MultipartFile file = mock(MultipartFile.class);
+
+        try (MockedStatic<SecurityUtil> ignored = authenticateWithPermission(
+            uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FILE_HANDLING,
+            FileHandlerPermission.CREATE_INTERFACE_FILES)) {
+            PermissionNotAllowedException exception = assertThrows(PermissionNotAllowedException.class,
+                () -> service.addInterfaceFile(file, addInterfaceFileMetadata()));
+            assertEquals("[CREATE_INTERFACE_FILES] permission(s) are not enabled for the user.",
+                exception.getMessage());
+        }
+
+        verifyNoInteractions(file, repository);
+    }
+
+    private MockedStatic<SecurityUtil> authenticateWithPermission(
+        uk.gov.hmcts.opal.common.user.authorisation.model.Domain domain,
+        FileHandlerPermission permission) {
+        long userServicePermissionId = switch (permission) {
+            case VIEW_INTERFACE_FILES -> 18L;
+            case CREATE_INTERFACE_FILES -> 19L;
+        };
+
+        UserStateV2 userState = UserStateV2.builder()
+            .userId(1L)
+            .username("test")
+            .domains(Map.of(domain, DomainBusinessUnitUsers.builder()
+                .businessUnitUsers(List.of(BusinessUnitUser.builder()
+                    .businessUnitUserId("BU1")
+                    .businessUnitId((short) 1)
+                    .permissions(Set.of(new Permission(userServicePermissionId, permission.getDescription())))
+                    .build()))
+                .build()))
+            .build();
+
+        MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
+        securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
+        when(authToken.getUserState()).thenReturn(userState);
+
+        return securityUtil;
     }
 
     private InterfaceFilesService serviceWithProcessor(
@@ -356,8 +430,7 @@ public class InterfaceFilesServiceTest {
             mapper,
             null,
             Map.of("dwpBaisFileProcessorConfig", config),
-            List.of(processorService)
-        );
+            List.of(processorService));
     }
 
     private AddInterfaceFileRequestMetadata addInterfaceFileMetadata() {
@@ -380,8 +453,8 @@ public class InterfaceFilesServiceTest {
                 .build());
 
             assertThrows(PermissionNotAllowedException.class, () ->
-                service.searchInterfaceFiles(new SearchInterfaceFilesDto())
-            );
+                service.searchInterfaceFiles(new SearchInterfaceFilesDto()));
+
             verifyNoInteractions(specsFactory);
             verifyNoInteractions(repository);
             verifyNoInteractions(mapper);
