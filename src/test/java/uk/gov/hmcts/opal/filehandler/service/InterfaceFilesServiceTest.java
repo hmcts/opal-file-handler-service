@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,7 +31,9 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.domain.Specification;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
+import uk.gov.hmcts.opal.common.user.authorisation.model.BusinessUnitUser;
 import uk.gov.hmcts.opal.common.user.authorisation.model.DomainBusinessUnitUsers;
+import uk.gov.hmcts.opal.common.user.authorisation.model.Permission;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
@@ -88,15 +91,16 @@ public class InterfaceFilesServiceTest {
             when(authToken.getUserState()).thenReturn(userState);
             when(userState.getDomains()).thenReturn(Map.of(
                 uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FINES, domainUsers));
-            when(domainUsers.anyBusinessUnitUserHasAnyPermission(FileHandlerPermission.VIEW_INTERFACE_FILES))
-                .thenReturn(true);
+            when(domainUsers.getBusinessUnitUsers()).thenReturn(List.of(BusinessUnitUser.builder()
+                .businessUnitUserId("FINES1")
+                .businessUnitId((short) 1)
+                .permissions(Set.of(new Permission(18L, "View Interface Files")))
+                .build()));
             List<InterfaceFileEntity> interfaceFiles = List.of(
                 mock(InterfaceFileEntity.class)
             );
             SearchInterfaceFilesDto searchDto = new SearchInterfaceFilesDto();
-            when(specsFactory.createSearchSpecs(searchDto)).thenReturn(specification);
-            when(specification.and(org.mockito.ArgumentMatchers.<Specification<InterfaceFileEntity>>any()))
-                .thenReturn(specification);
+            when(specsFactory.createSearchSpecs(searchDto, Set.of(Domain.FINES))).thenReturn(specification);
             when(repository.findAll(
                 specification, Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime)))
             ).thenReturn(interfaceFiles);
@@ -106,6 +110,41 @@ public class InterfaceFilesServiceTest {
             permissionUtil.verify(() ->
                 PermissionUtil.checkPermissionDomainAgnostic(FileHandlerPermission.VIEW_INTERFACE_FILES));
             verify(mapper).toInterfaceFileObjects(interfaceFiles);
+        }
+    }
+
+    @Test
+    void searchInterfaceFiles_selectsDomainsByPermissionDescription() {
+        DomainBusinessUnitUsers finesUsers = DomainBusinessUnitUsers.builder()
+            .businessUnitUsers(List.of(BusinessUnitUser.builder()
+                .businessUnitUserId("FINES1")
+                .businessUnitId((short) 1)
+                .permissions(Set.of(new Permission(1L, "Create and Manage Draft Accounts")))
+                .build()))
+            .build();
+        DomainBusinessUnitUsers fileHandlerUsers = DomainBusinessUnitUsers.builder()
+            .businessUnitUsers(List.of(BusinessUnitUser.builder()
+                .businessUnitUserId("FHAB01")
+                .businessUnitId((short) 2)
+                .permissions(Set.of(new Permission(18L, "View Interface Files")))
+                .build()))
+            .build();
+        UserStateV2 userState = UserStateV2.builder()
+            .userId(1L)
+            .username("test")
+            .domains(Map.of(
+                uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FINES, finesUsers,
+                uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FILE_HANDLING, fileHandlerUsers))
+            .build();
+
+        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class)) {
+            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
+            when(authToken.getUserState()).thenReturn(userState);
+
+            SearchInterfaceFilesDto request = new SearchInterfaceFilesDto();
+            service.searchInterfaceFiles(request);
+
+            verify(specsFactory).createSearchSpecs(request, Set.of(Domain.FILE_HANDLER));
         }
     }
 

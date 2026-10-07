@@ -25,7 +25,6 @@ import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
-import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity_;
 import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
@@ -88,15 +87,7 @@ public class InterfaceFilesService {
     public List<InterfaceFileObjectInterfaceFile> searchInterfaceFiles(SearchInterfaceFilesDto request) {
         PermissionUtil.checkPermissionDomainAgnostic(FileHandlerPermission.VIEW_INTERFACE_FILES);
 
-        Specification<InterfaceFileEntity> specs = specsFactory.createSearchSpecs(request);
-        Set<Domain> allowedDomains = permittedDomains();
-        Set<uk.gov.hmcts.opal.filehandler.entity.Domain> allowedFileDomains =
-            Arrays.stream(uk.gov.hmcts.opal.filehandler.entity.Domain.values())
-                .filter(domain -> allowedDomains.contains(domain.toCommonDomain()))
-                .collect(Collectors.toSet());
-
-        specs = specs.and((root, query, builder) ->
-            root.get(InterfaceFileEntity_.opalDomain).in(allowedFileDomains));
+        Specification<InterfaceFileEntity> specs = specsFactory.createSearchSpecs(request, permittedDomains());
 
         Sort sort = Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime));
         List<InterfaceFileEntity> interfacesFiles = repository.findAll(specs, sort);
@@ -144,16 +135,18 @@ public class InterfaceFilesService {
             .orElseThrow(() -> new InterfaceFileNotFoundException(id));
     }
 
-    private Set<Domain> permittedDomains() {
+    private Set<uk.gov.hmcts.opal.filehandler.entity.Domain> permittedDomains() {
         return SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser()
             .getUserState()
             .getDomains()
             .entrySet()
             .stream()
-            .filter(entry -> entry.getValue() != null)
-            .filter(entry ->
-                entry.getValue().anyBusinessUnitUserHasAnyPermission(FileHandlerPermission.VIEW_INTERFACE_FILES))
-            .map(Map.Entry::getKey)
+            .filter(entry -> entry.getValue().getBusinessUnitUsers().stream()
+                .flatMap(user -> user.getPermissions().stream())
+                .anyMatch(permission -> permission.getDescription()
+                    .equalsIgnoreCase(FileHandlerPermission.VIEW_INTERFACE_FILES.getDescription())))
+            .flatMap(entry -> Arrays.stream(uk.gov.hmcts.opal.filehandler.entity.Domain.values())
+                .filter(domain -> domain.toCommonDomain() == entry.getKey()))
             .collect(Collectors.toSet());
     }
 

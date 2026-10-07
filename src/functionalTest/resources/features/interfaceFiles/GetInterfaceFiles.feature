@@ -13,7 +13,7 @@ Feature: Get Interface Files
       | source           | BTECKOH_REPORT                  |
       | target           | OPAL                            |
       | type             | SOURCE                          |
-      | domain           | FILE_HANDLER                    |
+      | domain           | FINES                           |
       | status           | FAILED                          |
       | file_name        | 2500-Payments-Report-Daily.xlsx |
       | errors           | {"error":"malformed xlsx"}      |
