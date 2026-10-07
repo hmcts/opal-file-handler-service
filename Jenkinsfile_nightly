@@ -37,16 +37,16 @@ def secrets = [
     secret('bais-private-key', 'FUNCTIONAL_TEST_SFTP_PRIVATE_KEY'),
     secret('bais-sftp-connection-host', 'FUNCTIONAL_TEST_SFTP_HOST'),
     secret('bais-sftp-connection-port', 'FUNCTIONAL_TEST_SFTP_PORT'),
-    secret('bais-sftp-dwp-username', 'FUNCTIONAL_TEST_DWP_SFTP_USERNAME'),
-    secret('bais-sftp-caps-report-username', 'FUNCTIONAL_TEST_CAPS_SFTP_USERNAME'),
-    secret('bais-sftp-bteckoh-report-username', 'FUNCTIONAL_TEST_BTECKOH_REPORT_SFTP_USERNAME'),
-    secret('bais-sftp-allpay-report-username', 'FUNCTIONAL_TEST_ALLPAY_SFTP_USERNAME'),
-    secret('bais-sftp-natwest-username', 'FUNCTIONAL_TEST_NATWEST_SFTP_USERNAME'),
-    secret('bais-sftp-marston-username', 'FUNCTIONAL_TEST_MARSTON_SFTP_USERNAME'),
-    secret('bais-sftp-bteckoh-username', 'FUNCTIONAL_TEST_BTECKOH_SFTP_USERNAME'),
-    secret('bais-sftp-barclaycard-username', 'FUNCTIONAL_TEST_BARCLAYCARD_SFTP_USERNAME'),
-    secret('bais-sftp-jacobs-username', 'FUNCTIONAL_TEST_JACOBS_SFTP_USERNAME'),
-    secret('bais-sftp-cder-username', 'FUNCTIONAL_TEST_CDER_SFTP_USERNAME'),
+    secret('bais-sftp-dwp-username', 'BAIS_SFTP_DWP_USERNAME'),
+    secret('bais-sftp-caps-report-username', 'BAIS_SFTP_CAPS_REPORT_USERNAME'),
+    secret('bais-sftp-bteckoh-report-username', 'BAIS_SFTP_BTECKOH_REPORT_USERNAME'),
+    secret('bais-sftp-allpay-report-username', 'BAIS_SFTP_ALLPAY_USERNAME'),
+    secret('bais-sftp-natwest-username', 'BAIS_SFTP_NATWEST_USERNAME'),
+    secret('bais-sftp-marston-username', 'BAIS_SFTP_MARSTON_USERNAME'),
+    secret('bais-sftp-bteckoh-username', 'BAIS_SFTP_BTECKOH_USERNAME'),
+    secret('bais-sftp-barclaycard-username', 'BAIS_SFTP_BARCLAYCARD_USERNAME'),
+    secret('bais-sftp-jacobs-username', 'BAIS_SFTP_JACOBS_USERNAME'),
+    secret('bais-sftp-cder-username', 'BAIS_SFTP_CDER_USERNAME'),
     secret('file-handler-service-POSTGRES-HOST', 'OPAL_FILE_HANDLER_DB_HOST'),
     secret('file-handler-service-POSTGRES-PORT', 'OPAL_FILE_HANDLER_DB_PORT'),
     secret('file-handler-service-POSTGRES-DATABASE', 'OPAL_FILE_HANDLER_DB_NAME'),
@@ -121,7 +121,6 @@ def configureFunctionalTestEnvironment = { valuesFile ->
   }
 
   env.FUNCTIONAL_TEST_BLOB_CONTAINER_NAME = containerName
-  env.FUNCTIONAL_TEST_DB_MANAGED_BY_PIPELINE = 'false'
   echo "Configured staging functional-test database and blob container ${containerName}"
 }
 

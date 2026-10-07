@@ -5,7 +5,6 @@ import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
 import java.util.Locale;
 import java.util.Map;
-import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 import uk.gov.hmcts.opal.filehandler.db.DatabaseClient;
 import uk.gov.hmcts.opal.filehandler.support.BaisReportFixture;
 import uk.gov.hmcts.opal.filehandler.support.BaisReportTestConfig;
@@ -63,7 +62,7 @@ public class BaisReportHooks {
     }
 
     private static void executeScript(String resource) {
-        if (resource != null && !TestEnvironment.isDatabaseManagedByPipeline()) {
+        if (resource != null) {
             try (DatabaseClient database = new DatabaseClient()) {
                 database.executeScript(resource);
             }

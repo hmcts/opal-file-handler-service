@@ -132,8 +132,6 @@ def blobStorageSftpUsers = [
 ]
 def devValuesFile = "charts/opal-file-handler-service/values.dev.template.yaml"
 def stgValuesFile = "charts/opal-file-handler-service/values.stg.template.yaml"
-def functionalTestDatabaseSetupScript = 'src/functionalTest/resources/db/interface-file-content/setup.sql'
-def functionalTestDatabaseCleanupScript = 'src/functionalTest/resources/db/interface-file-content/cleanup.sql'
 
 def setupAzure(String storageAccountNamePrefix, String storageResourceGroup, List<Map<String, String>> storageSftpUsers) {
     // Keep the orchestration in Groovy and use shell only for az CLI calls.
@@ -191,16 +189,16 @@ def configureFunctionalTestBais(String storageAccountNamePrefix) {
     String storageAccount = "${storageAccountNamePrefix}${env.CHANGE_ID}"
     env.FUNCTIONAL_TEST_SFTP_HOST = "${storageAccount}.blob.core.windows.net"
     env.FUNCTIONAL_TEST_SFTP_PORT = '22'
-    env.FUNCTIONAL_TEST_DWP_SFTP_USERNAME = "${storageAccount}.dwp"
-    env.FUNCTIONAL_TEST_CAPS_SFTP_USERNAME = "${storageAccount}.capsreport"
-    env.FUNCTIONAL_TEST_BTECKOH_REPORT_SFTP_USERNAME = "${storageAccount}.bteckohreport"
-    env.FUNCTIONAL_TEST_ALLPAY_SFTP_USERNAME = "${storageAccount}.allpay"
-    env.FUNCTIONAL_TEST_NATWEST_SFTP_USERNAME = "${storageAccount}.natwest"
-    env.FUNCTIONAL_TEST_MARSTON_SFTP_USERNAME = "${storageAccount}.marston"
-    env.FUNCTIONAL_TEST_BTECKOH_SFTP_USERNAME = "${storageAccount}.bteckoh"
-    env.FUNCTIONAL_TEST_BARCLAYCARD_SFTP_USERNAME = "${storageAccount}.barclaycard"
-    env.FUNCTIONAL_TEST_JACOBS_SFTP_USERNAME = "${storageAccount}.jacobs"
-    env.FUNCTIONAL_TEST_CDER_SFTP_USERNAME = "${storageAccount}.cder"
+    env.BAIS_SFTP_DWP_USERNAME = "${storageAccount}.dwp"
+    env.BAIS_SFTP_CAPS_REPORT_USERNAME = "${storageAccount}.capsreport"
+    env.BAIS_SFTP_BTECKOH_REPORT_USERNAME = "${storageAccount}.bteckohreport"
+    env.BAIS_SFTP_ALLPAY_USERNAME = "${storageAccount}.allpay"
+    env.BAIS_SFTP_NATWEST_USERNAME = "${storageAccount}.natwest"
+    env.BAIS_SFTP_MARSTON_USERNAME = "${storageAccount}.marston"
+    env.BAIS_SFTP_BTECKOH_USERNAME = "${storageAccount}.bteckoh"
+    env.BAIS_SFTP_BARCLAYCARD_USERNAME = "${storageAccount}.barclaycard"
+    env.BAIS_SFTP_JACOBS_USERNAME = "${storageAccount}.jacobs"
+    env.BAIS_SFTP_CDER_USERNAME = "${storageAccount}.cder"
     steps.echo "Configured functional-test BAIS SFTP account ${storageAccount}"
 }
 
@@ -325,7 +323,6 @@ def configureStagingFunctionalTestEnvironment(String valuesFile) {
 
     configureFunctionalTestUserService(valuesFile)
     env.FUNCTIONAL_TEST_BLOB_CONTAINER_NAME = containerName
-    env.FUNCTIONAL_TEST_DB_MANAGED_BY_PIPELINE = 'false'
     steps.echo "Configured staging functional-test database and blob container ${containerName}"
 }
 
@@ -363,35 +360,6 @@ def configureFunctionalTestDatabase(String valuesFile, String releaseName, Strin
     steps.echo "Configured functional-test database ${databaseName} on ${env.OPAL_FILE_HANDLER_DB_HOST}"
 }
 
-def executeFunctionalTestDatabaseScript(
-        String releaseName,
-        String namespace,
-        String scriptPath
-) {
-    String databasePod = "${releaseName}-postgresql-0"
-
-    if (!steps.fileExists(scriptPath)) {
-        throw new RuntimeException("Functional-test database script does not exist: ${scriptPath}")
-    }
-
-    steps.echo "Executing ${scriptPath} in database pod ${databasePod}"
-    steps.sh """
-      set -eu
-      kubectl --namespace '${namespace}' wait --for=condition=Ready \
-        'pod/${databasePod}' --timeout=120s
-
-      set +x
-      kubectl --namespace '${namespace}' exec --stdin 'pod/${databasePod}' -- \
-        env PGPASSWORD="\$OPAL_FILE_HANDLER_DB_PASSWORD" \
-        psql --set=ON_ERROR_STOP=1 \
-          --host=127.0.0.1 \
-          --port="\$OPAL_FILE_HANDLER_DB_PORT" \
-          --username="\$OPAL_FILE_HANDLER_DB_USERNAME" \
-          --dbname="\$OPAL_FILE_HANDLER_DB_NAME" \
-          --file=- < '${scriptPath}'
-    """
-}
-
 def secrets = [
         'opal-${env}': [
                 secret('bais-private-key', 'FUNCTIONAL_TEST_SFTP_PRIVATE_KEY')
@@ -420,16 +388,16 @@ def stagingFunctionalTestSecrets = [
                 secret('bais-private-key', 'FUNCTIONAL_TEST_SFTP_PRIVATE_KEY'),
                 secret('bais-sftp-connection-host', 'FUNCTIONAL_TEST_SFTP_HOST'),
                 secret('bais-sftp-connection-port', 'FUNCTIONAL_TEST_SFTP_PORT'),
-                secret('bais-sftp-dwp-username', 'FUNCTIONAL_TEST_DWP_SFTP_USERNAME'),
-                secret('bais-sftp-caps-report-username', 'FUNCTIONAL_TEST_CAPS_SFTP_USERNAME'),
-                secret('bais-sftp-bteckoh-report-username', 'FUNCTIONAL_TEST_BTECKOH_REPORT_SFTP_USERNAME'),
-                secret('bais-sftp-allpay-report-username', 'FUNCTIONAL_TEST_ALLPAY_SFTP_USERNAME'),
-                secret('bais-sftp-natwest-username', 'FUNCTIONAL_TEST_NATWEST_SFTP_USERNAME'),
-                secret('bais-sftp-marston-username', 'FUNCTIONAL_TEST_MARSTON_SFTP_USERNAME'),
-                secret('bais-sftp-bteckoh-username', 'FUNCTIONAL_TEST_BTECKOH_SFTP_USERNAME'),
-                secret('bais-sftp-barclaycard-username', 'FUNCTIONAL_TEST_BARCLAYCARD_SFTP_USERNAME'),
-                secret('bais-sftp-jacobs-username', 'FUNCTIONAL_TEST_JACOBS_SFTP_USERNAME'),
-                secret('bais-sftp-cder-username', 'FUNCTIONAL_TEST_CDER_SFTP_USERNAME')
+                secret('bais-sftp-dwp-username', 'BAIS_SFTP_DWP_USERNAME'),
+                secret('bais-sftp-caps-report-username', 'BAIS_SFTP_CAPS_REPORT_USERNAME'),
+                secret('bais-sftp-bteckoh-report-username', 'BAIS_SFTP_BTECKOH_REPORT_USERNAME'),
+                secret('bais-sftp-allpay-report-username', 'BAIS_SFTP_ALLPAY_USERNAME'),
+                secret('bais-sftp-natwest-username', 'BAIS_SFTP_NATWEST_USERNAME'),
+                secret('bais-sftp-marston-username', 'BAIS_SFTP_MARSTON_USERNAME'),
+                secret('bais-sftp-bteckoh-username', 'BAIS_SFTP_BTECKOH_USERNAME'),
+                secret('bais-sftp-barclaycard-username', 'BAIS_SFTP_BARCLAYCARD_USERNAME'),
+                secret('bais-sftp-jacobs-username', 'BAIS_SFTP_JACOBS_USERNAME'),
+                secret('bais-sftp-cder-username', 'BAIS_SFTP_CDER_USERNAME')
         ]
 ]
 
@@ -471,36 +439,6 @@ withPipeline(type, product, component) {
                     releaseName,
                     product
             )
-            executeFunctionalTestDatabaseScript(
-                    releaseName,
-                    product,
-                    functionalTestDatabaseSetupScript
-            )
-            executeFunctionalTestDatabaseScript(
-                    releaseName, product, 'src/functionalTest/resources/db/dwp/setup.sql'
-            )
-            executeFunctionalTestDatabaseScript(
-                    releaseName, product, 'src/functionalTest/resources/db/bteckoh-transfer/setup.sql'
-            )
-            executeFunctionalTestDatabaseScript(
-                    releaseName, product, 'src/functionalTest/resources/db/natwest/setup.sql'
-            )
-            executeFunctionalTestDatabaseScript(
-                    releaseName, product, 'src/functionalTest/resources/db/barclaycard/setup.sql'
-            )
-            executeFunctionalTestDatabaseScript(
-                    releaseName, product, 'src/functionalTest/resources/db/allpay/setup.sql'
-            )
-            executeFunctionalTestDatabaseScript(
-                    releaseName, product, 'src/functionalTest/resources/db/jacobs/setup.sql'
-            )
-            executeFunctionalTestDatabaseScript(
-                    releaseName, product, 'src/functionalTest/resources/db/cder/setup.sql'
-            )
-            executeFunctionalTestDatabaseScript(
-                    releaseName, product, 'src/functionalTest/resources/db/marston/setup.sql'
-            )
-            env.FUNCTIONAL_TEST_DB_MANAGED_BY_PIPELINE = 'true'
         }
     }
 

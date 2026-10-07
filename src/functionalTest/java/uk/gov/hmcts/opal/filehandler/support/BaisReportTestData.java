@@ -26,7 +26,7 @@ public final class BaisReportTestData {
         "CAPS",
         "CAPS_REPORT",
         "CAPSReport",
-        TestEnvironment.getReportSftpUsername("CAPS", "CAPS-report"),
+        TestEnvironment.getReportSftpUsername("CAPS_REPORT", "CAPS-report"),
         "BAIS_SFTP_CAPS_REPORT_USERNAME",
         "caps-report",
         "CAPS_REPORT_AZURE_STORAGE_CONTAINER",

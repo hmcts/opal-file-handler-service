@@ -110,8 +110,7 @@ Nightly parameters:
 
 The staging functional suite loads database and blob-storage credentials and endpoints
 from the Opal Key Vault, and reads the functional-test blob container from the staging
-chart values. Functional fixture hooks manage their own setup and cleanup because the
-nightly pipeline sets `FUNCTIONAL_TEST_DB_MANAGED_BY_PIPELINE=false`.
+chart values. Functional fixture hooks manage their own database setup and cleanup.
 
 Nightly reports and artifacts:
 

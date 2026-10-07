@@ -16,7 +16,6 @@ public final class TestEnvironment {
     private static final String DEFAULT_DATABASE_PORT = "5432";
     private static final String DEFAULT_DATABASE_USERNAME = "opal-db-user";
     private static final String DEFAULT_DATABASE_PASSWORD = "opal-db-password";
-    private static final String DATABASE_MANAGED_BY_PIPELINE = "FUNCTIONAL_TEST_DB_MANAGED_BY_PIPELINE";
     private static final String OPAL_DATABASE_HOST = "OPAL_FILE_HANDLER_DB_HOST";
     private static final String OPAL_DATABASE_NAME = "OPAL_FILE_HANDLER_DB_NAME";
     private static final String OPAL_DATABASE_OPTIONS = "OPAL_FILE_HANDLER_DB_OPTIONS";
@@ -97,18 +96,6 @@ public final class TestEnvironment {
         return get("FUNCTIONAL_TEST_DB_PASSWORD")
             .or(() -> get(OPAL_DATABASE_PASSWORD))
             .orElse(DEFAULT_DATABASE_PASSWORD);
-    }
-
-    /**
-     * Indicates whether Jenkins has prepared the database fixtures inside the deployed database
-     * pod, removing the need for the functional-test JVM to connect directly.
-     *
-     * @return {@code true} when database fixture setup and cleanup are managed by the pipeline.
-     */
-    public static boolean isDatabaseManagedByPipeline() {
-        return get(DATABASE_MANAGED_BY_PIPELINE)
-            .map(Boolean::parseBoolean)
-            .orElse(false);
     }
 
     private static String getApplicationDatabaseUrl() {
@@ -218,7 +205,7 @@ public final class TestEnvironment {
      * @return configured deployed username or the local default.
      */
     public static String getReportSftpUsername(String reportName, String defaultUsername) {
-        return get("FUNCTIONAL_TEST_" + reportName + "_SFTP_USERNAME").orElse(defaultUsername);
+        return get("BAIS_SFTP_" + reportName + "_USERNAME").orElse(defaultUsername);
     }
 
     /**
