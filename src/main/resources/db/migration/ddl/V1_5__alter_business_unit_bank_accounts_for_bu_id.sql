@@ -9,14 +9,14 @@
 *
 * Date          Author      Version     Nature of Change
 * ----------    --------    --------    ----------------------------------------------------------------------------
-* 06/10/2026    TT          1.0         PO-10807 - Replace the surrogate Primary Key column (business_unit_bank_account_id)
-*                                                  with business_unit_id as the Primary Key.
-*                                                  Drop column business_unit_bank_account_id.
-*
+* 06/10/2026    TT          1.0         PO-10807 - Add business_unit_id as the Primary Key.
+*                                                  Drop business_unit_bank_account_id and its associated sequence.
 **/
 
 ALTER TABLE business_unit_bank_account
-    DROP CONSTRAINT business_unit_bank_account_pk,
+    ADD COLUMN business_unit_id SMALLINT NOT NULL,
+    DROP COLUMN business_unit_bank_account_id,
     ADD CONSTRAINT business_unit_bank_account_pk
-        PRIMARY KEY (business_unit_id),
-    DROP COLUMN business_unit_bank_account_id;
+        PRIMARY KEY (business_unit_id);
+
+DROP SEQUENCE IF EXISTS business_unit_bank_account_id_seq;

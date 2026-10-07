@@ -14,7 +14,7 @@
 *
 **/
 
-DROP INDEX if_bu_code_gin_idx;
+DROP INDEX IF EXISTS if_bu_code_gin_idx;
 
 ALTER TABLE interface_files
     DROP COLUMN business_unit_code,
