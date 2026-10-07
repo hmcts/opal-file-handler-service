@@ -68,9 +68,25 @@ public class BaisReportFixture {
     }
 
     private void restoreBaselineSftpFile() {
-        try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
-            sftpClient.deleteIfExists(config.unsupportedFileName());
-            sftpClient.uploadResource(config.resourcePath(), config.fileName());
+        int maxAttempts = 3;
+        RuntimeException lastException = null;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
+                sftpClient.deleteIfExists(config.unsupportedFileName());
+                sftpClient.uploadResource(config.resourcePath(), config.fileName());
+                return;
+            } catch (RuntimeException e) {
+                lastException = e;
+                if (attempt < maxAttempts) {
+                    try {
+                        Thread.sleep(1000L * attempt);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw e;
+                    }
+                }
+            }
         }
+        throw lastException;
     }
 }
