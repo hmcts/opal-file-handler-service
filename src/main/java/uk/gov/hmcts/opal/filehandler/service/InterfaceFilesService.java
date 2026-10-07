@@ -122,7 +122,7 @@ public class InterfaceFilesService {
     }
 
     private void checkAccessPermission(InterfaceFileEntity entity) {
-        if (entity.getOpalDomain() != null && !entity.getOpalDomain().equals(Domain.FILE_HANDLER)) {
+        if (entity.getOpalDomain() != null) {
             PermissionUtil.checkPermissionInDomain(FileHandlerPermission.VIEW_INTERFACE_FILES,
                 entity.getOpalDomain().toCommonDomain());
         } else {
