@@ -157,6 +157,10 @@ public class InterfaceFilesService {
     @Transactional
     public InterfaceFileObjectInterfaceFile addInterfaceFile(MultipartFile file,
         AddInterfaceFileRequestMetadata metadata) {
+
+        PermissionUtil.checkPermissionInDomain(FileHandlerPermission.CREATE_INTERFACE_FILES,
+            Domain.valueOf(metadata.getDomain()).toCommonDomain());
+
         try {
             //Ensure the related interface file exists if provided
             InterfaceFileEntity relatedInterfaceFile = null;
