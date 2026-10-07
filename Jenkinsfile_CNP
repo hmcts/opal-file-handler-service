@@ -470,57 +470,11 @@ withPipeline(type, product, component) {
     afterAlways('functionalTest:dev') {
         try {
             onPR {
-                withAksClient('dev', 'dev', product) {
-                    def kubectl = new Kubectl(this, 'dev', product)
-                    kubectl.login()
-                    executeFunctionalTestDatabaseScript(
-                            "opal-${component}-pr-${env.CHANGE_ID}", product,
-                            'src/functionalTest/resources/db/dwp/cleanup.sql'
-                    )
-                    executeFunctionalTestDatabaseScript(
-                            "opal-${component}-pr-${env.CHANGE_ID}", product,
-                            'src/functionalTest/resources/db/bteckoh-transfer/cleanup.sql'
-                    )
-                    executeFunctionalTestDatabaseScript(
-                            "opal-${component}-pr-${env.CHANGE_ID}", product,
-                            'src/functionalTest/resources/db/natwest/cleanup.sql'
-                    )
-                    executeFunctionalTestDatabaseScript(
-                            "opal-${component}-pr-${env.CHANGE_ID}", product,
-                            'src/functionalTest/resources/db/barclaycard/cleanup.sql'
-                    )
-                    executeFunctionalTestDatabaseScript(
-                            "opal-${component}-pr-${env.CHANGE_ID}", product,
-                            'src/functionalTest/resources/db/allpay/cleanup.sql'
-                    )
-                    executeFunctionalTestDatabaseScript(
-                            "opal-${component}-pr-${env.CHANGE_ID}", product,
-                            'src/functionalTest/resources/db/jacobs/cleanup.sql'
-                    )
-                    executeFunctionalTestDatabaseScript(
-                            "opal-${component}-pr-${env.CHANGE_ID}", product,
-                            'src/functionalTest/resources/db/cder/cleanup.sql'
-                    )
-                    executeFunctionalTestDatabaseScript(
-                            "opal-${component}-pr-${env.CHANGE_ID}", product,
-                            'src/functionalTest/resources/db/marston/cleanup.sql'
-                    )
-                    executeFunctionalTestDatabaseScript(
-                            "opal-${component}-pr-${env.CHANGE_ID}",
-                            product,
-                            functionalTestDatabaseCleanupScript
-                    )
-                }
+                steps.sh 'bash src/functionalTest/resources/db/port-forward.sh stop'
+                env.FUNCTIONAL_TEST_DB_URL = ''
             }
         } finally {
-            try {
-                onPR {
-                    steps.sh 'bash src/functionalTest/resources/db/port-forward.sh stop'
-                    env.FUNCTIONAL_TEST_DB_URL = ''
-                }
-            } finally {
-                publishFunctionalResults()
-            }
+            publishFunctionalResults()
         }
     }
 
