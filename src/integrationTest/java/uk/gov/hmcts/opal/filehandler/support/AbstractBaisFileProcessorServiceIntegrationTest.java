@@ -263,6 +263,7 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
             .opalDomain(Domain.MAINTENANCE)
             .createdDatetime(LocalDateTime.now(clock))
             .status(Status.SUCCESS)
+            .createdBy(-1L)
             .build();
 
         return repository.save(entity);
