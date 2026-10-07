@@ -118,6 +118,7 @@ public class InterfaceFilesService {
     public InterfaceFileObjectInterfaceFile getInterfaceFile(Long id) {
         InterfaceFileEntity entity = getInterfaceFileEntity(id);
         checkAccessPermission(entity);
+
         return mapper.toInterfaceFileObject(entity);
     }
 
@@ -185,7 +186,8 @@ public class InterfaceFilesService {
             entity.setPaymentType(PaymentType.valueOf(metadata.getPaymentType()));
             entity.setBusinessUnitCode(new String[] {metadata.getBusinessUnitCode()});
             entity = repository.save(entity);
-            return getInterfaceFile(entity.getInterfaceFileId());
+
+            return mapper.toInterfaceFileObject(getInterfaceFileEntity(entity.getInterfaceFileId()));
         } catch (IOException e) {
             throw new InternalServerErrorException(
                 "Internal Server Error",
