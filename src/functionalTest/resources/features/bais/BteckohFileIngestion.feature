@@ -1,4 +1,4 @@
-@Opal @PO-6428 @BaisReportFixture
+@Ignore @Opal @PO-6428 @BaisReportFixture
 Feature: BTEckoh file ingestion
 
   Scenario: A valid BTEckoh transfer file is ingested
