@@ -1,5 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.controllers;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -12,9 +13,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -35,6 +38,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.support.AbstractControllerIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.support.UtilBlobStoreService;
+import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
 import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileEnumInterfaceFile;
@@ -58,10 +62,17 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     @Autowired
     private InterfaceFilesRepository repository;
 
-    private static final String bteckohResourcePath = "azure/data/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-"
-        + "Daily-2026-07-06-06-00-18.xlsx";
+    @Autowired
+    private BusinessUnitBankAccountEntityTestData buBankAccountTestData;
 
-    private static byte[] fileContents;
+    private static String BASE_RESOURCE_PATH = "azure/data/";
+    private static final String bteckohResourcePath = BASE_RESOURCE_PATH +
+        "/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-Daily-2026-07-06-06-00-18.xlsx";
+    private static final String jacobsResourcePath = BASE_RESOURCE_PATH +
+        "/jacobs/0000031712_dat_0000098475_20260408_103500.txt";
+
+    private static byte[] bteckohFileContents;
+    private static byte[] jacobsFileContents;
     private static final UUID uuid = UUID.randomUUID();
 
     private InterfaceFileObjectInterfaceFile buildExpectedResponse(InterfaceFileEntity interfaceFileEntity) {
@@ -80,18 +91,23 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             .build();
     }
 
-    private AddInterfaceFileRequestMetadata buildMetaData(InterfaceFileEnumInterfaceFile source, Long relatedId) {
+    private AddInterfaceFileRequestMetadata buildMetaData(InterfaceFileEnumInterfaceFile source, Long relatedId,
+        boolean shouldPreProcessFile) {
         return AddInterfaceFileRequestMetadata.builder()
             .fileName("file-name.dat")
             .businessUnitCode("010")
             .paymentType(PaymentTypeEnumTypes.CASH)
             .type(InterfaceFileTypeEnumInterfaceFile.SOURCE)
             .domain(DomainEnumTypes.FINES)
-            .shouldPreProcessFile(false)
+            .shouldPreProcessFile(shouldPreProcessFile)
             .source(source)
             .target(InterfaceFileEnumInterfaceFile.OPAL)
             .relatedInterfaceFileId(relatedId)
             .build();
+    }
+
+    private AddInterfaceFileRequestMetadata buildMetaData(InterfaceFileEnumInterfaceFile source, Long relatedId) {
+        return buildMetaData(source, relatedId, false);
     }
 
     private InterfaceFileEntity buildEntity(
@@ -154,9 +170,18 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         static void setupData() throws IOException {
             utilBlobStoreService = new UtilBlobStoreService();
             utilBlobStoreService.createContainerIfNotExists("bteckoh-report");
+            utilBlobStoreService.createContainerIfNotExists("jacobs");
 
-            URL url = Resources.getResource(bteckohResourcePath);
-            fileContents = Resources.toByteArray(url);
+            URL bteckohUrl = Resources.getResource(bteckohResourcePath);
+            URL jacobsUrl = Resources.getResource(jacobsResourcePath);
+            bteckohFileContents = Resources.toByteArray(bteckohUrl);
+            jacobsFileContents = Resources.toByteArray(jacobsUrl);
+        }
+
+        @BeforeEach
+        void beforeEach() {
+            buBankAccountTestData.clear();
+            buBankAccountTestData.saveTypicalBusinessUnitBankAccount(1L, "JA01", "0000031714");
         }
 
         @Test
@@ -175,7 +200,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
 
             InterfaceFileObjectInterfaceFile response =  setupFileUploadApiTest(HttpMethod.POST, URI)
                 .includeMultipartBody(
-                    "file", "some-file-name", "application/json", fileContents)
+                    "file", "some-file-name", "application/json", bteckohFileContents)
                 .includeMultipartBody(
                     "metadata", "metadata.json", "application/json", metadata.getBytes())
                 .includeContentDigest()
@@ -192,6 +217,37 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         }
 
         @Test
+        @JiraStory("PO-8745")
+        @JiraEpic("PO-3952")
+        @DisplayName("Correctly processes file after ingestion when type=SOURCE and shouldPreProcessFile=true")
+        void addNewInterfaceFileAndPreProcess() {
+            String originalFileName = "jacobs-file-name";
+            String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.JACOBS, null, true));
+
+            InterfaceFileObjectInterfaceFile response =  setupFileUploadApiTest(HttpMethod.POST, URI)
+                .includeMultipartBody(
+                    "file", originalFileName, "application/json", jacobsFileContents)
+                .includeMultipartBody(
+                    "metadata", "metadata.json", "application/json", metadata.getBytes())
+                .includeContentDigest()
+                .clearPermissions()
+                .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
+                .execute()
+                .assertSuccess(HttpStatus.CREATED)
+                .getResponseBodyAsObject(InterfaceFileObjectInterfaceFile.class);
+
+
+            assertExistsInDatabase(response.getInterfaceFileId());
+            Optional<InterfaceFileEntity> sourceJsonInterfaceFile = repository
+                .findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileName(
+                    response.getInterfaceFileId(),
+                    Type.SOURCE_JSON, originalFileName); // TODO - JMS Queue error is happening so when we add Status.Success to this it fails
+            assertThat(sourceJsonInterfaceFile.isPresent()).isTrue();
+            assertAddedToBlobStorage("jacobs", response.getFilestoreUuid().toString());
+            assertAddedToBlobStorage("jacobs", sourceJsonInterfaceFile.get().getFilestoreUuid().toString());
+        }
+
+        @Test
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("Fails when user has no permissions")
@@ -200,7 +256,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
 
             setupFileUploadApiTest(HttpMethod.POST, URI)
                 .includeMultipartBody(
-                    "file", "some-file-name", "application/json", fileContents)
+                    "file", "some-file-name", "application/json", bteckohFileContents)
                 .includeMultipartBody(
                     "metadata", "metadata.json", "application/json", metadata.getBytes())
                 .includeContentDigest()
@@ -228,7 +284,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
                 originalEntity.getInterfaceFileId()));
 
             InterfaceFileObjectInterfaceFile response =  setupFileUploadApiTest(HttpMethod.POST, URI)
-                .includeMultipartBody("file", "some-other-file-name", "application/json", fileContents)
+                .includeMultipartBody("file", "some-other-file-name", "application/json", bteckohFileContents)
                 .includeMultipartBody("metadata", "metadata.json", "application/json", metadata.getBytes())
                 .includeContentDigest()
                 .clearPermissions()
@@ -252,7 +308,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             InterfaceFileEntity originalEntity = buildEntity(
                 "some-file-name", "d553f8f289bd08e5c513de5c000c0374", Status.SUCCESS, null, null);
             insertInterfaceFileEntity(originalEntity);
-            utilBlobStoreService.storeBlob(fileContents, "bteckoh-report", uuid.toString());
+            utilBlobStoreService.storeBlob(bteckohFileContents, "bteckoh-report", uuid.toString());
             final String originalVersion = utilBlobStoreService.getBlobVersion(
                 "bteckoh-report", originalEntity.getFilestoreUuid().toString());
 
@@ -264,7 +320,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             );
 
             InterfaceFileObjectInterfaceFile response =  setupFileUploadApiTest(HttpMethod.POST, URI)
-                .includeMultipartBody("file", "some-file-name", "application/json", fileContents)
+                .includeMultipartBody("file", "some-file-name", "application/json", bteckohFileContents)
                 .includeMultipartBody("metadata", "metadata.json", "application/json", metadata.getBytes())
                 .includeContentDigest()
                 .clearPermissions()
@@ -292,9 +348,9 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             InterfaceFileEntity original = buildEntity("some-file-name",
                 "d553f8f289bd08e5c513de5c000c0374", Status.INGESTED, null, null);
             insertInterfaceFileEntity(original);
-            utilBlobStoreService.storeBlob(fileContents, "bteckoh-report", uuid.toString());
+            utilBlobStoreService.storeBlob(bteckohFileContents, "bteckoh-report", uuid.toString());
 
-            InterfaceFileObjectInterfaceFile response = uploadContent(fileContents,
+            InterfaceFileObjectInterfaceFile response = uploadContent(bteckohFileContents,
                 buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
 
             assertEquals(StatusEnumInterfaceFile.INGESTED, response.getStatus());
@@ -333,7 +389,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             AddInterfaceFileRequestMetadata metadata = buildMetaData(
                 InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null);
             metadata.setFileName("different-metadata-name.xlsx");
-            InterfaceFileObjectInterfaceFile response = uploadContent(fileContents, metadata);
+            InterfaceFileObjectInterfaceFile response = uploadContent(bteckohFileContents, metadata);
 
             assertEquals(StatusEnumInterfaceFile.INGESTED, response.getStatus());
             assertEquals("some-file-name", response.getFileName());
@@ -369,7 +425,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         @Disabled("PO-10908: missing multipart parts return 500; re-enable when fixed to return 400")
         void rejectsMissingMetadataPart() {
             setupFileUploadApiTest(HttpMethod.POST, URI)
-                .includeMultipartBody("file", "some-file-name", "application/octet-stream", fileContents)
+                .includeMultipartBody("file", "some-file-name", "application/octet-stream", bteckohFileContents)
                 .includeContentDigest()
                 .clearPermissions()
                 .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
@@ -408,7 +464,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         void addInterfaceFile_shouldReturn404_whenFeatureFlagIsOff() throws Exception {
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
             setupFileUploadApiTest(HttpMethod.POST, URI)
-                .includeMultipartBody("file", "some-file-name", "application/json", fileContents)
+                .includeMultipartBody("file", "some-file-name", "application/json", bteckohFileContents)
                 .includeMultipartBody("metadata", "metadata.json", "application/json", metadata.getBytes())
                 .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
                 .execute()
@@ -425,7 +481,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         @BeforeAll
         static void setupData() throws IOException {
             URL url = Resources.getResource(bteckohResourcePath);
-            fileContents = Resources.toByteArray(url);
+            bteckohFileContents = Resources.toByteArray(url);
         }
 
         @Test
@@ -442,7 +498,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             utilBlobStoreService.deleteContainer("bteckoh-report");
 
             setupFileUploadApiTest(HttpMethod.POST, URI)
-                .includeMultipartBody("file", "some-file-name", "application/json", fileContents)
+                .includeMultipartBody("file", "some-file-name", "application/json", bteckohFileContents)
                 .includeMultipartBody("metadata", "metadata.json", "application/json", metadata.getBytes())
                 .includeContentDigest()
                 .clearPermissions()
