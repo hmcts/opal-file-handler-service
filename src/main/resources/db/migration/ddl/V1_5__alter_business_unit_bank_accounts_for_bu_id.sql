@@ -19,4 +19,7 @@ ALTER TABLE business_unit_bank_account
     ADD CONSTRAINT business_unit_bank_account_pk
         PRIMARY KEY (business_unit_id);
 
+COMMENT ON COLUMN business_unit_bank_account.business_unit_id IS
+    'Business unit ID (primary key) of this record.';
+
 DROP SEQUENCE IF EXISTS business_unit_bank_account_id_seq;

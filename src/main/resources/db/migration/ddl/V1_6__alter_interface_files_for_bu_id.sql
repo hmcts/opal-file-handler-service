@@ -20,6 +20,9 @@ ALTER TABLE interface_files
     DROP COLUMN business_unit_code,
     ADD COLUMN business_unit_id SMALLINT[] NULL;
 
-CREATE INDEX if_bu_id_idx
+COMMENT ON COLUMN interface_files.business_unit_id IS
+    'An array of business unit IDs related to the interface file';
+
+CREATE INDEX if_bu_id_gin_idx
     ON interface_files
     USING GIN (business_unit_id);
