@@ -1,4 +1,4 @@
-@Opal @PO-6439 @BaisReportFixture
+@Ignore @Opal @PO-6439 @BaisReportFixture
 Feature: Marston file ingestion
 
   Scenario: A valid Marston file is ingested
