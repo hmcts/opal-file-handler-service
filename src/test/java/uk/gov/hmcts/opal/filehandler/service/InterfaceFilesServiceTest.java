@@ -1,12 +1,15 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,18 +18,20 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.multipart.MultipartFile;
-import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.web.multipart.MultipartFile;
+import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
@@ -70,8 +75,27 @@ public class InterfaceFilesServiceTest {
     @Mock
     private List<InterfaceFileProcessorService> processorServicesList;
 
+    @Mock
+    private Map<String, BaisFileProcessorConfiguration> configMap;
+
+    @Mock BaisFileProcessorConfiguration config;
+
+    @Mock
+    private InterfaceFileProcessorService barclayCardProcessorService;
+
     @InjectMocks
     private InterfaceFilesService service;
+
+    @BeforeEach()
+    void beforeEach() {
+        Map map = mock(Map.class);
+        when(map.get(Interface.BARCLAYCARD.getProcessorServiceClass())).thenReturn(barclayCardProcessorService);
+        Stream stream = mock(Stream.class);
+        when(stream.collect(any())).thenReturn(map);
+        when(processorServicesList.stream()).thenReturn(stream);
+
+        when(configMap.get(anyString())).thenReturn(config);
+    }
 
 
     @Test
@@ -209,6 +233,7 @@ public class InterfaceFilesServiceTest {
         verify(repository).findById(15L);
         verify(repository).save(ingestedEntity);
         verify(spyService).getInterfaceFile(24L);
+        verify(processorService, never()).processFile(any(), any(), any());
     }
 
     @Test
@@ -249,6 +274,7 @@ public class InterfaceFilesServiceTest {
         assertArrayEquals(new String[] {"9876"}, ingestedEntity.getBusinessUnitCode());
         verify(repository).save(ingestedEntity);
         verify(spyService).getInterfaceFile(25L);
+        verify(processorService, never()).processFile(any(), any(), any());
     }
 
     @Test
@@ -272,6 +298,29 @@ public class InterfaceFilesServiceTest {
             "Failed to read file content for interface file creation ",
             exception.getMessage()
         );
+    }
+
+    @Test
+    void addInterfaceFile_processesFileAfterIngestionWhenShouldPreProcessFileTrue() throws IOException{
+        // Arrange
+        InterfaceFileEntity interfaceFile = mock(InterfaceFileEntity.class);
+        AddInterfaceFileRequestMetadata request = AddInterfaceFileRequestMetadata.builder()
+            .shouldPreProcessFile(true)
+            .type(InterfaceFileTypeEnumInterfaceFile.SOURCE)
+            .source(InterfaceFileEnumInterfaceFile.BARCLAYCARD)
+            .target(InterfaceFileEnumInterfaceFile.OPAL)
+            .domain(DomainEnumTypes.FINES)
+            .build();
+        MultipartFile file = mock(MultipartFile.class);
+        when(barclayCardProcessorService.ingestFile(file.getName(), file.getBytes(), Interface.BARCLAYCARD,
+            Interface.OPAL, Type.SOURCE, Domain.FINES,
+            config.getContainerName())).thenReturn(interfaceFile);
+
+        // Act
+        service.addInterfaceFile(file, request);
+
+        // Assert
+//        verify(barclayCardProcessorService.processFile(config, any(), );)
     }
 
     private InterfaceFilesService serviceWithProcessor(
