@@ -1,4 +1,4 @@
-@Ignore @Opal @PO-6426 @BaisReportFixture
+@Opal @PO-6426 @BaisReportFixture
 Feature: Allpay file ingestion
 
   Scenario: A valid Allpay file is ingested
