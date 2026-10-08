@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandler.utils;
+package uk.gov.hmcts.opal.filehandler.util;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

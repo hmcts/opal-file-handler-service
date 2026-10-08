@@ -18,6 +18,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationProvider;
 import uk.gov.hmcts.opal.filehandler.Application;
 import uk.hmcts.zephyr.automation.junit5.extension.ZephyrAutomationExtension;
 
@@ -28,6 +30,10 @@ import uk.hmcts.zephyr.automation.junit5.extension.ZephyrAutomationExtension;
 @ExtendWith(ZephyrAutomationExtension.class)
 @Slf4j
 public class AbstractIntegrationTest {
+
+    // SecurityConfig is disabled in this profile, but common-lib still creates its system-user service.
+    @MockitoBean
+    private OpalJwtAuthenticationProvider authenticationProvider;
 
     private static final int WIREMOCK_PORT = resolveWireMockPort();
     private static final WireMockServer WIREMOCK_SERVER = new WireMockServer(options().port(WIREMOCK_PORT));

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.opal.filehandler.support.BaisReportTestData.forDisplayName;
 import static uk.gov.hmcts.opal.filehandler.support.BaisReportTestData.forSource;
+import static uk.gov.hmcts.opal.filehandler.support.SftpRetry.withRetry;
 
 import com.google.common.io.Resources;
 import io.cucumber.java.en.Given;
@@ -18,6 +19,7 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.codec.digest.DigestUtils;
 import uk.gov.hmcts.opal.filehandler.sftp.SftpClient;
 import uk.gov.hmcts.opal.filehandler.support.BaisReportTestConfig;
 import uk.gov.hmcts.opal.filehandler.support.TestHttpClient.TestHttpResponse;
@@ -34,14 +36,26 @@ public class BaisReportStepDef extends BaseStepDef {
     private final TestSupportApiClient testSupportApiClient = new TestSupportApiClient();
     private TestHttpResponse taskResponse;
     private Map<String, Object> successfulInterfaceFile;
+    private Map<String, Object> duplicateInterfaceFile;
 
-    @Given("^the configured (BTEckoh|CAPS) report is available on bais$")
+    @Given("the configured {string} report is available on bais")
     public void configuredReportIsAvailable(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.fileName(), true);
     }
 
-    @When("^the (BTEckoh|CAPS) report ingestion job is requested through testing support$")
+    @Given("the configured {string} report has already been processed")
+    public void configuredReportHasAlreadyBeenProcessed(String displayName) {
+        // Initialise the default test user so this composite step can be used independently.
+        BearerTokenStepDef.getToken();
+        configuredReportIsAvailable(displayName);
+        reportIngestionJobIsRequested(displayName);
+        testingSupportRequestIsAccepted();
+        successfulInterfaceFileIsStored(forDisplayName(displayName).source());
+        configuredReportNoLongerExists(displayName);
+    }
+
+    @When("the {string} report ingestion job is requested through testing support")
     public void reportIngestionJobIsRequested(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         taskResponse = testSupportApiClient.post("/automated-jobs/" + config.automatedTaskName());
@@ -50,18 +64,22 @@ public class BaisReportStepDef extends BaseStepDef {
     @Then("the testing-support request is accepted")
     public void testingSupportRequestIsAccepted() {
         assertNotNull(taskResponse, "The testing-support endpoint was not called");
-        assertEquals(202, taskResponse.statusCode(), "The testing-support endpoint did not accept the job");
+        assertEquals(
+            202,
+            taskResponse.statusCode(),
+            "The testing-support endpoint did not accept the job. Response body: " + taskResponse.body()
+        );
     }
 
-    @Then("^a successful (BTECKOH_REPORT|CAPS_REPORT) interface file is stored$")
+    @Then("a successful {string} interface file is stored")
     public void successfulInterfaceFileIsStored(String source) {
         BaisReportTestConfig config = forSource(source);
-        successfulInterfaceFile = awaitSuccessfulInterfaceFile(config);
+        successfulInterfaceFile = awaitSuccessfulInterfaceFile(config, "SOURCE");
 
         assertEquals(config.source(), successfulInterfaceFile.get("source"));
         assertEquals("OPAL", successfulInterfaceFile.get("target"));
         assertEquals("SOURCE", successfulInterfaceFile.get("type"));
-        assertEquals("MAINTENANCE", successfulInterfaceFile.get("domain"));
+        assertEquals(config.expectedDomain(), successfulInterfaceFile.get("domain"));
         assertEquals(config.fileName(), successfulInterfaceFile.get("file_name"));
         assertEquals(config.checksum(), successfulInterfaceFile.get("checksum"));
         assertNotNull(successfulInterfaceFile.get("filestore_uuid"));
@@ -90,7 +108,7 @@ public class BaisReportStepDef extends BaseStepDef {
         assertEquals("SUCCESS", responseBody.get("status"));
     }
 
-    @Then("^the stored (BTEckoh|CAPS) report content matches the bais (workbook|file)$")
+    @Then("the stored {string} report content matches the bais {string}")
     public void storedReportContentMatches(String displayName, String fileDescription) throws IOException {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertNotNull(successfulInterfaceFile, "Successful interface-file metadata was not retrieved");
@@ -110,13 +128,73 @@ public class BaisReportStepDef extends BaseStepDef {
         );
     }
 
-    @Then("^the configured (BTEckoh|CAPS) report no longer exists on bais$")
+    @Then("the DWP JSON file contains the extracted payments and bank details")
+    public void dwpJsonContainsExtractedPayments() {
+        assertNotNull(successfulInterfaceFile, "Source metadata was not retrieved");
+        Map<String, Object> jsonFile = awaitSuccessfulInterfaceFile(forSource("DWP"), "SOURCE_JSON");
+        assertEquals("OPAL", jsonFile.get("target"));
+        assertEquals("MAINTENANCE", jsonFile.get("domain"));
+        assertNotNull(jsonFile.get("filestore_uuid"));
+        Response response = authorisedJsonRequest().accept("application/octet-stream").when()
+            .get(getTestUrl() + "/interface-files/" + jsonFile.get("interface_file_id") + "/content");
+        assertEquals(200, response.statusCode());
+        assertEquals(jsonFile.get("checksum"), DigestUtils.md5Hex(response.asByteArray()));
+        assertEquals(forSource("DWP").fileName(), response.jsonPath().getString("file_name"));
+        assertEquals("DWP1234567", response.jsonPath().getString("dwp_court_code"));
+        assertEquals("CASH", response.jsonPath().getString("payment_type"));
+        assertEquals("010101", response.jsonPath().getString("destination_details.bank_details.sort_code"));
+        assertEquals("12341234", response.jsonPath().getString("destination_details.bank_details.account_number"));
+        assertEquals(List.of(2125, 2125, 2125, 2125, 2001),
+            response.jsonPath().getList("transactions.amount"));
+        assertEquals(List.of("99", "99", "99", "99", "99"),
+            response.jsonPath().getList("transactions.transaction_code"));
+    }
+
+    @Then("the configured {string} report no longer exists on bais")
     public void configuredReportNoLongerExists(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.fileName(), false);
     }
 
-    private Map<String, Object> awaitSuccessfulInterfaceFile(BaisReportTestConfig config) {
+    @When("the configured {string} report is placed on bais")
+    public void configuredReportIsPlacedOnBais(String displayName) {
+        BaisReportTestConfig config = forDisplayName(displayName);
+        withRetry(() -> {
+            try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
+                sftpClient.uploadResource(config.resourcePath(), config.fileName());
+            }
+        });
+    }
+
+    @Then("a duplicate {string} interface file is recorded")
+    public void duplicateInterfaceFileIsRecorded(String source) {
+        BaisReportTestConfig config = forSource(source);
+        duplicateInterfaceFile = awaitInterfaceFile(config, "SOURCE", "DUPLICATE");
+        assertEquals(config.source(), duplicateInterfaceFile.get("source"));
+        assertEquals(config.fileName(), duplicateInterfaceFile.get("file_name"));
+        assertEquals(config.checksum(), duplicateInterfaceFile.get("checksum"));
+    }
+
+    @Then("the duplicate {string} interface file reuses the original blob")
+    public void duplicateInterfaceFileReusesOriginalBlob(String source) {
+        assertNotNull(successfulInterfaceFile, "Successful interface-file metadata was not retrieved");
+        assertNotNull(duplicateInterfaceFile, "Duplicate interface-file metadata was not retrieved");
+        assertEquals(
+            successfulInterfaceFile.get("filestore_uuid"),
+            duplicateInterfaceFile.get("filestore_uuid"),
+            "The duplicate should reuse the original blob rather than upload another blob"
+        );
+    }
+
+    private Map<String, Object> awaitSuccessfulInterfaceFile(BaisReportTestConfig config, String type) {
+        return awaitInterfaceFile(config, type, "SUCCESS");
+    }
+
+    private Map<String, Object> awaitInterfaceFile(
+        BaisReportTestConfig config,
+        String type,
+        String status
+    ) {
         long deadline = System.nanoTime() + INGESTION_TIMEOUT.toNanos();
         List<Map<String, Object>> matchingRecords = List.of();
         do {
@@ -132,16 +210,17 @@ public class BaisReportStepDef extends BaseStepDef {
                 .filter(record -> config.fileName().equals(record.get("file_name")))
                 .toList();
             List<Map<String, Object>> successfulRecords = matchingRecords.stream()
-                .filter(record -> "SUCCESS".equals(record.get("status")))
+                .filter(record -> type.equals(record.get("type")))
+                .filter(record -> status.equals(record.get("status")))
                 .toList();
-            if (successfulRecords.size() == 1) {
+            if (!successfulRecords.isEmpty()) {
                 return successfulRecords.getFirst();
             }
             pauseBeforeRetry();
         } while (System.nanoTime() < deadline);
 
         throw new AssertionError(
-            "Expected one successful " + config.displayName() + " interface-file record within "
+            "Expected a " + status + " " + config.displayName() + " interface-file record within "
                 + INGESTION_TIMEOUT.toSeconds() + " seconds; matching records: " + matchingRecords
         );
     }
@@ -160,12 +239,14 @@ public class BaisReportStepDef extends BaseStepDef {
         String fileName,
         boolean expected
     ) {
-        try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
-            if (expected) {
-                assertTrue(sftpClient.exists(fileName), "Expected SFTP file to exist: " + fileName);
-            } else {
-                assertFalse(sftpClient.exists(fileName), "Expected SFTP file to be removed: " + fileName);
+        withRetry(() -> {
+            try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
+                if (expected) {
+                    assertTrue(sftpClient.exists(fileName), "Expected SFTP file to exist: " + fileName);
+                } else {
+                    assertFalse(sftpClient.exists(fileName), "Expected SFTP file to be removed: " + fileName);
+                }
             }
-        }
+        });
     }
 }

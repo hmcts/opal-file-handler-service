@@ -2,7 +2,7 @@ import org.flywaydb.gradle.task.FlywayMigrateTask
 
 buildscript {
   dependencies {
-    classpath("org.flywaydb:flyway-database-postgresql:13.7.0")
+    classpath("org.flywaydb:flyway-database-postgresql:13.9.0")
   }
 }
 plugins {
@@ -18,7 +18,7 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'org.flywaydb.flyway' version '13.7.0'
+  id 'org.flywaydb.flyway' version '13.9.0'
   id 'net.serenity-bdd.serenity-gradle-plugin' version '5.3.9'
 }
 
@@ -36,9 +36,9 @@ java {
 
 ext {
   serenityVersion = "5.3.11"
-  cucumberVersion = "7.34.8"
+  cucumberVersion = "7.34.9"
   log4JVersion = "2.26.1"
-  logbackVersion = "1.6.3"
+  logbackVersion = "1.6.5"
 }
 
 def logPublishedHtmlReport = { String label, String reportDirectory ->
@@ -194,13 +194,13 @@ tasks.named('sonarResolver') {
 
 tasks.withType(Test).configureEach {
   useJUnitPlatform()
-  failFast = true
+  failFast = false
   systemProperty 'spring.test.context.cache.maxSize', 4
-  maxHeapSize = "2g"
 
   testLogging {
     exceptionFormat = 'full'
   }
+  maxHeapSize = "2g"
 }
 
 tasks.register('functional', Test) {
@@ -226,7 +226,7 @@ tasks.register('integration', Test) {
   group = "Verification"
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
   classpath = sourceSets.integrationTest.runtimeClasspath
-  failFast = true
+  failFast = false
 }
 
 
@@ -347,7 +347,7 @@ ext['snakeyaml.version'] = '2.0'
 dependencyManagement {
   imports {
     mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2025.1.3'
-    mavenBom "com.fasterxml.jackson:jackson-bom:2.22.2"
+    mavenBom "com.fasterxml.jackson:jackson-bom:2.22.3"
     mavenBom "io.netty:netty-bom:4.2.18.Final"
   }
 }
@@ -363,9 +363,10 @@ dependencies {
   openapiImplementation "io.swagger.core.v3:swagger-core:2.2.55"
   openapiImplementation "tools.jackson.dataformat:jackson-dataformat-yaml"
   //HMCTS
-  implementation 'uk.gov.hmcts:opal-common-lib:0.3.33'
+  implementation 'uk.gov.hmcts:opal-common-lib:0.3.35'
+  implementation 'uk.gov.hmcts:spring-exception-handler:1.0.3'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
-  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.1'
+  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.2'
 
   //Spring Boot
   implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
@@ -398,8 +399,8 @@ dependencies {
   implementation "ch.qos.logback:logback-classic:${logbackVersion}"
   implementation "ch.qos.logback:logback-core:${logbackVersion}"
 
-  implementation 'org.flywaydb:flyway-core:13.7.0'
-  runtimeOnly 'org.flywaydb:flyway-database-postgresql:13.7.0', {
+  implementation 'org.flywaydb:flyway-core:13.9.0'
+  runtimeOnly 'org.flywaydb:flyway-database-postgresql:13.9.0', {
     exclude group: 'org.flywaydb', module: 'flyway-core'
   }
 
@@ -421,7 +422,7 @@ dependencies {
   }
 
   //Annotation
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.10.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.12.Final'
 
   compileOnly 'org.projectlombok:lombok:1.18.48'
   annotationProcessor 'org.projectlombok:lombok:1.18.48'
