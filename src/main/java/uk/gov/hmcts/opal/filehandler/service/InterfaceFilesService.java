@@ -37,6 +37,7 @@ import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreSer
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
+import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 
 @Service
@@ -159,9 +160,12 @@ public class InterfaceFilesService {
     public InterfaceFileObjectInterfaceFile addInterfaceFile(MultipartFile file,
         AddInterfaceFileRequestMetadata metadata) {
 
-        if (metadata.getDomain() != null) {
+        DomainEnumTypes metadataDomain = metadata.getDomain();
+        Domain fromMetadata = Domain.valueOf(metadataDomain);
+
+        if (metadataDomain != null && fromMetadata != null) {
             PermissionUtil.checkPermissionInDomain(
-                FileHandlerPermission.CREATE_INTERFACE_FILES, Domain.valueOf(metadata.getDomain()).toCommonDomain());
+                FileHandlerPermission.CREATE_INTERFACE_FILES, fromMetadata.toCommonDomain());
         } else {
             PermissionUtil.checkPermission(FileHandlerPermission.CREATE_INTERFACE_FILES);
         }
