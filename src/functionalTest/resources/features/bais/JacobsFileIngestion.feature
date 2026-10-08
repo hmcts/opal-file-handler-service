@@ -1,4 +1,4 @@
-@Ignore @Opal @PO-6437 @BaisReportFixture
+@Opal @PO-6437 @BaisReportFixture
 Feature: Jacobs file ingestion
 
   Scenario: A valid Jacobs file is ingested
