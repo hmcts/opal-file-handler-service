@@ -98,7 +98,7 @@ public class InterfaceFileEntity {
     private InterfaceFileEntity relatedInterfaceFile;
 
     @Column(nullable = false)
-    @NonNull
+    @NotNull
     private Long createdBy;
 
 }
