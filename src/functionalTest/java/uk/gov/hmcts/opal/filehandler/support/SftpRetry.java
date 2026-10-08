@@ -8,8 +8,8 @@ public final class SftpRetry {
 
     private static final Logger log = LoggerFactory.getLogger(SftpRetry.class);
 
-    private static final int MAX_ATTEMPTS = 5;
-    private static final long BASE_SLEEP_MS = 2000L;
+    private static final int MAX_ATTEMPTS = 10;
+    private static final long BASE_SLEEP_MS = 10000L;
 
     private SftpRetry() {
     }
@@ -27,7 +27,7 @@ public final class SftpRetry {
             } catch (RuntimeException e) {
                 lastException = e;
                 if (attempt < MAX_ATTEMPTS) {
-                    long sleepMs = BASE_SLEEP_MS * attempt;
+                    long sleepMs = BASE_SLEEP_MS;
                     log.warn("SFTP attempt {}/{} failed: {} — retrying in {}ms",
                         attempt, MAX_ATTEMPTS, e.getMessage(), sleepMs);
                     try {
