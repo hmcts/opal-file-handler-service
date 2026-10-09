@@ -45,7 +45,11 @@ public class SftpClient implements AutoCloseable {
             authenticate();
             sftpClient = sshClient.newSFTPClient();
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to connect to SFTP server", e);
+            throw new IllegalStateException(
+                "Failed to connect to SFTP server for user " + sftpUsername
+                    + " at " + TestEnvironment.getSftpHost() + ":" + TestEnvironment.getSftpPort(),
+                e
+            );
         }
     }
 

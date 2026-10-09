@@ -1,4 +1,4 @@
-@Ignore @Opal @PO-6438 @BaisReportFixture
+@Opal @PO-6438 @BaisReportFixture
 Feature: CDER file ingestion
 
   Scenario: A valid CDER file is ingested
