@@ -73,10 +73,10 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     private FinesInterfaceFilePreprocessQueueService finesQueueService;
 
     private static String BASE_RESOURCE_PATH = "azure/data/";
-    private static final String bteckohResourcePath = BASE_RESOURCE_PATH +
-        "/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-Daily-2026-07-06-06-00-18.xlsx";
-    private static final String jacobsResourcePath = BASE_RESOURCE_PATH +
-        "/jacobs/0000031712_dat_0000098475_20260408_103500.txt";
+    private static final String bteckohResourcePath = BASE_RESOURCE_PATH
+        + "/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-Daily-2026-07-06-06-00-18.xlsx";
+    private static final String jacobsResourcePath = BASE_RESOURCE_PATH
+        + "/jacobs/0000031712_dat_0000098475_20260408_103500.txt";
 
     private static byte[] bteckohFileContents;
     private static byte[] jacobsFileContents;

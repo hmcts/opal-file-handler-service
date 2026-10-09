@@ -165,7 +165,7 @@ public class InterfaceFilesService {
             entity.setPaymentType(PaymentType.valueOf(metadata.getPaymentType()));
             entity.setBusinessUnitCode(new String[] {metadata.getBusinessUnitCode()});
             entity = repository.save(entity);
-            if(metadata.getType() == InterfaceFileTypeEnumInterfaceFile.SOURCE && metadata.getShouldPreProcessFile()) {
+            if (metadata.getType() == InterfaceFileTypeEnumInterfaceFile.SOURCE && metadata.getShouldPreProcessFile()) {
                 processorService.processFile(config, entity, file.getInputStream());
             }
             return getInterfaceFile(entity.getInterfaceFileId());
