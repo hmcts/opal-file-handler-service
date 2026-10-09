@@ -119,7 +119,9 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     }
 
     private void assertExistsInDatabase(Long id) {
-        assertTrue(repository.findById(id).isPresent());
+        InterfaceFileEntity saved = repository.findById(id).orElseThrow();
+        assertEquals(500000000L, saved.getCreatedBy(),
+            "The uploaded interface file should be attributed to the authenticated user");
     }
 
     private void assertDatabaseUnchanged() {
