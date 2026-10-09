@@ -69,12 +69,20 @@ public class UserStateStub {
     }
 
     public UserStateStub() {
-        this(generateJwt());
+        this(generateJwt(), 500000000L);
     }
 
     public UserStateStub(String jwtStr) {
+        this(jwtStr, 500000000L);
+    }
+
+    public UserStateStub(long userId) {
+        this(generateJwt(), userId);
+    }
+
+    private UserStateStub(String jwtStr, long userId) {
         this.jwtStr = jwtStr;
-        this.userState = getDefaultUserState();
+        this.userState = getDefaultUserState(userId);
     }
 
     private static String generateJwt() {
@@ -274,12 +282,12 @@ public class UserStateStub {
             .build();
     }
 
-    private UserStateV2 getDefaultUserState() {
-        return getDefaultUserStateBuilder().build();
+    private UserStateV2 getDefaultUserState(long userId) {
+        return getDefaultUserStateBuilder().userId(userId).build();
     }
 
     public void setupWithNoPermissions() {
-        this.userState = getDefaultUserState();
+        this.userState = getDefaultUserState(userState.getUserId());
         getDomainBusinessUnitUsers().getBusinessUnitUsers().clear();
     }
 

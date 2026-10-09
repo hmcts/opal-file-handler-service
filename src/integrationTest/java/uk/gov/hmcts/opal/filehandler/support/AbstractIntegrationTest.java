@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -27,6 +28,7 @@ import uk.hmcts.zephyr.automation.junit5.extension.ZephyrAutomationExtension;
 @AutoConfigureMockMvc(htmlUnit = @AutoConfigureMockMvc.HtmlUnit(webClient = false, webDriver = false))
 @ExtendWith(ZephyrAutomationExtension.class)
 @Slf4j
+@Import(TestAuthConfig.class)
 public class AbstractIntegrationTest {
 
     // SecurityConfig is disabled in this profile, but common-lib still creates its system-user service.
