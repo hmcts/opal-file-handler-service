@@ -1,7 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -25,8 +25,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
-import uk.gov.hmcts.opal.common.util.SecurityUtil;
+import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
+import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfiguration;
@@ -40,6 +40,7 @@ import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.InvalidInterfaceFileStatusException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
+import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 
 @ExtendWith(MockitoExtension.class)
 class InterfaceFileServiceTest {
@@ -57,9 +58,6 @@ class InterfaceFileServiceTest {
     private CapsReportBaisFileProcessorConfiguration capsConfig;
 
     @Mock
-    private OpalJwtAuthenticationToken authToken;
-
-    @Mock
     private Map<String, BaisFileProcessorConfiguration> configs;
 
     @Mock
@@ -71,39 +69,27 @@ class InterfaceFileServiceTest {
     private UUID uuid;
 
     private BinaryData mockData;
-    private MockedStatic<SecurityUtil> securityUtil;
+    private MockedStatic<PermissionUtil> permissionUtil;
 
     @BeforeEach
     void setup() {
         uuid = UUID.randomUUID();
         mockData = mock(BinaryData.class);
-        securityUtil = mockStatic(SecurityUtil.class);
-    }
-
-    void withPermissions() {
-        securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-        // when(authToken.hasPermission(FileHandlerPermission.VIEW_INTERFACE_FILES)).thenReturn(true);
-    }
-
-    void withoutPermissions() {
-        securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
-        // when(authToken.hasPermission(FileHandlerPermission.VIEW_INTERFACE_FILES)).thenReturn(false);
+        permissionUtil = mockStatic(PermissionUtil.class);
     }
 
     @AfterEach
     void teardown() {
-        securityUtil.close();
+        permissionUtil.close();
     }
 
     @Test
     void getInterfaceFileContent_bteckohSourceReturnsData() {
-        withPermissions();
         when(configs.get(eq("BTEckohReportBaisFileProcessorConfig"))).thenReturn(bteckohConfig);
         when(bteckohConfig.getContainerName()).thenReturn("bteckoh-report");
 
         when(repository.findById(eq(1L))).thenReturn(
-            Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.SUCCESS))
-        );
+            Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.SUCCESS)));
         when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report"))).thenReturn(mockData);
 
         InputStream response = interfaceFileService.getInterfaceFilesContent(1L);
@@ -115,7 +101,6 @@ class InterfaceFileServiceTest {
 
     @Test
     void getInterfaceFileContent_capsSourceReturnsData() {
-        withPermissions();
         when(configs.get(eq("capsReportBaisFileProcessorConfig"))).thenReturn(capsConfig);
         when(capsConfig.getContainerName()).thenReturn("caps-report");
 
@@ -131,12 +116,15 @@ class InterfaceFileServiceTest {
         verify(capsConfig).getContainerName();
     }
 
-    /*
-    TODO: This test is commented out due to the AC for permissions check being removed from PO-3948.
-    It will be re-added as part of PO-8686
     @Test
     void getInterfaceFileContent_missingPermissionsThrowsError() {
-        withoutPermissions();
+        when(repository.findById(1L)).thenReturn(
+            Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.SUCCESS)));
+        permissionUtil.when(() ->
+            PermissionUtil.checkPermissionInDomain(
+                FileHandlerPermission.VIEW_INTERFACE_FILES,
+                uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FILE_HANDLING))
+            .thenThrow(new PermissionNotAllowedException(FileHandlerPermission.VIEW_INTERFACE_FILES));
 
         Exception e = assertThrows(
             PermissionNotAllowedException.class,
@@ -144,11 +132,9 @@ class InterfaceFileServiceTest {
         );
         assertEquals("[VIEW_INTERFACE_FILES] permission(s) are not enabled for the user.", e.getMessage());
     }
-    */
 
     @Test
     void getInterfaceFileContent_EntityNotFoundThrowsError() {
-        withPermissions();
 
         when(repository.findById(eq(1L))).thenReturn(
             Optional.ofNullable(null)
@@ -168,7 +154,6 @@ class InterfaceFileServiceTest {
 
     @Test
     void getInterfaceFileContent_invalidStatusThrowsError() {
-        withPermissions();
 
         when(repository.findById(eq(1L))).thenReturn(
             Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.FAILED))
@@ -191,7 +176,6 @@ class InterfaceFileServiceTest {
 
     @Test
     void getInterfaceFileContent_missingBlobThrowsError() {
-        withPermissions();
         when(configs.get(eq("BTEckohReportBaisFileProcessorConfig"))).thenReturn(bteckohConfig);
         when(bteckohConfig.getContainerName()).thenReturn("bteckoh-report");
 
