@@ -61,6 +61,11 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
     @Autowired
     protected TestSystemUserAuthenticationService testSystemUserAuthenticationService;
 
+    protected final void setupAuthenticationAsUser(long userId) {
+        userStateStub = new UserStateStub(userId);
+        testSystemUserAuthenticationService.testSetupAsSystemUser(userStateStub);
+    }
+
     @BeforeEach
     protected void setupAuth() {
         if (userStateStub == null) {
