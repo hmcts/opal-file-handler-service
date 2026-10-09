@@ -196,6 +196,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         @JiraEpic("PO-3497")
         @DisplayName("Correctly adds a new interface file on the db and blob store")
         void addNewInterfaceFileToDBAndBlobStore() {
+            String originalFileName = "some-file-name";
             InterfaceFileObjectInterfaceFile expectedResponse = buildExpectedResponse(
                 buildEntity("some-file-name",
                     "d553f8f289bd08e5c513de5c000c0374",
@@ -207,7 +208,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
 
             InterfaceFileObjectInterfaceFile response =  setupFileUploadApiTest(HttpMethod.POST, URI)
                 .includeMultipartBody(
-                    "file", "some-file-name", "application/json", bteckohFileContents)
+                    "file", originalFileName, "application/json", bteckohFileContents)
                 .includeMultipartBody(
                     "metadata", "metadata.json", "application/json", metadata.getBytes())
                 .includeContentDigest()
@@ -221,6 +222,10 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             assertResponse(expectedResponse, response);
             assertExistsInDatabase(response.getInterfaceFileId());
             assertAddedToBlobStorage("bteckoh-report", response.getFilestoreUuid().toString());
+            Optional<InterfaceFileEntity> sourceJsonFile = repository
+                .findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileName(
+                    response.getInterfaceFileId(), Type.SOURCE_JSON, originalFileName, Status.SUCCESS);
+            assertThat(sourceJsonFile.isEmpty()).isTrue();
         }
 
         @Test
