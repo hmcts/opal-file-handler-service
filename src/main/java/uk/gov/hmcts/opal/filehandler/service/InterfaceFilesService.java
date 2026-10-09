@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
+import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -31,6 +32,7 @@ import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
+import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
@@ -44,6 +46,8 @@ public class InterfaceFilesService {
     private final InterfaceFileSpecsFactory specsFactory;
     private final InterfaceFileMapper mapper;
     private final InterfaceFileBlobStoreService blobStoreService;
+    private final UserStateService userStateService;
+    private final InterfaceFilesPdplLoggingService loggingService;
     private final Map<String, BaisFileProcessorConfiguration> configs;
     private final Map<Class<? extends InterfaceFileProcessorService>, InterfaceFileProcessorService> processorServices;
 
@@ -51,12 +55,16 @@ public class InterfaceFilesService {
         InterfaceFileSpecsFactory specsFactory,
         InterfaceFileMapper mapper,
         InterfaceFileBlobStoreService blobStoreService,
+        UserStateService userStateService,
+        InterfaceFilesPdplLoggingService loggingService,
         Map<String, BaisFileProcessorConfiguration> configs,
         List<InterfaceFileProcessorService> processorServicesList) {
         this.repository = repository;
         this.specsFactory = specsFactory;
         this.mapper = mapper;
         this.blobStoreService = blobStoreService;
+        this.userStateService = userStateService;
+        this.loggingService = loggingService;
         this.configs = configs;
 
         this.processorServices = processorServicesList.stream()
@@ -109,6 +117,11 @@ public class InterfaceFilesService {
         String containerName = config.getContainerName();
 
         BinaryData file = blobStoreService.fetchInterfaceFile(id, entity.getFilestoreUuid(), containerName);
+
+        UserStateV2 userState = userStateService.getUserStateFromSecurityContext();
+        if (!userState.isSystemUser()) {
+            loggingService.logPdpl(id, userState);
+        }
 
         return file.toStream();
     }
