@@ -389,7 +389,7 @@ dependencies {
   //Other
   implementation 'org.apache.poi:poi-ooxml:5.5.1'
 
-  implementation 'com.azure:azure-storage-blob:12.35.1'
+  implementation 'com.azure:azure-storage-blob:12.36.0'
   implementation 'com.microsoft.azure:applicationinsights-web:3.7.10'
 
   implementation 'commons-logging:commons-logging:1.4.0'
@@ -412,7 +412,7 @@ dependencies {
   implementation 'org.apache.tomcat:tomcat-annotations-api:11.0.26'
 
   // Azure blob storage
-  implementation 'com.azure:azure-storage-blob:12.35.1'
+  implementation 'com.azure:azure-storage-blob:12.36.0'
 
   //Annotation
   annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.12.Final'
