@@ -316,13 +316,6 @@ public class InterfaceFilesServiceTest {
         try (MockedStatic<PermissionUtil> permissionUtil = mockStatic(PermissionUtil.class)) {
             // Arrange
             InterfaceFileEntity interfaceFile = mock(InterfaceFileEntity.class);
-            AddInterfaceFileRequestMetadata request = AddInterfaceFileRequestMetadata.builder()
-                .shouldPreProcessFile(shouldPreProcess)
-                .type(type)
-                .source(InterfaceFileEnumInterfaceFile.BARCLAYCARD)
-                .target(InterfaceFileEnumInterfaceFile.OPAL)
-                .domain(DomainEnumTypes.FINES)
-                .build();
             MultipartFile file = mock(MultipartFile.class);
             when(barclayCardProcessorService.ingestFile(file.getName(), file.getBytes(), Interface.BARCLAYCARD,
                 Interface.OPAL, Type.valueOf(type), Domain.FINES,
@@ -330,6 +323,13 @@ public class InterfaceFilesServiceTest {
             when(repository.save(interfaceFile)).thenReturn(interfaceFile);
             when(repository.findById(interfaceFile.getInterfaceFileId())).thenReturn(Optional.of(interfaceFile));
             when(configMap.get(anyString())).thenReturn(config);
+            AddInterfaceFileRequestMetadata request = AddInterfaceFileRequestMetadata.builder()
+                .shouldPreProcessFile(shouldPreProcess)
+                .type(type)
+                .source(InterfaceFileEnumInterfaceFile.BARCLAYCARD)
+                .target(InterfaceFileEnumInterfaceFile.OPAL)
+                .domain(DomainEnumTypes.FINES)
+                .build();
 
             // Act
             service.addInterfaceFile(file, request);
