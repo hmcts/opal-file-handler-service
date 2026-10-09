@@ -33,7 +33,13 @@ def stagingEnvironment = [
 
 def secrets = [
   'opal-${env}': [
-    secret('jiraAuthToken', 'JIRA_AUTH_TOKEN'),
+
+    secret('jira-auth-token', 'JIRA_AUTH_TOKEN'),
+    secret('jira-account-id', 'JIRA_ACCOUNT_ID'),
+    secret('jira-zephyr-account-email', 'JIRA_ACCOUNT_EMAIL'),
+    secret('zephyr-access-key', 'ZEPHYR_ACCESS_KEY'),
+    secret('zephyr-secret-key', 'ZEPHYR_SECRET_KEY'),
+    secret('zephyr-account-id', 'ZEPHYR_ACCOUNT_ID'),
     secret('bais-private-key', 'FUNCTIONAL_TEST_SFTP_PRIVATE_KEY'),
     secret('bais-sftp-connection-host', 'FUNCTIONAL_TEST_SFTP_HOST'),
     secret('bais-sftp-connection-port', 'FUNCTIONAL_TEST_SFTP_PORT'),
