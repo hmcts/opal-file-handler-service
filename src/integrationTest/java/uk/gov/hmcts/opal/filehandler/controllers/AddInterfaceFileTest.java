@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static uk.gov.hmcts.opal.common.dto.ToJsonString.toJsonString;
 
 import com.google.common.io.Resources;
@@ -28,6 +30,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.opal.filehandler.IntegrationSecurityConfiguration;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -36,6 +39,7 @@ import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
+import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractControllerIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.support.UtilBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
@@ -64,6 +68,9 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
 
     @Autowired
     private BusinessUnitBankAccountEntityTestData buBankAccountTestData;
+
+    @MockitoBean
+    private FinesInterfaceFilePreprocessQueueService finesQueueService;
 
     private static String BASE_RESOURCE_PATH = "azure/data/";
     private static final String bteckohResourcePath = BASE_RESOURCE_PATH +
@@ -238,13 +245,13 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
 
 
             assertExistsInDatabase(response.getInterfaceFileId());
-            Optional<InterfaceFileEntity> sourceJsonInterfaceFile = repository
+            Optional<InterfaceFileEntity> sourceJsonFile = repository
                 .findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileName(
-                    response.getInterfaceFileId(),
-                    Type.SOURCE_JSON, originalFileName); // TODO - JMS Queue error is happening so when we add Status.Success to this it fails
-            assertThat(sourceJsonInterfaceFile.isPresent()).isTrue();
+                    response.getInterfaceFileId(), Type.SOURCE_JSON, originalFileName, Status.SUCCESS);
+            assertThat(sourceJsonFile.isPresent()).isTrue();
             assertAddedToBlobStorage("jacobs", response.getFilestoreUuid().toString());
-            assertAddedToBlobStorage("jacobs", sourceJsonInterfaceFile.get().getFilestoreUuid().toString());
+            assertAddedToBlobStorage("jacobs", sourceJsonFile.get().getFilestoreUuid().toString());
+            verify(finesQueueService, times(1)).send(sourceJsonFile.get().getInterfaceFileId());
         }
 
         @Test
