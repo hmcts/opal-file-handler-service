@@ -3,9 +3,9 @@ package uk.gov.hmcts.opal.filehandler.controllers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -30,6 +30,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.MessagePostProcessor;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -44,7 +46,7 @@ import uk.gov.hmcts.opal.filehandler.support.UtilBlobStoreService;
 import uk.gov.hmcts.opal.logging.integration.dto.ParticipantIdentifier;
 import uk.gov.hmcts.opal.logging.integration.dto.PersonalDataProcessingCategory;
 import uk.gov.hmcts.opal.logging.integration.dto.PersonalDataProcessingLogDetails;
-import uk.gov.hmcts.opal.logging.integration.service.LoggingService;
+import uk.gov.hmcts.opal.logging.integration.messaging.PdpoLogMessage;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraEpic;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
@@ -75,8 +77,8 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
     @Autowired
     protected MockMvc mockMvc;
 
-    @MockitoBean
-    private LoggingService loggingService;
+    @MockitoBean(name = "pdpoJmsTemplate", enforceOverride = true)
+    private JmsTemplate pdpoJmsTemplate;
 
     private static final String bteckohResourcePath = "azure/data/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-Daily-"
         + "2026-07-06-06-00-18.xlsx";
@@ -143,7 +145,6 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
         @JiraEpic("PO-3495")
         void get_respondsWith200AndFileContents() throws Exception {
             authorizeWithPermission(); // Auto enforcement permission
-            when(loggingService.personalDataAccessLogAsync(any())).thenReturn(true);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
@@ -163,11 +164,12 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))
                 .andExpect(content().bytes(expectedBody));
 
-            ArgumentCaptor<PersonalDataProcessingLogDetails> captor =
-                ArgumentCaptor.forClass(PersonalDataProcessingLogDetails.class);
-            verify(loggingService).personalDataAccessLogAsync(captor.capture());
+            ArgumentCaptor<PdpoLogMessage> captor = ArgumentCaptor.forClass(PdpoLogMessage.class);
+            verify(pdpoJmsTemplate).convertAndSend(eq("logging-pdpl"), captor.capture(),
+                any(MessagePostProcessor.class));
 
-            PersonalDataProcessingLogDetails logDetails = captor.getValue();
+            assertEquals("PDPO", captor.getValue().logType());
+            PersonalDataProcessingLogDetails logDetails = captor.getValue().details();
             assertEquals("Interface file - download", logDetails.getBusinessIdentifier());
             assertEquals(PersonalDataProcessingCategory.DISCLOSURE, logDetails.getCategory());
             assertEquals(USER_IP_ADDRESS, logDetails.getIpAddress());
@@ -209,7 +211,8 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))
                 .andExpect(content().bytes(expectedBody));
 
-            verify(loggingService).personalDataAccessLogAsync(any());
+            verify(pdpoJmsTemplate).convertAndSend(eq("logging-pdpl"), any(PdpoLogMessage.class),
+                any(MessagePostProcessor.class));
             assertBlobStorageUnchanged();
         }
 
@@ -241,7 +244,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))
                 .andExpect(content().bytes(expectedBody));
 
-            verifyNoInteractions(loggingService);
+            verifyNoInteractions(pdpoJmsTemplate);
             assertBlobStorageUnchanged();
         }
 
@@ -266,7 +269,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.detail")
                     .value("Interface file with id 1000 could not be located."));
 
-            verifyNoInteractions(loggingService);
+            verifyNoInteractions(pdpoJmsTemplate);
             assertBlobStorageUnchanged();
         }
 
@@ -292,7 +295,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                     .value("Interface file with id 3 could not be retrieved as it has an invalid status of:"
                         + " \"FAILED\" only files with status: \"SUCCESS\" can be returned."));
 
-            verifyNoInteractions(loggingService);
+            verifyNoInteractions(pdpoJmsTemplate);
             assertBlobStorageUnchanged();
         }
 
@@ -319,7 +322,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                         + "container: \"bteckoh-report\" with name \"b5fed320-1ad1-47f5-8786-91ba31f1604d\" but "
                         + "this could not be located."));
 
-            verifyNoInteractions(loggingService);
+            verifyNoInteractions(pdpoJmsTemplate);
             assertBlobStorageUnchanged();
         }
 
@@ -373,7 +376,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             );
 
             res.andExpect(status().isNotFound());
-            verifyNoInteractions(loggingService);
+            verifyNoInteractions(pdpoJmsTemplate);
         }
     }
 
