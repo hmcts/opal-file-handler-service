@@ -33,7 +33,7 @@ public class BusinessUnitBankAccountEntity {
     @Column(name = "business_unit_code", nullable = false)
     @Length(max = 4)
     @NonNull
-    private String businessUnitCode;
+    private String businessUnitId;
 
     @Column(name = "opal_domain", nullable = false)
     @Enumerated(EnumType.STRING)

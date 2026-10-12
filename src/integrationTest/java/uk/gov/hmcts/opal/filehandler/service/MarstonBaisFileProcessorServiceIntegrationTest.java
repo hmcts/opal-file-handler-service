@@ -194,7 +194,7 @@ public class MarstonBaisFileProcessorServiceIntegrationTest   extends AbstractBa
         businessUnitBankAccountEntityTestData.saveAndFlushBusinessUnitBankAccount(
             BusinessUnitBankAccountEntity.builder()
                 .id(1L)
-                .businessUnitCode("MR01")
+                .businessUnitId("MR01")
                 .domain(Domain.FINES)
                 .bankSortCode("560033")
                 .bankAccountNumber("27048527")

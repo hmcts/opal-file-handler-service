@@ -367,7 +367,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             assertThat(sourceJson.getStatus()).isEqualTo(Status.SUCCESS);
             assertThat(sourceJson.getCreatedDatetime()).isEqualTo(LocalDateTime.now(CLOCK));
             assertThat(sourceJson.getRelatedInterfaceFile()).isSameAs(sourceFile);
-            assertThat(sourceJson.getBusinessUnitCode()).containsExactly("BC12", "BC34");
+            assertThat(sourceJson.getBusinessUnitId()).containsExactly("BC12", "BC34");
             assertThat(sourceJson.getPaymentType()).isEqualTo(PaymentType.CASH);
         }
     }

@@ -58,7 +58,7 @@ public class DWPBaisFileProcessorServiceIntegrationTest
         businessUnitBankAccountEntityTestData.clear();
         BusinessUnitBankAccountEntity bu = BusinessUnitBankAccountEntity.builder()
             .id(1L)
-            .businessUnitCode(BUSINESS_UNIT_CODE)
+            .businessUnitId(BUSINESS_UNIT_CODE)
             .domain(Domain.MAINTENANCE)
             .bankSortCode("010101")
             .bankAccountNumber("12341234")
