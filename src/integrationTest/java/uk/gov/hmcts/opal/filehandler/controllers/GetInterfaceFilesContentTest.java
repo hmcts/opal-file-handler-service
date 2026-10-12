@@ -19,12 +19,15 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -48,11 +51,22 @@ import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 @Slf4j(topic = "opal.GetInterfaceFilesContentIntegrationTest")
 @ActiveProfiles(profiles = {"integration"})
 @DisplayName("Get Interface File Content Controller Integration Tests")
+@Import(GetInterfaceFilesContentTest.FixedClockConfiguration.class)
 class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
     private static final OffsetDateTime FIXED_DATE_TIME = OffsetDateTime.parse("2026-09-29T10:15:30Z");
     private static final Clock FIXED_CLOCK = Clock.fixed(FIXED_DATE_TIME.toInstant(), ZoneOffset.UTC);
     private static final String USER_IP_ADDRESS = "192.0.2.10";
+
+    @TestConfiguration
+    static class FixedClockConfiguration {
+
+        @Bean
+        @Primary
+        Clock fixedClock() {
+            return FIXED_CLOCK;
+        }
+    }
 
     private String urlWithID(long id) {
         return String.format("/interface-files/%d/content", id);
@@ -63,9 +77,6 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
     @MockitoBean
     private LoggingService loggingService;
-
-    @MockitoBean
-    private Clock clock;
 
     private static final String bteckohResourcePath = "azure/data/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-Daily-"
         + "2026-07-06-06-00-18.xlsx";
@@ -95,12 +106,6 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
     private static String bteckohReportOriginalVersion;
     private static String capsReportOriginalVersion;
-
-    @BeforeEach
-    void setupClock() {
-        when(clock.instant()).thenReturn(FIXED_CLOCK.instant());
-        when(clock.getZone()).thenReturn(FIXED_CLOCK.getZone());
-    }
 
     @BeforeAll
     public static void setupAzureData() throws IOException {
