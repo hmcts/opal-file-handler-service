@@ -1,6 +1,9 @@
 package uk.gov.hmcts.opal.filehandler.support;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobServiceClient;
@@ -10,14 +13,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import lombok.extern.slf4j.Slf4j;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.MessagePostProcessor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -28,6 +35,7 @@ import org.testcontainers.utility.MountableFile;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
+import uk.gov.hmcts.opal.filehandler.entity.PdplIdentifierType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
@@ -35,7 +43,9 @@ import uk.gov.hmcts.opal.filehandler.service.CapsReportBaisFileProcessorServiceI
 import uk.gov.hmcts.opal.filehandler.service.InterfaceFilesService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
-import uk.gov.hmcts.opal.logging.integration.service.LoggingService;
+import uk.gov.hmcts.opal.logging.integration.dto.PersonalDataProcessingCategory;
+import uk.gov.hmcts.opal.logging.integration.dto.PersonalDataProcessingLogDetails;
+import uk.gov.hmcts.opal.logging.integration.messaging.PdpoLogMessage;
 
 @SpringBootTest(properties = {
     "spring.main.web-application-type=none",
@@ -60,8 +70,8 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
     @Autowired
     private InterfaceFilesService interfaceFilesService;
 
-    @MockitoBean
-    private LoggingService loggingService;
+    @MockitoBean(name = "pdpoJmsTemplate", enforceOverride = true)
+    private JmsTemplate pdpoJmsTemplate;
 
     @DynamicPropertySource
     static void dynamicProperties(DynamicPropertyRegistry registry) throws IOException {
@@ -222,10 +232,34 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
             });
         SecurityContextHolder.getContext().setAuthentication(userStateStub.getOpalJwtAuthenticationToken());
         try {
+            final OffsetDateTime beforeDownload = OffsetDateTime.now(clock);
             try (InputStream expected = new ClassPathResource(resourcePath).getInputStream();
                  InputStream actual = interfaceFilesService.getInterfaceFilesContent(entity.getInterfaceFileId())) {
                 assertThat(actual.readAllBytes()).isEqualTo(expected.readAllBytes());
             }
+            OffsetDateTime afterDownload = OffsetDateTime.now(clock);
+
+            ArgumentCaptor<PdpoLogMessage> message = ArgumentCaptor.forClass(PdpoLogMessage.class);
+            verify(pdpoJmsTemplate).convertAndSend(eq("logging-pdpl"), message.capture(),
+                any(MessagePostProcessor.class));
+
+            assertThat(message.getValue().logType()).isEqualTo("PDPO");
+            PersonalDataProcessingLogDetails details = message.getValue().details();
+            assertThat(details.getBusinessIdentifier()).isEqualTo("Interface file - download");
+            assertThat(details.getCategory()).isEqualTo(PersonalDataProcessingCategory.DISCLOSURE);
+            assertThat(details.getIpAddress()).isNull();
+            assertThat(details.getCreatedAt()).isBetween(beforeDownload, afterDownload);
+            assertThat(details.getCreatedBy().getIdentifier())
+                .isEqualTo(userStateStub.getUserState().getUserId().toString());
+            assertThat(details.getCreatedBy().getType()).isEqualTo(PdplIdentifierType.OPAL_USER_ID);
+            assertThat(details.getRecipient().getIdentifier()).isNull();
+            assertThat(details.getRecipient().getType()).isNull();
+            assertThat(details.getIndividuals())
+                .singleElement()
+                .satisfies(individual -> {
+                    assertThat(individual.getIdentifier()).isEqualTo(entity.getInterfaceFileId().toString());
+                    assertThat(individual.getType()).isEqualTo(PdplIdentifierType.FILE_HANDLER_INTERFACE_FILE);
+                });
         } finally {
             SecurityContextHolder.clearContext();
         }
