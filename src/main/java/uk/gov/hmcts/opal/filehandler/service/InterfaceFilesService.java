@@ -18,6 +18,7 @@ import org.springframework.util.ClassUtils;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
+import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -46,7 +47,6 @@ public class InterfaceFilesService {
     private final InterfaceFileSpecsFactory specsFactory;
     private final InterfaceFileMapper mapper;
     private final InterfaceFileBlobStoreService blobStoreService;
-    private final UserStateService userStateService;
     private final InterfaceFilesPdplLoggingService loggingService;
     private final Map<String, BaisFileProcessorConfiguration> configs;
     private final Map<Class<? extends InterfaceFileProcessorService>, InterfaceFileProcessorService> processorServices;
@@ -55,7 +55,6 @@ public class InterfaceFilesService {
         InterfaceFileSpecsFactory specsFactory,
         InterfaceFileMapper mapper,
         InterfaceFileBlobStoreService blobStoreService,
-        UserStateService userStateService,
         InterfaceFilesPdplLoggingService loggingService,
         Map<String, BaisFileProcessorConfiguration> configs,
         List<InterfaceFileProcessorService> processorServicesList) {
@@ -63,7 +62,6 @@ public class InterfaceFilesService {
         this.specsFactory = specsFactory;
         this.mapper = mapper;
         this.blobStoreService = blobStoreService;
-        this.userStateService = userStateService;
         this.loggingService = loggingService;
         this.configs = configs;
 
@@ -118,7 +116,7 @@ public class InterfaceFilesService {
 
         BinaryData file = blobStoreService.fetchInterfaceFile(id, entity.getFilestoreUuid(), containerName);
 
-        UserStateV2 userState = userStateService.getUserStateFromSecurityContext();
+        UserStateV2 userState = SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser().getUserState();
         if (!userState.isSystemUser()) {
             loggingService.logPdpl(id, userState);
         }

@@ -1,7 +1,8 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -45,9 +46,6 @@ import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingServi
 
 @ExtendWith(MockitoExtension.class)
 class InterfaceFileServiceTest {
-
-    @Mock
-    private UserStateService userStateService;
 
     @Mock
     private InterfaceFilesPdplLoggingService loggingService;
@@ -96,6 +94,10 @@ class InterfaceFileServiceTest {
         // when(authToken.hasPermission(FileHandlerPermission.VIEW_INTERFACE_FILES)).thenReturn(true);
     }
 
+    void withUserState() {
+        when(authToken.getUserState()).thenReturn(userState);
+    }
+
     void withoutPermissions() {
         securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
         // when(authToken.hasPermission(FileHandlerPermission.VIEW_INTERFACE_FILES)).thenReturn(false);
@@ -109,6 +111,7 @@ class InterfaceFileServiceTest {
     @Test
     void getInterfaceFileContent_bteckohSourceReturnsData() {
         withPermissions();
+        withUserState();
         when(configs.get(eq("BTEckohReportBaisFileProcessorConfig"))).thenReturn(bteckohConfig);
         when(bteckohConfig.getContainerName()).thenReturn("bteckoh-report");
 
@@ -116,21 +119,25 @@ class InterfaceFileServiceTest {
             Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.SUCCESS))
         );
         when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report"))).thenReturn(mockData);
-        when(userStateService.getUserStateFromSecurityContext()).thenReturn(userState);
         when(userState.isSystemUser()).thenReturn(false);
+        InputStream expectedStream = mock(InputStream.class);
+        when(mockData.toStream()).thenReturn(expectedStream);
 
         InputStream response = interfaceFileService.getInterfaceFilesContent(1L);
 
+        assertSame(expectedStream, response);
         verify(repository).findById(eq(1L));
         verify(blobStoreService).fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report"));
         verify(bteckohConfig).getContainerName();
-        verify(userStateService).getUserStateFromSecurityContext();
+        securityUtil.verify(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser);
+        verify(authToken).getUserState();
         verify(loggingService).logPdpl(1L, userState);
     }
 
     @Test
     void getInterfaceFileContent_capsSourceReturnsData() {
         withPermissions();
+        withUserState();
         when(configs.get(eq("capsReportBaisFileProcessorConfig"))).thenReturn(capsConfig);
         when(capsConfig.getContainerName()).thenReturn("caps-report");
 
@@ -138,35 +145,39 @@ class InterfaceFileServiceTest {
             Optional.of(buildEntity(1L, uuid, Interface.CAPS_REPORT, Status.SUCCESS))
         );
         when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("caps-report"))).thenReturn(mockData);
-        when(userStateService.getUserStateFromSecurityContext()).thenReturn(userState);
         when(userState.isSystemUser()).thenReturn(false);
+        InputStream expectedStream = mock(InputStream.class);
+        when(mockData.toStream()).thenReturn(expectedStream);
 
         InputStream response = interfaceFileService.getInterfaceFilesContent(1L);
 
+        assertSame(expectedStream, response);
         verify(repository).findById(eq(1L));
         verify(blobStoreService).fetchInterfaceFile(eq(1L), eq(uuid), eq("caps-report"));
         verify(capsConfig).getContainerName();
-        verify(userStateService).getUserStateFromSecurityContext();
+        securityUtil.verify(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser);
+        verify(authToken).getUserState();
         verify(loggingService).logPdpl(1L, userState);
     }
 
     @Test
     void getInterfaceFileContent_systemUserReturnsDataWithoutPdplLogging() {
         withPermissions();
+        withUserState();
         when(configs.get(eq("BTEckohReportBaisFileProcessorConfig"))).thenReturn(bteckohConfig);
         when(bteckohConfig.getContainerName()).thenReturn("bteckoh-report");
         when(repository.findById(eq(1L))).thenReturn(
             Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.SUCCESS))
         );
         when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report"))).thenReturn(mockData);
-        when(userStateService.getUserStateFromSecurityContext()).thenReturn(userState);
         when(userState.isSystemUser()).thenReturn(true);
 
         interfaceFileService.getInterfaceFilesContent(1L);
 
         verify(repository).findById(1L);
         verify(blobStoreService).fetchInterfaceFile(1L, uuid, "bteckoh-report");
-        verify(userStateService).getUserStateFromSecurityContext();
+        securityUtil.verify(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser);
+        verify(authToken).getUserState();
         verifyNoInteractions(loggingService);
     }
 
@@ -202,7 +213,8 @@ class InterfaceFileServiceTest {
         verify(repository).findById(1L);
         verifyNoMoreInteractions(repository);
         verifyNoInteractions(blobStoreService);
-        verifyNoInteractions(userStateService, loggingService);
+        securityUtil.verifyNoInteractions();
+        verifyNoInteractions(authToken, loggingService);
     }
 
 
@@ -227,7 +239,8 @@ class InterfaceFileServiceTest {
         verify(repository).findById(1L);
         verifyNoMoreInteractions(repository);
         verifyNoInteractions(blobStoreService);
-        verifyNoInteractions(userStateService, loggingService);
+        securityUtil.verifyNoInteractions();
+        verifyNoInteractions(authToken, loggingService);
     }
 
     @Test
@@ -252,7 +265,8 @@ class InterfaceFileServiceTest {
         verify(repository).findById(1L);
         verifyNoMoreInteractions(repository);
         verify(bteckohConfig).getContainerName();
-        verifyNoInteractions(userStateService, loggingService);
+        securityUtil.verifyNoInteractions();
+        verifyNoInteractions(authToken, loggingService);
 
     }
 

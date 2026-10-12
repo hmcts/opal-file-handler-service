@@ -63,9 +63,6 @@ public class InterfaceFilesServiceTest {
     private InterfaceFileSpecsFactory specsFactory;
 
     @Mock
-    private UserStateService userStateService;
-
-    @Mock
     private InterfaceFilesPdplLoggingService loggingService;
 
     @Mock
@@ -290,7 +287,6 @@ public class InterfaceFilesServiceTest {
             specsFactory,
             mapper,
             null,
-            userStateService,
             loggingService,
             Map.of("dwpBaisFileProcessorConfig", config),
             List.of(processorService)
