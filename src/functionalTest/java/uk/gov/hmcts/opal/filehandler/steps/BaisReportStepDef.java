@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.opal.filehandler.support.BaisReportTestData.forDisplayName;
 import static uk.gov.hmcts.opal.filehandler.support.BaisReportTestData.forSource;
+import static uk.gov.hmcts.opal.filehandler.support.SftpRetry.withRetry;
 
 import com.google.common.io.Resources;
 import io.cucumber.java.en.Given;
@@ -158,9 +159,14 @@ public class BaisReportStepDef extends BaseStepDef {
     @When("the configured {string} report is placed on bais")
     public void configuredReportIsPlacedOnBais(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
-        try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
-            sftpClient.uploadResource(config.resourcePath(), config.fileName());
-        }
+        withRetry(
+            "upload " + config.displayName() + " report for user " + config.sftpUsername(),
+            () -> {
+                try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
+                    sftpClient.uploadResource(config.resourcePath(), config.fileName());
+                }
+            }
+        );
     }
 
     @Then("a duplicate {string} interface file is recorded")
@@ -236,12 +242,17 @@ public class BaisReportStepDef extends BaseStepDef {
         String fileName,
         boolean expected
     ) {
-        try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
-            if (expected) {
-                assertTrue(sftpClient.exists(fileName), "Expected SFTP file to exist: " + fileName);
-            } else {
-                assertFalse(sftpClient.exists(fileName), "Expected SFTP file to be removed: " + fileName);
+        withRetry(
+            "check " + config.displayName() + " report presence for user " + config.sftpUsername(),
+            () -> {
+                try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
+                    if (expected) {
+                        assertTrue(sftpClient.exists(fileName), "Expected SFTP file to exist: " + fileName);
+                    } else {
+                        assertFalse(sftpClient.exists(fileName), "Expected SFTP file to be removed: " + fileName);
+                    }
+                }
             }
-        }
+        );
     }
 }
