@@ -51,7 +51,7 @@ public class SearchInterfaceFilesDtoMapperTest {
             () -> assertEquals(Status.SUCCESS, searchDto.getStatus()),
             () -> assertEquals(1, searchDto.getNotStatuses().size()),
             () -> assertTrue(searchDto.getNotStatuses().contains(Status.FAILED)),
-            () -> assertEquals(buCode, searchDto.getBusinessUnitCode()),
+            () -> assertEquals(buCode, searchDto.getBusinessUnitId()),
             () -> assertEquals(fromDate, searchDto.getFromDate()),
             () -> assertEquals(toDate, searchDto.getToDate())
         );
@@ -72,7 +72,7 @@ public class SearchInterfaceFilesDtoMapperTest {
             () -> assertNull(searchDto.getDomain()),
             () -> assertNull(searchDto.getStatus()),
             () -> assertNull(searchDto.getNotStatuses()),
-            () -> assertNull(searchDto.getBusinessUnitCode()),
+            () -> assertNull(searchDto.getBusinessUnitId()),
             () -> assertNull(searchDto.getFromDate()),
             () -> assertNull(searchDto.getToDate())
         );

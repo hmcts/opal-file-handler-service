@@ -124,7 +124,7 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
 
         verify(queue).send(sourceJson.getInterfaceFileId());
 
-        assertArrayEquals(sourceFile.getBusinessUnitCode(), sourceJson.getBusinessUnitCode());
+        assertArrayEquals(sourceFile.getBusinessUnitId(), sourceJson.getBusinessUnitId());
         assertBlobChecksum(JACOBS_FILE, JACOBS_FILE_CHECKSUM, configuration.getContainerName());
         assertNumberOfSftpFiles(configuration.getSftpUsername(), 0);
     }

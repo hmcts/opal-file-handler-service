@@ -70,13 +70,13 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
         BusinessUnitBankAccountEntity businessUnitBankAccount,
         Domain domain
     ) {
-        Set<String> businessUnitCodes = new LinkedHashSet<>();
-        if (sourceInterfaceFile.getBusinessUnitCode() != null) {
-            businessUnitCodes.addAll(Arrays.asList(sourceInterfaceFile.getBusinessUnitCode()));
+        Set<String> businessUnitIds = new LinkedHashSet<>();
+        if (sourceInterfaceFile.getBusinessUnitId() != null) {
+            businessUnitIds.addAll(Arrays.asList(sourceInterfaceFile.getBusinessUnitId()));
         }
-        businessUnitCodes.add(businessUnitBankAccount.getBusinessUnitCode());
+        businessUnitIds.add(businessUnitBankAccount.getBusinessUnitId());
 
-        sourceInterfaceFile.setBusinessUnitCode(businessUnitCodes.toArray(String[]::new));
+        sourceInterfaceFile.setBusinessUnitId(businessUnitIds.toArray(String[]::new));
         sourceInterfaceFile.setOpalDomain(domain);
     }
 
@@ -131,7 +131,7 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
         validateSupportedDomain(sourceInterfaceFile, domain);
         updateSourceBusinessUnitAndDomain(sourceInterfaceFile, businessUnitBankAccount, domain);
 
-        if (BUSINESS_UNIT_065.equals(businessUnitBankAccount.getBusinessUnitCode())) {
+        if (BUSINESS_UNIT_065.equals(businessUnitBankAccount.getBusinessUnitId())) {
             return false;
         }
 
@@ -151,7 +151,7 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
 
     @Override
     protected String[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract) {
-        return new String[] {extractionService.getBusinessUnitBankAccount(extract).getBusinessUnitCode()};
+        return new String[] {extractionService.getBusinessUnitBankAccount(extract).getBusinessUnitId()};
     }
 
     @Override

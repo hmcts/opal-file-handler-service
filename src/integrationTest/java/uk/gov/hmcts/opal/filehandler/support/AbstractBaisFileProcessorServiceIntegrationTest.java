@@ -200,7 +200,7 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
         throws IOException {
         InterfaceFileEntity entity = repository.findByFileNameAndChecksumAndStatus(fileName, checksum, Status.SUCCESS)
             .orElseThrow();
-        assertThat(entity.getBusinessUnitCode()).isNullOrEmpty();
+        assertThat(entity.getBusinessUnitId()).isNullOrEmpty();
         assertThat(entity.getPaymentType()).isNull();
         assertThat(entity.getErrors()).isNull();
         var listed = interfaceFilesService.searchInterfaceFiles(SearchInterfaceFilesDto.builder()

@@ -177,7 +177,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
         T extract,
-        String[] businessUnitCodes,
+        String[] businessUnitIds,
         Domain domain,
         String checksum
     ) {
@@ -191,7 +191,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
             .status(Status.SUCCESS)
             .createdDatetime(LocalDateTime.now(clock))
             .relatedInterfaceFile(sourceInterfaceFile)
-            .businessUnitCode(businessUnitCodes)
+            .businessUnitId(businessUnitIds)
             .paymentType(extract.getPaymentType())
             .build();
     }

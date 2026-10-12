@@ -162,7 +162,7 @@ public class InterfaceFilesService {
             );
             entity.setRelatedInterfaceFile(relatedInterfaceFile);
             entity.setPaymentType(PaymentType.valueOf(metadata.getPaymentType()));
-            entity.setBusinessUnitCode(new String[] {metadata.getBusinessUnitCode()});
+            entity.setBusinessUnitId(new String[] {metadata.getBusinessUnitCode()});
             entity = repository.save(entity);
             return getInterfaceFile(entity.getInterfaceFileId());
         } catch (IOException e) {

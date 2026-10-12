@@ -39,7 +39,7 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
         BusinessUnitBankAccountEntity fetched = repository.findById(TYPICAL_ID).orElseThrow();
 
         assertThat(fetched.getId()).isEqualTo(original.getId());
-        assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());
+        assertThat(fetched.getBusinessUnitId()).isEqualTo(original.getBusinessUnitId());
         assertThat(fetched.getDomain()).isEqualTo(original.getDomain());
         assertThat(fetched.getBankSortCode()).isEqualTo(original.getBankSortCode());
         assertThat(fetched.getBankAccountNumber()).isEqualTo(original.getBankAccountNumber());
@@ -56,7 +56,7 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
         BusinessUnitBankAccountEntity fetched = repository.findById(MAX_ID).orElseThrow();
 
         assertThat(fetched.getId()).isEqualTo(original.getId());
-        assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());
+        assertThat(fetched.getBusinessUnitId()).isEqualTo(original.getBusinessUnitId());
         assertThat(fetched.getDomain()).isEqualTo(original.getDomain());
         assertThat(fetched.getBankSortCode()).isEqualTo(original.getBankSortCode());
         assertThat(fetched.getBankAccountNumber()).isEqualTo(original.getBankAccountNumber());
@@ -79,7 +79,7 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
                 .findByBankSortCodeAndBankAccountNumber(sortCode, accountNumber).orElseThrow();
 
             assertThat(fetched.getId()).isEqualTo(original.getId());
-            assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());
+            assertThat(fetched.getBusinessUnitId()).isEqualTo(original.getBusinessUnitId());
             assertThat(fetched.getDomain()).isEqualTo(original.getDomain());
             assertThat(fetched.getBankSortCode()).isEqualTo(original.getBankSortCode());
             assertThat(fetched.getBankAccountNumber()).isEqualTo(original.getBankAccountNumber());
@@ -101,7 +101,7 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
                 .findByDwpCourtCode(dwpCourtCode).orElseThrow();
 
             assertThat(fetched.getId()).isEqualTo(original.getId());
-            assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());
+            assertThat(fetched.getBusinessUnitId()).isEqualTo(original.getBusinessUnitId());
             assertThat(fetched.getDomain()).isEqualTo(original.getDomain());
             assertThat(fetched.getBankSortCode()).isEqualTo(original.getBankSortCode());
             assertThat(fetched.getBankAccountNumber()).isEqualTo(original.getBankAccountNumber());
@@ -110,7 +110,7 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
     }
 
     @Nested
-    class FindByBusinessUnitCode {
+    class FindByBusinessUnitId {
         @Test
         void correctlyFetchesByDwpCourtCode() {
             BusinessUnitBankAccountEntity original =
@@ -118,12 +118,12 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
 
             entityManager.clear();
 
-            String businessUnitCode = original.getBusinessUnitCode();
+            String businessUnitId = original.getBusinessUnitId();
 
-            BusinessUnitBankAccountEntity fetched = repository.findByBusinessUnitCode(businessUnitCode).orElseThrow();
+            BusinessUnitBankAccountEntity fetched = repository.findByBusinessUnitId(businessUnitId).orElseThrow();
 
             assertThat(fetched.getId()).isEqualTo(original.getId());
-            assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());
+            assertThat(fetched.getBusinessUnitId()).isEqualTo(original.getBusinessUnitId());
             assertThat(fetched.getDomain()).isEqualTo(original.getDomain());
             assertThat(fetched.getBankSortCode()).isEqualTo(original.getBankSortCode());
             assertThat(fetched.getBankAccountNumber()).isEqualTo(original.getBankAccountNumber());

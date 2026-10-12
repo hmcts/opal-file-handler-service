@@ -20,7 +20,7 @@ public class BusinessUnitBankAccountEntityTestData {
         long id, String businessUnitCode, String dwpCourtCode) {
         return BusinessUnitBankAccountEntity.builder()
             .id(id)
-            .businessUnitCode(businessUnitCode)
+            .businessUnitId(businessUnitCode)
             .domain(Domain.FINES)
             .bankSortCode("560033")
             .bankAccountNumber("27048527")
@@ -31,7 +31,7 @@ public class BusinessUnitBankAccountEntityTestData {
     public BusinessUnitBankAccountEntity getMaximumBusinessUnitBankAccount(long id) {
         return BusinessUnitBankAccountEntity.builder()
             .id(id)
-            .businessUnitCode("Z999")
+            .businessUnitId("Z999")
             .domain(Domain.FILE_HANDLER)
             .bankSortCode("999999")
             .bankAccountNumber("1234567890")

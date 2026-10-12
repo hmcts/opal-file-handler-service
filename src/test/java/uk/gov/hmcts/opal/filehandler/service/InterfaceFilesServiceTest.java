@@ -205,7 +205,7 @@ public class InterfaceFilesServiceTest {
         assertEquals(mapped, result);
         assertEquals(relatedInterfaceFile, ingestedEntity.getRelatedInterfaceFile());
         assertEquals(PaymentType.CHEQUE, ingestedEntity.getPaymentType());
-        assertArrayEquals(new String[] {"1234"}, ingestedEntity.getBusinessUnitCode());
+        assertArrayEquals(new String[] {"1234"}, ingestedEntity.getBusinessUnitId());
         verify(repository).findById(15L);
         verify(repository).save(ingestedEntity);
         verify(spyService).getInterfaceFile(24L);
@@ -246,7 +246,7 @@ public class InterfaceFilesServiceTest {
         assertEquals(mapped, result);
         assertNull(ingestedEntity.getRelatedInterfaceFile());
         assertEquals(PaymentType.CASH, ingestedEntity.getPaymentType());
-        assertArrayEquals(new String[] {"9876"}, ingestedEntity.getBusinessUnitCode());
+        assertArrayEquals(new String[] {"9876"}, ingestedEntity.getBusinessUnitId());
         verify(repository).save(ingestedEntity);
         verify(spyService).getInterfaceFile(25L);
     }
