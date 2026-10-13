@@ -3,7 +3,6 @@ package uk.gov.hmcts.opal.filehandler.controllers;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,8 +41,6 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
-import uk.gov.hmcts.opal.common.user.authentication.service.SystemUserAuthenticationService;
-import uk.gov.hmcts.opal.common.user.authentication.service.SystemUserEnum;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -71,9 +68,6 @@ class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest
     private static final RSAKey SIGNING_KEY = createSigningKey();
 
     @Autowired
-    private SystemUserAuthenticationService systemUserAuthenticationService;
-
-    @Autowired
     private InterfaceFilesRepository repository;
 
     private InterfaceFileEntity file;
@@ -83,7 +77,6 @@ class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest
     @DynamicPropertySource
     static void authenticationProperties(DynamicPropertyRegistry registry) {
         registry.add("user.service.url", () -> BASE_URL);
-        registry.add("opal.common.system-users.token-url", () -> BASE_URL + "/system-token");
         registry.add("spring.security.oauth2.client.registration.internal-azure-ad.issuer-uri", () -> ISSUER);
         registry.add("spring.security.oauth2.client.provider.internal-azure-ad-provider.jwk-set-uri",
             () -> BASE_URL + "/jwks");
@@ -97,11 +90,6 @@ class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest
         stubFor(get(urlEqualTo("/jwks"))
             .willReturn(aResponse().withHeader("Content-Type", "application/json")
                 .withBody(new JWKSet(SIGNING_KEY.toPublicJWK()).toString())));
-
-        stubFor(post(urlEqualTo("/system-token"))
-            .willReturn(aResponse().withHeader("Content-Type", "application/json")
-                .withBody("{\"access_token\":\"" + systemToken
-                    + "\",\"token_type\":\"Bearer\",\"expires_in\":3600}")));
 
         UserStateStub humanState = new UserStateStub(humanToken);
         UserStateStub systemState = new UserStateStub(systemToken);
@@ -161,11 +149,8 @@ class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest
 
     @Test
     void systemUserCanListInterfaceFiles() throws Exception {
-        String token = systemUserAuthenticationService.getSystemUserAuthenticationToken(
-            SystemUserEnum.OPAL_SYSTEM_USER);
-
         mockMvc.perform(MockMvcRequestBuilders.get("/interface-files")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + systemToken))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.number_of_results").value(1))
             .andExpect(jsonPath("$.interface_files[0].interface_file_id").value(file.getInterfaceFileId()));
@@ -173,33 +158,24 @@ class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest
 
     @Test
     void systemUserCanGetInterfaceFile() throws Exception {
-        String token = systemUserAuthenticationService.getSystemUserAuthenticationToken(
-            SystemUserEnum.OPAL_SYSTEM_USER);
-
         mockMvc.perform(MockMvcRequestBuilders.get(interfaceFileUri())
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + systemToken))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.interface_file_id").value(file.getInterfaceFileId()));
     }
 
     @Test
     void systemUserCanGetInterfaceFileContent() throws Exception {
-        String token = systemUserAuthenticationService.getSystemUserAuthenticationToken(
-            SystemUserEnum.OPAL_SYSTEM_USER);
-
         mockMvc.perform(MockMvcRequestBuilders.get(contentUri())
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + systemToken))
             .andExpect(status().isOk())
             .andExpect(content().bytes(FILE_CONTENT));
     }
 
     @Test
     void systemUserCanAddInterfaceFile() throws Exception {
-        String token = systemUserAuthenticationService.getSystemUserAuthenticationToken(
-            SystemUserEnum.OPAL_SYSTEM_USER);
-
         mockMvc.perform(uploadRequest()
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + systemToken))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.file_name").value(UPLOAD_FILE_NAME))
             .andExpect(jsonPath("$.domain").value("FINES"))
@@ -252,11 +228,8 @@ class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest
         state.isSystemUser(true);
         stubUserState(systemToken, state);
 
-        String token = systemUserAuthenticationService.getSystemUserAuthenticationToken(
-            SystemUserEnum.OPAL_SYSTEM_USER);
-
         mockMvc.perform(MockMvcRequestBuilders.get("/interface-files")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + systemToken))
             .andExpect(status().isForbidden());
     }
 
@@ -274,11 +247,8 @@ class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest
     @Test
     void systemUserWithoutCreatePermissionCannotAddInterfaceFile() throws Exception {
         stubWithoutCreatePermission(systemToken, true);
-        String token = systemUserAuthenticationService.getSystemUserAuthenticationToken(
-            SystemUserEnum.OPAL_SYSTEM_USER);
-
         mockMvc.perform(uploadRequest()
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + systemToken))
             .andExpect(status().isForbidden());
 
         assertEquals(1, repository.count());

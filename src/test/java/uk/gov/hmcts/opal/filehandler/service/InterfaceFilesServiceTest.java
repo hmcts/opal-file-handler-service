@@ -261,28 +261,22 @@ public class InterfaceFilesServiceTest {
         when(file.getOriginalFilename()).thenReturn("payments.dat");
         when(file.getBytes()).thenReturn(fileBytes);
 
-        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class)) {
-            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
-                .thenReturn(authToken);
-
-            when(authToken.getUserId()).thenReturn(1L);
-
-            when(processorService.ingestFile(
-                "payments.dat",
-                fileBytes,
-                Interface.DWP,
-                Interface.OPAL,
-                Type.TRANSFORMED_JSON,
-                Domain.FINES,
-                "dwp-container",
-                1L
-            )).thenReturn(ingestedEntity);
-
-            when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
-            when(repository.findById(24L)).thenReturn(Optional.of(ingestedEntity));
+        when(authToken.getUserId()).thenReturn(1L);
+        when(processorService.ingestFile(
+            "payments.dat",
+            fileBytes,
+            Interface.DWP,
+            Interface.OPAL,
+            Type.TRANSFORMED_JSON,
+            Domain.FINES,
+            "dwp-container",
+            1L
+        )).thenReturn(ingestedEntity);
+        when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
+        when(repository.findById(24L)).thenReturn(Optional.of(ingestedEntity));
         when(mapper.toInterfaceFileObject(ingestedEntity)).thenReturn(mapped);
 
-            try (MockedStatic<SecurityUtil> ignored = authenticateWithPermission(
+        try (MockedStatic<SecurityUtil> ignored = authenticateWithPermission(
             uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FINES,
             FileHandlerPermission.CREATE_INTERFACE_FILES)) {
             InterfaceFileObjectInterfaceFile result = uploadService.addInterfaceFile(file, metadata);
@@ -318,26 +312,22 @@ public class InterfaceFilesServiceTest {
         when(file.getOriginalFilename()).thenReturn("source.dat");
         when(file.getBytes()).thenReturn(fileBytes);
 
-        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class)) {
-            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
-                .thenReturn(authToken);
-
-            when(authToken.getUserId()).thenReturn(1L);
-            when(processorService.ingestFile(
-                "source.dat",
-                fileBytes,
-                Interface.DWP,
-                Interface.OPAL,
-                Type.TRANSFORMED_JSON,
-                Domain.FINES,
-                "dwp-container",
-                1L
-            )).thenReturn(ingestedEntity);
-            when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
-            when(repository.findById(25L)).thenReturn(Optional.of(ingestedEntity));
+        when(authToken.getUserId()).thenReturn(1L);
+        when(processorService.ingestFile(
+            "source.dat",
+            fileBytes,
+            Interface.DWP,
+            Interface.OPAL,
+            Type.TRANSFORMED_JSON,
+            Domain.FINES,
+            "dwp-container",
+            1L
+        )).thenReturn(ingestedEntity);
+        when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
+        when(repository.findById(25L)).thenReturn(Optional.of(ingestedEntity));
         when(mapper.toInterfaceFileObject(ingestedEntity)).thenReturn(mapped);
 
-            try (MockedStatic<SecurityUtil> ignored = authenticateWithPermission(
+        try (MockedStatic<SecurityUtil> ignored = authenticateWithPermission(
             uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FINES,
             FileHandlerPermission.CREATE_INTERFACE_FILES)) {
             InterfaceFileObjectInterfaceFile result = uploadService.addInterfaceFile(file, metadata);
