@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.exception.DownstreamServiceUnavailableException;
-import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
@@ -45,6 +44,13 @@ public class InterfaceFileProcessorService {
     protected final InterfaceFilesRepository interfaceFilesRepository;
     private final TransactionTemplate transactionTemplate;
     protected final ObjectMapper objectMapper;
+
+    protected void processFile(BaisFileProcessorConfiguration config,
+        InterfaceFileEntity fileEntity,
+        InputStream inputStream) {
+
+        processFile(config, fileEntity, inputStream, getCurrentUserId());
+    }
 
     protected void processFile(
         BaisFileProcessorConfiguration config,

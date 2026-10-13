@@ -331,13 +331,16 @@ public class InterfaceFilesServiceTest {
     void addInterfaceFile_shouldOnlyProcessFileWhenShouldPreProcessFileIsTrueAndTypeIsSource(
         InterfaceFileTypeEnumInterfaceFile type, boolean shouldPreProcess) throws IOException {
 
-        try (MockedStatic<PermissionUtil> permissionUtil = mockStatic(PermissionUtil.class)) {
+        try (MockedStatic<PermissionUtil> permissionUtil = mockStatic(PermissionUtil.class);
+            MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class)) {
             // Arrange
+            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
+            when(authToken.getUserId()).thenReturn(10L);
             InterfaceFileEntity interfaceFile = mock(InterfaceFileEntity.class);
             MultipartFile file = mock(MultipartFile.class);
             when(barclayCardProcessorService.ingestFile(file.getName(), file.getBytes(), Interface.BARCLAYCARD,
                 Interface.OPAL, Type.valueOf(type), Domain.FINES,
-                config.getContainerName())).thenReturn(interfaceFile);
+                config.getContainerName(), 10L)).thenReturn(interfaceFile);
             when(repository.save(interfaceFile)).thenReturn(interfaceFile);
             when(repository.findById(interfaceFile.getInterfaceFileId())).thenReturn(Optional.of(interfaceFile));
             when(configMap.get(anyString())).thenReturn(config);
