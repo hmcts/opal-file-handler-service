@@ -87,6 +87,6 @@ class XmlSchemaUnmarshalServiceTest {
             PACS_SCHEMA,
             "PACS TTP file"
         )).isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("PACS TTP file did not match the expected schema");
+            .hasMessageContaining("PACS TTP file was not valid");
     }
 }
