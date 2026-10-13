@@ -59,6 +59,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
     private static final OffsetDateTime FIXED_DATE_TIME = OffsetDateTime.parse("2026-09-29T10:15:30Z");
     private static final Clock FIXED_CLOCK = Clock.fixed(FIXED_DATE_TIME.toInstant(), ZoneOffset.UTC);
     private static final String USER_IP_ADDRESS = "192.0.2.10";
+    private static final String REMOTE_IP_ADDRESS = "198.51.100.20";
 
     @TestConfiguration
     static class FixedClockConfiguration {
@@ -199,6 +200,10 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
             ResultActions res = mockMvc.perform(
                 get(urlWithID(2L))
+                    .with(request -> {
+                        request.setRemoteAddr(REMOTE_IP_ADDRESS);
+                        return request;
+                    })
                     .with(userStateStub.getAuthenticaitonRequestPostProcessor())
                     .headers(headers)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -211,8 +216,10 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))
                 .andExpect(content().bytes(expectedBody));
 
-            verify(pdpoJmsTemplate).convertAndSend(eq("logging-pdpl"), any(PdpoLogMessage.class),
+            ArgumentCaptor<PdpoLogMessage> captor = ArgumentCaptor.forClass(PdpoLogMessage.class);
+            verify(pdpoJmsTemplate).convertAndSend(eq("logging-pdpl"), captor.capture(),
                 any(MessagePostProcessor.class));
+            assertEquals(REMOTE_IP_ADDRESS, captor.getValue().details().getIpAddress());
             assertBlobStorageUnchanged();
         }
 
