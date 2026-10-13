@@ -141,8 +141,8 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
         @Test
         @DisplayName("OPAL: GET Interface File Content - Fetches file content from BTECKOH")
-        @JiraStory("PO-3948")
-        @JiraEpic("PO-3495")
+        @JiraStory("PO-8915")
+        @JiraEpic("PO-3952")
         void get_respondsWith200AndFileContents() throws Exception {
             authorizeWithPermission(); // Auto enforcement permission
 
