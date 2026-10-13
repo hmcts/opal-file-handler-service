@@ -141,8 +141,8 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
         @Test
         @DisplayName("OPAL: GET Interface File Content - Fetches file content from BTECKOH")
-        @JiraStory("PO-8915")
-        @JiraEpic("PO-3952")
+        @JiraStory("PO-3948")
+        @JiraEpic("PO-3495")
         void get_respondsWith200AndFileContents() throws Exception {
             authorizeWithPermission(); // Auto enforcement permission
 
@@ -218,8 +218,8 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
         @Test
         @DisplayName("OPAL: GET Interface File Content - Does not create a PDPL log for a system user")
-        @JiraStory("PO-3948")
-        @JiraEpic("PO-3495")
+        @JiraStory("PO-8915")
+        @JiraEpic("PO-3952")
         void get_systemUserRespondsWith200WithoutPdplLogging() throws Exception {
             userStateStub.setUserState(
                 userStateStub.getDefaultUserStateBuilder()
