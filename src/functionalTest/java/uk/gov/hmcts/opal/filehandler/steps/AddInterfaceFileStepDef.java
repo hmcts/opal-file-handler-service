@@ -28,6 +28,8 @@ import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient.Interfac
  */
 public class AddInterfaceFileStepDef extends BaseStepDef {
 
+    private static final long HUMAN_TEST_USER_ID = 500000000L;
+
     private static final String WORKBOOK = "test-data/bteckoh-report/bteckoh-test-file.xlsx";
     private String fileName;
     private byte[] content;
@@ -121,6 +123,8 @@ public class AddInterfaceFileStepDef extends BaseStepDef {
             assertEquals("SOURCE", record.type());
             assertEquals("FINES", record.domain());
             assertEquals(DigestUtils.md5Hex(content), record.checksum());
+            assertEquals(HUMAN_TEST_USER_ID, record.createdBy(),
+                "The uploaded interface file should be attributed to the human test user");
             assertEquals(record.filestoreUuid() == null ? null : record.filestoreUuid().toString(),
                 lastResponse().jsonPath().getString("filestore_uuid"));
         }

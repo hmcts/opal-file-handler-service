@@ -27,6 +27,10 @@ java:
           alias: AAD_CLIENT_ID
         - name: AzureADClientSecret
           alias: AAD_CLIENT_SECRET
+        - name: opal-system-user-client-id
+          alias: OPAL_SYSTEM_USER_CLIENT_ID
+        - name: opal-system-user-client-secret
+          alias: OPAL_SYSTEM_USER_CLIENT_SECRET
         - name: managed-redis-connection-string
           alias: REDIS_CONNECTION_STRING
         - name: opal-file-handler-service-file-store-account-name
@@ -114,6 +118,12 @@ bt-eckoh-report:
           alias: BAIS_SFTP_CONNECTION_PORT
         - name: bais-sftp-bteckoh-report-username
           alias: BAIS_SFTP_BTECKOH_REPORT_USERNAME
+        - name: AzureADTenantId
+          alias: AAD_TENANT_ID
+        - name: opal-system-user-client-id
+          alias: OPAL_SYSTEM_USER_CLIENT_ID
+        - name: opal-system-user-client-secret
+          alias: OPAL_SYSTEM_USER_CLIENT_SECRET
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
@@ -163,6 +173,12 @@ caps-report:
           alias: BAIS_SFTP_CONNECTION_PORT
         - name: bais-sftp-caps-report-username
           alias: BAIS_SFTP_CAPS_REPORT_USERNAME
+        - name: AzureADTenantId
+          alias: AAD_TENANT_ID
+        - name: opal-system-user-client-id
+          alias: OPAL_SYSTEM_USER_CLIENT_ID
+        - name: opal-system-user-client-secret
+          alias: OPAL_SYSTEM_USER_CLIENT_SECRET
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
@@ -212,6 +228,12 @@ natwest-transfer:
           alias: BAIS_SFTP_CONNECTION_PORT
         - name: bais-sftp-natwest-username
           alias: BAIS_SFTP_NATWEST_USERNAME
+        - name: AzureADTenantId
+          alias: AAD_TENANT_ID
+        - name: opal-system-user-client-id
+          alias: OPAL_SYSTEM_USER_CLIENT_ID
+        - name: opal-system-user-client-secret
+          alias: OPAL_SYSTEM_USER_CLIENT_SECRET
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
@@ -261,6 +283,12 @@ allpay-file-transfer:
           alias: BAIS_SFTP_CONNECTION_PORT
         - name: bais-sftp-allpay-report-username
           alias: BAIS_SFTP_ALLPAY_USERNAME
+        - name: AzureADTenantId
+          alias: AAD_TENANT_ID
+        - name: opal-system-user-client-id
+          alias: OPAL_SYSTEM_USER_CLIENT_ID
+        - name: opal-system-user-client-secret
+          alias: OPAL_SYSTEM_USER_CLIENT_SECRET
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
@@ -310,6 +338,12 @@ barclaycard-transfer:
           alias: BAIS_SFTP_CONNECTION_PORT
         - name: bais-sftp-barclaycard-username
           alias: BAIS_SFTP_BARCLAYCARD_USERNAME
+        - name: AzureADTenantId
+          alias: AAD_TENANT_ID
+        - name: opal-system-user-client-id
+          alias: OPAL_SYSTEM_USER_CLIENT_ID
+        - name: opal-system-user-client-secret
+          alias: OPAL_SYSTEM_USER_CLIENT_SECRET
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
@@ -359,6 +393,12 @@ bt-eckoh-transfer:
           alias: BAIS_SFTP_CONNECTION_PORT
         - name: bais-sftp-bteckoh-username
           alias: BAIS_SFTP_BTECKOH_USERNAME
+        - name: AzureADTenantId
+          alias: AAD_TENANT_ID
+        - name: opal-system-user-client-id
+          alias: OPAL_SYSTEM_USER_CLIENT_ID
+        - name: opal-system-user-client-secret
+          alias: OPAL_SYSTEM_USER_CLIENT_SECRET
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
@@ -408,6 +448,12 @@ dwp-transfer:
           alias: BAIS_SFTP_CONNECTION_PORT
         - name: bais-sftp-dwp-username
           alias: BAIS_SFTP_DWP_USERNAME
+        - name: AzureADTenantId
+          alias: AAD_TENANT_ID
+        - name: opal-system-user-client-id
+          alias: OPAL_SYSTEM_USER_CLIENT_ID
+        - name: opal-system-user-client-secret
+          alias: OPAL_SYSTEM_USER_CLIENT_SECRET
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
@@ -457,6 +503,8 @@ jacobs-transfer:
           alias: BAIS_SFTP_CONNECTION_PORT
         - name: bais-sftp-jacobs-username
           alias: BAIS_SFTP_JACOBS_USERNAME
+        - name: AzureADTenantId
+          alias: AAD_TENANT_ID
         - name: opal-system-user-client-id
           alias: OPAL_SYSTEM_USER_CLIENT_ID
         - name: opal-system-user-client-secret
@@ -510,6 +558,12 @@ cder-transfer:
           alias: BAIS_SFTP_CONNECTION_PORT
         - name: bais-sftp-cder-username
           alias: BAIS_SFTP_CDER_USERNAME
+        - name: AzureADTenantId
+          alias: AAD_TENANT_ID
+        - name: opal-system-user-client-id
+          alias: OPAL_SYSTEM_USER_CLIENT_ID
+        - name: opal-system-user-client-secret
+          alias: OPAL_SYSTEM_USER_CLIENT_SECRET
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: false
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
@@ -555,6 +609,12 @@ marston-transfer:
           alias: BAIS_SFTP_CONNECTION_PORT
         - name: bais-sftp-marston-username
           alias: BAIS_SFTP_MARSTON_USERNAME
+        - name: AzureADTenantId
+          alias: AAD_TENANT_ID
+        - name: opal-system-user-client-id
+          alias: OPAL_SYSTEM_USER_CLIENT_ID
+        - name: opal-system-user-client-secret
+          alias: OPAL_SYSTEM_USER_CLIENT_SECRET
 
 
   environment:

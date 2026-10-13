@@ -281,6 +281,7 @@ class InterfaceFileServiceTest {
             .fileName("fileName")
             .status(status)
             .createdDatetime(LocalDateTime.now())
+            .createdBy(-1L)
             .build();
     }
 }
