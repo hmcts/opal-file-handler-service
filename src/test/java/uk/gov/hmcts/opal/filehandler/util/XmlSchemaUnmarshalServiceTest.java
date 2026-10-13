@@ -28,7 +28,7 @@ class XmlSchemaUnmarshalServiceTest {
     }
 
     @Test
-    void shouldRejectInvalidXmlBeforeSchemaValidation() {
+    void shouldRejectInvalidXml() {
         assertThatThrownBy(() -> service.unmarshal(
             StreamTestUtil.stream("<PacsTppSchedule>"),
             PacsTppSchedule.class,
