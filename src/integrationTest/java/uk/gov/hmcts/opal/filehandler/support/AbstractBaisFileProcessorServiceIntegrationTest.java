@@ -44,8 +44,8 @@ import uk.gov.hmcts.opal.filehandler.service.InterfaceFilesService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.logging.integration.dto.PersonalDataProcessingCategory;
-import uk.gov.hmcts.opal.logging.integration.dto.PersonalDataProcessingLogDetails;
 import uk.gov.hmcts.opal.logging.integration.messaging.PdpoLogMessage;
+import uk.gov.hmcts.opal.logging.integration.messaging.PdpoQueueLogDetails;
 
 @SpringBootTest(properties = {
     "spring.main.web-application-type=none",
@@ -244,22 +244,19 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
                 any(MessagePostProcessor.class));
 
             assertThat(message.getValue().logType()).isEqualTo("PDPO");
-            PersonalDataProcessingLogDetails details = message.getValue().details();
-            assertThat(details.getBusinessIdentifier()).isEqualTo("Interface file - download");
-            assertThat(details.getCategory()).isEqualTo(PersonalDataProcessingCategory.DISCLOSURE);
-            assertThat(details.getIpAddress()).isNull();
-            assertThat(details.getCreatedAt()).isBetween(beforeDownload, afterDownload);
-            assertThat(details.getCreatedBy().getIdentifier())
+            PdpoQueueLogDetails details = message.getValue().details();
+            assertThat(details.businessIdentifier()).isEqualTo("Interface file - download");
+            assertThat(details.category()).isEqualTo(PersonalDataProcessingCategory.DISCLOSURE);
+            assertThat(details.ipAddress()).isNull();
+            assertThat(details.createdAt()).isBetween(beforeDownload, afterDownload);
+            assertThat(details.createdBy().getIdentifier())
                 .isEqualTo(userStateStub.getUserState().getUserId().toString());
-            assertThat(details.getCreatedBy().getType()).isEqualTo(PdplIdentifierType.OPAL_USER_ID);
-            assertThat(details.getRecipient().getIdentifier()).isNull();
-            assertThat(details.getRecipient().getType()).isNull();
-            assertThat(details.getIndividuals())
-                .singleElement()
-                .satisfies(individual -> {
-                    assertThat(individual.getIdentifier()).isEqualTo(entity.getInterfaceFileId().toString());
-                    assertThat(individual.getType()).isEqualTo(PdplIdentifierType.FILE_HANDLER_INTERFACE_FILE);
-                });
+            assertThat(details.createdBy().getType()).isEqualTo(PdplIdentifierType.OPAL_USER_ID);
+            assertThat(details.recipient().getIdentifier()).isNull();
+            assertThat(details.recipient().getType()).isNull();
+            assertThat(details.individuals()).isEqualTo(Map.of(
+                PdplIdentifierType.FILE_HANDLER_INTERFACE_FILE.getType(),
+                List.of(entity.getInterfaceFileId().toString())));
         } finally {
             SecurityContextHolder.clearContext();
         }

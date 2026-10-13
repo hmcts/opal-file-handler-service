@@ -17,6 +17,8 @@ import java.net.URL;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -43,10 +45,9 @@ import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.entity.PdplIdentifierType;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.support.UtilBlobStoreService;
-import uk.gov.hmcts.opal.logging.integration.dto.ParticipantIdentifier;
 import uk.gov.hmcts.opal.logging.integration.dto.PersonalDataProcessingCategory;
-import uk.gov.hmcts.opal.logging.integration.dto.PersonalDataProcessingLogDetails;
 import uk.gov.hmcts.opal.logging.integration.messaging.PdpoLogMessage;
+import uk.gov.hmcts.opal.logging.integration.messaging.PdpoQueueLogDetails;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraEpic;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
@@ -170,20 +171,17 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                 any(MessagePostProcessor.class));
 
             assertEquals("PDPO", captor.getValue().logType());
-            PersonalDataProcessingLogDetails logDetails = captor.getValue().details();
-            assertEquals("Interface file - download", logDetails.getBusinessIdentifier());
-            assertEquals(PersonalDataProcessingCategory.DISCLOSURE, logDetails.getCategory());
-            assertEquals(USER_IP_ADDRESS, logDetails.getIpAddress());
-            assertEquals(FIXED_DATE_TIME, logDetails.getCreatedAt());
-            assertEquals("500000000", logDetails.getCreatedBy().getIdentifier());
-            assertEquals(PdplIdentifierType.OPAL_USER_ID, logDetails.getCreatedBy().getType());
-            assertNull(logDetails.getRecipient().getIdentifier());
-            assertNull(logDetails.getRecipient().getType());
-            assertEquals(1, logDetails.getIndividuals().size());
-
-            ParticipantIdentifier individual = logDetails.getIndividuals().getFirst();
-            assertEquals("1", individual.getIdentifier());
-            assertEquals(PdplIdentifierType.FILE_HANDLER_INTERFACE_FILE, individual.getType());
+            PdpoQueueLogDetails logDetails = captor.getValue().details();
+            assertEquals("Interface file - download", logDetails.businessIdentifier());
+            assertEquals(PersonalDataProcessingCategory.DISCLOSURE, logDetails.category());
+            assertEquals(USER_IP_ADDRESS, logDetails.ipAddress());
+            assertEquals(FIXED_DATE_TIME, logDetails.createdAt());
+            assertEquals("500000000", logDetails.createdBy().getIdentifier());
+            assertEquals(PdplIdentifierType.OPAL_USER_ID, logDetails.createdBy().getType());
+            assertNull(logDetails.recipient().getIdentifier());
+            assertNull(logDetails.recipient().getType());
+            assertEquals(Map.of(PdplIdentifierType.FILE_HANDLER_INTERFACE_FILE.getType(), List.of("1")),
+                logDetails.individuals());
 
             assertBlobStorageUnchanged();
         }
@@ -219,7 +217,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             ArgumentCaptor<PdpoLogMessage> captor = ArgumentCaptor.forClass(PdpoLogMessage.class);
             verify(pdpoJmsTemplate).convertAndSend(eq("logging-pdpl"), captor.capture(),
                 any(MessagePostProcessor.class));
-            assertEquals(REMOTE_IP_ADDRESS, captor.getValue().details().getIpAddress());
+            assertEquals(REMOTE_IP_ADDRESS, captor.getValue().details().ipAddress());
             assertBlobStorageUnchanged();
         }
 
