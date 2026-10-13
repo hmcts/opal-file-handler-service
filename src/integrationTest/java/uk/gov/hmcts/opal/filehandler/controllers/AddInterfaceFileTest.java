@@ -118,7 +118,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     }
 
     private InterfaceFileEntity buildEntity(
-        String filename, String checksum, Status status, String errors, Long relatedId) {
+        String filename, String checksum, Status status, String errors, Long relatedId, Long creatorId) {
         InterfaceFileEntity.InterfaceFileEntityBuilder builder = InterfaceFileEntity.builder()
             .checksum(checksum)
             .fileName(filename)
@@ -129,7 +129,8 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             .opalDomain(Domain.FINES)
             .status(status)
             .errors(errors)
-            .createdDatetime(LocalDateTime.now());
+            .createdDatetime(LocalDateTime.now())
+            .createdBy(creatorId);
         if (relatedId != null) {
             builder.relatedInterfaceFile(InterfaceFileEntity.builder().interfaceFileId(relatedId).build());
         }
@@ -141,7 +142,9 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     }
 
     private void assertExistsInDatabase(Long id) {
-        assertTrue(repository.findById(id).isPresent());
+        InterfaceFileEntity saved = repository.findById(id).orElseThrow();
+        assertEquals(500000000L, saved.getCreatedBy(),
+            "The uploaded interface file should be attributed to the authenticated user");
     }
 
     private void assertDatabaseUnchanged() {
@@ -201,7 +204,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
                 buildEntity("some-file-name",
                     "d553f8f289bd08e5c513de5c000c0374",
                     Status.INGESTED,
-                    null, null)
+                    null, null, 1L)
             );
 
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
@@ -285,12 +288,12 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         @DisplayName("Correctly sets related interface file")
         void relatedFileIsSetCorrectly() {
             InterfaceFileEntity originalEntity = buildEntity("some-file-name",
-                "d553f8f289bd08e5c513de5c000c0374", Status.SUCCESS, null, null);
+                "d553f8f289bd08e5c513de5c000c0374", Status.SUCCESS, null, null, 1L);
             insertInterfaceFileEntity(originalEntity);
             InterfaceFileObjectInterfaceFile expectedResponse = buildExpectedResponse(
                 buildEntity("some-other-file-name",
                     "d553f8f289bd08e5c513de5c000c0374", Status.INGESTED,
-                    null, originalEntity.getInterfaceFileId())
+                    null, originalEntity.getInterfaceFileId(), 1L)
             );
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT,
                 originalEntity.getInterfaceFileId()));
@@ -318,7 +321,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
 
             InterfaceFileEntity originalEntity = buildEntity(
-                "some-file-name", "d553f8f289bd08e5c513de5c000c0374", Status.SUCCESS, null, null);
+                "some-file-name", "d553f8f289bd08e5c513de5c000c0374", Status.SUCCESS, null, null, 1L);
             insertInterfaceFileEntity(originalEntity);
             utilBlobStoreService.storeBlob(bteckohFileContents, "bteckoh-report", uuid.toString());
             final String originalVersion = utilBlobStoreService.getBlobVersion(
@@ -328,7 +331,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
                 buildEntity("some-file-name", "d553f8f289bd08e5c513de5c000c0374", Status.DUPLICATE,
                     "{\"message\":\"File with name 'some-file-name' and checksum 'd553f8f289bd08e5c513de5c000c0374'"
                         + " for source 'BTECKOH_REPORT' is a duplicate of " + originalEntity.getInterfaceFileId()
-                        + "\"}", null)
+                        + "\"}", null, 1L)
             );
 
             InterfaceFileObjectInterfaceFile response =  setupFileUploadApiTest(HttpMethod.POST, URI)
@@ -358,7 +361,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         @DisplayName("AC4 - Repeating an INGESTED file creates a new record and blob")
         void ingestedFileIsNotDuplicate() {
             InterfaceFileEntity original = buildEntity("some-file-name",
-                "d553f8f289bd08e5c513de5c000c0374", Status.INGESTED, null, null);
+                "d553f8f289bd08e5c513de5c000c0374", Status.INGESTED, null, null, 1L);
             insertInterfaceFileEntity(original);
             utilBlobStoreService.storeBlob(bteckohFileContents, "bteckoh-report", uuid.toString());
 

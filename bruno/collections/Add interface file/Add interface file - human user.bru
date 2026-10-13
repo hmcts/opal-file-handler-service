@@ -1,0 +1,51 @@
+meta {
+  name: Add interface file - human user
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseURL}}/interface-files
+  body: multipartForm
+  auth: bearer
+}
+
+script:pre-request {
+  const response = await bru.sendRequest({
+    method: "GET",
+    url: `${bru.getEnvVar("userURL")}/testing-support/token/user`,
+    headers: { "X-User-Email": bru.getEnvVar("userEmail") }
+  });
+
+  if (response.status !== 200) throw new Error(`Could not obtain human-user token: HTTP ${response.status}`);
+  const payload = response.data ?? response.body;
+  const body = typeof payload === "string" ? JSON.parse(payload) : payload;
+  if (!body?.access_token) throw new Error("Human-user token was not returned");
+  bru.setVar("BEARER_TOKEN", body.access_token);
+}
+
+auth:bearer {
+  token: {{BEARER_TOKEN}}
+}
+
+headers {
+  Content-Type: multipart/form-data
+}
+
+body:multipart-form {
+  file: @file(/tmp/po-8746-system-user-upload.xlsx) @contentType(application/octet-stream)
+  metadata: {"source":"BTECKOH_REPORT","target":"OPAL","type":"SOURCE","domain":"FINES","payment_type":"CASH","file_name":"po-8746-human-user-upload.xlsx","should_pre_process_file":false} @contentType(application/json)
+}
+
+tests {
+  test("creates an interface file for the human user", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body.interface_file_id).to.be.a("number");
+    expect(res.body.status).to.equal("INGESTED");
+  })
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
