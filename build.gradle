@@ -35,8 +35,9 @@ java {
 }
 
 ext {
-  serenityVersion = "5.3.11"
-  cucumberVersion = "7.34.9"
+  serenityVersion = "5.4.1"
+  cucumberVersion = "8.0.4"
+  set('junit-jupiter.version', "6.1.3")
   log4JVersion = "2.26.1"
   logbackVersion = "1.6.5"
 }
@@ -105,14 +106,6 @@ configurations {
 
   integrationTestImplementation.extendsFrom testImplementation
   integrationTestRuntimeOnly.extendsFrom runtimeOnly
-}
-
-configurations.configureEach {
-  resolutionStrategy {
-    force "io.cucumber:cucumber-core:${cucumberVersion}"
-    force "io.cucumber:cucumber-java:${cucumberVersion}"
-    force "io.cucumber:cucumber-junit:${cucumberVersion}"
-  }
 }
 
 xmlSchemasToGenerate.each { schemaName, schemaConfig ->
@@ -435,13 +428,15 @@ dependencies {
   testImplementation 'io.rest-assured:rest-assured:6.1.0'
   testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
   testImplementation 'org.junit.platform:junit-platform-suite'
-  testImplementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
-  testImplementation "io.cucumber:cucumber-java:${cucumberVersion}"
-  testImplementation "net.serenity-bdd:serenity-core:${serenityVersion}"
-  testImplementation "net.serenity-bdd:serenity-rest-assured:${serenityVersion}"
-  testImplementation "net.serenity-bdd:serenity-report-resources:${serenityVersion}"
-  testImplementation "net.serenity-bdd:serenity-cucumber:${serenityVersion}"
-  testImplementation "net.serenity-bdd:serenity-ensure:${serenityVersion}"
+  functionalTestImplementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
+  functionalTestImplementation "io.cucumber:cucumber-java:${cucumberVersion}"
+  functionalTestImplementation "net.serenity-bdd:serenity-core:${serenityVersion}"
+  functionalTestImplementation "net.serenity-bdd:serenity-rest-assured:${serenityVersion}"
+  functionalTestImplementation "net.serenity-bdd:serenity-report-resources:${serenityVersion}"
+  functionalTestImplementation("net.serenity-bdd:serenity-cucumber:${serenityVersion}") {
+    exclude group: 'io.cucumber', module: 'cucumber-junit'
+  }
+  functionalTestImplementation "net.serenity-bdd:serenity-ensure:${serenityVersion}"
   testImplementation 'com.hierynomus:sshj:0.41.2'
 
   integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.4.3'
