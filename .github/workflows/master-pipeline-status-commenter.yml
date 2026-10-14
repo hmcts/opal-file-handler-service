@@ -32,10 +32,9 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
   checks: read
   statuses: read
-  pull-requests: read
-  issues: write
 
 concurrency:
   group: master-pipeline-status-commenter
