@@ -12,7 +12,7 @@ plugins {
   id 'org.springframework.boot' version '4.1.1'
   id 'io.github.ben-manes.versions' version '0.66.0'
   id 'org.sonarqube' version '7.5.0.8588'
-  id "org.openapi.generator" version "7.25.0"
+  id "org.openapi.generator" version "7.26.0"
   /*
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
@@ -389,7 +389,7 @@ dependencies {
   //Other
   implementation 'org.apache.poi:poi-ooxml:5.5.1'
 
-  implementation 'com.azure:azure-storage-blob:12.35.1'
+  implementation 'com.azure:azure-storage-blob:12.36.0'
   implementation 'com.microsoft.azure:applicationinsights-web:3.7.10'
 
   implementation 'commons-logging:commons-logging:1.4.0'
@@ -406,16 +406,16 @@ dependencies {
   // temporary bump until spring-boot-dependencies updates (CVE-2026-54291)
   implementation 'org.postgresql:postgresql:42.7.14'
 
-  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:11.0.26'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-core:11.0.26'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-el:11.0.26'
-  implementation 'org.apache.tomcat:tomcat-annotations-api:11.0.26'
+  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:11.0.27'
+  implementation 'org.apache.tomcat.embed:tomcat-embed-core:11.0.27'
+  implementation 'org.apache.tomcat.embed:tomcat-embed-el:11.0.27'
+  implementation 'org.apache.tomcat:tomcat-annotations-api:11.0.27'
 
   // Azure blob storage
-  implementation 'com.azure:azure-storage-blob:12.35.1'
+  implementation 'com.azure:azure-storage-blob:12.36.0'
 
   //Annotation
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.12.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.13.Final'
 
   compileOnly 'org.projectlombok:lombok:1.18.48'
   annotationProcessor 'org.projectlombok:lombok:1.18.48'
@@ -442,7 +442,7 @@ dependencies {
   testImplementation "net.serenity-bdd:serenity-report-resources:${serenityVersion}"
   testImplementation "net.serenity-bdd:serenity-cucumber:${serenityVersion}"
   testImplementation "net.serenity-bdd:serenity-ensure:${serenityVersion}"
-  testImplementation 'com.hierynomus:sshj:0.41.1'
+  testImplementation 'com.hierynomus:sshj:0.41.2'
 
   integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.4.3'
   integrationTestImplementation 'org.springframework.security:spring-security-test'
