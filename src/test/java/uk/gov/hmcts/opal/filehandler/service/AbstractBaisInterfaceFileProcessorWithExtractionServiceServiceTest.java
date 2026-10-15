@@ -159,7 +159,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             TestProcessor processor = spy(service);
             InputStream inputStream = new ByteArrayInputStream("source".getBytes(StandardCharsets.UTF_8));
             InterfaceFileCommonDataExtract extract = extract();
-            BusinessUnitBankAccountEntity businessUnit = businessUnit((short)12, Domain.FINES);
+            BusinessUnitBankAccountEntity businessUnit = businessUnit("12", Domain.FINES);
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS, Domain.FINES);
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
@@ -168,7 +168,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
 
             processor.processFile(config, sourceFile, inputStream);
 
-            assertThat(sourceFile.getBusinessUnitId()).containsExactly(12);
+            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 12);
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
             verify(processor).createAndUploadSourceJson(config, sourceFile, extract);
             verify(finesQueueService).send(200L);
@@ -181,14 +181,14 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             TestProcessor processor = spy(service);
             InputStream inputStream = new ByteArrayInputStream("source".getBytes(StandardCharsets.UTF_8));
             InterfaceFileCommonDataExtract extract = extract();
-            BusinessUnitBankAccountEntity businessUnit = businessUnit((short)65, Domain.FINES);
+            BusinessUnitBankAccountEntity businessUnit = businessUnit("65", Domain.FINES);
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
             when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
 
             processor.processFile(config, sourceFile, inputStream);
 
-            assertThat(sourceFile.getBusinessUnitId()).containsExactly(65);
+            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 65);
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
             verify(processor, never()).createAndUploadSourceJson(any(), any(), any());
             verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
@@ -206,8 +206,8 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
                 .fileName("second.dat")
                 .paymentType(PaymentType.CHEQUE)
                 .build();
-            BusinessUnitBankAccountEntity firstBusinessUnit = businessUnit((short)12, Domain.FINES);
-            BusinessUnitBankAccountEntity secondBusinessUnit = businessUnit((short)1, Domain.MAINTENANCE);
+            BusinessUnitBankAccountEntity firstBusinessUnit = businessUnit("12", Domain.FINES);
+            BusinessUnitBankAccountEntity secondBusinessUnit = businessUnit("1", Domain.MAINTENANCE);
             InterfaceFileEntity firstSourceJson = sourceJsonFile(200L, Status.SUCCESS, Domain.FINES);
             InterfaceFileEntity secondSourceJson = sourceJsonFile(201L, Status.SUCCESS, Domain.MAINTENANCE);
 
@@ -219,7 +219,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
 
             processor.processFile(config, sourceFile, inputStream);
 
-            assertThat(sourceFile.getBusinessUnitId()).containsExactly(12, 01);
+            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 12, (short) 1);
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.MAINTENANCE);
             verify(processor).createAndUploadSourceJson(config, sourceFile, first);
             verify(processor).createAndUploadSourceJson(config, sourceFile, second);
@@ -233,7 +233,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             TestProcessor processor = spy(service);
             InputStream inputStream = new ByteArrayInputStream("source".getBytes(StandardCharsets.UTF_8));
             InterfaceFileCommonDataExtract extract = extract();
-            BusinessUnitBankAccountEntity businessUnit = businessUnit((short)1, Domain.CONFISCATION);
+            BusinessUnitBankAccountEntity businessUnit = businessUnit("1", Domain.CONFISCATION);
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
             when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
@@ -272,11 +272,11 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
 
         @Test
         void shouldMergeBusinessUnitIdsAndUpdateDomain() {
-            sourceFile.setBusinessUnitId(new short[] {1});
+            sourceFile.setBusinessUnitId(new Short[] {1});
 
-            service.updateSourceBusinessUnitAndDomain(sourceFile, businessUnit((short)12, Domain.FINES), Domain.FINES);
+            service.updateSourceBusinessUnitAndDomain(sourceFile, businessUnit("12", Domain.FINES), Domain.FINES);
 
-            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short)1, (short)12);
+            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 1, (short) 12);
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
         }
 
@@ -284,9 +284,9 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
         void shouldMergeBusinessUnitIdsAndUpdateDomainSourceHasNullBusinessUnitId() {
             sourceFile.setBusinessUnitId(null);
 
-            service.updateSourceBusinessUnitAndDomain(sourceFile, businessUnit((short)12, Domain.FINES), Domain.FINES);
+            service.updateSourceBusinessUnitAndDomain(sourceFile, businessUnit("12", Domain.FINES), Domain.FINES);
 
-            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short)12);
+            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 12);
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
         }
     }
@@ -299,7 +299,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             InterfaceFileCommonDataExtract extract = extract();
             extract.setDestinationDetails(null);
 
-            BusinessUnitBankAccountEntity businessUnitBankAccountEntity = businessUnit((short)12, Domain.FINES);
+            BusinessUnitBankAccountEntity businessUnitBankAccountEntity = businessUnit("12", Domain.FINES);
             businessUnitBankAccountEntity.setBankAccountNumber("some-account-number");
             businessUnitBankAccountEntity.setBankSortCode("some-sort-code");
 
@@ -317,7 +317,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
                 .bankDetails(BankDetails.builder().accountNumber("11111111").build())
                 .build());
 
-            service.populateMissingDestinationBankDetails(extract, businessUnit((short)12, Domain.FINES));
+            service.populateMissingDestinationBankDetails(extract, businessUnit("12", Domain.FINES));
 
             assertThat(extract.getDestinationDetails().getBankDetails().getAccountNumber()).isEqualTo("11111111");
             assertThat(extract.getDestinationDetails().getBankDetails().getSortCode()).isNull();
@@ -330,7 +330,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
                 .bankDetails(BankDetails.builder().sortCode("11111111").build())
                 .build());
 
-            service.populateMissingDestinationBankDetails(extract, businessUnit((short)12, Domain.FINES));
+            service.populateMissingDestinationBankDetails(extract, businessUnit("12", Domain.FINES));
 
             assertThat(extract.getDestinationDetails().getBankDetails().getAccountNumber()).isNull();
             assertThat(extract.getDestinationDetails().getBankDetails().getSortCode()).isEqualTo("11111111");
@@ -413,7 +413,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             InterfaceFileCommonDataExtract extract = extract();
 
             InterfaceFileEntity sourceJson = service.createSourceJson(
-                config, sourceFile, extract, new short[] {12}, Domain.FINES, "checksum");
+                config, sourceFile, extract, new String[] {"12"}, Domain.FINES, "checksum");
 
             assertThat(sourceJson.getSource()).isEqualTo(Interface.NATWEST);
             assertThat(sourceJson.getTarget()).isEqualTo(Interface.OPAL);
@@ -423,7 +423,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             assertThat(sourceJson.getChecksum()).isEqualTo("checksum");
             assertThat(sourceJson.getStatus()).isEqualTo(Status.SUCCESS);
             assertThat(sourceJson.getRelatedInterfaceFile()).isSameAs(sourceFile);
-            assertThat(sourceJson.getBusinessUnitId()).containsExactly(12);
+            assertThat(sourceJson.getBusinessUnitId()).containsExactly((short) 12);
             assertThat(sourceJson.getPaymentType()).isEqualTo(uk.gov.hmcts.opal.filehandler.entity.PaymentType.CASH);
         }
     }
@@ -617,9 +617,9 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             .build();
     }
 
-    private BusinessUnitBankAccountEntity businessUnit(short code, Domain domain) {
+    private BusinessUnitBankAccountEntity businessUnit(String code, Domain domain) {
         return BusinessUnitBankAccountEntity.builder()
-            .id(1L)
+            .id((short) 1)
             .businessUnitCode(code)
             .domain(domain)
             .bankAccountNumber("27048527")
@@ -641,7 +641,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
         void shouldUpdateSourceFilePopulateBankDetailsAndReturnTrue() {
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
-            BusinessUnitBankAccountEntity businessUnit = businessUnit((short)12, Domain.FINES);
+            BusinessUnitBankAccountEntity businessUnit = businessUnit("12", Domain.FINES);
 
             when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
             doNothing().when(processor).validateSupportedDomain(sourceFile, Domain.FINES);
@@ -658,22 +658,32 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
         }
 
         @Test
-        void shouldReturnFalseForBusinessUnit065AfterUpdatingSourceFile() {
+        void shouldContinueProcessingAfterUpdatingSourceFile() {
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
-            BusinessUnitBankAccountEntity businessUnit = businessUnit((short)65, Domain.FINES);
+            BusinessUnitBankAccountEntity businessUnit = businessUnit("075", Domain.FINES);
 
             when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
             doNothing().when(processor).validateSupportedDomain(sourceFile, Domain.FINES);
-            doNothing().when(processor).updateSourceBusinessUnitAndDomain(sourceFile, businessUnit, Domain.FINES);
+            doNothing().when(processor).updateSourceBusinessUnitAndDomain(
+                sourceFile,
+                businessUnit,
+                Domain.FINES
+            );
 
             boolean result = processor.preProcessExtract(config, sourceFile, extract);
 
-            assertThat(result).isFalse();
+            assertThat(result).isTrue();
+
             verify(extractionService).getBusinessUnitBankAccount(extract);
             verify(processor).validateSupportedDomain(sourceFile, Domain.FINES);
-            verify(processor).updateSourceBusinessUnitAndDomain(sourceFile, businessUnit, Domain.FINES);
-            verify(processor, never()).populateMissingDestinationBankDetails(extract, businessUnit);
+            verify(processor).updateSourceBusinessUnitAndDomain(
+                sourceFile,
+                businessUnit,
+                Domain.FINES
+            );
+            verify(processor)
+                .populateMissingDestinationBankDetails(extract, businessUnit);
         }
     }
 
@@ -734,9 +744,9 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             InterfaceFileCommonDataExtract extract = extract();
 
             when(extractionService.getBusinessUnitBankAccount(extract))
-                .thenReturn(businessUnit((short)12, Domain.FINES));
+                .thenReturn(businessUnit("12", Domain.FINES));
 
-            assertThat(service.getBusinessUnitsFromExtract(config, extract)).containsExactly(12);
+            assertThat(service.getBusinessUnitsFromExtract(config, extract)).containsExactly("12");
         }
     }
 
@@ -748,7 +758,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             InterfaceFileCommonDataExtract extract = extract();
 
             when(extractionService.getBusinessUnitBankAccount(extract))
-                .thenReturn(businessUnit((short)12, Domain.FINES));
+                .thenReturn(businessUnit("12", Domain.FINES));
 
             assertThat(service.getDomainFromExtract(config, extract)).isEqualTo(Domain.FINES);
         }

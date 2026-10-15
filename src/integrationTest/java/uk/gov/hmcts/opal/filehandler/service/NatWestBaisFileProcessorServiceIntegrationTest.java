@@ -37,7 +37,7 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
     private static final String NATWEST_FILE_CHECKSUM = "3e7eb40eae410fee9a8d999bdcd7c302";
     private static final String NATWEST_FILE_RESOURCE = "bais-emulator/" + NATWEST_FILE;
     private static final String NATWEST_FILE_CONTAINER = "/home/NATWEST/" + NATWEST_FILE;
-    private static final short BUSINESS_UNIT_CODE = 12;
+    private static final String BUSINESS_UNIT_CODE = "12";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 

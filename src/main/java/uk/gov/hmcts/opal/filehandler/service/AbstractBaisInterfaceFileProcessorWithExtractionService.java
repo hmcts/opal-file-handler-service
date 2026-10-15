@@ -29,7 +29,7 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T extends InterfaceFileCommonDataExtract>
     extends AbstractInterfaceFileProcessorWithExtractionService<T> {
 
-    private static final short BUSINESS_UNIT_065 = 65;
+    private static final String BUSINESS_UNIT_065 = "65";
 
     private final EnumMap<Domain, InterfaceFilePreprocessQueueService> queueServiceMap;
 
@@ -76,8 +76,8 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
             }
         }
 
-        businessUnitIds.add(businessUnitBankAccount.getBusinessUnitCode());
-        short[] businessUnitIdArray = new short[businessUnitIds.size()];
+        businessUnitIds.add(Short.valueOf(businessUnitBankAccount.getBusinessUnitCode()));
+        Short[] businessUnitIdArray = new Short[businessUnitIds.size()];
         int i = 0;
         for (Short businessUnitId : businessUnitIds) {
             businessUnitIdArray[i++] = businessUnitId;
@@ -156,8 +156,8 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
     }
 
     @Override
-    protected short[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract) {
-        return new short[] {extractionService.getBusinessUnitBankAccount(extract).getBusinessUnitCode()};
+    protected String[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract) {
+        return new String[] {extractionService.getBusinessUnitBankAccount(extract).getBusinessUnitCode()};
     }
 
     @Override

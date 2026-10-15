@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -117,10 +118,6 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
     }
 
 
-
-
-
-
     boolean alreadyProcessedSuccessfully(
         InterfaceFileEntity sourceInterfaceFile,
         T extract,
@@ -177,7 +174,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
         T extract,
-        short[] businessUnitIds,
+        String[] businessUnitIds,
         Domain domain,
         String checksum
     ) {
@@ -191,7 +188,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
             .status(Status.SUCCESS)
             .createdDatetime(LocalDateTime.now(clock))
             .relatedInterfaceFile(sourceInterfaceFile)
-            .businessUnitId(businessUnitIds)
+            .businessUnitId(Arrays.stream(businessUnitIds).map(Short::valueOf).toArray(Short[]::new))
             .paymentType(extract.getPaymentType())
             .build();
     }
@@ -225,7 +222,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
             sourceJson.getInterfaceFileId(), sourceJson.getFileName(), exception);
     }
 
-    protected abstract short[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract);
+    protected abstract String[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract);
 
     protected abstract Domain getDomainFromExtract(BaisFileProcessorConfiguration config, T extract);
 

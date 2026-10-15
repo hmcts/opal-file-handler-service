@@ -31,8 +31,7 @@ public class BusinessUnitBankAccountEntity {
     private Short id;
 
     @Column(name = "business_unit_code", nullable = false)
-    @Length(max = 4)
-    private short businessUnitCode;
+    private String businessUnitCode;
 
     @Column(name = "opal_domain", nullable = false)
     @Enumerated(EnumType.STRING)

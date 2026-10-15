@@ -1,5 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -204,7 +205,8 @@ public class InterfaceFilesServiceTest {
         assertEquals(mapped, result);
         assertEquals(relatedInterfaceFile, ingestedEntity.getRelatedInterfaceFile());
         assertEquals(PaymentType.CHEQUE, ingestedEntity.getPaymentType());
-        assertEquals(new Short[] {Short.valueOf((short) 1234)},ingestedEntity.getBusinessUnitId());
+        assertArrayEquals(new Short[] {(short) 1234}, ingestedEntity.getBusinessUnitId());
+
         verify(repository).findById(15L);
         verify(repository).save(ingestedEntity);
         verify(spyService).getInterfaceFile(24L);
@@ -245,7 +247,8 @@ public class InterfaceFilesServiceTest {
         assertEquals(mapped, result);
         assertNull(ingestedEntity.getRelatedInterfaceFile());
         assertEquals(PaymentType.CASH, ingestedEntity.getPaymentType());
-        assertEquals(new Short[] {Short.valueOf((short) 9876)},ingestedEntity.getBusinessUnitId());
+        assertArrayEquals(new Short[] {(short) 9876},ingestedEntity.getBusinessUnitId());
+
         verify(repository).save(ingestedEntity);
         verify(spyService).getInterfaceFile(25L);
     }

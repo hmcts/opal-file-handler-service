@@ -258,7 +258,7 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
             .checksum(checksum)
             .status(status)
             .createdDatetime(LocalDateTime.now())
-            .businessUnitId(new short[] {12})
+            .businessUnitId(new Short[] {12})
             .relatedInterfaceFile(sourceFile)
             .build();
     }

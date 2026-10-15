@@ -32,8 +32,9 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
 
     @Test
     void shouldPersistAndLoadTypicalBusinessUnitBankAccount() {
-        short businessUnitId=224;
-        BusinessUnitBankAccountEntity original = testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID,  businessUnitId);
+        String businessUnitId = "224";
+        BusinessUnitBankAccountEntity original =
+            testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID,  businessUnitId);
         entityManager.clear();
 
         BusinessUnitBankAccountEntity fetched = repository.findById(TYPICAL_ID).orElseThrow();
@@ -68,7 +69,7 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
 
         @Test
         void correctlyFetchesBySortCodeAndAccountNumber() {
-            BusinessUnitBankAccountEntity original = testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID, (short)1);
+            BusinessUnitBankAccountEntity original = testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID, "01");
 
             entityManager.clear();
 
@@ -114,13 +115,13 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
         @Test
         void correctlyFetchesByDwpCourtCode() {
             BusinessUnitBankAccountEntity original =
-                testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID, (short)123);
+                testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID, "123");
 
             entityManager.clear();
 
-            short businessUnitId = original.getBusinessUnitCode();
+            String businessUnitId = original.getBusinessUnitCode();
 
-            BusinessUnitBankAccountEntity fetched = repository.findByBusinessUnitId(businessUnitId).orElseThrow();
+            BusinessUnitBankAccountEntity fetched = repository.findByBusinessUnitCode(businessUnitId).orElseThrow();
 
             assertThat(fetched.getId()).isEqualTo(original.getId());
             assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());

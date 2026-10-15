@@ -307,31 +307,39 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         }
 
         @Test
-        @DisplayName("PO-3947 - Filters interface files correctly by business_unit_code")
+        @DisplayName("PO-3947 - Filters interface files correctly by business_unit_id")
         @JiraStory("PO-3947")
         @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
-        void filtersInterfaceFilesCorrectlyByBusinessUnitCode_200() throws Exception {
-            String businessUnitCode = "BC01";
+        void filtersInterfaceFilesCorrectlyByBusinessUnitId_200() throws Exception {
+            Integer businessUnitId = 1;
+
             setupAuthorisedUser();
+
             ResultActions result = mockMvc.perform(
                 get(URL)
                     .with(userStateStub.getAuthenticaitonRequestPostProcessor())
                     .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
-                    .param("business_unit_code", businessUnitCode));
+                    .param("business_unit_id", businessUnitId.toString()));
 
             String body = result.andReturn().getResponse().getContentAsString();
+
             result.andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
-            GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {
-            });
+            GetInterfaceFiles200Response response = objectMapper.readValue(
+                body,
+                new TypeReference<>() {
+                });
 
             List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
-            assertThat(interfaceFiles).hasSizeGreaterThanOrEqualTo(1);
-            assertThat(interfaceFiles).allMatch(i -> i.getBusinessUnitIds().contains(businessUnitCode));
-        }
 
+            assertThat(interfaceFiles).hasSizeGreaterThanOrEqualTo(1);
+
+            assertThat(interfaceFiles).allSatisfy(interfaceFile ->
+                assertThat(interfaceFile.getBusinessUnitIds())
+                    .contains(businessUnitId));
+        }
         /* Commented out pending https://tools.hmcts.net/jira/browse/PO-8686
         @Test
         @DisplayName("PO-3947 – Forbidden without View Interface Files permission")

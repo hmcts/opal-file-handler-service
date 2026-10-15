@@ -34,7 +34,7 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 })
 public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
 
-    private static final short BUSINESS_UNIT_CODE = 01;
+    private static final String BUSINESS_UNIT_CODE = "01";
     private static final String ALLPAY_FILE = "a121_00350005_300000";
     private static final String ALLPAY_FILE_CHECKSUM = "f3f29c87cf2058c337fa6f130dd66b28";
     private static final String ALLPAY_FILE_RESOURCE = "bais-emulator/" + ALLPAY_FILE;

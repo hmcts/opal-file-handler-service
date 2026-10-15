@@ -60,7 +60,7 @@ public class SearchInterfaceFilesDtoMapperTest {
     @Test
     void toSearchInterfaceFilesDto_allFieldsNull() {
         SearchInterfaceFilesDto searchDto = mapper.toSearchInterfaceFilesDto(
-            null, null, null, null, null, null, null, (short)0, null, null
+            null, null, null, null, null, null, null, null, null, null
         );
 
         assertNotNull(searchDto);

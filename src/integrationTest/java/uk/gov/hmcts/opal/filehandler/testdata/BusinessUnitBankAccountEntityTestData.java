@@ -12,12 +12,12 @@ public class BusinessUnitBankAccountEntityTestData {
 
     private final BusinessUnitBankAccountRepository repository;
 
-    public BusinessUnitBankAccountEntity getTypicalBusinessUnitBankAccount(short id, short businessUnitId) {
+    public BusinessUnitBankAccountEntity getTypicalBusinessUnitBankAccount(short id, String businessUnitId) {
         return getTypicalBusinessUnitBankAccount(id, businessUnitId, null);
     }
 
     public BusinessUnitBankAccountEntity getTypicalBusinessUnitBankAccount(
-        short id, short businessUnitCode, String dwpCourtCode) {
+        short id, String businessUnitCode, String dwpCourtCode) {
         return BusinessUnitBankAccountEntity.builder()
             .id(id)
             .businessUnitCode(businessUnitCode)
@@ -31,7 +31,7 @@ public class BusinessUnitBankAccountEntityTestData {
     public BusinessUnitBankAccountEntity getMaximumBusinessUnitBankAccount(short id) {
         return BusinessUnitBankAccountEntity.builder()
             .id(id)
-            .businessUnitCode((short) 999)
+            .businessUnitCode("999")
             .domain(Domain.FILE_HANDLER)
             .bankSortCode("999999")
             .bankAccountNumber("1234567890")
@@ -39,12 +39,12 @@ public class BusinessUnitBankAccountEntityTestData {
             .build();
     }
 
-    public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(short id, short businessUnitId) {
+    public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(Short id, String businessUnitId) {
         return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitId));
     }
 
     public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(
-        short id, short businessUnitId, String dwpCourtCode) {
+        Short id, String businessUnitId, String dwpCourtCode) {
         return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitId, dwpCourtCode));
     }
 

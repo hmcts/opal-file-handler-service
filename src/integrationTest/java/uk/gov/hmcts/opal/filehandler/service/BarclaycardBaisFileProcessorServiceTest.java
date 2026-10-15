@@ -37,7 +37,7 @@ public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFilePro
     private static final String BARCLAYCARD_FILE_CHECKSUM = "3e7eb40eae410fee9a8d999bdcd7c302";
     private static final String BARCLAYCARD_FILE_RESOURCE = "bais-emulator/" + BARCLAYCARD_FILE;
     private static final String BARCLAYCARD_FILE_CONTAINER = "/home/BARCLAYCARD/" + BARCLAYCARD_FILE;
-    private static final short BUSINESS_UNIT_CODE = 12;
+    private static final String BUSINESS_UNIT_CODE = "12";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 

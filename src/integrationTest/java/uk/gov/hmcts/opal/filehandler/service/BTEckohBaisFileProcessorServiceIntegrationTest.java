@@ -38,7 +38,7 @@ public class BTEckohBaisFileProcessorServiceIntegrationTest
     private static final String FEATURE_FLAG = "bteckoh-file-transfer-job";
     private static final String JOB_PROPERTY = "launchdarkly.default-flag-values." + FEATURE_FLAG;
 
-    private static final short BUSINESS_UNIT_CODE = 01;
+    private static final String BUSINESS_UNIT_CODE = "01";
     private static final String BTECKOH_FILE = "a121_00350005_300000.dat";
     private static final String BTECKOH_FILE_CHECKSUM = "f3f29c87cf2058c337fa6f130dd66b28";
     private static final String BTECKOH_FILE_RESOURCE = "bais-emulator/" + BTECKOH_FILE;
