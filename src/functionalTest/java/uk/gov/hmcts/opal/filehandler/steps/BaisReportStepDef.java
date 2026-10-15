@@ -32,6 +32,8 @@ public class BaisReportStepDef extends BaseStepDef {
 
     private static final Duration INGESTION_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration POLL_INTERVAL = Duration.ofMillis(500);
+    private static final Duration IGNORED_FILE_CHECK_DURATION = Duration.ofSeconds(5);
+    private static final String INVALID_CONTENT_RESOURCE = "test-data/bais/invalid-content.txt";
 
     private final TestSupportApiClient testSupportApiClient = new TestSupportApiClient();
     private TestHttpResponse taskResponse;
@@ -42,6 +44,34 @@ public class BaisReportStepDef extends BaseStepDef {
     public void configuredReportIsAvailable(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.fileName(), true);
+    }
+
+    @Given("the configured {string} report has an unsupported file on bais")
+    public void configuredReportHasUnsupportedFileOnBais(String displayName) {
+        BaisReportTestConfig config = forDisplayName(displayName);
+        withRetry(
+            "place unsupported " + config.displayName() + " report file for user " + config.sftpUsername(),
+            () -> {
+                try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
+                    sftpClient.deleteIfExists(config.fileName());
+                    sftpClient.uploadResource(config.resourcePath(), config.unsupportedFileName());
+                }
+            }
+        );
+    }
+
+    @Given("the configured {string} report has invalid content on bais")
+    public void configuredReportHasInvalidContentOnBais(String displayName) {
+        BaisReportTestConfig config = forDisplayName(displayName);
+        withRetry(
+            "place invalid " + config.displayName() + " report content for user " + config.sftpUsername(),
+            () -> {
+                try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
+                    sftpClient.deleteIfExists(config.fileName());
+                    sftpClient.uploadResource(INVALID_CONTENT_RESOURCE, config.fileName());
+                }
+            }
+        );
     }
 
     @Given("the configured {string} report has already been processed")
@@ -85,7 +115,45 @@ public class BaisReportStepDef extends BaseStepDef {
         assertNotNull(successfulInterfaceFile.get("filestore_uuid"));
     }
 
-    @Then("^the stored (BTEckoh|CAPS) report can be retrieved by interface file ID$")
+    @Then("a failed {string} interface file is recorded with its source blob")
+    public void failedInterfaceFileIsRecordedWithSourceBlob(String source) {
+        // EI2 BAIS processors validate after the source blob is uploaded, unlike the EI1 report
+        // processors. Keep this assertion visible for the separate decision on failed-blob cleanup.
+        BaisReportTestConfig config = forSource(source);
+        Map<String, Object> failedInterfaceFile = awaitInterfaceFile(config, "SOURCE", "FAILED");
+
+        assertEquals(config.source(), failedInterfaceFile.get("source"));
+        assertEquals(config.fileName(), failedInterfaceFile.get("file_name"));
+        assertNotNull(failedInterfaceFile.get("filestore_uuid"));
+        assertNotNull(failedInterfaceFile.get("errors"));
+    }
+
+    @Then("no {string} interface file is stored for the unsupported report")
+    public void noInterfaceFileIsStoredForUnsupportedReport(String source) {
+        BaisReportTestConfig config = forSource(source);
+        long deadline = System.nanoTime() + IGNORED_FILE_CHECK_DURATION.toNanos();
+        do {
+            Response response = authorisedJsonRequest()
+                .queryParam("source", config.source())
+                .when()
+                .get(getTestUrl() + "/interface-files");
+            assertEquals(200, response.statusCode(), "Interface-file metadata could not be retrieved");
+
+            List<Map<String, Object>> matchingRecords = response.jsonPath()
+                .<Map<String, Object>>getList("interface_files")
+                .stream()
+                .filter(record -> config.unsupportedFileName().equals(record.get("file_name")))
+                .toList();
+            assertTrue(
+                matchingRecords.isEmpty(),
+                "No interface-file record should be created for unsupported file "
+                    + config.unsupportedFileName() + ": " + matchingRecords
+            );
+            pauseBeforeRetry();
+        } while (System.nanoTime() < deadline);
+    }
+
+    @Then("^the stored \"?(.+?)\"? report can be retrieved by interface file ID$")
     public void storedReportCanBeRetrievedByInterfaceFileId(String displayName) {
         assertNotNull(successfulInterfaceFile, "Successful interface-file metadata was not retrieved");
         long interfaceFileId = ((Number) successfulInterfaceFile.get("interface_file_id")).longValue();
@@ -101,7 +169,7 @@ public class BaisReportStepDef extends BaseStepDef {
         assertEquals(forDisplayName(displayName).source(), responseBody.get("source"));
         assertEquals("OPAL", responseBody.get("target"));
         assertEquals("SOURCE", responseBody.get("type"));
-        assertEquals("MAINTENANCE", responseBody.get("domain"));
+        assertEquals(forDisplayName(displayName).expectedDomain(), responseBody.get("domain"));
         assertEquals(forDisplayName(displayName).fileName(), responseBody.get("file_name"));
         assertEquals(forDisplayName(displayName).checksum(), responseBody.get("checksum"));
         assertEquals(successfulInterfaceFile.get("filestore_uuid"), responseBody.get("filestore_uuid"));
@@ -120,7 +188,12 @@ public class BaisReportStepDef extends BaseStepDef {
             .get(getTestUrl() + "/interface-files/" + interfaceFileId + "/content");
 
         URL expectedResource = Resources.getResource(config.resourcePath());
-        assertEquals(200, response.statusCode(), "Stored report content could not be retrieved");
+        assertEquals(
+            200,
+            response.statusCode(),
+            "Stored " + config.displayName() + " report content could not be retrieved. "
+                + "Response body: " + response.asString()
+        );
         assertArrayEquals(
             Resources.toByteArray(expectedResource),
             response.getBody().asByteArray(),
@@ -154,6 +227,18 @@ public class BaisReportStepDef extends BaseStepDef {
     public void configuredReportNoLongerExists(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.fileName(), false);
+    }
+
+    @Then("the unsupported {string} report remains on bais")
+    public void unsupportedReportRemainsOnBais(String displayName) {
+        BaisReportTestConfig config = forDisplayName(displayName);
+        assertSftpFilePresence(config, config.unsupportedFileName(), true);
+    }
+
+    @Then("the invalid {string} report remains on bais")
+    public void invalidReportRemainsOnBais(String displayName) {
+        BaisReportTestConfig config = forDisplayName(displayName);
+        assertSftpFilePresence(config, config.fileName(), true);
     }
 
     @When("the configured {string} report is placed on bais")
