@@ -12,14 +12,14 @@ plugins {
   id 'org.springframework.boot' version '4.1.1'
   id 'io.github.ben-manes.versions' version '0.66.0'
   id 'org.sonarqube' version '7.5.0.8588'
-  id "org.openapi.generator" version "7.25.0"
+  id "org.openapi.generator" version "7.26.0"
   /*
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
   id 'org.flywaydb.flyway' version '13.10.0'
-  id 'net.serenity-bdd.serenity-gradle-plugin' version '5.3.9'
+  id 'net.serenity-bdd.serenity-gradle-plugin' version '5.4.1'
 }
 
 application {
@@ -389,7 +389,7 @@ dependencies {
   //Other
   implementation 'org.apache.poi:poi-ooxml:5.5.1'
 
-  implementation 'com.azure:azure-storage-blob:12.35.1'
+  implementation 'com.azure:azure-storage-blob:12.36.0'
   implementation 'com.microsoft.azure:applicationinsights-web:3.7.10'
 
   implementation 'commons-logging:commons-logging:1.4.0'
@@ -412,7 +412,7 @@ dependencies {
   implementation 'org.apache.tomcat:tomcat-annotations-api:11.0.27'
 
   // Azure blob storage
-  implementation 'com.azure:azure-storage-blob:12.35.1'
+  implementation 'com.azure:azure-storage-blob:12.36.0'
 
   //Annotation
   annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.13.Final'
@@ -442,7 +442,7 @@ dependencies {
   testImplementation "net.serenity-bdd:serenity-report-resources:${serenityVersion}"
   testImplementation "net.serenity-bdd:serenity-cucumber:${serenityVersion}"
   testImplementation "net.serenity-bdd:serenity-ensure:${serenityVersion}"
-  testImplementation 'com.hierynomus:sshj:0.41.1'
+  testImplementation 'com.hierynomus:sshj:0.41.2'
 
   integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.4.3'
   integrationTestImplementation 'org.springframework.security:spring-security-test'
