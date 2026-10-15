@@ -83,7 +83,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     private AddInterfaceFileRequestMetadata buildMetaData(InterfaceFileEnumInterfaceFile source, Long relatedId) {
         return AddInterfaceFileRequestMetadata.builder()
             .fileName("file-name.dat")
-            .businessUnitCode("010")
+            .businessUnitId(10)
             .paymentType(PaymentTypeEnumTypes.CASH)
             .type(InterfaceFileTypeEnumInterfaceFile.SOURCE)
             .domain(DomainEnumTypes.FINES)

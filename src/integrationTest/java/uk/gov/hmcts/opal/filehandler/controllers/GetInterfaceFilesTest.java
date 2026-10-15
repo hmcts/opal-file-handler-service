@@ -122,14 +122,14 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
 
             List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
             assertThat(interfaceFiles).isNotEmpty().allSatisfy(interfaceFile ->
-                assertThat(interfaceFile.getBusinessUnitCodes()).isNotNull());
+                assertThat(interfaceFile.getBusinessUnitIds()).isNotNull());
 
             InterfaceFileObjectInterfaceFile fileWithMultipleBusinessUnits = interfaceFiles.stream()
                 .filter(file -> file.getInterfaceFileId().equals(10L))
                 .findFirst()
                 .orElseThrow();
-            assertThat(fileWithMultipleBusinessUnits.getBusinessUnitCodes())
-                .containsExactly("AB01", "BC01", "DD03");
+            assertThat(fileWithMultipleBusinessUnits.getBusinessUnitIds())
+                .containsExactly(1, 1, 3);
         }
 
         @Test
@@ -329,7 +329,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
 
             List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
             assertThat(interfaceFiles).hasSizeGreaterThanOrEqualTo(1);
-            assertThat(interfaceFiles).allMatch(i -> i.getBusinessUnitCodes().contains(businessUnitCode));
+            assertThat(interfaceFiles).allMatch(i -> i.getBusinessUnitIds().contains(businessUnitCode));
         }
 
         /* Commented out pending https://tools.hmcts.net/jira/browse/PO-8686

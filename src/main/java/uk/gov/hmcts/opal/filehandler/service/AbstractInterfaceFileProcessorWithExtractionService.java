@@ -177,7 +177,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
         T extract,
-        String[] businessUnitIds,
+        short[] businessUnitIds,
         Domain domain,
         String checksum
     ) {
@@ -225,7 +225,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
             sourceJson.getInterfaceFileId(), sourceJson.getFileName(), exception);
     }
 
-    protected abstract String[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract);
+    protected abstract short[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract);
 
     protected abstract Domain getDomainFromExtract(BaisFileProcessorConfiguration config, T extract);
 

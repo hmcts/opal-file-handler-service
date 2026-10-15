@@ -17,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import org.springframework.web.multipart.MultipartFile;
-import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureToggle;
 import uk.gov.hmcts.opal.filehandler.mapper.SearchInterfaceFilesDtoMapper;
 import uk.gov.hmcts.opal.filehandler.service.InterfaceFilesService;
@@ -53,12 +52,13 @@ public class InterfaceFilesController implements InterfaceFilesApi {
         @Nullable DomainEnumTypes domain,
         @Nullable StatusEnumInterfaceFile status,
         @Nullable List<StatusEnumInterfaceFile> notStatus,
-        @Nullable String businessUnitId,
+        @Nullable Integer businessUnitId,
         @Nullable LocalDateTime fromDate,
         @Nullable LocalDateTime toDate) {
 
         SearchInterfaceFilesDto searchDto = searchMapper.toSearchInterfaceFilesDto(
-            source, target, notTarget, type, domain, status, notStatus, businessUnitId, fromDate, toDate);
+            source, target, notTarget, type, domain, status, notStatus, Short.valueOf(String.valueOf(businessUnitId)),
+            fromDate, toDate);
         List<InterfaceFileObjectInterfaceFile> interfaceFileObjects = service.searchInterfaceFiles(searchDto);
         GetInterfaceFiles200Response response = GetInterfaceFiles200Response.builder()
             .interfaceFiles(interfaceFileObjects)

@@ -32,8 +32,7 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
 
     @Test
     void shouldPersistAndLoadTypicalBusinessUnitBankAccount() {
-        BusinessUnitBankAccountEntity original = testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID, "AB01");
-
+        BusinessUnitBankAccountEntity original = testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID, (short) 1);
         entityManager.clear();
 
         BusinessUnitBankAccountEntity fetched = repository.findById(TYPICAL_ID).orElseThrow();
@@ -68,7 +67,7 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
 
         @Test
         void correctlyFetchesBySortCodeAndAccountNumber() {
-            BusinessUnitBankAccountEntity original = testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID, "AB01");
+            BusinessUnitBankAccountEntity original = testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID, (short)1);
 
             entityManager.clear();
 
@@ -114,11 +113,11 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
         @Test
         void correctlyFetchesByDwpCourtCode() {
             BusinessUnitBankAccountEntity original =
-                testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID, "123");
+                testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID, (short)123);
 
             entityManager.clear();
 
-            String businessUnitId = original.getBusinessUnitId();
+            short businessUnitId = original.getBusinessUnitId();
 
             BusinessUnitBankAccountEntity fetched = repository.findByBusinessUnitId(businessUnitId).orElseThrow();
 

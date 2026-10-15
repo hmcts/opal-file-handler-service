@@ -58,7 +58,7 @@ public class InterfaceFilesControllerTest {
         List<InterfaceFileTypeEnumInterfaceFile> types = List.of(InterfaceFileTypeEnumInterfaceFile.SOURCE);
         DomainEnumTypes domain = DomainEnumTypes.FINES;
         StatusEnumInterfaceFile status = StatusEnumInterfaceFile.SUCCESS;
-        String buCode = "BU1323";
+        short buCode = 1323;
         LocalDateTime toDate = LocalDateTime.of(2026, Month.APRIL, 1, 9, 0);
         SearchInterfaceFilesDto searchDto = new SearchInterfaceFilesDto();
         List<InterfaceFileObjectInterfaceFile> interfaceFiles = List.of(
@@ -72,7 +72,7 @@ public class InterfaceFilesControllerTest {
         when(service.searchInterfaceFiles(searchDto)).thenReturn(interfaceFiles);
 
         ResponseEntity<GetInterfaceFiles200Response> response = controller.getInterfaceFiles(
-            source, target, null, types, domain, status, null, buCode, toDate, null
+            source, target, null, types, domain, status, null, 1323, toDate, null
         );
 
         assertAll(
@@ -89,12 +89,12 @@ public class InterfaceFilesControllerTest {
         List<InterfaceFileObjectInterfaceFile> interfaceFiles = Collections.emptyList();
 
         when(mapper.toSearchInterfaceFilesDto(
-            null, null, null, null, null, status, null, null, null, null)
+            null, null, null, null, null, status, null, (short)1, null, null)
         ).thenReturn(searchDto);
         when(service.searchInterfaceFiles(searchDto)).thenReturn(interfaceFiles);
 
         ResponseEntity<GetInterfaceFiles200Response> response = controller.getInterfaceFiles(
-            null, null, null, null, null, status, null, null, null, null
+            null, null, null, null, null, status, null, 0, null, null
         );
 
         assertAll(

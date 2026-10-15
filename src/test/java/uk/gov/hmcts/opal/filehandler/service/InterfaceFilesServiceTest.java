@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
@@ -182,7 +181,7 @@ public class InterfaceFilesServiceTest {
         AddInterfaceFileRequestMetadata metadata = addInterfaceFileMetadata()
             .relatedInterfaceFileId(15L)
             .paymentType(PaymentTypeEnumTypes.CHEQUE)
-            .businessUnitCode("1234");
+            .businessUnitId(1234);
 
         when(repository.findById(15L)).thenReturn(Optional.of(relatedInterfaceFile));
         when(config.getContainerName()).thenReturn("dwp-container");
@@ -205,7 +204,7 @@ public class InterfaceFilesServiceTest {
         assertEquals(mapped, result);
         assertEquals(relatedInterfaceFile, ingestedEntity.getRelatedInterfaceFile());
         assertEquals(PaymentType.CHEQUE, ingestedEntity.getPaymentType());
-        assertArrayEquals(new String[] {"1234"}, ingestedEntity.getBusinessUnitId());
+        assertEquals(new Short[] {Short.valueOf((short) 1234)},ingestedEntity.getBusinessUnitId());
         verify(repository).findById(15L);
         verify(repository).save(ingestedEntity);
         verify(spyService).getInterfaceFile(24L);
@@ -224,7 +223,7 @@ public class InterfaceFilesServiceTest {
         InterfaceFileObjectInterfaceFile mapped = mock(InterfaceFileObjectInterfaceFile.class);
         AddInterfaceFileRequestMetadata metadata = addInterfaceFileMetadata()
             .paymentType(PaymentTypeEnumTypes.CASH)
-            .businessUnitCode("9876");
+            .businessUnitId(9876);
 
         when(config.getContainerName()).thenReturn("dwp-container");
         when(file.getOriginalFilename()).thenReturn("source.dat");
@@ -246,7 +245,7 @@ public class InterfaceFilesServiceTest {
         assertEquals(mapped, result);
         assertNull(ingestedEntity.getRelatedInterfaceFile());
         assertEquals(PaymentType.CASH, ingestedEntity.getPaymentType());
-        assertArrayEquals(new String[] {"9876"}, ingestedEntity.getBusinessUnitId());
+        assertEquals(new Short[] {Short.valueOf((short) 9876)},ingestedEntity.getBusinessUnitId());
         verify(repository).save(ingestedEntity);
         verify(spyService).getInterfaceFile(25L);
     }

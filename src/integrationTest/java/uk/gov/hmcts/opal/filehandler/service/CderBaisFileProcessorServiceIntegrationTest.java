@@ -57,7 +57,7 @@ public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFil
     void setUp() {
         repository.deleteAll();
         businessUnitBankAccountEntityTestData.clear();
-        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount(1L, "BC12", DWP_CODE);
+        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount(1L, (short)12, DWP_CODE);
         blobServiceClient.createBlobContainerIfNotExists(configuration.getContainerName());
     }
 

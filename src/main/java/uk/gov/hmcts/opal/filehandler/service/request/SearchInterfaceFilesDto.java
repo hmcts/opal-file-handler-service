@@ -24,7 +24,7 @@ public class SearchInterfaceFilesDto {
     private Domain domain;
     private Status status;
     private Set<Status> notStatuses;
-    private String businessUnitId;
+    private Short businessUnitId;
     private LocalDateTime fromDate;
     private LocalDateTime toDate;
 }

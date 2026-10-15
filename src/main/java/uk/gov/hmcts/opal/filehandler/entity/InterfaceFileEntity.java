@@ -86,7 +86,7 @@ public class InterfaceFileEntity {
 
     @Column(columnDefinition = "VARCHAR(4)[]")
     @JdbcTypeCode(SqlTypes.ARRAY)
-    private String[] businessUnitId;
+    private short[] businessUnitId;
 
     @Column
     @Enumerated(EnumType.STRING)

@@ -228,7 +228,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
-            String[] businessUnits = new String[] {"BC12"};
+            short[] businessUnits = new short[] {12};
 
             doReturn("checksum").when(processor).calculateExtractChecksum(any());
             doReturn(false).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
@@ -253,7 +253,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
-            String[] businessUnits = new String[] {"BC12"};
+            short[] businessUnits = new short[] {12};
 
             doReturn("checksum").when(processor).calculateExtractChecksum(any());
             doReturn(false).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
@@ -356,7 +356,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             InterfaceFileCommonDataExtract extract = extract();
 
             InterfaceFileEntity sourceJson = service.createSourceJson(
-                config, sourceFile, extract, new String[] {"BC12", "BC34"}, Domain.FINES, "checksum");
+                config, sourceFile, extract, new short[] {12, 34}, Domain.FINES, "checksum");
 
             assertThat(sourceJson.getSource()).isEqualTo(Interface.NATWEST);
             assertThat(sourceJson.getTarget()).isEqualTo(Interface.OPAL);
@@ -367,7 +367,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             assertThat(sourceJson.getStatus()).isEqualTo(Status.SUCCESS);
             assertThat(sourceJson.getCreatedDatetime()).isEqualTo(LocalDateTime.now(CLOCK));
             assertThat(sourceJson.getRelatedInterfaceFile()).isSameAs(sourceFile);
-            assertThat(sourceJson.getBusinessUnitId()).containsExactly("BC12", "BC34");
+            assertThat(sourceJson.getBusinessUnitId()).containsExactly(12, 34);
             assertThat(sourceJson.getPaymentType()).isEqualTo(PaymentType.CASH);
         }
     }
@@ -542,11 +542,11 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
         }
 
         @Override
-        protected String[] getBusinessUnitsFromExtract(
+        protected short[] getBusinessUnitsFromExtract(
             BaisFileProcessorConfiguration config,
             InterfaceFileCommonDataExtract extract
         ) {
-            return new String[] {"BC12"};
+            return new short[] {12};
         }
 
         @Override

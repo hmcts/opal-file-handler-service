@@ -33,7 +33,7 @@ public class SearchInterfaceFilesDtoMapperTest {
         DomainEnumTypes domain = DomainEnumTypes.FINES;
         StatusEnumInterfaceFile status = StatusEnumInterfaceFile.SUCCESS;
         List<StatusEnumInterfaceFile> notStatuses = List.of(StatusEnumInterfaceFile.FAILED);
-        String buCode = "BU134";
+        short buCode = 134;
         LocalDateTime fromDate = LocalDateTime.of(2026, Month.APRIL, 1, 9, 0);
         LocalDateTime toDate = LocalDateTime.of(2026, Month.MAY, 1, 0, 00);
 
@@ -60,7 +60,7 @@ public class SearchInterfaceFilesDtoMapperTest {
     @Test
     void toSearchInterfaceFilesDto_allFieldsNull() {
         SearchInterfaceFilesDto searchDto = mapper.toSearchInterfaceFilesDto(
-            null, null, null, null, null, null, null, null, null, null
+            null, null, null, null, null, null, null, (short)0, null, null
         );
 
         assertNotNull(searchDto);

@@ -31,19 +31,19 @@ class VariantBacsStandard18BaisExtractionServiceTest {
     @Test
     void shouldReturnWhenDataIsFound() {
         when(input.getFileName()).thenReturn(FILE_NAME);
-        when(bubaRepository.findByBusinessUnitId(eq("123")))
+        when(bubaRepository.findByBusinessUnitId(eq((short)123)))
             .thenReturn(Optional.of(mock(BusinessUnitBankAccountEntity.class)));
 
         BusinessUnitBankAccountEntity response = service.getBusinessUnitBankAccount(input);
 
-        verify(bubaRepository, times(1)).findByBusinessUnitId(eq("123"));
+        verify(bubaRepository, times(1)).findByBusinessUnitId(eq((short)123));
         assertThat(response).isNotNull();
     }
 
     @Test
     void shouldThrowErrorWithInvalidFilename() {
         when(input.getFileName()).thenReturn(INVALID_FILE_NAME);
-        when(bubaRepository.findByBusinessUnitId(eq("123")))
+        when(bubaRepository.findByBusinessUnitId(eq((short)123)))
             .thenReturn(Optional.of(mock(BusinessUnitBankAccountEntity.class)));
 
         EntityNotFoundException exception = assertThrows(
@@ -57,7 +57,7 @@ class VariantBacsStandard18BaisExtractionServiceTest {
     @Test
     void shouldThrowErrorWhenBusinessUnitNotFound() {
         when(input.getFileName()).thenReturn(FILE_NAME);
-        when(bubaRepository.findByBusinessUnitId(eq("123")))
+        when(bubaRepository.findByBusinessUnitId(eq((short)123)))
             .thenReturn(Optional.empty());
 
         EntityNotFoundException exception = assertThrows(
