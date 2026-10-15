@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 
 @Repository
-public interface BusinessUnitBankAccountRepository extends JpaRepository<BusinessUnitBankAccountEntity, Long> {
+public interface BusinessUnitBankAccountRepository extends JpaRepository<BusinessUnitBankAccountEntity, Short> {
 
     Optional<BusinessUnitBankAccountEntity> findByBankSortCodeAndBankAccountNumber(
         String bankSortCode, String bankAccountNumber);

@@ -13,8 +13,8 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 
 class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrationTest {
 
-    private static final long TYPICAL_ID = 920001L;
-    private static final long MAX_ID = 920002L;
+    private static final short TYPICAL_ID = 32000;
+    private static final short MAX_ID = 32767;
 
     @Autowired
     private EntityManager entityManager;
@@ -32,13 +32,14 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
 
     @Test
     void shouldPersistAndLoadTypicalBusinessUnitBankAccount() {
-        BusinessUnitBankAccountEntity original = testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID, (short) 1);
+        short businessUnitId=224;
+        BusinessUnitBankAccountEntity original = testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID,  businessUnitId);
         entityManager.clear();
 
         BusinessUnitBankAccountEntity fetched = repository.findById(TYPICAL_ID).orElseThrow();
 
         assertThat(fetched.getId()).isEqualTo(original.getId());
-        assertThat(fetched.getBusinessUnitId()).isEqualTo(original.getBusinessUnitId());
+        assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());
         assertThat(fetched.getDomain()).isEqualTo(original.getDomain());
         assertThat(fetched.getBankSortCode()).isEqualTo(original.getBankSortCode());
         assertThat(fetched.getBankAccountNumber()).isEqualTo(original.getBankAccountNumber());
@@ -55,7 +56,7 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
         BusinessUnitBankAccountEntity fetched = repository.findById(MAX_ID).orElseThrow();
 
         assertThat(fetched.getId()).isEqualTo(original.getId());
-        assertThat(fetched.getBusinessUnitId()).isEqualTo(original.getBusinessUnitId());
+        assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());
         assertThat(fetched.getDomain()).isEqualTo(original.getDomain());
         assertThat(fetched.getBankSortCode()).isEqualTo(original.getBankSortCode());
         assertThat(fetched.getBankAccountNumber()).isEqualTo(original.getBankAccountNumber());
@@ -78,7 +79,7 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
                 .findByBankSortCodeAndBankAccountNumber(sortCode, accountNumber).orElseThrow();
 
             assertThat(fetched.getId()).isEqualTo(original.getId());
-            assertThat(fetched.getBusinessUnitId()).isEqualTo(original.getBusinessUnitId());
+            assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());
             assertThat(fetched.getDomain()).isEqualTo(original.getDomain());
             assertThat(fetched.getBankSortCode()).isEqualTo(original.getBankSortCode());
             assertThat(fetched.getBankAccountNumber()).isEqualTo(original.getBankAccountNumber());
@@ -100,7 +101,7 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
                 .findByDwpCourtCode(dwpCourtCode).orElseThrow();
 
             assertThat(fetched.getId()).isEqualTo(original.getId());
-            assertThat(fetched.getBusinessUnitId()).isEqualTo(original.getBusinessUnitId());
+            assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());
             assertThat(fetched.getDomain()).isEqualTo(original.getDomain());
             assertThat(fetched.getBankSortCode()).isEqualTo(original.getBankSortCode());
             assertThat(fetched.getBankAccountNumber()).isEqualTo(original.getBankAccountNumber());
@@ -117,12 +118,12 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
 
             entityManager.clear();
 
-            short businessUnitId = original.getBusinessUnitId();
+            short businessUnitId = original.getBusinessUnitCode();
 
             BusinessUnitBankAccountEntity fetched = repository.findByBusinessUnitId(businessUnitId).orElseThrow();
 
             assertThat(fetched.getId()).isEqualTo(original.getId());
-            assertThat(fetched.getBusinessUnitId()).isEqualTo(original.getBusinessUnitId());
+            assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());
             assertThat(fetched.getDomain()).isEqualTo(original.getDomain());
             assertThat(fetched.getBankSortCode()).isEqualTo(original.getBankSortCode());
             assertThat(fetched.getBankAccountNumber()).isEqualTo(original.getBankAccountNumber());

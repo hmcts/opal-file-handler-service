@@ -76,7 +76,7 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
             }
         }
 
-        businessUnitIds.add(businessUnitBankAccount.getBusinessUnitId());
+        businessUnitIds.add(businessUnitBankAccount.getBusinessUnitCode());
         short[] businessUnitIdArray = new short[businessUnitIds.size()];
         int i = 0;
         for (Short businessUnitId : businessUnitIds) {
@@ -137,7 +137,7 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
         validateSupportedDomain(sourceInterfaceFile, domain);
         updateSourceBusinessUnitAndDomain(sourceInterfaceFile, businessUnitBankAccount, domain);
 
-        if (BUSINESS_UNIT_065 == businessUnitBankAccount.getBusinessUnitId()) {
+        if (BUSINESS_UNIT_065 == businessUnitBankAccount.getBusinessUnitCode()) {
             return false;
         }
 
@@ -157,7 +157,7 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
 
     @Override
     protected short[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract) {
-        return new short[] {extractionService.getBusinessUnitBankAccount(extract).getBusinessUnitId()};
+        return new short[] {extractionService.getBusinessUnitBankAccount(extract).getBusinessUnitCode()};
     }
 
     @Override

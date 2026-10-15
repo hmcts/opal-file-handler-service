@@ -57,7 +57,7 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
     void setUp() {
         repository.deleteAll();
         businessUnitBankAccountEntityTestData.clear();
-        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount(1L, BUSINESS_UNIT_CODE);
+        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount((short) 1, BUSINESS_UNIT_CODE);
         blobServiceClient.createBlobContainerIfNotExists(natWestBaisFileProcessorConfiguration.getContainerName());
     }
 

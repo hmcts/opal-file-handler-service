@@ -617,10 +617,10 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             .build();
     }
 
-    private BusinessUnitBankAccountEntity businessUnit(short id, Domain domain) {
+    private BusinessUnitBankAccountEntity businessUnit(short code, Domain domain) {
         return BusinessUnitBankAccountEntity.builder()
             .id(1L)
-            .businessUnitId(id)
+            .businessUnitCode(code)
             .domain(domain)
             .bankAccountNumber("27048527")
             .bankSortCode("560033")

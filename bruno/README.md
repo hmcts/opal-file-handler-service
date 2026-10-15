@@ -54,7 +54,7 @@ To process a fixture manually:
 3. Run the matching `Process ...` request.
 4. Verify the resulting records using `Get interface files - filters`.
 
-For the first PO-8669 happy-path filter check, set `businessUnitId` to `BC12` in the local
+For the first PO-8669 happy-path filter check, set `businessUnitCode` to `BC12` in the local
 environment and run `Get interface files - business unit focused`. This request deliberately uses
 only the `business_unit_code` query parameter and verifies that matching results are returned.
 

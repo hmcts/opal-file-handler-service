@@ -64,8 +64,8 @@ public class BTEckohBaisFileProcessorServiceIntegrationTest
         blobServiceClient.createBlobContainerIfNotExists(config.getContainerName());
 
         BusinessUnitBankAccountEntity bu = BusinessUnitBankAccountEntity.builder()
-            .id(1L)
-            .businessUnitId(BUSINESS_UNIT_CODE)
+            .id((short) 1)
+            .businessUnitCode(BUSINESS_UNIT_CODE)
             .domain(Domain.MAINTENANCE)
             .bankSortCode("010101")
             .bankAccountNumber("12341234")
