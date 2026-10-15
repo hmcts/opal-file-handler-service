@@ -7,6 +7,8 @@ Feature: BTEckoh file ingestion
     And the "BTEckoh transfer" report ingestion job is requested through testing support
     Then the testing-support request is accepted
     And a successful "BTECKOH" interface file is stored
+    And the stored "BTEckoh transfer" report can be retrieved by interface file ID
+    And the stored "BTEckoh transfer" report content matches the bais "file"
     And the configured "BTEckoh transfer" report no longer exists on bais
 
   Scenario: A duplicate BTEckoh transfer file is detected
@@ -17,3 +19,19 @@ Feature: BTEckoh file ingestion
     And a duplicate "BTECKOH" interface file is recorded
     And the duplicate "BTECKOH" interface file reuses the original blob
     And the configured "BTEckoh transfer" report no longer exists on bais
+
+  Scenario: An unsupported BTEckoh transfer file is ignored
+    Given the configured "BTEckoh transfer" report has an unsupported file on bais
+    When I am testing as the "opal-test@dev.platform.hmcts.net" user
+    And the "BTEckoh transfer" report ingestion job is requested through testing support
+    Then the testing-support request is accepted
+    And no "BTECKOH" interface file is stored for the unsupported report
+    And the unsupported "BTEckoh transfer" report remains on bais
+
+  Scenario: Invalid BTEckoh transfer content is recorded as failed with its source blob
+    Given the configured "BTEckoh transfer" report has invalid content on bais
+    When I am testing as the "opal-test@dev.platform.hmcts.net" user
+    And the "BTEckoh transfer" report ingestion job is requested through testing support
+    Then the testing-support request is accepted
+    And a failed "BTECKOH" interface file is recorded with its source blob
+    And the invalid "BTEckoh transfer" report remains on bais

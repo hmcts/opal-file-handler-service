@@ -7,6 +7,8 @@ Feature: Barclaycard file ingestion
     And the "Barclaycard" report ingestion job is requested through testing support
     Then the testing-support request is accepted
     And a successful "BARCLAYCARD" interface file is stored
+    And the stored "Barclaycard" report can be retrieved by interface file ID
+    And the stored "Barclaycard" report content matches the bais "file"
     And the configured "Barclaycard" report no longer exists on bais
 
   Scenario: A duplicate Barclaycard file is detected
@@ -17,3 +19,19 @@ Feature: Barclaycard file ingestion
     And a duplicate "BARCLAYCARD" interface file is recorded
     And the duplicate "BARCLAYCARD" interface file reuses the original blob
     And the configured "Barclaycard" report no longer exists on bais
+
+  Scenario: An unsupported Barclaycard file is ignored
+    Given the configured "Barclaycard" report has an unsupported file on bais
+    When I am testing as the "opal-test@dev.platform.hmcts.net" user
+    And the "Barclaycard" report ingestion job is requested through testing support
+    Then the testing-support request is accepted
+    And no "BARCLAYCARD" interface file is stored for the unsupported report
+    And the unsupported "Barclaycard" report remains on bais
+
+  Scenario: Invalid Barclaycard content is recorded as failed with its source blob
+    Given the configured "Barclaycard" report has invalid content on bais
+    When I am testing as the "opal-test@dev.platform.hmcts.net" user
+    And the "Barclaycard" report ingestion job is requested through testing support
+    Then the testing-support request is accepted
+    And a failed "BARCLAYCARD" interface file is recorded with its source blob
+    And the invalid "Barclaycard" report remains on bais
