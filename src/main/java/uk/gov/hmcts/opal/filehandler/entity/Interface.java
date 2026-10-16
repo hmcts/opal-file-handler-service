@@ -21,7 +21,7 @@ public enum Interface {
     BTECKOH("BTEckohBaisFileProcessorConfig", BTEckohReportBaisFileProcessorService.class),
     DWP("dwpBaisFileProcessorConfig", DWPBaisFileProcessorService.class),
     CDER("cderBaisFileProcessorConfig", CderBaisFileProcessorService.class),
-    JACOBS("JacobsBaisFileBaisFileProcessorConfig", JacobsBaisFileProcessorService.class),
+    JACOBS("JacobsBaisFileProcessorConfig", JacobsBaisFileProcessorService.class),
     MARSTON(null, null),
     BTECKOH_REPORT("BTEckohReportBaisFileProcessorConfig", BTEckohReportBaisFileProcessorService.class),
     CAPS_REPORT("capsReportBaisFileProcessorConfig", CapsReportBaisFileProcessorService.class),
