@@ -14,8 +14,8 @@ import uk.gov.hmcts.opal.generated.model.InterfaceFileEnumInterfaceFile;
 
 @Getter
 public enum Interface {
-    NATWEST("NatWestBaisFileBaisFileProcessorConfig", NatWestBaisFileProcessorService.class),
-    ALLPAY("AllpayBaisFileBaisFileProcessorConfig", AllpayBaisFileProcessorService.class),
+    NATWEST("NatWestBaisFileProcessorConfig", NatWestBaisFileProcessorService.class),
+    ALLPAY("AllpayBaisFileProcessorConfig", AllpayBaisFileProcessorService.class),
     ALLPAY_DD(null, AllpayBaisFileProcessorService.class),
     BARCLAYCARD("BarclaycardBaisFileProcessorConfig", BarclaycardBaisFileProcessorService.class),
     BTECKOH("BTEckohBaisFileProcessorConfig", BTEckohReportBaisFileProcessorService.class),
