@@ -2,9 +2,7 @@ package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import org.springframework.data.domain.Sort;
-import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
-import uk.gov.hmcts.opal.filehandler.entity.Domain;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -16,17 +14,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
-import uk.gov.hmcts.opal.filehandler.config.MarstonBaisFileBaisFileProcessorConfig;
+import uk.gov.hmcts.opal.filehandler.config.MarstonBaisFileProcessorConfig;
+import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
+import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
+import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 
@@ -56,7 +57,7 @@ public class MarstonBaisFileProcessorServiceIntegrationTest   extends AbstractBa
     @Autowired
     BusinessUnitBankAccountEntityTestData businessUnitBankAccountEntityTestData;
     @Autowired
-    private MarstonBaisFileBaisFileProcessorConfig config;
+    private MarstonBaisFileProcessorConfig config;
 
     @MockitoBean
     private FinesInterfaceFilePreprocessQueueService finesQueueService;
