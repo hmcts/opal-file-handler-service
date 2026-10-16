@@ -432,7 +432,7 @@ dependencies {
   //Test
   testImplementation 'jakarta.jms:jakarta.jms-api'
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
-  testImplementation 'io.rest-assured:rest-assured:6.1.0'
+  testImplementation 'io.rest-assured:rest-assured:6.2.0'
   testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
   testImplementation 'org.junit.platform:junit-platform-suite'
   testImplementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
