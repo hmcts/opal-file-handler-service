@@ -28,12 +28,12 @@ public class VariantBacsStandard18BaisExtractionService extends BacsStandard18Ba
                 extractedData.getFileName())
             );
         }
-        String businessUnitId = matcher.group("buCode");
-        return businessUnitBankAccountRepository.findByBusinessUnitCode(businessUnitId)
+        String businessUnitCode = matcher.group("buCode");
+        return businessUnitBankAccountRepository.findByBusinessUnitCode(businessUnitCode)
             .orElseThrow(() -> new EntityNotFoundException(
                 String.format("Business unit bank account with business unit code '%s' could not be "
                         + "located for file_name '%s'",
-                    businessUnitId, extractedData.getFileName())
+                    businessUnitCode, extractedData.getFileName())
             ));
     }
 }
