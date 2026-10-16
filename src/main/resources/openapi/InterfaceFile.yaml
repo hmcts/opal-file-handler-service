@@ -437,6 +437,7 @@ components:
         - BTECKOH_REPORT
         - CAPS_REPORT
         - OPAL
+        - VARIANT_BANKING
     interfaceFileTypeEnum:
       type: string
       enum:
