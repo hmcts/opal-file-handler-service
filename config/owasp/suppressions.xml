@@ -11,9 +11,9 @@
     <cve>CVE-2025-7962</cve>
   </suppress>
   <!--End of false positives section -->
-  <suppress until="2026-10-15Z">
+  <suppress until="2027-04-15Z">
     <notes><![CDATA[
-    Reviewed 2026-05-27.
+    Reviewed 2026-10-15.
     CVE-2025-21199 applies to Microsoft Azure Agent Installer products under the CPE family
     cpe:2.3:a:microsoft:azure_agent:* and the NVD affected-software entries are for the "backup"
     and "site_recovery" products. This repo contains the Java libraries
