@@ -1,6 +1,11 @@
 package uk.gov.hmcts.opal.filehandler.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -9,29 +14,63 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.time.Clock;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.MessagePostProcessor;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
+import uk.gov.hmcts.opal.filehandler.entity.PdplIdentifierType;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.support.UtilBlobStoreService;
+import uk.gov.hmcts.opal.logging.integration.dto.PersonalDataProcessingCategory;
+import uk.gov.hmcts.opal.logging.integration.messaging.PdpoLogMessage;
+import uk.gov.hmcts.opal.logging.integration.messaging.PdpoQueueLogDetails;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraEpic;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
 @Slf4j(topic = "opal.GetInterfaceFilesContentIntegrationTest")
 @ActiveProfiles(profiles = {"integration"})
+@DisplayName("Get Interface File Content Controller Integration Tests")
+@Import(GetInterfaceFilesContentTest.FixedClockConfiguration.class)
 class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
+
+    private static final OffsetDateTime FIXED_DATE_TIME = OffsetDateTime.parse("2026-09-29T10:15:30Z");
+    private static final Clock FIXED_CLOCK = Clock.fixed(FIXED_DATE_TIME.toInstant(), ZoneOffset.UTC);
+    private static final String USER_IP_ADDRESS = "192.0.2.10";
+    private static final String REMOTE_IP_ADDRESS = "198.51.100.20";
+
+    @TestConfiguration
+    static class FixedClockConfiguration {
+
+        @Bean
+        @Primary
+        Clock fixedClock() {
+            return FIXED_CLOCK;
+        }
+    }
 
     private String urlWithID(long id) {
         return String.format("/interface-files/%d/content", id);
@@ -39,6 +78,9 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
     @Autowired
     protected MockMvc mockMvc;
+
+    @MockitoBean(name = "pdpoJmsTemplate", enforceOverride = true)
+    private JmsTemplate pdpoJmsTemplate;
 
     private static final String bteckohResourcePath = "azure/data/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-Daily-"
         + "2026-07-06-06-00-18.xlsx";
@@ -108,6 +150,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
+            headers.set("X-User-IP", USER_IP_ADDRESS);
 
             ResultActions res = mockMvc.perform(
                 get(urlWithID(1L))
@@ -122,6 +165,23 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             res.andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))
                 .andExpect(content().bytes(expectedBody));
+
+            ArgumentCaptor<PdpoLogMessage> captor = ArgumentCaptor.forClass(PdpoLogMessage.class);
+            verify(pdpoJmsTemplate).convertAndSend(eq("logging-pdpl"), captor.capture(),
+                any(MessagePostProcessor.class));
+
+            assertEquals("PDPO", captor.getValue().logType());
+            PdpoQueueLogDetails logDetails = captor.getValue().details();
+            assertEquals("Interface file - download", logDetails.businessIdentifier());
+            assertEquals(PersonalDataProcessingCategory.DISCLOSURE, logDetails.category());
+            assertEquals(USER_IP_ADDRESS, logDetails.ipAddress());
+            assertEquals(FIXED_DATE_TIME, logDetails.createdAt());
+            assertEquals("500000000", logDetails.createdBy().getIdentifier());
+            assertEquals(PdplIdentifierType.OPAL_USER_ID, logDetails.createdBy().getType());
+            assertNull(logDetails.recipient().getIdentifier());
+            assertNull(logDetails.recipient().getType());
+            assertEquals(Map.of(PdplIdentifierType.FILE_HANDLER_INTERFACE_FILE.getType(), List.of("1")),
+                logDetails.individuals());
 
             assertBlobStorageUnchanged();
         }
@@ -138,6 +198,10 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
 
             ResultActions res = mockMvc.perform(
                 get(urlWithID(2L))
+                    .with(request -> {
+                        request.setRemoteAddr(REMOTE_IP_ADDRESS);
+                        return request;
+                    })
                     .with(userStateStub.getAuthenticaitonRequestPostProcessor())
                     .headers(headers)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -150,6 +214,42 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))
                 .andExpect(content().bytes(expectedBody));
 
+            ArgumentCaptor<PdpoLogMessage> captor = ArgumentCaptor.forClass(PdpoLogMessage.class);
+            verify(pdpoJmsTemplate).convertAndSend(eq("logging-pdpl"), captor.capture(),
+                any(MessagePostProcessor.class));
+            assertEquals(REMOTE_IP_ADDRESS, captor.getValue().details().ipAddress());
+            assertBlobStorageUnchanged();
+        }
+
+        @Test
+        @DisplayName("OPAL: GET Interface File Content - Does not create a PDPL log for a system user")
+        @JiraStory("PO-8915")
+        @JiraEpic("PO-3952")
+        void get_systemUserRespondsWith200WithoutPdplLogging() throws Exception {
+            userStateStub.setUserState(
+                userStateStub.getDefaultUserStateBuilder()
+                    .systemUser(true)
+                    .build()
+            );
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(userStateStub.getBearerToken());
+
+            ResultActions res = mockMvc.perform(
+                get(urlWithID(1L))
+                    .with(userStateStub.getAuthenticaitonRequestPostProcessor())
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_JSON)
+            );
+
+            URL url = Resources.getResource(bteckohResourcePath);
+            byte[] expectedBody = Resources.toByteArray(url);
+
+            res.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))
+                .andExpect(content().bytes(expectedBody));
+
+            verifyNoInteractions(pdpoJmsTemplate);
             assertBlobStorageUnchanged();
         }
 
@@ -174,6 +274,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.detail")
                     .value("Interface file with id 1000 could not be located."));
 
+            verifyNoInteractions(pdpoJmsTemplate);
             assertBlobStorageUnchanged();
         }
 
@@ -199,6 +300,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                     .value("Interface file with id 3 could not be retrieved as it has an invalid status of:"
                         + " \"FAILED\" only files with status: \"SUCCESS\" can be returned."));
 
+            verifyNoInteractions(pdpoJmsTemplate);
             assertBlobStorageUnchanged();
         }
 
@@ -225,6 +327,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                         + "container: \"bteckoh-report\" with name \"b5fed320-1ad1-47f5-8786-91ba31f1604d\" but "
                         + "this could not be located."));
 
+            verifyNoInteractions(pdpoJmsTemplate);
             assertBlobStorageUnchanged();
         }
 
@@ -278,6 +381,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             );
 
             res.andExpect(status().isNotFound());
+            verifyNoInteractions(pdpoJmsTemplate);
         }
     }
 

@@ -414,6 +414,9 @@ dependencies {
   // Azure blob storage
   implementation 'com.azure:azure-storage-blob:12.36.0'
 
+  // PDPL Logging Integration Lib
+  implementation 'uk.gov.hmcts:opal-logging-service-integration-lib:0.0.14'
+
   //Annotation
   annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.13.Final'
 
