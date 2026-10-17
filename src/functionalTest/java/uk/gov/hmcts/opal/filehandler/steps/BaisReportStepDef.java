@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.opal.filehandler.support.BaisReportTestData.forDisplayName;
 import static uk.gov.hmcts.opal.filehandler.support.BaisReportTestData.forSource;
@@ -125,6 +126,17 @@ public class BaisReportStepDef extends BaseStepDef {
         assertEquals(config.source(), failedInterfaceFile.get("source"));
         assertEquals(config.fileName(), failedInterfaceFile.get("file_name"));
         assertNotNull(failedInterfaceFile.get("filestore_uuid"));
+        assertNotNull(failedInterfaceFile.get("errors"));
+    }
+
+    @Then("a failed {string} interface file is recorded without a source blob")
+    public void failedInterfaceFileIsRecordedWithoutSourceBlob(String source) {
+        BaisReportTestConfig config = forSource(source);
+        Map<String, Object> failedInterfaceFile = awaitInterfaceFile(config, "SOURCE", "FAILED");
+
+        assertEquals(config.source(), failedInterfaceFile.get("source"));
+        assertEquals(config.fileName(), failedInterfaceFile.get("file_name"));
+        assertNull(failedInterfaceFile.get("filestore_uuid"));
         assertNotNull(failedInterfaceFile.get("errors"));
     }
 

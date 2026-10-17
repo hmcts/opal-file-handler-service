@@ -8,9 +8,7 @@ Feature: Marston file ingestion
     Then the testing-support request is accepted
     And a successful "MARSTON" interface file is stored
     And the stored "Marston" report can be retrieved by interface file ID
-    # Raise an observation: Marston content retrieval currently returns HTTP 500
-    # even though the interface-file metadata is stored successfully.
-    # And the stored "Marston" report content matches the bais "file"
+    And the stored "Marston" report content matches the bais "file"
     And the configured "Marston" report no longer exists on bais
 
   Scenario: A duplicate Marston file is detected
