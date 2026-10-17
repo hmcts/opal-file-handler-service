@@ -62,7 +62,7 @@ public final class BaisReportTestData {
         "ALLPAY_AZURE_STORAGE_CONTAINER",
         "ALLPAY_FILE_TRANSFER_JOB_ENABLED",
         "a121_00350005_300000.dat",
-        "a121_00350005_300000.err",
+        "a121_00350005_300000.csv",
         "f3f29c87cf2058c337fa6f130dd66b28",
         "test-data/bacs/a121_00350005_300000.dat"
     );

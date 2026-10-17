@@ -7,6 +7,8 @@ Feature: Jacobs file ingestion
     And the "Jacobs" report ingestion job is requested through testing support
     Then the testing-support request is accepted
     And a successful "JACOBS" interface file is stored
+    And the stored "Jacobs" report can be retrieved by interface file ID
+    And the stored "Jacobs" report content matches the bais "file"
     And the configured "Jacobs" report no longer exists on bais
 
   Scenario: A duplicate Jacobs file is detected
@@ -17,3 +19,19 @@ Feature: Jacobs file ingestion
     And a duplicate "JACOBS" interface file is recorded
     And the duplicate "JACOBS" interface file reuses the original blob
     And the configured "Jacobs" report no longer exists on bais
+
+  Scenario: An unsupported Jacobs file is ignored
+    Given the configured "Jacobs" report has an unsupported file on bais
+    When I am testing as the "opal-test@dev.platform.hmcts.net" user
+    And the "Jacobs" report ingestion job is requested through testing support
+    Then the testing-support request is accepted
+    And no "JACOBS" interface file is stored for the unsupported report
+    And the unsupported "Jacobs" report remains on bais
+
+  Scenario: Invalid Jacobs content is recorded as failed with its source blob
+    Given the configured "Jacobs" report has invalid content on bais
+    When I am testing as the "opal-test@dev.platform.hmcts.net" user
+    And the "Jacobs" report ingestion job is requested through testing support
+    Then the testing-support request is accepted
+    And a failed "JACOBS" interface file is recorded with its source blob
+    And the invalid "Jacobs" report remains on bais
