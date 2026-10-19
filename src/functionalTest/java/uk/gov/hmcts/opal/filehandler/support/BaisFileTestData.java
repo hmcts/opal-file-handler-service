@@ -5,9 +5,9 @@ import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 /**
  * Stable local report definitions used by BAIS ingestion functional scenarios.
  */
-public final class BaisReportTestData {
+public final class BaisFileTestData {
 
-    public static final BaisReportTestConfig BTECKOH = new BaisReportTestConfig(
+    public static final BaisFileTestConfig BTECKOH = new BaisFileTestConfig(
         "BTEckoh",
         "BTECKOH_REPORT",
         "BTEckohReport",
@@ -22,7 +22,7 @@ public final class BaisReportTestData {
         "test-data/bteckoh-report/bteckoh-test-file.xlsx"
     );
 
-    public static final BaisReportTestConfig CAPS = new BaisReportTestConfig(
+    public static final BaisFileTestConfig CAPS = new BaisFileTestConfig(
         "CAPS",
         "CAPS_REPORT",
         "CAPSReport",
@@ -37,7 +37,7 @@ public final class BaisReportTestData {
         "test-data/caps-report/caps-test-file.xml"
     );
 
-    public static final BaisReportTestConfig DWP = new BaisReportTestConfig(
+    public static final BaisFileTestConfig DWP = new BaisFileTestConfig(
         "DWP",
         "DWP",
         "DWPFileTransferJob",
@@ -52,7 +52,7 @@ public final class BaisReportTestData {
         "test-data/dwp/0000015232_dat_0000000612_08011008_111355.txt"
     );
 
-    public static final BaisReportTestConfig ALLPAY = new BaisReportTestConfig(
+    public static final BaisFileTestConfig ALLPAY = new BaisFileTestConfig(
         "Allpay",
         "ALLPAY",
         "AllpayFileTransferJob",
@@ -62,12 +62,12 @@ public final class BaisReportTestData {
         "ALLPAY_AZURE_STORAGE_CONTAINER",
         "ALLPAY_FILE_TRANSFER_JOB_ENABLED",
         "a121_00350005_300000.dat",
-        "a121_00350005_300000.err",
+        "a121_00350005_300000.csv",
         "f3f29c87cf2058c337fa6f130dd66b28",
         "test-data/bacs/a121_00350005_300000.dat"
     );
 
-    public static final BaisReportTestConfig NATWEST = new BaisReportTestConfig(
+    public static final BaisFileTestConfig NATWEST = new BaisFileTestConfig(
         "NatWest",
         "NATWEST",
         "NatWestFileTransferJob",
@@ -82,7 +82,7 @@ public final class BaisReportTestData {
         "test-data/bacs/natwest-unique.dat"
     );
 
-    public static final BaisReportTestConfig BARCLAYCARD = new BaisReportTestConfig(
+    public static final BaisFileTestConfig BARCLAYCARD = new BaisFileTestConfig(
         "Barclaycard",
         "BARCLAYCARD",
         "BarclaycardFileTransferJob",
@@ -97,7 +97,7 @@ public final class BaisReportTestData {
         "test-data/bacs/barclaycard-unique.dat"
     );
 
-    public static final BaisReportTestConfig BTECKOH_TRANSFER = new BaisReportTestConfig(
+    public static final BaisFileTestConfig BTECKOH_TRANSFER = new BaisFileTestConfig(
         "BTEckoh transfer",
         "BTECKOH",
         "BTEckohFileTransferJob",
@@ -112,7 +112,7 @@ public final class BaisReportTestData {
         "test-data/bacs/bteckoh-unique.dat"
     );
 
-    public static final BaisReportTestConfig JACOBS = new BaisReportTestConfig(
+    public static final BaisFileTestConfig JACOBS = new BaisFileTestConfig(
         "Jacobs",
         "JACOBS",
         "JacobsFileTransferJob",
@@ -127,7 +127,7 @@ public final class BaisReportTestData {
         "test-data/bailiffs/jacobs-unique.txt"
     );
 
-    public static final BaisReportTestConfig CDER = new BaisReportTestConfig(
+    public static final BaisFileTestConfig CDER = new BaisFileTestConfig(
         "Cder",
         "CDER",
         "CderFileTransferJob",
@@ -142,7 +142,7 @@ public final class BaisReportTestData {
         "test-data/bailiffs/cder-unique.txt"
     );
 
-    public static final BaisReportTestConfig MARSTON = new BaisReportTestConfig(
+    public static final BaisFileTestConfig MARSTON = new BaisFileTestConfig(
         "Marston",
         "MARSTON",
         "MarstonFileTransferJob",
@@ -157,7 +157,7 @@ public final class BaisReportTestData {
         "test-data/bailiffs/marston-unique.txt"
     );
 
-    private BaisReportTestData() {
+    private BaisFileTestData() {
     }
 
     /**
@@ -166,7 +166,7 @@ public final class BaisReportTestData {
      * @param displayName name captured from a Cucumber step.
      * @return matching report definition.
      */
-    public static BaisReportTestConfig forDisplayName(String displayName) {
+    public static BaisFileTestConfig forDisplayName(String displayName) {
         return switch (displayName) {
             case "BTEckoh" -> BTECKOH;
             case "CAPS" -> CAPS;
@@ -188,7 +188,7 @@ public final class BaisReportTestData {
      * @param source source captured from a Cucumber step.
      * @return matching report definition.
      */
-    public static BaisReportTestConfig forSource(String source) {
+    public static BaisFileTestConfig forSource(String source) {
         return switch (source) {
             case "BTECKOH_REPORT" -> BTECKOH;
             case "CAPS_REPORT" -> CAPS;
