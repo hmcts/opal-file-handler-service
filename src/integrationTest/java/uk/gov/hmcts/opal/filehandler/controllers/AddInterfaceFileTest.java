@@ -6,7 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.opal.common.dto.ToJsonString.toJsonString;
-
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
@@ -19,12 +21,15 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.bidi.module.Permission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import uk.gov.hmcts.opal.common.user.authorisation.client.service.UserStateClientService;
 import uk.gov.hmcts.opal.filehandler.IntegrationSecurityConfiguration;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -57,6 +62,9 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     private static UtilBlobStoreService utilBlobStoreService;
     @Autowired
     private InterfaceFilesRepository repository;
+
+    @MockitoBean
+    private UserStateClientService userStateService;
 
     private static final String bteckohResourcePath = "azure/data/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-"
         + "Daily-2026-07-06-06-00-18.xlsx";
@@ -198,7 +206,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("Fails when user has no permissions")
-        void failsWhenUserHasNoPermission() {
+        void failsWhenUserHasNoPermission() throws Exception {
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
 
             setupFileUploadApiTest(HttpMethod.POST, URI)
@@ -209,6 +217,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
                 .includeContentDigest()
                 .clearPermissions()
                 .execute()
+                .logResponse()
                 .assertForbidden();
 
             assertDatabaseUnchanged();
