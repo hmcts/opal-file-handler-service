@@ -70,6 +70,8 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-07-30T10:15:30Z"), ZoneOffset.UTC);
     private static final UUID FILE_UUID = UUID.randomUUID();
 
+    private static    long CREATED_ID = 2L;
+
     @Mock
     private FeatureFlagUtil featureFlagUtil;
 
@@ -390,8 +392,9 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
         void mapsEntityFields() {
             InterfaceFileCommonDataExtract extract = extract();
 
+
             InterfaceFileEntity sourceJson = service.createSourceJson(
-                config, sourceFile, extract, new String[] {"12", "34"}, Domain.FINES, "checksum");
+                config, sourceFile, extract, new String[] {"12", "34"}, Domain.FINES, "checksum",CREATED_ID);
 
             assertThat(sourceJson.getSource()).isEqualTo(Interface.NATWEST);
             assertThat(sourceJson.getTarget()).isEqualTo(Interface.OPAL);

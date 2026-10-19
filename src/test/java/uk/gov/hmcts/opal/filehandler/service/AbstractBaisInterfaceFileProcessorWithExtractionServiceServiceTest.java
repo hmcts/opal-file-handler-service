@@ -444,8 +444,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             InterfaceFileCommonDataExtract extract = extract();
 
             InterfaceFileEntity sourceJson = service.createSourceJson(
-                config, sourceFile, extract, new String[] {"BC12"}, Domain.FINES, "checksum", CREATOR_ID);
-                config, sourceFile, extract, new String[] {"12"}, Domain.FINES, "checksum");
+                config, sourceFile, extract, new String[] {"12"}, Domain.FINES, "checksum", CREATOR_ID);
 
             assertThat(sourceJson.getSource()).isEqualTo(Interface.NATWEST);
             assertThat(sourceJson.getTarget()).isEqualTo(Interface.OPAL);
