@@ -63,7 +63,7 @@ public class GetInterfaceFileTest extends AbstractControllerIntegrationTest {
 
         @Test
         @DisplayName("Given valid id When getInterfaceFile is called but the user does not have the correct permission"
-            + "Should reutrn 401")
+            + "Should reutrn 403")
         void givenValidDataButUserDoesNotHaveCorrectPermission_shouldReturnError() {
             InterfaceFileEntity interfaceFileEntity =
                 interfaceFileEntityTestData.getTypicalInterfaceFile("some-file-name");
