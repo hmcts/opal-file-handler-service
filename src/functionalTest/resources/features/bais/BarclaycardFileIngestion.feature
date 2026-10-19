@@ -26,7 +26,7 @@ Feature: Barclaycard file ingestion
     And the "Barclaycard" file ingestion job is requested through testing support
     Then the testing-support request is accepted
     And no "BARCLAYCARD" interface file is stored for the unsupported file
-    And the unsupported "Barclaycard" report remains on bais
+    And the unsupported "Barclaycard" file remains on bais
 
   Scenario: Invalid Barclaycard content is recorded as failed with its source blob
     Given the configured "Barclaycard" file has invalid content on bais

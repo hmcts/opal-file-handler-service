@@ -27,9 +27,9 @@ import uk.gov.hmcts.opal.filehandler.support.TestHttpClient.TestHttpResponse;
 import uk.gov.hmcts.opal.filehandler.testsupport.TestSupportApiClient;
 
 /**
- * Defines the shared end-to-end journey for BAIS report ingestion.
+ * Defines the shared end-to-end journey for BAIS file ingestion.
  */
-public class BaisReportStepDef extends BaseStepDef {
+public class BaisFileStepDef extends BaseStepDef {
 
     private static final Duration INGESTION_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration POLL_INTERVAL = Duration.ofMillis(500);
@@ -42,16 +42,16 @@ public class BaisReportStepDef extends BaseStepDef {
     private Map<String, Object> duplicateInterfaceFile;
 
     @Given("^the configured \\\"([^\\\"]+)\\\" (?:report|file) is available on bais$")
-    public void configuredReportIsAvailable(String displayName) {
+    public void configuredFileIsAvailable(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.fileName(), true);
     }
 
     @Given("^the configured \\\"([^\\\"]+)\\\" (?:report|file) has an unsupported file on bais$")
-    public void configuredReportHasUnsupportedFileOnBais(String displayName) {
+    public void configuredFileHasUnsupportedFileOnBais(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         withRetry(
-            "place unsupported " + config.displayName() + " report file for user " + config.sftpUsername(),
+            "place unsupported " + config.displayName() + " file for user " + config.sftpUsername(),
             () -> {
                 try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
                     sftpClient.deleteIfExists(config.fileName());
@@ -62,10 +62,10 @@ public class BaisReportStepDef extends BaseStepDef {
     }
 
     @Given("^the configured \\\"([^\\\"]+)\\\" (?:report|file) has invalid content on bais$")
-    public void configuredReportHasInvalidContentOnBais(String displayName) {
+    public void configuredFileHasInvalidContentOnBais(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         withRetry(
-            "place invalid " + config.displayName() + " report content for user " + config.sftpUsername(),
+            "place invalid " + config.displayName() + " file content for user " + config.sftpUsername(),
             () -> {
                 try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
                     sftpClient.deleteIfExists(config.fileName());
@@ -76,18 +76,18 @@ public class BaisReportStepDef extends BaseStepDef {
     }
 
     @Given("^the configured \\\"([^\\\"]+)\\\" (?:report|file) has already been processed$")
-    public void configuredReportHasAlreadyBeenProcessed(String displayName) {
+    public void configuredFileHasAlreadyBeenProcessed(String displayName) {
         // Initialise the default test user so this composite step can be used independently.
         BearerTokenStepDef.getToken();
-        configuredReportIsAvailable(displayName);
-        reportIngestionJobIsRequested(displayName);
+        configuredFileIsAvailable(displayName);
+        fileIngestionJobIsRequested(displayName);
         testingSupportRequestIsAccepted();
         successfulInterfaceFileIsStored(forDisplayName(displayName).source());
-        configuredReportNoLongerExists(displayName);
+        configuredFileNoLongerExists(displayName);
     }
 
     @When("^the \\\"([^\\\"]+)\\\" (?:report|file) ingestion job is requested through testing support$")
-    public void reportIngestionJobIsRequested(String displayName) {
+    public void fileIngestionJobIsRequested(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         taskResponse = testSupportApiClient.post("/automated-jobs/" + config.automatedTaskName());
     }
@@ -141,7 +141,7 @@ public class BaisReportStepDef extends BaseStepDef {
     }
 
     @Then("^no \\\"([^\\\"]+)\\\" interface file is stored for the unsupported (?:report|file)$")
-    public void noInterfaceFileIsStoredForUnsupportedReport(String source) {
+    public void noInterfaceFileIsStoredForUnsupportedFile(String source) {
         BaisReportTestConfig config = forSource(source);
         long deadline = System.nanoTime() + IGNORED_FILE_CHECK_DURATION.toNanos();
         do {
@@ -166,7 +166,7 @@ public class BaisReportStepDef extends BaseStepDef {
     }
 
     @Then("^the stored \\\"?(.+?)\\\"? (?:report|file) can be retrieved by interface file ID$")
-    public void storedReportCanBeRetrievedByInterfaceFileId(String displayName) {
+    public void storedFileCanBeRetrievedByInterfaceFileId(String displayName) {
         assertNotNull(successfulInterfaceFile, "Successful interface-file metadata was not retrieved");
         long interfaceFileId = ((Number) successfulInterfaceFile.get("interface_file_id")).longValue();
 
@@ -189,7 +189,7 @@ public class BaisReportStepDef extends BaseStepDef {
     }
 
     @Then("^the stored \\\"([^\\\"]+)\\\" (?:report|file) content matches the bais \\\"([^\\\"]+)\\\"$")
-    public void storedReportContentMatches(String displayName, String fileDescription) throws IOException {
+    public void storedFileContentMatches(String displayName, String fileDescription) throws IOException {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertNotNull(successfulInterfaceFile, "Successful interface-file metadata was not retrieved");
         long interfaceFileId = ((Number) successfulInterfaceFile.get("interface_file_id")).longValue();
@@ -203,13 +203,13 @@ public class BaisReportStepDef extends BaseStepDef {
         assertEquals(
             200,
             response.statusCode(),
-            "Stored " + config.displayName() + " report content could not be retrieved. "
+            "Stored " + config.displayName() + " file content could not be retrieved. "
                 + "Response body: " + response.asString()
         );
         assertArrayEquals(
             Resources.toByteArray(expectedResource),
             response.getBody().asByteArray(),
-            "Stored " + config.displayName() + " report content differs from the SFTP " + fileDescription
+            "Stored " + config.displayName() + " file content differs from the SFTP " + fileDescription
         );
     }
 
@@ -236,28 +236,28 @@ public class BaisReportStepDef extends BaseStepDef {
     }
 
     @Then("^the configured \\\"([^\\\"]+)\\\" (?:report|file) no longer exists on bais$")
-    public void configuredReportNoLongerExists(String displayName) {
+    public void configuredFileNoLongerExists(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.fileName(), false);
     }
 
     @Then("^the unsupported \\\"([^\\\"]+)\\\" (?:report|file) remains on bais$")
-    public void unsupportedReportRemainsOnBais(String displayName) {
+    public void unsupportedFileRemainsOnBais(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.unsupportedFileName(), true);
     }
 
     @Then("^the invalid \\\"([^\\\"]+)\\\" (?:report|file) remains on bais$")
-    public void invalidReportRemainsOnBais(String displayName) {
+    public void invalidFileRemainsOnBais(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.fileName(), true);
     }
 
     @When("^the configured \\\"([^\\\"]+)\\\" (?:report|file) is placed on bais$")
-    public void configuredReportIsPlacedOnBais(String displayName) {
+    public void configuredFileIsPlacedOnBais(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         withRetry(
-            "upload " + config.displayName() + " report for user " + config.sftpUsername(),
+            "upload " + config.displayName() + " file for user " + config.sftpUsername(),
             () -> {
                 try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
                     sftpClient.uploadResource(config.resourcePath(), config.fileName());
@@ -340,7 +340,7 @@ public class BaisReportStepDef extends BaseStepDef {
         boolean expected
     ) {
         withRetry(
-            "check " + config.displayName() + " report presence for user " + config.sftpUsername(),
+            "check " + config.displayName() + " file presence for user " + config.sftpUsername(),
             () -> {
                 try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
                     if (expected) {

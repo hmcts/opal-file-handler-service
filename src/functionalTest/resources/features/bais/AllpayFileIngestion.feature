@@ -26,7 +26,7 @@ Feature: Allpay file ingestion
     And the "Allpay" file ingestion job is requested through testing support
     Then the testing-support request is accepted
     And no "ALLPAY" interface file is stored for the unsupported file
-    And the unsupported "Allpay" report remains on bais
+    And the unsupported "Allpay" file remains on bais
 
   Scenario: Invalid Allpay content is recorded as failed with its source blob
     Given the configured "Allpay" file has invalid content on bais
