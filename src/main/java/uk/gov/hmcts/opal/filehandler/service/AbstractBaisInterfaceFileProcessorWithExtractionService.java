@@ -3,6 +3,7 @@ package uk.gov.hmcts.opal.filehandler.service;
 import static uk.gov.hmcts.opal.filehandler.util.StringUtil.isBlank;
 
 import java.time.Clock;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -29,7 +30,7 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T extends InterfaceFileCommonDataExtract>
     extends AbstractInterfaceFileProcessorWithExtractionService<T> {
 
-    private static final String BUSINESS_UNIT_065 = "65";
+    private static final String BUSINESS_UNIT_065 = "065";
 
     private final EnumMap<Domain, InterfaceFilePreprocessQueueService> queueServiceMap;
 
@@ -64,27 +65,29 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
         }
     }
 
+
     void updateSourceBusinessUnitAndDomain(
         InterfaceFileEntity sourceInterfaceFile,
         BusinessUnitBankAccountEntity businessUnitBankAccount,
         Domain domain
     ) {
         Set<Short> businessUnitIds = new LinkedHashSet<>();
+
         if (sourceInterfaceFile.getBusinessUnitId() != null) {
-            for (short businessUnitId : sourceInterfaceFile.getBusinessUnitId()) {
-                businessUnitIds.add(businessUnitId);
-            }
+            Collections.addAll(
+                businessUnitIds,
+                sourceInterfaceFile.getBusinessUnitId()
+            );
         }
 
-        businessUnitIds.add(Short.valueOf(businessUnitBankAccount.getBusinessUnitCode()));
-        Short[] businessUnitIdArray = new Short[businessUnitIds.size()];
-        int i = 0;
-        for (Short businessUnitId : businessUnitIds) {
-            businessUnitIdArray[i++] = businessUnitId;
-        }
-        sourceInterfaceFile.setBusinessUnitId(businessUnitIdArray);
+        businessUnitIds.add(businessUnitBankAccount.getId());
+
+        sourceInterfaceFile.setBusinessUnitId(
+            businessUnitIds.toArray(new Short[0])
+        );
         sourceInterfaceFile.setOpalDomain(domain);
     }
+
 
     void populateMissingDestinationBankDetails(
         InterfaceFileCommonDataExtract extract,
@@ -156,8 +159,8 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
     }
 
     @Override
-    protected String[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract) {
-        return new String[] {extractionService.getBusinessUnitBankAccount(extract).getBusinessUnitCode()};
+    protected Short[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract) {
+        return new Short[] {extractionService.getBusinessUnitBankAccount(extract).getId()};
     }
 
     @Override

@@ -12,8 +12,8 @@ public class BusinessUnitBankAccountEntityTestData {
 
     private final BusinessUnitBankAccountRepository repository;
 
-    public BusinessUnitBankAccountEntity getTypicalBusinessUnitBankAccount(short id, String businessUnitId) {
-        return getTypicalBusinessUnitBankAccount(id, businessUnitId, null);
+    public BusinessUnitBankAccountEntity getTypicalBusinessUnitBankAccount(short id, String businessUnitCode) {
+        return getTypicalBusinessUnitBankAccount(id, businessUnitCode, null);
     }
 
     public BusinessUnitBankAccountEntity getTypicalBusinessUnitBankAccount(
@@ -39,8 +39,8 @@ public class BusinessUnitBankAccountEntityTestData {
             .build();
     }
 
-    public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(Short id, String businessUnitId) {
-        return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitId));
+    public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(Short id, String businessUnitCode) {
+        return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitCode));
     }
 
     public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(

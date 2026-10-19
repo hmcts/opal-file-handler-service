@@ -36,7 +36,7 @@ public class AbstractIntegrationTest {
     private OpalJwtAuthenticationProvider authenticationProvider;
 
     private static final int WIREMOCK_PORT =
-        Integer.parseInt(System.getenv().getOrDefault("INTEGRATION_WIREMOCK_PORT", "4558"));
+        Integer.parseInt(System.getenv().getOrDefault("INTEGRATION_WIREMOCK_PORT", "4559"));
     private static final WireMockServer WIREMOCK_SERVER = new WireMockServer(options().port(WIREMOCK_PORT));
 
     protected UserStateStub userStateStub;

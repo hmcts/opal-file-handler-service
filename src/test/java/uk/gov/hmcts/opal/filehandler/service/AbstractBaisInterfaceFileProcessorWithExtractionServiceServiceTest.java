@@ -190,7 +190,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
 
             processor.processFile(config, sourceFile, inputStream, CREATOR_ID);
 
-            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 12);
+            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 1);
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
             verify(processor).createAndUploadSourceJson(config, sourceFile, extract, CREATOR_ID);
             verify(finesQueueService).send(200L);
@@ -201,21 +201,45 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
         @Test
         void shouldSkipProcessingExtractWhenBusinessUnitIs065() {
             TestProcessor processor = spy(service);
-            InputStream inputStream = new ByteArrayInputStream("source".getBytes(StandardCharsets.UTF_8));
-            InterfaceFileCommonDataExtract extract = extract();
-            BusinessUnitBankAccountEntity businessUnit = businessUnit("65", Domain.FINES);
+            InputStream inputStream =
+                new ByteArrayInputStream("source".getBytes(StandardCharsets.UTF_8));
 
-            when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
-            when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
+            InterfaceFileCommonDataExtract extract = extract();
+
+            BusinessUnitBankAccountEntity businessUnit =
+                businessUnit("065", Domain.FINES);
+
+            when(extractionService.extractStandardData(sourceFile, inputStream))
+                .thenReturn(List.of(extract));
+
+            when(extractionService.getBusinessUnitBankAccount(extract))
+                .thenReturn(businessUnit);
 
             processor.processFile(config, sourceFile, inputStream, CREATOR_ID);
 
-            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 65);
-            assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
-            verify(processor, never()).createAndUploadSourceJson(any(), any(), any(), anyLong());
-            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+            assertThat(sourceFile.getBusinessUnitId())
+                .containsExactly((short) 1);
+
+            assertThat(sourceFile.getOpalDomain())
+                .isEqualTo(Domain.FINES);
+
+            verify(processor, never()).createAndUploadSourceJson(
+                any(),
+                any(),
+                any(),
+                anyLong()
+            );
+
+            verify(blobStoreService, never()).uploadBaisFile(
+                any(),
+                any(),
+                any(),
+                any()
+            );
+
             verify(finesQueueService, never()).send(any());
             verify(maintenanceQueueService, never()).send(any());
+
             verify(repository).save(sourceFile);
         }
 
@@ -246,7 +270,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
 
             processor.processFile(config, sourceFile, inputStream, CREATOR_ID);
 
-            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 12, (short) 1);
+            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 1);
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.MAINTENANCE);
             verify(processor).createAndUploadSourceJson(config, sourceFile, first, CREATOR_ID);
             verify(processor).createAndUploadSourceJson(config, sourceFile, second, CREATOR_ID);
@@ -307,7 +331,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
 
             service.updateSourceBusinessUnitAndDomain(sourceFile, businessUnit("12", Domain.FINES), Domain.FINES);
 
-            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 1, (short) 12);
+            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 1);
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
         }
 
@@ -315,9 +339,9 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
         void shouldMergeBusinessUnitIdsAndUpdateDomainSourceHasNullBusinessUnitId() {
             sourceFile.setBusinessUnitId(null);
 
-            service.updateSourceBusinessUnitAndDomain(sourceFile, businessUnit("12", Domain.FINES), Domain.FINES);
+            service.updateSourceBusinessUnitAndDomain(sourceFile, businessUnit("1", Domain.FINES), Domain.FINES);
 
-            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 12);
+            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 1);
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
         }
     }
@@ -444,7 +468,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             InterfaceFileCommonDataExtract extract = extract();
 
             InterfaceFileEntity sourceJson = service.createSourceJson(
-                config, sourceFile, extract, new String[] {"12"}, Domain.FINES, "checksum", CREATOR_ID);
+                config, sourceFile, extract, new Short[] {12}, Domain.FINES, "checksum", CREATOR_ID);
 
             assertThat(sourceJson.getSource()).isEqualTo(Interface.NATWEST);
             assertThat(sourceJson.getTarget()).isEqualTo(Interface.OPAL);
@@ -781,7 +805,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             when(extractionService.getBusinessUnitBankAccount(extract))
                 .thenReturn(businessUnit("12", Domain.FINES));
 
-            assertThat(service.getBusinessUnitsFromExtract(config, extract)).containsExactly("12");
+            assertThat(service.getBusinessUnitsFromExtract(config, extract)).containsExactly(Short.valueOf("1"));
         }
     }
 
@@ -798,7 +822,6 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             assertThat(service.getDomainFromExtract(config, extract)).isEqualTo(Domain.FINES);
         }
     }
-
 
 
     @Service

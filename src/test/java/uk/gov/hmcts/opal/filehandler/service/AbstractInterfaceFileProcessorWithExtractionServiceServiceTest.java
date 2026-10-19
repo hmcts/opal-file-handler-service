@@ -264,7 +264,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
-            String[] businessUnits = new String[] {"12"};
+            Short[] businessUnits = new Short[] {12};
 
             doReturn("checksum").when(processor).calculateExtractChecksum(any());
             doReturn(false).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
@@ -290,7 +290,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
-            String[] businessUnits = new String[] {"12"};
+            Short[] businessUnits = new Short[] {12};
 
             doReturn("checksum").when(processor).calculateExtractChecksum(any());
             doReturn(false).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
@@ -394,7 +394,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
 
             InterfaceFileEntity sourceJson = service.createSourceJson(
-                config, sourceFile, extract, new String[] {"12", "34"}, Domain.FINES, "checksum",CREATED_ID);
+                config, sourceFile, extract, new Short[] {12, 34}, Domain.FINES, "checksum",CREATED_ID);
 
             assertThat(sourceJson.getSource()).isEqualTo(Interface.NATWEST);
             assertThat(sourceJson.getTarget()).isEqualTo(Interface.OPAL);
@@ -590,11 +590,11 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
         }
 
         @Override
-        protected String[] getBusinessUnitsFromExtract(
+        protected Short[] getBusinessUnitsFromExtract(
             BaisFileProcessorConfiguration config,
             InterfaceFileCommonDataExtract extract
         ) {
-            return new String[] {"BC12"};
+            return new Short[] {12};
         }
 
         @Override
