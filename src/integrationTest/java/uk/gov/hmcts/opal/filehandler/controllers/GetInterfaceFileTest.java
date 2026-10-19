@@ -1,7 +1,5 @@
 package uk.gov.hmcts.opal.filehandler.controllers;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -9,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
-import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.support.AbstractControllerIntegrationTest;
@@ -71,16 +68,10 @@ public class GetInterfaceFileTest extends AbstractControllerIntegrationTest {
             InterfaceFileEntity interfaceFileEntity =
                 interfaceFileEntityTestData.getTypicalInterfaceFile("some-file-name");
 
-            assertThatThrownBy(() ->
-                setupApiTest(HttpMethod.GET, URI)
-                    .clearPermissions()
-                    .execute(interfaceFileEntity.getInterfaceFileId()))
-                .hasRootCauseInstanceOf(PermissionNotAllowedException.class);
 
-            //            setupApiTest(HttpMethod.GET, URI)
-            //                .clearPermissions()
-            //                .execute(interfaceFileEntity.getInterfaceFileId())
-            //                .assertForbidden();
+            setupApiTest(HttpMethod.GET, URI).clearPermissions()
+                .execute(interfaceFileEntity.getInterfaceFileId())
+                .assertForbidden();
         }
 
         @Test
