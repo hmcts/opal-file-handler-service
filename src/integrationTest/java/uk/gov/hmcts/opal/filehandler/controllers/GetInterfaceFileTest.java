@@ -77,10 +77,10 @@ public class GetInterfaceFileTest extends AbstractControllerIntegrationTest {
                     .execute(interfaceFileEntity.getInterfaceFileId()))
                 .hasRootCauseInstanceOf(PermissionNotAllowedException.class);
 
-//            setupApiTest(HttpMethod.GET, URI)
-//                .clearPermissions()
-//                .execute(interfaceFileEntity.getInterfaceFileId())
-//                .assertForbidden();
+            //            setupApiTest(HttpMethod.GET, URI)
+            //                .clearPermissions()
+            //                .execute(interfaceFileEntity.getInterfaceFileId())
+            //                .assertForbidden();
         }
 
         @Test
