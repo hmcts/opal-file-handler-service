@@ -41,13 +41,13 @@ public class BaisReportStepDef extends BaseStepDef {
     private Map<String, Object> successfulInterfaceFile;
     private Map<String, Object> duplicateInterfaceFile;
 
-    @Given("the configured {string} report is available on bais")
+    @Given("^the configured \\\"([^\\\"]+)\\\" (?:report|file) is available on bais$")
     public void configuredReportIsAvailable(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.fileName(), true);
     }
 
-    @Given("the configured {string} report has an unsupported file on bais")
+    @Given("^the configured \\\"([^\\\"]+)\\\" (?:report|file) has an unsupported file on bais$")
     public void configuredReportHasUnsupportedFileOnBais(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         withRetry(
@@ -61,7 +61,7 @@ public class BaisReportStepDef extends BaseStepDef {
         );
     }
 
-    @Given("the configured {string} report has invalid content on bais")
+    @Given("^the configured \\\"([^\\\"]+)\\\" (?:report|file) has invalid content on bais$")
     public void configuredReportHasInvalidContentOnBais(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         withRetry(
@@ -75,7 +75,7 @@ public class BaisReportStepDef extends BaseStepDef {
         );
     }
 
-    @Given("the configured {string} report has already been processed")
+    @Given("^the configured \\\"([^\\\"]+)\\\" (?:report|file) has already been processed$")
     public void configuredReportHasAlreadyBeenProcessed(String displayName) {
         // Initialise the default test user so this composite step can be used independently.
         BearerTokenStepDef.getToken();
@@ -86,7 +86,7 @@ public class BaisReportStepDef extends BaseStepDef {
         configuredReportNoLongerExists(displayName);
     }
 
-    @When("the {string} report ingestion job is requested through testing support")
+    @When("^the \\\"([^\\\"]+)\\\" (?:report|file) ingestion job is requested through testing support$")
     public void reportIngestionJobIsRequested(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         taskResponse = testSupportApiClient.post("/automated-jobs/" + config.automatedTaskName());
@@ -140,7 +140,7 @@ public class BaisReportStepDef extends BaseStepDef {
         assertNotNull(failedInterfaceFile.get("errors"));
     }
 
-    @Then("no {string} interface file is stored for the unsupported report")
+    @Then("^no \\\"([^\\\"]+)\\\" interface file is stored for the unsupported (?:report|file)$")
     public void noInterfaceFileIsStoredForUnsupportedReport(String source) {
         BaisReportTestConfig config = forSource(source);
         long deadline = System.nanoTime() + IGNORED_FILE_CHECK_DURATION.toNanos();
@@ -165,7 +165,7 @@ public class BaisReportStepDef extends BaseStepDef {
         } while (System.nanoTime() < deadline);
     }
 
-    @Then("^the stored \"?(.+?)\"? report can be retrieved by interface file ID$")
+    @Then("^the stored \\\"?(.+?)\\\"? (?:report|file) can be retrieved by interface file ID$")
     public void storedReportCanBeRetrievedByInterfaceFileId(String displayName) {
         assertNotNull(successfulInterfaceFile, "Successful interface-file metadata was not retrieved");
         long interfaceFileId = ((Number) successfulInterfaceFile.get("interface_file_id")).longValue();
@@ -188,7 +188,7 @@ public class BaisReportStepDef extends BaseStepDef {
         assertEquals("SUCCESS", responseBody.get("status"));
     }
 
-    @Then("the stored {string} report content matches the bais {string}")
+    @Then("^the stored \\\"([^\\\"]+)\\\" (?:report|file) content matches the bais \\\"([^\\\"]+)\\\"$")
     public void storedReportContentMatches(String displayName, String fileDescription) throws IOException {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertNotNull(successfulInterfaceFile, "Successful interface-file metadata was not retrieved");
@@ -235,25 +235,25 @@ public class BaisReportStepDef extends BaseStepDef {
             response.jsonPath().getList("transactions.transaction_code"));
     }
 
-    @Then("the configured {string} report no longer exists on bais")
+    @Then("^the configured \\\"([^\\\"]+)\\\" (?:report|file) no longer exists on bais$")
     public void configuredReportNoLongerExists(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.fileName(), false);
     }
 
-    @Then("the unsupported {string} report remains on bais")
+    @Then("^the unsupported \\\"([^\\\"]+)\\\" (?:report|file) remains on bais$")
     public void unsupportedReportRemainsOnBais(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.unsupportedFileName(), true);
     }
 
-    @Then("the invalid {string} report remains on bais")
+    @Then("^the invalid \\\"([^\\\"]+)\\\" (?:report|file) remains on bais$")
     public void invalidReportRemainsOnBais(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         assertSftpFilePresence(config, config.fileName(), true);
     }
 
-    @When("the configured {string} report is placed on bais")
+    @When("^the configured \\\"([^\\\"]+)\\\" (?:report|file) is placed on bais$")
     public void configuredReportIsPlacedOnBais(String displayName) {
         BaisReportTestConfig config = forDisplayName(displayName);
         withRetry(
