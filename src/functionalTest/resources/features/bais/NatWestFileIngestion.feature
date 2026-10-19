@@ -1,4 +1,4 @@
-@Opal @PO-6398 @BaisReportFixture
+@Opal @PO-6398 @BaisFileFixture
 Feature: NatWest file ingestion
 
   Scenario: A valid NatWest file is ingested

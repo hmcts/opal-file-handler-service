@@ -8,18 +8,18 @@ import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient.Interfac
 import uk.gov.hmcts.opal.filehandler.sftp.SftpClient;
 
 /**
- * Resets SFTP, database and blob state for one BAIS report functional-test definition.
+ * Resets SFTP, database and blob state for one BAIS file functional-test definition.
  */
-public class BaisReportFixture {
+public class BaisFileFixture {
 
-    private final BaisReportTestConfig config;
+    private final BaisFileTestConfig config;
 
-    public BaisReportFixture(BaisReportTestConfig config) {
+    public BaisFileFixture(BaisFileTestConfig config) {
         this.config = config;
     }
 
     /**
-     * Ensures a scenario starts with only its baseline report fixture.
+     * Ensures a scenario starts with only its baseline file fixture.
      */
     public void setUp() {
         cleanDatabaseAndBlobs();
@@ -27,7 +27,7 @@ public class BaisReportFixture {
     }
 
     /**
-     * Removes scenario output and restores the report consumed by successful ingestion.
+     * Removes scenario output and restores the file consumed by successful ingestion.
      */
     public void tearDown() {
         RuntimeException cleanupFailure = null;
@@ -69,7 +69,7 @@ public class BaisReportFixture {
 
     private void restoreBaselineSftpFile() {
         SftpRetry.withRetry(
-            "restore baseline " + config.displayName() + " report for user " + config.sftpUsername(),
+            "restore baseline " + config.displayName() + " file for user " + config.sftpUsername(),
             () -> {
                 try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
                     sftpClient.deleteIfExists(config.unsupportedFileName());

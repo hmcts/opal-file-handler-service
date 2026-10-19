@@ -1,4 +1,4 @@
-@Opal @JIRA-LABEL:file-handler-service @JIRA-STORY:PO-6382 @PO-5608 @BaisReportFixture
+@Opal @JIRA-LABEL:file-handler-service @JIRA-STORY:PO-6382 @PO-5608 @BaisFileFixture
 Feature: CAPS report ingestion
 
   @JIRA-STORY:PO-7205
