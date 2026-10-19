@@ -17,7 +17,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.exception.DownstreamServiceUnavailableException;
+import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
+import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -47,7 +49,8 @@ public class InterfaceFileProcessorService {
     protected void processFile(
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity fileEntity,
-        InputStream inputStream
+        InputStream inputStream,
+        long creatorId
     ) {
         // Processors may implement their own processing logic for ingested files.
         // This method is called after the file has been successfully ingested and stored in the blob store.
@@ -65,7 +68,7 @@ public class InterfaceFileProcessorService {
 
         for (String fileName : baisFiles) {
             try {
-                ingestFile(config, fileName);
+                ingestFile(config, fileName, getCurrentUserId());
             } catch (IOException | RuntimeException e) {
                 log.error("Failed to ingest file '{}'", fileName, e);
             }
@@ -99,7 +102,7 @@ public class InterfaceFileProcessorService {
         return matchingFiles;
     }
 
-    private void ingestFile(BaisFileProcessorConfiguration config, String fileName) throws IOException {
+    private void ingestFile(BaisFileProcessorConfiguration config, String fileName, Long creatorId) throws IOException {
         final byte[] downloadedBytes;
 
         try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
@@ -113,10 +116,11 @@ public class InterfaceFileProcessorService {
             config.getTarget(),
             Type.SOURCE,
             Domain.MAINTENANCE,//TODO check
-            config.getContainerName()
+            config.getContainerName(),
+            creatorId
         );
         if (entity.getStatus().equals(Status.INGESTED)) {
-            processIngestedFile(config, entity, new ByteArrayInputStream(downloadedBytes));
+            processIngestedFile(config, entity, new ByteArrayInputStream(downloadedBytes), creatorId);
         }
 
         completeIngestion(config, fileName, entity);
@@ -128,7 +132,8 @@ public class InterfaceFileProcessorService {
         Interface target,
         Type type,
         Domain domain,
-        String containerName
+        String containerName,
+        Long creatorId
     ) throws IOException {
         String fileChecksum = StreamUtil.calculateChecksum(new ByteArrayInputStream(sourceFileData));
         InterfaceFileEntity entity = InterfaceFileEntity.builder()
@@ -139,6 +144,7 @@ public class InterfaceFileProcessorService {
             .checksum(fileChecksum)
             .createdDatetime(LocalDateTime.now(clock))
             .opalDomain(domain)
+            .createdBy(creatorId)
             .build();
         Optional<InterfaceFileEntity> duplicateOpt = interfaceFilesRepository
             .findByTypeAndFileNameAndChecksumAndStatus(
@@ -191,10 +197,13 @@ public class InterfaceFileProcessorService {
     private void processIngestedFile(
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity entity,
-        InputStream inputStream
+        InputStream inputStream,
+        long creatorId
     ) {
         try {
-            transactionTemplate.executeWithoutResult(transactionStatus -> processFile(config, entity, inputStream));
+            transactionTemplate.executeWithoutResult(transactionStatus -> {
+                processFile(config, entity, inputStream, creatorId);
+            });
         } catch (RuntimeException e) {
             transactionTemplate.executeWithoutResult(transactionStatus -> {
                 entity.setStatus(Status.FAILED);
@@ -236,5 +245,9 @@ public class InterfaceFileProcessorService {
 
     protected String errorJson(String message) {
         return objectMapper.createObjectNode().put("message", message).toString();
+    }
+
+    protected long getCurrentUserId() {
+        return SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser().getUserId();
     }
 }

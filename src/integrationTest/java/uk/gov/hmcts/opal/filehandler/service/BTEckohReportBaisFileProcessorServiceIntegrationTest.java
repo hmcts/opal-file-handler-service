@@ -139,6 +139,19 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
     }
 
     @Test
+    @DisplayName("AC1: Automated processing records the Opal system user as creator")
+    void automatedProcessingRecordsSystemUserAsCreator() throws IOException {
+        setupAuthenticationAsUser(-1L);
+        uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
+
+        service.run(config);
+
+        assertThat(assertSuccessfulInterfaceFile(
+            BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE, Domain.MAINTENANCE
+        ).getCreatedBy()).isEqualTo(-1L);
+    }
+
+    @Test
     @DisplayName("AC3: When no files are present the service should not fail")
     void whenNoFilesArePresentServiceSucceeds() {
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);

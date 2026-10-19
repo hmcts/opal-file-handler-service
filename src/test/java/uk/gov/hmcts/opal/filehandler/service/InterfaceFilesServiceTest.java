@@ -188,19 +188,28 @@ public class InterfaceFilesServiceTest {
         when(config.getContainerName()).thenReturn("dwp-container");
         when(file.getOriginalFilename()).thenReturn("payments.dat");
         when(file.getBytes()).thenReturn(fileBytes);
-        when(processorService.ingestFile(
-            "payments.dat",
-            fileBytes,
-            Interface.DWP,
-            Interface.OPAL,
-            Type.TRANSFORMED_JSON,
-            Domain.FINES,
-            "dwp-container"
-        )).thenReturn(ingestedEntity);
-        when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
-        doReturn(mapped).when(spyService).getInterfaceFile(24L);
 
-        InterfaceFileObjectInterfaceFile result = spyService.addInterfaceFile(file, metadata);
+        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class)) {
+            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(authToken);
+
+            when(authToken.getUserId()).thenReturn(1L);
+
+            when(processorService.ingestFile(
+                "payments.dat",
+                fileBytes,
+                Interface.DWP,
+                Interface.OPAL,
+                Type.TRANSFORMED_JSON,
+                Domain.FINES,
+                "dwp-container",
+                1L
+            )).thenReturn(ingestedEntity);
+
+            when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
+            doReturn(mapped).when(spyService).getInterfaceFile(24L);
+
+            InterfaceFileObjectInterfaceFile result = spyService.addInterfaceFile(file, metadata);
 
         assertEquals(mapped, result);
         assertEquals(relatedInterfaceFile, ingestedEntity.getRelatedInterfaceFile());
@@ -210,6 +219,14 @@ public class InterfaceFilesServiceTest {
         verify(repository).findById(15L);
         verify(repository).save(ingestedEntity);
         verify(spyService).getInterfaceFile(24L);
+            assertEquals(mapped, result);
+            assertEquals(relatedInterfaceFile, ingestedEntity.getRelatedInterfaceFile());
+            assertEquals(PaymentType.CHEQUE, ingestedEntity.getPaymentType());
+            assertArrayEquals(new String[] {"1234"}, ingestedEntity.getBusinessUnitCode());
+            verify(repository).findById(15L);
+            verify(repository).save(ingestedEntity);
+            verify(spyService).getInterfaceFile(24L);
+        }
     }
 
     @Test
@@ -230,19 +247,26 @@ public class InterfaceFilesServiceTest {
         when(config.getContainerName()).thenReturn("dwp-container");
         when(file.getOriginalFilename()).thenReturn("source.dat");
         when(file.getBytes()).thenReturn(fileBytes);
-        when(processorService.ingestFile(
-            "source.dat",
-            fileBytes,
-            Interface.DWP,
-            Interface.OPAL,
-            Type.TRANSFORMED_JSON,
-            Domain.FINES,
-            "dwp-container"
-        )).thenReturn(ingestedEntity);
-        when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
-        doReturn(mapped).when(spyService).getInterfaceFile(25L);
 
-        InterfaceFileObjectInterfaceFile result = spyService.addInterfaceFile(file, metadata);
+        try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class)) {
+            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(authToken);
+
+            when(authToken.getUserId()).thenReturn(1L);
+            when(processorService.ingestFile(
+                "source.dat",
+                fileBytes,
+                Interface.DWP,
+                Interface.OPAL,
+                Type.TRANSFORMED_JSON,
+                Domain.FINES,
+                "dwp-container",
+                1L
+            )).thenReturn(ingestedEntity);
+            when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
+            doReturn(mapped).when(spyService).getInterfaceFile(25L);
+
+            InterfaceFileObjectInterfaceFile result = spyService.addInterfaceFile(file, metadata);
 
         assertEquals(mapped, result);
         assertNull(ingestedEntity.getRelatedInterfaceFile());
@@ -251,6 +275,13 @@ public class InterfaceFilesServiceTest {
 
         verify(repository).save(ingestedEntity);
         verify(spyService).getInterfaceFile(25L);
+            assertEquals(mapped, result);
+            assertNull(ingestedEntity.getRelatedInterfaceFile());
+            assertEquals(PaymentType.CASH, ingestedEntity.getPaymentType());
+            assertArrayEquals(new String[] {"9876"}, ingestedEntity.getBusinessUnitCode());
+            verify(repository).save(ingestedEntity);
+            verify(spyService).getInterfaceFile(25L);
+        }
     }
 
     @Test
