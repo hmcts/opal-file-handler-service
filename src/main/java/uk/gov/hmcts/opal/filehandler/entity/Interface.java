@@ -9,6 +9,7 @@ import uk.gov.hmcts.opal.filehandler.service.CderBaisFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.service.DWPBaisFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.service.InterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.service.JacobsBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.MarstonBaisFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.service.NatWestBaisFileProcessorService;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileEnumInterfaceFile;
 
@@ -21,8 +22,8 @@ public enum Interface {
     BTECKOH("BTEckohBaisFileProcessorConfig", BTEckohReportBaisFileProcessorService.class),
     DWP("dwpBaisFileProcessorConfig", DWPBaisFileProcessorService.class),
     CDER("cderBaisFileProcessorConfig", CderBaisFileProcessorService.class),
-    JACOBS("JacobsBaisFileBaisFileProcessorConfig", JacobsBaisFileProcessorService.class),
-    MARSTON(null, null),
+    JACOBS("JacobsBaisFileProcessorConfig", JacobsBaisFileProcessorService.class),
+    MARSTON("marstonBaisFileBaisFileProcessorConfig", MarstonBaisFileProcessorService.class),
     BTECKOH_REPORT("BTEckohReportBaisFileProcessorConfig", BTEckohReportBaisFileProcessorService.class),
     CAPS_REPORT("capsReportBaisFileProcessorConfig", CapsReportBaisFileProcessorService.class),
     OPAL(null, InterfaceFileProcessorService.class);

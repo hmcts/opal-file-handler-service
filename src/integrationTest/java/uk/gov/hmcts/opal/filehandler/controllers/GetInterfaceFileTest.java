@@ -4,12 +4,12 @@ import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
-import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.support.AbstractControllerIntegrationTest;
 import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
@@ -47,45 +47,43 @@ public class GetInterfaceFileTest extends AbstractControllerIntegrationTest {
                 .build();
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = { false, true })
         @DisplayName("Given valid id When getInterfaceFile is called Then returns interface file 200")
-        void givenValidDataAndCredentials_shouldReturnCorrectInformation() {
+        void givenValidDataAndCredentials_shouldReturnCorrectInformation(boolean isSystemUser) {
             InterfaceFileEntity interfaceFileEntity =
                 interfaceFileEntityTestData.getTypicalInterfaceFile("some-file-name");
             InterfaceFileObjectInterfaceFile expectedResponse = buildExpectedResponse(interfaceFileEntity);
 
             setupApiTest(HttpMethod.GET, URI)
                 .clearPermissions()
+                .systemUser(isSystemUser)
                 .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
                 .execute(interfaceFileEntity.getInterfaceFileId())
                 .assertSuccess(HttpStatus.OK)
                 .assertBody(expectedResponse);
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = { false, true })
         @DisplayName("Given valid id When getInterfaceFile is called but the user does not have the correct permission"
-            + "Should reutrn 403")
+            + "Should reutrn 401")
         void givenValidDataButUserDoesNotHaveCorrectPermission_shouldReturnError() {
-
             InterfaceFileEntity interfaceFileEntity =
                 interfaceFileEntityTestData.getTypicalInterfaceFile("some-file-name");
-
-            interfaceFileEntity.setOpalDomain(Domain.FILE_HANDLER);
-            log.info("Domain={}", interfaceFileEntity.getOpalDomain());
-            log.info("BusinessUnit={}", Arrays.toString(interfaceFileEntity.getBusinessUnitId()));
-
             setupApiTest(HttpMethod.GET, URI)
                 .clearPermissions()
                 .execute(interfaceFileEntity.getInterfaceFileId())
                 .assertForbidden();
         }
 
-
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = { false, true })
         @DisplayName("Given id is provided which does not exist then I should get a 404")
-        void givenIdIsProvidedWhichDoesNotExistOnDb_shouldReturnError() {
+        void givenIdIsProvidedWhichDoesNotExistOnDb_shouldReturnError(boolean isSystemUser) {
             setupApiTest(HttpMethod.GET, URI)
                 .clearPermissions()
+                .systemUser(isSystemUser)
                 .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
                 .execute(512)
                 .assertNotFound("Interface file with id 512 could not be located.");
@@ -99,10 +97,12 @@ public class GetInterfaceFileTest extends AbstractControllerIntegrationTest {
     @Nested
     class FeatureOff {
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = { false, true })
         @DisplayName("API should return 404 when feature flag is off")
-        void getInterfaceFile_shouldReturn404_whenFeatureFlagIsOff() throws Exception {
+        void getInterfaceFile_shouldReturn404_whenFeatureFlagIsOff(boolean isSystemUser) throws Exception {
             setupApiTest(HttpMethod.GET, URI)
+                .systemUser(isSystemUser)
                 .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
                 .execute(1L)
                 .assertFeatureFlagDisabledResponse();

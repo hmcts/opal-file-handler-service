@@ -13,7 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -99,12 +100,14 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
     @Nested
     class FeatureOn {
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = { false, true })
         @DisplayName("OPAL: GET Interface File Content - Fetches file content from BTECKOH")
         @JiraStory("PO-3948")
         @JiraEpic("PO-3495")
-        void get_respondsWith200AndFileContents() throws Exception {
+        void get_respondsWith200AndFileContents(boolean isSystemUser) throws Exception {
             authorizeWithPermission(); // Auto enforcement permission
+            userStateStub.isSystemUser(isSystemUser);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
@@ -126,12 +129,14 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             assertBlobStorageUnchanged();
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = { false, true })
         @DisplayName("OPAL: GET Interface File Content - Fetches file content from CAPS")
         @JiraStory("PO-3948")
         @JiraEpic("PO-3495")
-        void get_respondsWith200AndFileContents_CapsContainer() throws Exception {
+        void get_respondsWith200AndFileContents_CapsContainer(boolean isSystemUser) throws Exception {
             authorizeWithPermission(); // Auto enforcement permission
+            userStateStub.isSystemUser(isSystemUser);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
@@ -153,12 +158,14 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             assertBlobStorageUnchanged();
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = { false, true })
         @DisplayName("OPAL: GET Interface File Content - Returns status 404 when IF cannot be found")
         @JiraStory("PO-3948")
         @JiraEpic("PO-3495")
-        void get_respondsWith404WhenNotInDB() throws Exception {
+        void get_respondsWith404WhenNotInDB(boolean isSystemUser) throws Exception {
             authorizeWithPermission();
+            userStateStub.isSystemUser(isSystemUser);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
@@ -177,12 +184,14 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             assertBlobStorageUnchanged();
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = { false, true })
         @DisplayName("OPAL: GET Interface File Content - Returns status 422 when IF status is invalid")
         @JiraStory("PO-3948")
         @JiraEpic("PO-3495")
-        void get_respondsWith422WithInvalidStatus() throws Exception {
+        void get_respondsWith422WithInvalidStatus(boolean isSystemUser) throws Exception {
             authorizeWithPermission();
+            userStateStub.isSystemUser(isSystemUser);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
@@ -202,12 +211,14 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             assertBlobStorageUnchanged();
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = { false, true })
         @DisplayName("OPAL: GET Interface File Content - Returns status 500 when IF Blob is not found")
         @JiraStory("PO-3948")
         @JiraEpic("PO-3495")
-        void get_respondsWith500WhenBlobNotFound() throws Exception {
+        void get_respondsWith500WhenBlobNotFound(boolean isSystemUser) throws Exception {
             authorizeWithPermission();
+            userStateStub.isSystemUser(isSystemUser);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
@@ -228,15 +239,14 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             assertBlobStorageUnchanged();
         }
 
-        /*
-        TODO: This test was removed due to the AC for permissions check being removed from PO-3948.
-        This requirement will be re-added as part of PO-8686
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = { false, true })
         @DisplayName("OPAL: GET Interface File Content - Returns status 403 when permissions are missing")
         @JiraStory("PO-3948")
         @JiraEpic("PO-3495")
-        void get_respondsWith403WhenPermissionsMissing() throws Exception {
+        void get_respondsWith403WhenPermissionsMissing(boolean isSystemUser) throws Exception {
             authoriseNoPermissions();
+            userStateStub.isSystemUser(isSystemUser);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
@@ -251,7 +261,7 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
             res.andExpect(status().isForbidden());
 
             assertBlobStorageUnchanged();
-        } */
+        }
     }
 
     @TestPropertySource(properties = {
@@ -260,12 +270,14 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
     })
     @Nested
     class FeatureOff {
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = { false, true })
         @DisplayName("PO-3948 - Feature flag off test")
         @JiraStory("PO-3948")
         @JiraEpic("PO-3495")
-        void getAllEnforcementAccountTypes_FeatureOff_404() throws Exception {
+        void getAllEnforcementAccountTypes_FeatureOff_404(boolean isSystemUser) throws Exception {
             authorizeWithPermission(); // Auto enforcement permission
+            userStateStub.isSystemUser(isSystemUser);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(userStateStub.getBearerToken());
