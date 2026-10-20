@@ -172,6 +172,7 @@ class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest
             .andExpect(content().bytes(FILE_CONTENT));
     }
 
+
     @Test
     void systemUserCanAddInterfaceFile() throws Exception {
         mockMvc.perform(uploadRequest()
