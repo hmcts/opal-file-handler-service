@@ -176,6 +176,23 @@ public class InterfaceFilesStepDef extends BaseStepDef {
     }
 
     /**
+     * Asserts that the response contains exactly the supplied interface-file IDs.
+     *
+     * @param expectedIds comma-separated expected IDs.
+     */
+    @Then("the returned interface file IDs are {string}")
+    public void returnedInterfaceFileIdsAre(String expectedIds) {
+        Set<Long> expected = Stream.of(expectedIds.split(","))
+            .map(String::trim)
+            .map(Long::valueOf)
+            .collect(Collectors.toSet());
+        Set<Long> actual = getInterfaceFiles().stream()
+            .map(file -> ((Number) file.get("interface_file_id")).longValue())
+            .collect(Collectors.toSet());
+        assertEquals(expected, actual, "Unexpected interface files returned");
+    }
+
+    /**
      * Asserts that every returned interface file contains the supplied business-unit code.
      *
      * @param businessUnitCode expected business-unit code.
