@@ -81,7 +81,6 @@ public class GetInterfaceFileTest extends AbstractControllerIntegrationTest {
         }
 
 
-
         @Test
         @DisplayName("Given id is provided which does not exist then I should get a 404")
         void givenIdIsProvidedWhichDoesNotExistOnDb_shouldReturnError() {
