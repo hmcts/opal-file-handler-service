@@ -1,5 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.controllers;
 
+import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -8,6 +9,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
+import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.support.AbstractControllerIntegrationTest;
 import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
@@ -64,14 +66,21 @@ public class GetInterfaceFileTest extends AbstractControllerIntegrationTest {
         @DisplayName("Given valid id When getInterfaceFile is called but the user does not have the correct permission"
             + "Should reutrn 403")
         void givenValidDataButUserDoesNotHaveCorrectPermission_shouldReturnError() {
+
             InterfaceFileEntity interfaceFileEntity =
                 interfaceFileEntityTestData.getTypicalInterfaceFile("some-file-name");
 
+            interfaceFileEntity.setOpalDomain(Domain.FILE_HANDLER);
+            log.info("Domain={}", interfaceFileEntity.getOpalDomain());
+            log.info("BusinessUnit={}", Arrays.toString(interfaceFileEntity.getBusinessUnitId()));
 
-            setupApiTest(HttpMethod.GET, URI).clearPermissions()
+            setupApiTest(HttpMethod.GET, URI)
+                .clearPermissions()
                 .execute(interfaceFileEntity.getInterfaceFileId())
                 .assertForbidden();
         }
+
+
 
         @Test
         @DisplayName("Given id is provided which does not exist then I should get a 404")
