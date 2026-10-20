@@ -203,13 +203,23 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         @JiraEpic("PO-3497")
         @DisplayName("Fails when user has no permissions")
         void failsWhenUserHasNoPermission(boolean isSystemUser) {
-            String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
+            String metadata =
+                toJsonString(
+                    buildMetaData(
+                        InterfaceFileEnumInterfaceFile.BTECKOH_REPORT,
+                        null));
 
             setupFileUploadApiTest(HttpMethod.POST, URI)
                 .includeMultipartBody(
-                    "file", "some-file-name", "application/json", fileContents)
+                    "file",
+                    "some-file-name",
+                    "application/json",
+                    fileContents)
                 .includeMultipartBody(
-                    "metadata", "metadata.json", "application/json", metadata.getBytes())
+                    "metadata",
+                    "metadata.json",
+                    "application/json",
+                    metadata.getBytes())
                 .includeContentDigest()
                 .clearPermissions()
                 .systemUser(isSystemUser)
