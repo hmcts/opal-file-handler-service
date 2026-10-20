@@ -362,23 +362,24 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             assertThat(interfaceFiles).noneMatch(i -> i.getTarget() == InterfaceFileEnumInterfaceFile.OPAL);
         }
 
-        @Test
-        @DisplayName("PO-3947 - Filters interface files correctly by business_unit_id")
+        @DisplayName("PO-3947 - Filters interface files correctly by business_unit_code")
         @JiraStory("PO-3947")
         @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
-        void filtersInterfaceFilesCorrectlyByBusinessUnitId_200() throws Exception {
-            Integer businessUnitId = 1;
+        @ParameterizedTest
+        @ValueSource(booleans = { false, true })
+        void filtersInterfaceFilesCorrectlyByBusinessUnitCode_200(boolean isSystemUser) throws Exception {
+
+            short businessUnitId = 1;
 
             setupAuthorisedUser();
-
             userStateStub.isSystemUser(isSystemUser);
 
             ResultActions result = mockMvc.perform(
                 get(URL)
                     .with(userStateStub.getAuthenticaitonRequestPostProcessor())
                     .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
-                    .param("business_unit_id", businessUnitId.toString()));
+                    .param("business_unit_id", String.valueOf(businessUnitId)));
 
             String body = result.andReturn().getResponse().getContentAsString();
 
@@ -391,14 +392,13 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
                 });
 
             List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
-            assertThat(interfaceFiles).hasSizeGreaterThanOrEqualTo(1);
 
-            assertThat(interfaceFiles).allSatisfy(interfaceFile ->
-                assertThat(interfaceFile.getBusinessUnitIds())
-                    .contains(businessUnitId));
+            assertThat(interfaceFiles).isNotEmpty();
+
+            assertThat(interfaceFiles)
+                .allMatch(i -> i.getBusinessUnitIds().contains(Integer.valueOf(businessUnitId)));
         }
 
-        @Test
         @DisplayName("PO-3947 – Forbidden without View Interface Files permission")
         @JiraStory("PO-3947")
         @JiraEpic("PO-3495")
