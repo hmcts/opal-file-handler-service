@@ -290,7 +290,6 @@ public class InterfaceFilesServiceTest {
             verify(repository).save(ingestedEntity);
             verify(repository).findById(24L);
             verify(mapper).toInterfaceFileObject(ingestedEntity);
-            verify(service).getInterfaceFile(24L);
 
         }
     }

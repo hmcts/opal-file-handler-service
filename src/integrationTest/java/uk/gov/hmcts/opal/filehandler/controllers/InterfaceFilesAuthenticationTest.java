@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.google.common.io.Resources;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JOSEObjectType;
@@ -49,6 +48,11 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.support.AbstractControllerIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.support.UserStateStub;
 import uk.gov.hmcts.opal.filehandler.support.UtilBlobStoreService;
+import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
+import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
+import uk.gov.hmcts.opal.generated.model.InterfaceFileEnumInterfaceFile;
+import uk.gov.hmcts.opal.generated.model.InterfaceFileTypeEnumInterfaceFile;
+import uk.gov.hmcts.opal.generated.model.PaymentTypeEnumTypes;
 
 @ActiveProfiles(value = "authentication-integration", inheritProfiles = false)
 @TestPropertySource(properties = {
@@ -59,7 +63,7 @@ import uk.gov.hmcts.opal.filehandler.support.UtilBlobStoreService;
 })
 class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest {
 
-    private static final String BASE_URL = "http://localhost:4553";
+    private static final String BASE_URL = "http://localhost:4559";
     private static final String ISSUER = BASE_URL + "/issuer";
     private static final byte[] FILE_CONTENT = "test interface file".getBytes(StandardCharsets.UTF_8);
     private static final String UPLOAD_FILE_NAME = "authentication-upload.xlsx";
@@ -86,10 +90,11 @@ class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest
     void setUp() {
         humanToken = signedToken("human-subject", false);
         systemToken = signedToken("system-subject", true);
-
+        System.out.println("REGISTERING JWKS STUB");
         stubFor(get(urlEqualTo("/jwks"))
             .willReturn(aResponse().withHeader("Content-Type", "application/json")
-                .withBody(new JWKSet(SIGNING_KEY.toPublicJWK()).toString())));
+                    .withBody(new JWKSet(SIGNING_KEY.toPublicJWK()).toString())));
+
 
         UserStateStub humanState = new UserStateStub(humanToken);
         UserStateStub systemState = new UserStateStub(systemToken);
@@ -109,6 +114,7 @@ class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest
         blobStoreService.storeBlob(FILE_CONTENT, "natwest", file.getFilestoreUuid().toString());
         blobStoreService.createContainerIfNotExists("bteckoh-report");
     }
+
 
     @Test
     void humanCanListInterfaceFiles() throws Exception {
@@ -255,15 +261,32 @@ class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest
     }
 
     private MockMultipartHttpServletRequestBuilder uploadRequest() throws IOException {
-        String metadata = """
-            {"source":"BTECKOH_REPORT","target":"OPAL","type":"SOURCE","domain":"FINES",
-             "file_name":"authentication-upload.xlsx","payment_type":"CASH","should_pre_process_file":false}
-            """;
+
+        AddInterfaceFileRequestMetadata metadata =
+            AddInterfaceFileRequestMetadata.builder()
+                .fileName("authentication-upload.xlsx")
+                .businessUnitId(10)
+                .paymentType(PaymentTypeEnumTypes.CASH)
+                .type(InterfaceFileTypeEnumInterfaceFile.SOURCE)
+                .domain(DomainEnumTypes.FINES)
+                .shouldPreProcessFile(false)
+                .source(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT)
+                .target(InterfaceFileEnumInterfaceFile.OPAL)
+                .build();
+
+        String metadataJson = objectMapper.writeValueAsString(metadata);
+
         return MockMvcRequestBuilders.multipart("/interface-files")
-            .file(new MockMultipartFile("file", UPLOAD_FILE_NAME, "application/octet-stream",
+            .file(new MockMultipartFile(
+                "file",
+                UPLOAD_FILE_NAME,
+                "application/octet-stream",
                 Resources.toByteArray(Resources.getResource(UPLOAD_RESOURCE))))
-            .file(new MockMultipartFile("metadata", "metadata.json", "application/json",
-                metadata.getBytes(StandardCharsets.UTF_8)));
+            .file(new MockMultipartFile(
+                "metadata",
+                "metadata.json",
+                "application/json",
+                metadataJson.getBytes(StandardCharsets.UTF_8)));
     }
 
     private void stubWithoutCreatePermission(String token, boolean systemUser) {
