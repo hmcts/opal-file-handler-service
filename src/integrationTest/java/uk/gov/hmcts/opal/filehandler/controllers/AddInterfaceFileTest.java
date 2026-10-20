@@ -214,7 +214,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
                 .clearPermissions()
                 .systemUser(isSystemUser)
                 .execute()
-                .assertForbidden();
+                .assertStatus(HttpStatus.FORBIDDEN);
 
             assertDatabaseUnchanged();
         }
