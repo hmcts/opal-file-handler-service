@@ -197,27 +197,27 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             assertAddedToBlobStorage("bteckoh-report", response.getFilestoreUuid().toString());
         }
 
-        //@ParameterizedTest
-        //@ValueSource(booleans = { false, true })
-        //@JiraStory("PO-6453")
-        // @JiraEpic("PO-3497")
-        //@DisplayName("Fails when user has no permissions")
-        //void failsWhenUserHasNoPermission(boolean isSystemUser) {
-        //String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
+        @ParameterizedTest
+        @ValueSource(booleans = { false, true })
+        @JiraStory("PO-6453")
+        @JiraEpic("PO-3497")
+        @DisplayName("Fails when user has no permissions")
+        void failsWhenUserHasNoPermission(boolean isSystemUser) {
+            String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
 
-        //setupFileUploadApiTest(HttpMethod.POST, URI)
-        //   .includeMultipartBody(
-        //      "file", "some-file-name", "application/json", fileContents)
-        //   .includeMultipartBody(
-        //       "metadata", "metadata.json", "application/json", metadata.getBytes())
-        //  .includeContentDigest()
-        //   .clearPermissions()
-        //   .systemUser(isSystemUser)
-        //   .execute()
-        //   .assertStatus(HttpStatus.FORBIDDEN);
+            setupFileUploadApiTest(HttpMethod.POST, URI)
+                .includeMultipartBody(
+                    "file", "some-file-name", "application/json", fileContents)
+                .includeMultipartBody(
+                    "metadata", "metadata.json", "application/json", metadata.getBytes())
+                .includeContentDigest()
+                .clearPermissions()
+                .systemUser(isSystemUser)
+                .execute()
+                .assertForbidden();
 
-        // assertDatabaseUnchanged();
-        // }
+            assertDatabaseUnchanged();
+        }
 
         @ParameterizedTest
         @ValueSource(booleans = { false, true })
