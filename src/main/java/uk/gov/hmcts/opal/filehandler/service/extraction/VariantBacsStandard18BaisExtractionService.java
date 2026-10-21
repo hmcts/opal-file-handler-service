@@ -12,7 +12,7 @@ import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommo
 @Service
 public class VariantBacsStandard18BaisExtractionService extends BacsStandard18BaisExtractionService {
 
-    private final Pattern fileNamePattern = Pattern.compile("^a121_\\d{6}VB(?<buCode>\\d{3})_\\d{2}\\.dat$");
+    private final Pattern fileNamePattern = Pattern.compile("^a121_\\d{6}VB(?<buId>\\d{3})_\\d{2}\\.dat$");
 
     public VariantBacsStandard18BaisExtractionService(InterfaceFilesRepository interfaceFilesRepository,
         BusinessUnitBankAccountRepository businessUnitBankAccountRepository) {
@@ -28,12 +28,12 @@ public class VariantBacsStandard18BaisExtractionService extends BacsStandard18Ba
                 extractedData.getFileName())
             );
         }
-        String businessUnitCode = matcher.group("buCode");
-        return businessUnitBankAccountRepository.findByBusinessUnitCode(businessUnitCode)
+        Short businessUnitId = Short.valueOf(matcher.group("buId"));
+        return businessUnitBankAccountRepository.findById(businessUnitId)
             .orElseThrow(() -> new EntityNotFoundException(
-                String.format("Business unit bank account with business unit code '%s' could not be "
+                String.format("Business unit bank account with business unit id '%s' could not be "
                         + "located for file_name '%s'",
-                    businessUnitCode, extractedData.getFileName())
+                    businessUnitId, extractedData.getFileName())
             ));
     }
 }

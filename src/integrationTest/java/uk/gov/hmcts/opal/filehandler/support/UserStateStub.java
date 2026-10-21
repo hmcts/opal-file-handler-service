@@ -118,9 +118,6 @@ public class UserStateStub {
     }
 
     public void createAuthentication() {
-
-        System.out.println("USER STATE:");
-        System.out.println(getUserStateAsJson());
         stubFor(get("/v2/users/0/state")
             .willReturn(
                 aResponse()

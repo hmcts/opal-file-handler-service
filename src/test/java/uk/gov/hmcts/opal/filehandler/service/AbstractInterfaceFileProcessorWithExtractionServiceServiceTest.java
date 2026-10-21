@@ -70,8 +70,6 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-07-30T10:15:30Z"), ZoneOffset.UTC);
     private static final UUID FILE_UUID = UUID.randomUUID();
 
-    private static    long CREATED_ID = 2L;
-
     @Mock
     private FeatureFlagUtil featureFlagUtil;
 
@@ -264,7 +262,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
-            Short[] businessUnits = new Short[] {12};
+            Short[] businessUnits = new Short[] {(short)12};
 
             doReturn("checksum").when(processor).calculateExtractChecksum(any());
             doReturn(false).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
@@ -290,7 +288,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
-            Short[] businessUnits = new Short[] {12};
+            Short[] businessUnits = new Short[] {(short)12};
 
             doReturn("checksum").when(processor).calculateExtractChecksum(any());
             doReturn(false).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
@@ -392,9 +390,9 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
         void mapsEntityFields() {
             InterfaceFileCommonDataExtract extract = extract();
 
-
             InterfaceFileEntity sourceJson = service.createSourceJson(
-                config, sourceFile, extract, new Short[] {12, 34}, Domain.FINES, "checksum",CREATED_ID);
+                config, sourceFile, extract, new Short[] {(short) 12, (short) 34},
+                Domain.FINES, "checksum", CREATOR_ID);
 
             assertThat(sourceJson.getSource()).isEqualTo(Interface.NATWEST);
             assertThat(sourceJson.getTarget()).isEqualTo(Interface.OPAL);
@@ -415,6 +413,10 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
         @Test
         void populatesFilestoreUuidAndUploadsJsonBytes() throws IOException {
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(-1L);
+
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
             byte[] jsonBytes = "{}".getBytes(StandardCharsets.UTF_8);
             ArgumentCaptor<InputStream> inputStreamCaptor = ArgumentCaptor.forClass(InputStream.class);

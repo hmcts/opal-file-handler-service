@@ -73,7 +73,7 @@ public class GetInterfaceFileTest extends AbstractControllerIntegrationTest {
             setupApiTest(HttpMethod.GET, URI)
                 .clearPermissions()
                 .execute(interfaceFileEntity.getInterfaceFileId())
-                .assertStatus(HttpStatus.FORBIDDEN);
+                .assertForbidden();
         }
 
         @ParameterizedTest

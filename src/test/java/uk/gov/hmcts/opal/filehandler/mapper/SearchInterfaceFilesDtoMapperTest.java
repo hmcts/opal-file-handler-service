@@ -33,12 +33,12 @@ public class SearchInterfaceFilesDtoMapperTest {
         DomainEnumTypes domain = DomainEnumTypes.FINES;
         StatusEnumInterfaceFile status = StatusEnumInterfaceFile.SUCCESS;
         List<StatusEnumInterfaceFile> notStatuses = List.of(StatusEnumInterfaceFile.FAILED);
-        short buCode = 134;
+        short buId = 134;
         LocalDateTime fromDate = LocalDateTime.of(2026, Month.APRIL, 1, 9, 0);
         LocalDateTime toDate = LocalDateTime.of(2026, Month.MAY, 1, 0, 00);
 
         SearchInterfaceFilesDto searchDto = mapper.toSearchInterfaceFilesDto(
-            source, target, notTarget, types, domain, status, notStatuses, buCode, fromDate, toDate
+            source, target, notTarget, types, domain, status, notStatuses, buId, fromDate, toDate
         );
 
         assertAll(
@@ -51,7 +51,7 @@ public class SearchInterfaceFilesDtoMapperTest {
             () -> assertEquals(Status.SUCCESS, searchDto.getStatus()),
             () -> assertEquals(1, searchDto.getNotStatuses().size()),
             () -> assertTrue(searchDto.getNotStatuses().contains(Status.FAILED)),
-            () -> assertEquals(buCode, searchDto.getBusinessUnitId()),
+            () -> assertEquals(buId, searchDto.getBusinessUnitId()),
             () -> assertEquals(fromDate, searchDto.getFromDate()),
             () -> assertEquals(toDate, searchDto.getToDate())
         );

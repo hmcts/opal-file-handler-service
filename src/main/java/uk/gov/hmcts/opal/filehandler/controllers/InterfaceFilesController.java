@@ -52,14 +52,13 @@ public class InterfaceFilesController implements InterfaceFilesApi {
         @Nullable DomainEnumTypes domain,
         @Nullable StatusEnumInterfaceFile status,
         @Nullable List<StatusEnumInterfaceFile> notStatus,
-        @Nullable Integer businessUnitId,
+        @Nullable Short businessUnitId,
         @Nullable LocalDateTime fromDate,
         @Nullable LocalDateTime toDate) {
 
         SearchInterfaceFilesDto searchDto = searchMapper.toSearchInterfaceFilesDto(
             source, target, notTarget, type, domain, status, notStatus,
-            businessUnitId == null ? null : businessUnitId.shortValue(),
-            fromDate, toDate);
+            businessUnitId, fromDate, toDate);
         List<InterfaceFileObjectInterfaceFile> interfaceFileObjects = service.searchInterfaceFiles(searchDto);
         GetInterfaceFiles200Response response = GetInterfaceFiles200Response.builder()
             .interfaceFiles(interfaceFileObjects)

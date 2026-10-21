@@ -55,7 +55,7 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
         blobServiceClient.createBlobContainerIfNotExists(configuration.getContainerName());
 
         buBankAccountTestData.clear();
-        buBankAccountTestData.saveTypicalBusinessUnitBankAccount((short) 1, "1", DWP_CODE);
+        buBankAccountTestData.saveTypicalBusinessUnitBankAccount((short) 1, "JA01", DWP_CODE);
     }
 
     @Nested

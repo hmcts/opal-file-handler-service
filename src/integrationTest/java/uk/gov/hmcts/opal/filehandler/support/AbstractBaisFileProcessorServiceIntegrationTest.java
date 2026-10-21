@@ -222,7 +222,6 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
             .orElseThrow();
 
         assertThat(entity.getBusinessUnitId()).isNullOrEmpty();
-        assertThat(entity.getBusinessUnitId()).isNullOrEmpty();
         assertThat(entity.getPaymentType()).isNull();
         assertThat(entity.getErrors()).isNull();
 

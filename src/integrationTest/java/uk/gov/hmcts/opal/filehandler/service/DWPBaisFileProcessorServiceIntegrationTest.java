@@ -38,7 +38,7 @@ public class DWPBaisFileProcessorServiceIntegrationTest
     private static final String FILE = "0000015232_dat_0000000612_08011008_111355.txt";
     private static final String RESOURCE = "bais-emulator/" + FILE;
     private static final String CONTAINER = "/home/DWP/" + FILE;
-    private static final String BUSINESS_UNIT_CODE = "01";
+    private static final String BUSINESS_UNIT_CODE = "DW01";
 
     @Autowired
     private DWPBaisFileProcessorService service;

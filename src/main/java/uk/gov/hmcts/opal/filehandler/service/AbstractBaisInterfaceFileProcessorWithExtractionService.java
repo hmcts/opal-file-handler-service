@@ -30,7 +30,7 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T extends InterfaceFileCommonDataExtract>
     extends AbstractInterfaceFileProcessorWithExtractionService<T> {
 
-    private static final String BUSINESS_UNIT_065 = "065";
+    private static final short BUSINESS_UNIT_065 = (short)65;
 
     private final EnumMap<Domain, InterfaceFilePreprocessQueueService> queueServiceMap;
 
@@ -140,7 +140,7 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
         validateSupportedDomain(sourceInterfaceFile, domain);
         updateSourceBusinessUnitAndDomain(sourceInterfaceFile, businessUnitBankAccount, domain);
 
-        if (BUSINESS_UNIT_065 == businessUnitBankAccount.getBusinessUnitCode()) {
+        if (BUSINESS_UNIT_065 == businessUnitBankAccount.getId()) {
             return false;
         }
 

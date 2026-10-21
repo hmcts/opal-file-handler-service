@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.google.common.io.Resources;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JOSEObjectType;
@@ -63,7 +64,7 @@ import uk.gov.hmcts.opal.generated.model.PaymentTypeEnumTypes;
 })
 class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest {
 
-    private static final String BASE_URL = "http://localhost:4559";
+    private static final String BASE_URL = "http://localhost:4553";
     private static final String ISSUER = BASE_URL + "/issuer";
     private static final byte[] FILE_CONTENT = "test interface file".getBytes(StandardCharsets.UTF_8);
     private static final String UPLOAD_FILE_NAME = "authentication-upload.xlsx";
@@ -90,11 +91,9 @@ class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest
     void setUp() {
         humanToken = signedToken("human-subject", false);
         systemToken = signedToken("system-subject", true);
-        System.out.println("REGISTERING JWKS STUB");
         stubFor(get(urlEqualTo("/jwks"))
             .willReturn(aResponse().withHeader("Content-Type", "application/json")
-                    .withBody(new JWKSet(SIGNING_KEY.toPublicJWK()).toString())));
-
+                .withBody(new JWKSet(SIGNING_KEY.toPublicJWK()).toString())));
 
         UserStateStub humanState = new UserStateStub(humanToken);
         UserStateStub systemState = new UserStateStub(systemToken);
@@ -265,7 +264,7 @@ class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest
         AddInterfaceFileRequestMetadata metadata =
             AddInterfaceFileRequestMetadata.builder()
                 .fileName("authentication-upload.xlsx")
-                .businessUnitId(10)
+                .businessUnitId((short) 10)
                 .paymentType(PaymentTypeEnumTypes.CASH)
                 .type(InterfaceFileTypeEnumInterfaceFile.SOURCE)
                 .domain(DomainEnumTypes.FINES)

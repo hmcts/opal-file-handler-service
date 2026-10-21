@@ -31,7 +31,7 @@ public class BusinessUnitBankAccountEntityTestData {
     public BusinessUnitBankAccountEntity getMaximumBusinessUnitBankAccount(short id) {
         return BusinessUnitBankAccountEntity.builder()
             .id(id)
-            .businessUnitCode("999")
+            .businessUnitCode("Z999")
             .domain(Domain.FILE_HANDLER)
             .bankSortCode("999999")
             .bankAccountNumber("1234567890")
@@ -44,8 +44,8 @@ public class BusinessUnitBankAccountEntityTestData {
     }
 
     public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(
-        Short id, String businessUnitId, String dwpCourtCode) {
-        return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitId, dwpCourtCode));
+        Short id, String businessUnitCode, String dwpCourtCode) {
+        return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitCode, dwpCourtCode));
     }
 
     public BusinessUnitBankAccountEntity saveMaximumBusinessUnitBankAccount(short id) {
