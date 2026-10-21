@@ -3,10 +3,12 @@ package uk.gov.hmcts.opal.filehandler.service;
 import com.azure.core.util.BinaryData;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.domain.Sort;
@@ -35,6 +37,7 @@ import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreSer
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
+import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileTypeEnumInterfaceFile;
 
@@ -84,21 +87,20 @@ public class InterfaceFilesService {
 
     @Transactional(readOnly = true)
     public List<InterfaceFileObjectInterfaceFile> searchInterfaceFiles(SearchInterfaceFilesDto request) {
-        // Permissions to be dealt with by: https://tools.hmcts.net/jira/browse/PO-8686
-        // PermissionUtil.checkPermissions(FileHandlerPermission.VIEW_INTERFACE_FILES);
+        PermissionUtil.checkPermissionDomainAgnostic(FileHandlerPermission.VIEW_INTERFACE_FILES);
 
-        Specification<InterfaceFileEntity> specs = specsFactory.createSearchSpecs(request);
+        Specification<InterfaceFileEntity> specs = specsFactory.createSearchSpecs(request, permittedDomains());
+
         Sort sort = Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime));
         List<InterfaceFileEntity> interfacesFiles = repository.findAll(specs, sort);
+
         return mapper.toInterfaceFileObjects(interfacesFiles);
     }
 
 
     public InputStream getInterfaceFilesContent(Long id) {
-        // TODO: permission check is removed from this api, to be re-added in PO-8686
-        // PermissionUtil.checkPermission(FileHandlerPermission.ViewInterfacesFile);
-
         InterfaceFileEntity entity = getInterfaceFileEntity(id);
+        checkAccessPermission(entity);
 
         if (entity.getStatus() != Status.SUCCESS) {
             throw new InvalidInterfaceFileStatusException(
@@ -118,11 +120,12 @@ public class InterfaceFilesService {
     public InterfaceFileObjectInterfaceFile getInterfaceFile(Long id) {
         InterfaceFileEntity entity = getInterfaceFileEntity(id);
         checkAccessPermission(entity);
+
         return mapper.toInterfaceFileObject(entity);
     }
 
     private void checkAccessPermission(InterfaceFileEntity entity) {
-        if (entity.getOpalDomain() != null && !entity.getOpalDomain().equals(Domain.FILE_HANDLER)) {
+        if (entity.getOpalDomain() != null) {
             PermissionUtil.checkPermissionInDomain(FileHandlerPermission.VIEW_INTERFACE_FILES,
                 entity.getOpalDomain().toCommonDomain());
         } else {
@@ -135,6 +138,21 @@ public class InterfaceFilesService {
             .orElseThrow(() -> new InterfaceFileNotFoundException(id));
     }
 
+    private Set<uk.gov.hmcts.opal.filehandler.entity.Domain> permittedDomains() {
+        return SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser()
+            .getUserState()
+            .getDomains()
+            .entrySet()
+            .stream()
+            .filter(entry -> entry.getValue().getBusinessUnitUsers().stream()
+                .flatMap(user -> user.getPermissions().stream())
+                .anyMatch(permission -> permission.getDescription()
+                    .equalsIgnoreCase(FileHandlerPermission.VIEW_INTERFACE_FILES.getDescription())))
+            .flatMap(entry -> Arrays.stream(uk.gov.hmcts.opal.filehandler.entity.Domain.values())
+                .filter(domain -> domain.toCommonDomain() == entry.getKey()))
+            .collect(Collectors.toSet());
+    }
+
     private InterfaceFileProcessorService getProcessorService(Interface sourceType) {
         return processorServices.get(sourceType.getProcessorServiceClass());
     }
@@ -142,6 +160,17 @@ public class InterfaceFilesService {
     @Transactional
     public InterfaceFileObjectInterfaceFile addInterfaceFile(MultipartFile file,
         AddInterfaceFileRequestMetadata metadata) {
+
+        DomainEnumTypes metadataDomain = metadata.getDomain();
+        Domain fromMetadata = Domain.valueOf(metadataDomain);
+
+        if (metadataDomain != null && fromMetadata != null) {
+            PermissionUtil.checkPermissionInDomain(
+                FileHandlerPermission.CREATE_INTERFACE_FILES, fromMetadata.toCommonDomain());
+        } else {
+            PermissionUtil.checkPermission(FileHandlerPermission.CREATE_INTERFACE_FILES);
+        }
+
         try {
             //Ensure the related interface file exists if provided
             InterfaceFileEntity relatedInterfaceFile = null;
@@ -170,7 +199,8 @@ public class InterfaceFilesService {
             if (metadata.getType() == InterfaceFileTypeEnumInterfaceFile.SOURCE && metadata.getShouldPreProcessFile()) {
                 processorService.processFile(config, entity, file.getInputStream());
             }
-            return getInterfaceFile(entity.getInterfaceFileId());
+
+            return mapper.toInterfaceFileObject(getInterfaceFileEntity(entity.getInterfaceFileId()));
         } catch (IOException e) {
             throw new InternalServerErrorException(
                 "Internal Server Error",

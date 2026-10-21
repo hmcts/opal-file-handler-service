@@ -2,7 +2,7 @@ import org.flywaydb.gradle.task.FlywayMigrateTask
 
 buildscript {
   dependencies {
-    classpath("org.flywaydb:flyway-database-postgresql:13.10.0")
+    classpath("org.flywaydb:flyway-database-postgresql:13.10.3")
   }
 }
 plugins {
@@ -18,7 +18,7 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'org.flywaydb.flyway' version '13.10.0'
+  id 'org.flywaydb.flyway' version '13.10.3'
   id 'net.serenity-bdd.serenity-gradle-plugin' version '5.4.1'
 }
 
@@ -35,8 +35,9 @@ java {
 }
 
 ext {
-  serenityVersion = "5.3.11"
-  cucumberVersion = "7.34.9"
+  serenityVersion = "5.4.1"
+  cucumberVersion = "8.0.4"
+  set('junit-jupiter.version', "6.1.3")
   log4JVersion = "2.26.1"
   logbackVersion = "1.6.5"
 }
@@ -105,14 +106,6 @@ configurations {
 
   integrationTestImplementation.extendsFrom testImplementation
   integrationTestRuntimeOnly.extendsFrom runtimeOnly
-}
-
-configurations.configureEach {
-  resolutionStrategy {
-    force "io.cucumber:cucumber-core:${cucumberVersion}"
-    force "io.cucumber:cucumber-java:${cucumberVersion}"
-    force "io.cucumber:cucumber-junit:${cucumberVersion}"
-  }
 }
 
 xmlSchemasToGenerate.each { schemaName, schemaConfig ->
@@ -365,7 +358,7 @@ dependencies {
   implementation 'uk.gov.hmcts:opal-common-lib:0.3.37'
   implementation 'uk.gov.hmcts:spring-exception-handler:1.0.3'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
-  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.2'
+  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.3'
 
   //Spring Boot
   implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
@@ -398,8 +391,8 @@ dependencies {
   implementation "ch.qos.logback:logback-classic:${logbackVersion}"
   implementation "ch.qos.logback:logback-core:${logbackVersion}"
 
-  implementation 'org.flywaydb:flyway-core:13.10.0'
-  runtimeOnly 'org.flywaydb:flyway-database-postgresql:13.10.0', {
+  implementation 'org.flywaydb:flyway-core:13.10.3'
+  runtimeOnly 'org.flywaydb:flyway-database-postgresql:13.10.3', {
     exclude group: 'org.flywaydb', module: 'flyway-core'
   }
 
@@ -435,13 +428,15 @@ dependencies {
   testImplementation 'io.rest-assured:rest-assured:6.1.0'
   testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
   testImplementation 'org.junit.platform:junit-platform-suite'
-  testImplementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
-  testImplementation "io.cucumber:cucumber-java:${cucumberVersion}"
-  testImplementation "net.serenity-bdd:serenity-core:${serenityVersion}"
-  testImplementation "net.serenity-bdd:serenity-rest-assured:${serenityVersion}"
-  testImplementation "net.serenity-bdd:serenity-report-resources:${serenityVersion}"
-  testImplementation "net.serenity-bdd:serenity-cucumber:${serenityVersion}"
-  testImplementation "net.serenity-bdd:serenity-ensure:${serenityVersion}"
+  functionalTestImplementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
+  functionalTestImplementation "io.cucumber:cucumber-java:${cucumberVersion}"
+  functionalTestImplementation "net.serenity-bdd:serenity-core:${serenityVersion}"
+  functionalTestImplementation "net.serenity-bdd:serenity-rest-assured:${serenityVersion}"
+  functionalTestImplementation "net.serenity-bdd:serenity-report-resources:${serenityVersion}"
+  functionalTestImplementation("net.serenity-bdd:serenity-cucumber:${serenityVersion}") {
+    exclude group: 'io.cucumber', module: 'cucumber-junit'
+  }
+  functionalTestImplementation "net.serenity-bdd:serenity-ensure:${serenityVersion}"
   testImplementation 'com.hierynomus:sshj:0.41.2'
 
   integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.4.3'

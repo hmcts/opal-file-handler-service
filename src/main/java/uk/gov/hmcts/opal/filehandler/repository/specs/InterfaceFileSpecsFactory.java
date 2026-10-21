@@ -21,7 +21,8 @@ import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 @Component
 public class InterfaceFileSpecsFactory {
 
-    public Specification<InterfaceFileEntity> createSearchSpecs(SearchInterfaceFilesDto searchDto) {
+    public Specification<InterfaceFileEntity> createSearchSpecs(SearchInterfaceFilesDto searchDto,
+        Set<Domain> userPermittedDomains) {
         List<Specification<InterfaceFileEntity>> specs = new ArrayList<>();
         if (searchDto.getSource() != null) {
             specs.add(equalsSource(searchDto.getSource()));
@@ -52,6 +53,12 @@ public class InterfaceFileSpecsFactory {
         }
         if (searchDto.getToDate() != null) {
             specs.add(toDate(searchDto.getToDate()));
+        }
+        if (userPermittedDomains != null && !userPermittedDomains.isEmpty()) {
+            specs.add((root, query, builder) -> {
+                var domain = root.get(InterfaceFileEntity_.opalDomain);
+                return builder.or(domain.in(userPermittedDomains), builder.isNull(domain));
+            });
         }
 
         return Specification.allOf(specs);
@@ -94,17 +101,17 @@ public class InterfaceFileSpecsFactory {
 
     private static Specification<InterfaceFileEntity> equalsSource(Interface source) {
         return (root, query, builder)
-            -> builder.equal(root.get(InterfaceFileEntity_.source).cast(String.class), source.toString());
+            -> builder.equal(root.get(InterfaceFileEntity_.source), source);
     }
 
     private static Specification<InterfaceFileEntity> equalsTarget(Interface target) {
         return (root, query, builder)
-            -> builder.equal(root.get(InterfaceFileEntity_.target).cast(String.class), target.toString());
+            -> builder.equal(root.get(InterfaceFileEntity_.target), target);
     }
 
     private static Specification<InterfaceFileEntity> notEqualsTarget(Interface target) {
         return (root, query, builder)
-            -> builder.notEqual(root.get(InterfaceFileEntity_.target).cast(String.class), target.toString());
+            -> builder.notEqual(root.get(InterfaceFileEntity_.target), target);
     }
 
     private static Specification<InterfaceFileEntity> hasTypeIn(Set<Type> types) {
@@ -114,12 +121,12 @@ public class InterfaceFileSpecsFactory {
 
     private static Specification<InterfaceFileEntity> equalsOpalDomain(Domain domain) {
         return (root, query, builder)
-            -> builder.equal(root.get(InterfaceFileEntity_.opalDomain).cast(String.class), domain.toString());
+            -> builder.equal(root.get(InterfaceFileEntity_.opalDomain), domain);
     }
 
     private static Specification<InterfaceFileEntity> equalsStatus(Status status) {
         return (root, query, builder)
-            -> builder.equal(root.get(InterfaceFileEntity_.status).cast(String.class), status.toString());
+            -> builder.equal(root.get(InterfaceFileEntity_.status), status);
     }
 
     private static Specification<InterfaceFileEntity> fromDate(LocalDateTime fromDate) {
