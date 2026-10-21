@@ -20,7 +20,7 @@ public class BaisAutomatedTaskRunner {
      * @param config report-specific task configuration.
      * @return captured application output for the Serenity report.
      */
-    public String run(BaisReportTestConfig config) {
+    public String run(BaisFileTestConfig config) {
         Path applicationJar = TestEnvironment.getApplicationJar().toAbsolutePath().normalize();
         if (!Files.isRegularFile(applicationJar)) {
             throw new IllegalStateException(config.displayName() + " functional-test application JAR does not exist: "
@@ -65,7 +65,7 @@ public class BaisAutomatedTaskRunner {
         }
     }
 
-    private static void configureEnvironment(Map<String, String> environment, BaisReportTestConfig config) {
+    private static void configureEnvironment(Map<String, String> environment, BaisFileTestConfig config) {
         environment.put("SPRING_DATASOURCE_URL", TestEnvironment.getDatabaseUrl());
         environment.put("SPRING_DATASOURCE_USERNAME", TestEnvironment.getDatabaseUsername());
         environment.put("SPRING_DATASOURCE_PASSWORD", TestEnvironment.getDatabasePassword());
@@ -83,7 +83,7 @@ public class BaisAutomatedTaskRunner {
         environment.put(config.jobFlagEnvironmentVariable(), "true");
     }
 
-    private static String resolvePrivateKey(BaisReportTestConfig config) {
+    private static String resolvePrivateKey(BaisFileTestConfig config) {
         if (TestEnvironment.getSftpPrivateKey().isPresent()) {
             return TestEnvironment.getSftpPrivateKey().orElseThrow();
         }
@@ -99,7 +99,7 @@ public class BaisAutomatedTaskRunner {
         }
     }
 
-    private static Path createOutputFile(BaisReportTestConfig config) {
+    private static Path createOutputFile(BaisFileTestConfig config) {
         try {
             Path outputDirectory = Path.of("build", "functional-task-output");
             Files.createDirectories(outputDirectory);
@@ -111,7 +111,7 @@ public class BaisAutomatedTaskRunner {
         }
     }
 
-    private static String readOutput(Path outputFile, BaisReportTestConfig config) {
+    private static String readOutput(Path outputFile, BaisFileTestConfig config) {
         try {
             return Files.readString(outputFile, StandardCharsets.UTF_8);
         } catch (IOException e) {

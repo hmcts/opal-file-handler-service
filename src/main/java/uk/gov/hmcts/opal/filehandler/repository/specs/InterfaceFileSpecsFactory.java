@@ -21,7 +21,8 @@ import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 @Component
 public class InterfaceFileSpecsFactory {
 
-    public Specification<InterfaceFileEntity> createSearchSpecs(SearchInterfaceFilesDto searchDto) {
+    public Specification<InterfaceFileEntity> createSearchSpecs(SearchInterfaceFilesDto searchDto,
+        Set<Domain> userPermittedDomains) {
         List<Specification<InterfaceFileEntity>> specs = new ArrayList<>();
         if (searchDto.getSource() != null) {
             specs.add(equalsSource(searchDto.getSource()));
@@ -52,6 +53,12 @@ public class InterfaceFileSpecsFactory {
         }
         if (searchDto.getToDate() != null) {
             specs.add(toDate(searchDto.getToDate()));
+        }
+        if (userPermittedDomains != null && !userPermittedDomains.isEmpty()) {
+            specs.add((root, query, builder) -> {
+                var domain = root.get(InterfaceFileEntity_.opalDomain);
+                return builder.or(domain.in(userPermittedDomains), builder.isNull(domain));
+            });
         }
 
         return Specification.allOf(specs);
