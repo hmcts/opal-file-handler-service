@@ -2,6 +2,7 @@ package uk.gov.hmcts.opal.filehandler.service;
 
 import java.io.InputStream;
 import java.time.Clock;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
@@ -13,29 +14,35 @@ import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 import uk.gov.hmcts.opal.filehandler.util.ReportFileValidator;
 
+@Slf4j
 @Service
-public class BTEckohReportBaisFileProcessorService extends InterfaceFileProcessorService {
+public class CapsReportInterfaceFileProcessorService extends InterfaceFileProcessorService {
 
-    public BTEckohReportBaisFileProcessorService(
+    public CapsReportInterfaceFileProcessorService(
         Clock clock,
         FeatureFlagUtil featureFlagUtil,
         BaisSftpClient baisSftpClient,
         InterfaceFileBlobStoreService interfaceFileBlobStoreService,
         InterfaceFilesRepository interfaceFilesRepository,
         TransactionTemplate transactionTemplate,
-        ObjectMapper objectMapper) {
+        ObjectMapper objectMapper
+    ) {
         super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
             transactionTemplate, objectMapper);
     }
 
     @Override
     protected void validateFile(InputStream inputStream) {
-        ReportFileValidator.validateXlsx(inputStream);
+        ReportFileValidator.validateXml(inputStream);
     }
 
     @Override
-    protected void processFile(BaisFileProcessorConfiguration config, InterfaceFileEntity fileEntity,
-        InputStream inputStream, long creatorId) {
-
+    public void processFile(
+        BaisFileProcessorConfiguration config,
+        InterfaceFileEntity fileEntity,
+        InputStream inputStream,
+        long creatorId) {
+        // Not Required
     }
+
 }

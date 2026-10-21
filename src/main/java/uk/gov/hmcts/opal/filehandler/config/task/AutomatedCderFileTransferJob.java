@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.config.CderBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.service.CderBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.CderInterfaceFileProcessorService;
 
 @Component
 @RequiredArgsConstructor
@@ -15,7 +15,7 @@ import uk.gov.hmcts.opal.filehandler.service.CderBaisFileProcessorService;
 @Slf4j
 public class AutomatedCderFileTransferJob implements TaskConfiguration {
 
-    private final CderBaisFileProcessorService service;
+    private final CderInterfaceFileProcessorService service;
     private final CderBaisFileProcessorConfiguration configuration;
 
     @Override

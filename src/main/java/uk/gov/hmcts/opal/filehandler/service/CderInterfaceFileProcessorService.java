@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import java.time.Clock;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
@@ -14,12 +13,11 @@ import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePrepr
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
-@Slf4j
 @Service
-public class JacobsBaisFileProcessorService extends
-    AbstractBaisInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
+public class CderInterfaceFileProcessorService extends
+    AbstractBankingInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract>   {
 
-    protected JacobsBaisFileProcessorService(Clock clock,
+    public CderInterfaceFileProcessorService(Clock clock,
         FeatureFlagUtil featureFlagUtil,
         BaisSftpClient baisSftpClient,
         InterfaceFileBlobStoreService interfaceFileBlobStoreService,
@@ -32,4 +30,5 @@ public class JacobsBaisFileProcessorService extends
         super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
             transactionTemplate, objectMapper, extractionService, finesQueueService, maintenanceQueueService);
     }
+
 }
