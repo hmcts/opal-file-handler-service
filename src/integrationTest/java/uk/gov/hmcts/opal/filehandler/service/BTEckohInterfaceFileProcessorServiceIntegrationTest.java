@@ -24,14 +24,14 @@ import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
-import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.AbstractInterfaceFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraEpic;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
 @ActiveProfiles("integration")
-public class BTEckohBaisFileProcessorServiceIntegrationTest
-    extends AbstractBaisFileProcessorServiceIntegrationTest {
+public class BTEckohInterfaceFileProcessorServiceIntegrationTest
+    extends AbstractInterfaceFileProcessorServiceIntegrationTest {
 
     private static final String BANKING_INTERFACES_ENABLED_PROPERTY =
         "launchdarkly.default-flag-values.release-1c-banking-interfaces";
@@ -45,7 +45,7 @@ public class BTEckohBaisFileProcessorServiceIntegrationTest
     private static final String BTECKOH_FILE_CONTAINER = "/home/BTEckoh/" + BTECKOH_FILE;
 
     @Autowired
-    private BTEckohBaisFileProcessorService service;
+    private BTEckohInterfaceFileProcessorService service;
 
     @Autowired
     private BTEckohBaisFileProcessorConfiguration config;
