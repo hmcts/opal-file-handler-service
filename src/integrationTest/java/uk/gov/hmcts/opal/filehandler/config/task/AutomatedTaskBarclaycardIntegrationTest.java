@@ -14,7 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.DispatcherServlet;
 import uk.gov.hmcts.opal.filehandler.config.BarclaycardBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.service.BarclaycardBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.BarclaycardInterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
 @ActiveProfiles("integration")
@@ -28,7 +28,7 @@ public class AutomatedTaskBarclaycardIntegrationTest extends AbstractIntegration
     private ApplicationContext applicationContext;
 
     @MockitoBean(enforceOverride = true, reset = MockReset.NONE)
-    private BarclaycardBaisFileProcessorService service;
+    private BarclaycardInterfaceFileProcessorService service;
 
     @Test
     void shouldNotCreateWebLayer() {

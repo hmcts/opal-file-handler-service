@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.config.MarstonBaisFileBaisFileProcessorConfig;
-import uk.gov.hmcts.opal.filehandler.service.MarstonBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.MarstonInterfaceFileProcessorService;
 
 @Component
 @ConditionalOnExpression(
@@ -15,7 +15,7 @@ import uk.gov.hmcts.opal.filehandler.service.MarstonBaisFileProcessorService;
 @RequiredArgsConstructor
 public class AutomatedMarstonFileTransferJob implements TaskConfiguration {
 
-    private final MarstonBaisFileProcessorService processorService;
+    private final MarstonInterfaceFileProcessorService processorService;
     private final MarstonBaisFileBaisFileProcessorConfig processorConfiguration;
 
     @Override

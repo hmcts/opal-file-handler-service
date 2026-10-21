@@ -27,15 +27,15 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
-import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.AbstractInterfaceFileProcessorServiceIntegrationTest;
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
     "launchdarkly.default-flag-values.bteckoh-report-file-transfer-job=true",
 })
 @Slf4j
-public class BTEckohReportBaisFileProcessorServiceIntegrationTest
-    extends AbstractBaisFileProcessorServiceIntegrationTest {
+public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
+    extends AbstractInterfaceFileProcessorServiceIntegrationTest {
 
     private static final String BTECKOH_FILE = "2498-MCPLDB-MOJ-Payments-Report-Daily-2026-07-06-06-00-18.xlsx";
     private static final String BTECKOH_FILE_2 = "2498-MCPLDB-MOJ-Payments-Report-Daily-2026-07-07-06-00-18.xlsx";
@@ -47,7 +47,7 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
     private static final String BTECKOH_FILE_CONTAINER_2 = "/home/BTEckoh-report/" + BTECKOH_FILE_2;
 
     @Autowired
-    private BTEckohReportBaisFileProcessorService service;
+    private BTEckohReportInterfaceFileProcessorService service;
 
     @Autowired
     private BTEckohReportBaisFileProcessorConfiguration config;
@@ -127,7 +127,7 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
 
     @Test
     @DisplayName("AC2: BTEckoh-Report file is present, read and stored correctly")
-    void btEckohReportBaisFileProcessorServiceShouldRunSuccesfully() throws IOException {
+    void btEckohReportInterfaceFileProcessorServiceShouldRunSuccesfully() throws IOException {
         uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
         service.run(config);
 

@@ -14,7 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.DispatcherServlet;
 import uk.gov.hmcts.opal.filehandler.config.NatWestBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.service.NatWestBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.NatWestInterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
 @ActiveProfiles("integration")
@@ -28,7 +28,7 @@ public class AutomatedTaskNatWestFileTransferJobIntegrationTest extends Abstract
     private ApplicationContext applicationContext;
 
     @MockitoBean(enforceOverride = true, reset = MockReset.NONE)
-    private NatWestBaisFileProcessorService service;
+    private NatWestInterfaceFileProcessorService service;
 
     @Test
     void shouldNotCreateWebLayer() {

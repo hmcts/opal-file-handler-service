@@ -30,7 +30,7 @@ import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @ExtendWith(MockitoExtension.class)
-public class DWPBaisFileProcessorServiceTest {
+public class DWPInterfaceFileProcessorServiceTest {
     private static final String FILE_NAME = "0000000000_dat_0000000000_11111111_222222.txt";
 
     @Mock
@@ -60,11 +60,11 @@ public class DWPBaisFileProcessorServiceTest {
     @Mock
     private MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService;
 
-    private DWPBaisFileProcessorService service;
+    private DWPInterfaceFileProcessorService service;
 
     @BeforeEach
     void setUp() {
-        service = new DWPBaisFileProcessorService(
+        service = new DWPInterfaceFileProcessorService(
             Clock.systemUTC(),
             featureFlagUtil,
             baisSftpClient,
