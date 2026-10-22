@@ -378,8 +378,9 @@ class InterfaceFileProcessorServiceTest {
 
         when(repository.findAllByFileNameAndChecksumAndStatus(MATCHING_FILE, CHECKSUM, Status.FAILED))
             .thenReturn(List.of());
-        when(repository.save(any(InterfaceFileEntity.class))).
-            thenAnswer(invocation -> invocation.getArgument(0));
+
+        when(repository.save(any(InterfaceFileEntity.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
         InterfaceFileEntity duplicate = InterfaceFileEntity.builder()
             .interfaceFileId(123L)
             .source(Interface.CAPS_REPORT)

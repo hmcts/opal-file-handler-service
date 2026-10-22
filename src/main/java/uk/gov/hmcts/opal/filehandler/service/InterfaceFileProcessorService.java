@@ -302,6 +302,7 @@ public class InterfaceFileProcessorService {
             .errors(errorJson(failureMessage))
             .build();
     }
+
     private void supersedePreviousFailures(String fileName, String fileChecksum) {
         List<InterfaceFileEntity> previousFailures = interfaceFilesRepository
             .findAllByFileNameAndChecksumAndStatus(fileName, fileChecksum, Status.FAILED);
