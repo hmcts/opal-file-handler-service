@@ -193,18 +193,18 @@ public class InterfaceFilesStepDef extends BaseStepDef {
     }
 
     /**
-     * Asserts that every returned interface file contains the supplied business-unit Id.
+     * Asserts that every returned interface file contains the supplied business-unit ID.
      *
-     * @param businessUnitId expected business-unit Id.
+     * @param businessUnitId expected business-unit ID.
      */
-    @Then("every returned interface file contains business unit Id {string}")
+    @Then("every returned interface file contains business unit id {string}")
     public void everyReturnedInterfaceFileContainsBusinessUnitId(String businessUnitId) {
         List<Map<String, Object>> interfaceFiles = getInterfaceFiles();
         assertTrue(!interfaceFiles.isEmpty(), "No interface files were returned");
         interfaceFiles.forEach(interfaceFile -> {
-            Object businessUnitIds = interfaceFile.get("business_unit_Ids");
+            Object businessUnitIds = interfaceFile.get("business_unit_ids");
             assertTrue(
-                businessUnitIds instanceof List<?> Ids && Ids.contains(businessUnitId),
+                businessUnitIds instanceof List<?> ids && ids.contains(Integer.valueOf(businessUnitId)),
                 "Interface file " + interfaceFile.get("interface_file_id")
                     + " does not contain business unit id " + businessUnitId
             );

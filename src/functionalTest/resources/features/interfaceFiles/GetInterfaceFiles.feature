@@ -33,7 +33,7 @@ Feature: Get Interface Files
       | business_unit_id | 2001 |
     Then the response status code is 200
     And at least 1 interface files are returned
-    And every returned interface file has at least one business unit code
+    And every returned interface file has at least one business unit id
     And every returned interface file contains business unit id "2001"
 
   @JIRA-STORY:PO-8669 @JIRA-EPIC:PO-3495
