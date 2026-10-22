@@ -376,6 +376,10 @@ class InterfaceFileProcessorServiceTest {
     @Test
     void shouldCreateDuplicateEntityWhenMatchingTypeFilenameChecksumExists() throws Exception {
 
+        when(repository.findAllByFileNameAndChecksumAndStatus(MATCHING_FILE, CHECKSUM, Status.FAILED))
+            .thenReturn(List.of());
+        when(repository.save(any(InterfaceFileEntity.class))).
+            thenAnswer(invocation -> invocation.getArgument(0));
         InterfaceFileEntity duplicate = InterfaceFileEntity.builder()
             .interfaceFileId(123L)
             .source(Interface.CAPS_REPORT)
@@ -383,6 +387,7 @@ class InterfaceFileProcessorServiceTest {
             .type(Type.SOURCE)
             .status(Status.SUCCESS)
             .filestoreUuid(FILE_UUID)
+            .createdBy(1L)
             .build();
 
         when(repository.findByTypeAndFileNameAndChecksumAndStatus(Type.SOURCE, MATCHING_FILE, CHECKSUM, Status.SUCCESS))

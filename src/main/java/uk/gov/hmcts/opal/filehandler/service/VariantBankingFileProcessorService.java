@@ -1,7 +1,5 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
-import static uk.gov.hmcts.opal.filehandler.util.StreamUtil.calculateChecksum;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Clock;
