@@ -241,4 +241,27 @@ class VariantBankingFileProcessorServiceTest {
         verify(interfaceFileBlobStoreService).uploadBaisFile(any(UUID.class),
                 eq("variant-banking"), any(), anyString());
     }
+
+    @Test
+    void shouldReturnEmptyWhenNoFilenameMatchExists() {
+
+        when(interfaceFilesRepository.findByFileNameAndStatus(
+            "VB001.dat",
+            Status.SUCCESS))
+            .thenReturn(Optional.empty());
+
+        Optional<InterfaceFileEntity> result =
+            service.findDuplicateFile(
+                "VB001.dat",
+                "checksum");
+
+        assertThat(result).isEmpty();
+
+        verify(interfaceFilesRepository)
+            .findByFileNameAndStatus(
+                "VB001.dat",
+                Status.SUCCESS);
+    }
+
+
 }
