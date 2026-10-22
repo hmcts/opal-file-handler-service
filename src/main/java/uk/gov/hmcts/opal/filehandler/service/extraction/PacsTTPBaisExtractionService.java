@@ -19,7 +19,7 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.OriginatorDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.Transaction;
-import uk.gov.hmcts.opal.filehandler.utils.XmlSchemaUnmarshalService;
+import uk.gov.hmcts.opal.filehandler.util.XmlSchemaUnmarshalService;
 
 @Service
 @RequiredArgsConstructor
