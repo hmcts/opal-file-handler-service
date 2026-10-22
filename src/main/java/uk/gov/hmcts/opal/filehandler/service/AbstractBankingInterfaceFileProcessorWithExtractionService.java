@@ -34,6 +34,7 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
     private static final String BUSINESS_UNIT_065 = "065";
 
     private final EnumMap<Domain, InterfaceFilePreprocessQueueService> queueServiceMap;
+    private final BankingExtractionService<T> bankingExtractionService;
 
     protected AbstractBankingInterfaceFileProcessorWithExtractionService(
         Clock clock,
@@ -49,6 +50,7 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
     ) {
         super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
             transactionTemplate, objectMapper, extractionService);
+        this.bankingExtractionService = extractionService;
         this.queueServiceMap = new EnumMap<>(Domain.class);
         this.queueServiceMap.put(Domain.FINES, finesQueueService);
         this.queueServiceMap.put(Domain.MAINTENANCE, maintenanceQueueService);
@@ -126,7 +128,7 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
         T extract) {
 
         BusinessUnitBankAccountEntity businessUnitBankAccount =
-            extractionService.getBusinessUnitBankAccount(extract);
+            bankingExtractionService.getBusinessUnitBankAccount(extract);
         Domain domain = businessUnitBankAccount.getDomain();
 
         validateSupportedDomain(sourceInterfaceFile, domain);
@@ -152,11 +154,11 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
 
     @Override
     protected String[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract) {
-        return new String[] {extractionService.getBusinessUnitBankAccount(extract).getBusinessUnitCode()};
+        return new String[] {bankingExtractionService.getBusinessUnitBankAccount(extract).getBusinessUnitCode()};
     }
 
     @Override
     protected Domain getDomainFromExtract(BaisFileProcessorConfiguration config, T extract) {
-        return extractionService.getBusinessUnitBankAccount(extract).getDomain();
+        return bankingExtractionService.getBusinessUnitBankAccount(extract).getDomain();
     }
 }
