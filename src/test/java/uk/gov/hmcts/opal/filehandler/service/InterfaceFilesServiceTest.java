@@ -1,13 +1,16 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -17,18 +20,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.multipart.MultipartFile;
-import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
+import org.mockito.verification.VerificationMode;
 import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.web.multipart.MultipartFile;
+import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
 import uk.gov.hmcts.opal.common.user.authorisation.model.BusinessUnitUser;
@@ -47,6 +54,7 @@ import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
+import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
@@ -77,8 +85,34 @@ public class InterfaceFilesServiceTest {
     @Mock
     private List<InterfaceFileProcessorService> processorServicesList;
 
-    @InjectMocks
+    @Mock
+    private Map<String, BaisFileProcessorConfiguration> configMap;
+
+    @Mock
+    private BaisFileProcessorConfiguration config;
+
+    @Mock
+    private InterfaceFileProcessorService barclayCardProcessorService;
+
     private InterfaceFilesService service;
+
+    @BeforeEach
+    @SuppressWarnings("unchecked")
+    void beforeEach() {
+        // Mock services map
+        Map<Class<? extends InterfaceFileProcessorService>, InterfaceFileProcessorService> map = Map.of(
+            Interface.BARCLAYCARD.getProcessorServiceClass(), barclayCardProcessorService);
+        Stream<InterfaceFileProcessorService> stream = mock(Stream.class);
+        when(stream.collect(any())).thenReturn(map);
+        when(processorServicesList.stream()).thenReturn(stream);
+
+        service = new InterfaceFilesService(repository,
+            specsFactory,
+            mapper,
+            mock(InterfaceFileBlobStoreService.class),
+            configMap,
+            processorServicesList);
+    }
 
 
     @Test
@@ -425,6 +459,43 @@ public class InterfaceFilesServiceTest {
         when(authToken.getUserState()).thenReturn(userState);
 
         return securityUtil;
+    }
+
+    @ParameterizedTest
+    @CsvSource({"SOURCE,true", "SOURCE,false", "SOURCE_JSON,true", "TRANSFORMED_JSON,true", "SOURCE_JSON,false"})
+    void addInterfaceFile_shouldOnlyProcessFileWhenShouldPreProcessFileIsTrueAndTypeIsSource(
+        InterfaceFileTypeEnumInterfaceFile type, boolean shouldPreProcess) throws IOException {
+
+        try (MockedStatic<PermissionUtil> permissionUtil = mockStatic(PermissionUtil.class);
+            MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class)) {
+            // Arrange
+            securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
+            when(authToken.getUserId()).thenReturn(10L);
+            InterfaceFileEntity interfaceFile = mock(InterfaceFileEntity.class);
+            MultipartFile file = mock(MultipartFile.class);
+            when(barclayCardProcessorService.ingestFile(file.getName(), file.getBytes(), Interface.BARCLAYCARD,
+                Interface.OPAL, Type.valueOf(type), Domain.FINES,
+                config.getContainerName(), 10L)).thenReturn(interfaceFile);
+            when(repository.save(interfaceFile)).thenReturn(interfaceFile);
+            when(repository.findById(interfaceFile.getInterfaceFileId())).thenReturn(Optional.of(interfaceFile));
+            when(configMap.get(anyString())).thenReturn(config);
+            AddInterfaceFileRequestMetadata request = AddInterfaceFileRequestMetadata.builder()
+                .shouldPreProcessFile(shouldPreProcess)
+                .type(type)
+                .source(InterfaceFileEnumInterfaceFile.BARCLAYCARD)
+                .target(InterfaceFileEnumInterfaceFile.OPAL)
+                .domain(DomainEnumTypes.FINES)
+                .build();
+
+            // Act
+            service.addInterfaceFile(file, request);
+
+            // Assert
+            boolean shouldCallProcessFile = shouldPreProcess && type == InterfaceFileTypeEnumInterfaceFile.SOURCE;
+            VerificationMode times = times(shouldCallProcessFile ? 1 : 0);
+            verify(barclayCardProcessorService, times).processFile(config, interfaceFile, file.getInputStream());
+            verify(barclayCardProcessorService, times).processFile(any(), any(), any());
+        }
     }
 
     private InterfaceFilesService serviceWithProcessor(
