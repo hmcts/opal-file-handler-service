@@ -5,6 +5,8 @@ import java.util.List;
 
 public interface FileIngestionService<T> {
     List<T> getFiles();
+
     InputStream getFile(T file);
+
     void deleteFile(T file);
 }
