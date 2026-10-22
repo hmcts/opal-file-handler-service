@@ -2,6 +2,7 @@ package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -210,10 +211,11 @@ class VariantBankingFileProcessorServiceTest {
     @DisplayName("Should upload file to blob store when no duplicate exists")
     void shouldUploadFileWhenNoDuplicateExists() throws Exception {
 
+        VariantBankingFileProcessorService spyService = spy(service);
+        doReturn(1L).when(spyService).getCurrentUserId();
+        doReturn(Optional.empty()).when(spyService).findDuplicateFile(anyString(), anyString());
         when(config.getContainerName()).thenReturn("variant-banking");
 
-        VariantBankingFileProcessorService spyService = spy(service);
-        doReturn(Optional.empty()).when(spyService).findDuplicateFile(anyString(), anyString());
 
         InterfaceFileEntity ingestedEntity = InterfaceFileEntity.builder()
             .source(Interface.VARIANT_BANKING)
@@ -231,7 +233,7 @@ class VariantBankingFileProcessorServiceTest {
 
         doReturn(ingestedEntity).when(spyService).saveInitialFile(any());
 
-        doNothing().when(spyService).processIngestedFile(any(), any(), any());
+        doNothing().when(spyService).processIngestedFile(any(), any(), any(), anyLong());
         byte[] fileBytes = "content".getBytes();
 
         spyService.ingestUploadedFile(config,"VB001.dat", fileBytes);

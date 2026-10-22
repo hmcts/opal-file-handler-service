@@ -135,7 +135,21 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
             Domain.MAINTENANCE);
         assertBlobChecksum(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, config.getContainerName());
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
-        assertReportCanBeListedAndDownloaded(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, BTECKOH_FILE_RESOURCE);
+        assertReportCanBeListedAndDownloaded(
+            BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, BTECKOH_FILE_RESOURCE, config.getContainerName());
+    }
+
+    @Test
+    @DisplayName("AC1: Automated processing records the Opal system user as creator")
+    void automatedProcessingRecordsSystemUserAsCreator() throws IOException {
+        setupAuthenticationAsUser(-1L);
+        uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
+
+        service.run(config);
+
+        assertThat(assertSuccessfulInterfaceFile(
+            BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE, Domain.MAINTENANCE
+        ).getCreatedBy()).isEqualTo(-1L);
     }
 
     @Test
@@ -275,7 +289,8 @@ public class BTEckohReportBaisFileProcessorServiceIntegrationTest
         assertThat(storedBlobs(config.getContainerName()))
             .containsOnlyKeys(success.getFilestoreUuid().toString());
         assertBlobChecksum(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, config.getContainerName());
-        assertReportCanBeListedAndDownloaded(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, BTECKOH_FILE_RESOURCE);
+        assertReportCanBeListedAndDownloaded(
+            BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, BTECKOH_FILE_RESOURCE, config.getContainerName());
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
     }
 

@@ -1,5 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.support;
 
+import static org.mockito.Mockito.mock;
+
 import com.redis.testcontainers.RedisContainer;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,15 +9,25 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
+import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationProvider;
 
-@TestConfiguration
+@TestConfiguration(proxyBeanMethods = false)
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TestContainerConfig {
+
+    // SecurityConfig is disabled for regular integration tests, but common-lib still needs this bean.
+    @Bean
+    @Profile("integration")
+    OpalJwtAuthenticationProvider mockAuthenticationProvider() {
+        return mock(OpalJwtAuthenticationProvider.class);
+    }
 
     private static final String DEFAULT_POSTGRES_IMAGE = "postgres:17.5";
     private static final String DEFAULT_AZURITE_IMAGE = "mcr.microsoft.com/azure-storage/azurite:latest";
@@ -34,7 +46,8 @@ public class TestContainerConfig {
         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
     private static final List<String> SFTP_USERS = List.of(
-        "CAPS-report", "BTEckoh-report", "AllPay", "DWP", "NATWEST", "Jacobs", "BARCLAYCARD", "CDER", "BTEckoh");
+        "CAPS-report", "BTEckoh-report", "AllPay", "DWP", "NATWEST", "Jacobs", "BARCLAYCARD", "CDER",
+        "BTEckoh", "MARSTON");
 
     static {
         POSTGRES_CONTAINER = new PostgreSQLContainer(DockerImageName.parse(POSTGRES_IMAGE))

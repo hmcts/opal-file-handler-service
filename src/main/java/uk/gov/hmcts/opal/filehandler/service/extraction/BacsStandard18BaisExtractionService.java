@@ -21,7 +21,7 @@ import uk.gov.hmcts.opal.filehandler.service.extraction.model.DestinationDetails
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.OriginatorDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.Transaction;
-import uk.gov.hmcts.opal.filehandler.utils.StreamUtil;
+import uk.gov.hmcts.opal.filehandler.util.StreamUtil;
 
 @Service
 @Primary

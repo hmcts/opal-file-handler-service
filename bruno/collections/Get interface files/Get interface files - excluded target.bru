@@ -1,0 +1,29 @@
+meta {
+  name: Excluded target
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseURL}}/interface-files?business_unit_code={{businessUnitCode}}&not_target={{excludedTarget}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("does not return files for the excluded target", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.interface_files).to.be.an("array");
+
+    const excludedTarget = bru.getEnvVar("excludedTarget");
+    res.body.interface_files.forEach((file) => {
+      expect(file.target).to.not.equal(excludedTarget);
+    });
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

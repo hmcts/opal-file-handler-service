@@ -182,6 +182,8 @@ class VariantBankingFileProcessorServiceIntegrationTest
                 Domain.MAINTENANCE
             );
 
+
+
         assertSuccessfulSourceJsonInterfaceFile(
             sourceJsonEntity.getFileName(),
             Interface.VARIANT_BANKING,
@@ -331,5 +333,19 @@ class VariantBankingFileProcessorServiceIntegrationTest
                     .dwpCourtCode("DWP1234567")
                     .build()
         );
+    }
+
+    private InterfaceFileEntity createInterfaceFileEntity() {
+        return InterfaceFileEntity.builder()
+            .source(Interface.VARIANT_BANKING)
+            .target(Interface.OPAL)
+            .type(Type.SOURCE_JSON)
+            .opalDomain(Domain.MAINTENANCE)
+            .fileName("test-file.dat")
+            .checksum("test-checksum")
+            .status(Status.SUCCESS)
+            .createdDatetime(LocalDateTime.now())
+            .createdBy(1L)
+            .build();
     }
 }

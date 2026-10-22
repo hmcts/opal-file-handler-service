@@ -1,5 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
+import static uk.gov.hmcts.opal.filehandler.util.StreamUtil.calculateChecksum;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Clock;
@@ -98,8 +100,9 @@ public class VariantBankingFileProcessorService
         }
 
         entity = saveInitialFile(entity);
+
         if (entity.getStatus().equals(Status.INGESTED)) {
-            processIngestedFile(config, entity, new ByteArrayInputStream(fileBytes));
+            processIngestedFile(config, entity, new ByteArrayInputStream(fileBytes), getCurrentUserId());
         }
     }
 }
