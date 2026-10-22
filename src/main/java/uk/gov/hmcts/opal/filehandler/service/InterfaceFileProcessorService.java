@@ -32,7 +32,7 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @Slf4j
 @RequiredArgsConstructor
-public abstract class AbstractInterfaceFileProcessorService {
+public abstract class InterfaceFileProcessorService {
 
     protected final Clock clock;
     private final FeatureFlagUtil featureFlagUtil;

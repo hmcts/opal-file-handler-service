@@ -333,10 +333,10 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
         @Test
         void wrapsChecksumReadFailure() {
-            try (MockedStatic<AbstractInterfaceFileProcessorService> checksum =
-                mockStatic(AbstractInterfaceFileProcessorService.class, CALLS_REAL_METHODS)) {
+            try (MockedStatic<InterfaceFileProcessorService> checksum =
+                mockStatic(InterfaceFileProcessorService.class, CALLS_REAL_METHODS)) {
 
-                checksum.when(() -> AbstractInterfaceFileProcessorService.calculateChecksum(any(InputStream.class)))
+                checksum.when(() -> InterfaceFileProcessorService.calculateChecksum(any(InputStream.class)))
                     .thenThrow(new IOException("read failed"));
                 Throwable thrown =
                     catchThrowable(() -> service.calculateExtractChecksum("abc".getBytes(StandardCharsets.UTF_8)));
