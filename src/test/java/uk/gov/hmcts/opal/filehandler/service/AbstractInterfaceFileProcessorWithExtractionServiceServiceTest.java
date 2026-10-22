@@ -6,11 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -44,8 +43,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
-import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
-import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -60,7 +57,6 @@ import uk.gov.hmcts.opal.filehandler.service.extraction.ExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
-import uk.gov.hmcts.opal.filehandler.util.StreamUtil;
 
 @ExtendWith(MockitoExtension.class)
 class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
@@ -94,11 +90,6 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
     private TestProcessor service;
     private InterfaceFileEntity sourceFile;
 
-    private static final long CREATOR_ID = -1L;
-
-    MockedStatic<SecurityUtil> mockedSecurityUtil;
-    OpalJwtAuthenticationToken mockedToken = mock(OpalJwtAuthenticationToken.class);
-    
     @BeforeEach
     void setUp() {
         ObjectMapper objectMapper = JsonMapper.builder().build();
@@ -117,13 +108,6 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             }
             return entity;
         });
-
-        mockedSecurityUtil = mockStatic(SecurityUtil.class);
-    }
-
-    @AfterEach
-    void tearDown() {
-        mockedSecurityUtil.close();
     }
 
     @Nested
@@ -133,13 +117,9 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
         void noExtractsMarksSourceFileAsSuccessNoTransactions() {
             InputStream inputStream = new ByteArrayInputStream("source".getBytes(StandardCharsets.UTF_8));
 
-            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
-                .thenReturn(mockedToken);
-            when(mockedToken.getUserId()).thenReturn(-1L);
-
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of());
 
-            service.processFile(config, sourceFile, inputStream, CREATOR_ID);
+            service.processFile(config, sourceFile, inputStream);
 
             assertThat(sourceFile.getStatus()).isEqualTo(Status.SUCCESS_NO_TRANSACTIONS);
             verify(repository).save(sourceFile);
@@ -154,17 +134,13 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             InterfaceFileCommonDataExtract extract = extract();
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
 
-            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
-                .thenReturn(mockedToken);
-            when(mockedToken.getUserId()).thenReturn(-1L);
-
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
-            doReturn(sourceJson).when(processor).createAndUploadSourceJson(config, sourceFile, extract, CREATOR_ID);
+            doReturn(sourceJson).when(processor).createAndUploadSourceJson(config, sourceFile, extract);
 
-            processor.processFile(config, sourceFile, inputStream, CREATOR_ID);
+            processor.processFile(config, sourceFile, inputStream);
 
             assertThat(processor.postProcessedFiles).containsExactly(sourceJson);
-            verify(processor).createAndUploadSourceJson(config, sourceFile, extract, CREATOR_ID);
+            verify(processor).createAndUploadSourceJson(config, sourceFile, extract);
             verify(repository).save(sourceFile);
         }
 
@@ -177,10 +153,10 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
 
-            processor.processFile(config, sourceFile, inputStream, CREATOR_ID);
+            processor.processFile(config, sourceFile, inputStream);
 
             assertThat(processor.postProcessedFiles).isEmpty();
-            verify(processor, never()).createAndUploadSourceJson(any(), any(), any(), anyLong());
+            verify(processor, never()).createAndUploadSourceJson(any(), any(), any());
             verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
             verify(repository).save(sourceFile);
         }
@@ -191,17 +167,13 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             InputStream inputStream = new ByteArrayInputStream("source".getBytes(StandardCharsets.UTF_8));
             InterfaceFileCommonDataExtract extract = extract();
 
-            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
-                .thenReturn(mockedToken);
-            when(mockedToken.getUserId()).thenReturn(-1L);
-
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
-            doReturn(null).when(processor).createAndUploadSourceJson(config, sourceFile, extract, CREATOR_ID);
+            doReturn(null).when(processor).createAndUploadSourceJson(config, sourceFile, extract);
 
-            processor.processFile(config, sourceFile, inputStream, CREATOR_ID);
+            processor.processFile(config, sourceFile, inputStream);
 
             assertThat(processor.postProcessedFiles).isEmpty();
-            verify(processor).createAndUploadSourceJson(config, sourceFile, extract, CREATOR_ID);
+            verify(processor).createAndUploadSourceJson(config, sourceFile, extract);
             verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
             verify(repository).save(sourceFile);
         }
@@ -218,20 +190,15 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             InterfaceFileEntity firstSourceJson = sourceJsonFile(200L, Status.SUCCESS);
             InterfaceFileEntity secondSourceJson = sourceJsonFile(201L, Status.SUCCESS);
 
-            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
-                .thenReturn(mockedToken);
-            when(mockedToken.getUserId()).thenReturn(-1L);
-
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(first, second));
-            doReturn(firstSourceJson).when(processor).createAndUploadSourceJson(config, sourceFile, first, CREATOR_ID);
-            doReturn(secondSourceJson).when(processor)
-                .createAndUploadSourceJson(config, sourceFile, second, CREATOR_ID);
+            doReturn(firstSourceJson).when(processor).createAndUploadSourceJson(config, sourceFile, first);
+            doReturn(secondSourceJson).when(processor).createAndUploadSourceJson(config, sourceFile, second);
 
-            processor.processFile(config, sourceFile, inputStream, CREATOR_ID);
+            processor.processFile(config, sourceFile, inputStream);
 
             assertThat(processor.postProcessedFiles).containsExactly(firstSourceJson, secondSourceJson);
-            verify(processor).createAndUploadSourceJson(config, sourceFile, first, CREATOR_ID);
-            verify(processor).createAndUploadSourceJson(config, sourceFile, second, CREATOR_ID);
+            verify(processor).createAndUploadSourceJson(config, sourceFile, first);
+            verify(processor).createAndUploadSourceJson(config, sourceFile, second);
             verify(repository).save(sourceFile);
         }
     }
@@ -247,12 +214,11 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             doReturn("checksum").when(processor).calculateExtractChecksum(any());
             doReturn(true).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
 
-            InterfaceFileEntity sourceJson = processor.createAndUploadSourceJson(
-                config, sourceFile, extract, CREATOR_ID);
+            InterfaceFileEntity sourceJson = processor.createAndUploadSourceJson(config, sourceFile, extract);
 
             assertThat(sourceJson).isNull();
             verify(processor, never()).supersedeFailedSourceJson(any(), any(), any());
-            verify(processor, never()).createSourceJson(any(), any(), any(), any(), any(), any(), anyLong());
+            verify(processor, never()).createSourceJson(any(), any(), any(), any(), any(), any());
             verify(processor, never()).uploadSourceJson(any(), any(), any());
             verify(repository, never()).save(any());
         }
@@ -269,16 +235,15 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             doReturn(businessUnits).when(processor).getBusinessUnitsFromExtract(config, extract);
             doReturn(Domain.FINES).when(processor).getDomainFromExtract(config, extract);
             doReturn(sourceJson).when(processor)
-                .createSourceJson(config, sourceFile, extract, businessUnits, Domain.FINES, "checksum", CREATOR_ID);
+                .createSourceJson(config, sourceFile, extract, businessUnits, Domain.FINES, "checksum");
 
-            InterfaceFileEntity result = processor.createAndUploadSourceJson(config, sourceFile, extract, CREATOR_ID);
+            InterfaceFileEntity result = processor.createAndUploadSourceJson(config, sourceFile, extract);
 
             assertThat(result).isSameAs(sourceJson);
             verify(processor).calculateExtractChecksum(any());
             verify(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
             verify(processor).supersedeFailedSourceJson(sourceFile, extract, "checksum");
-            verify(processor)
-                .createSourceJson(config, sourceFile, extract, businessUnits, Domain.FINES, "checksum", CREATOR_ID);
+            verify(processor).createSourceJson(config, sourceFile, extract, businessUnits, Domain.FINES, "checksum");
             verify(processor).uploadSourceJson(eq(config), eq(sourceJson), any());
             verify(repository).save(sourceJson);
         }
@@ -295,14 +260,14 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             doReturn(businessUnits).when(processor).getBusinessUnitsFromExtract(config, extract);
             doReturn(Domain.FINES).when(processor).getDomainFromExtract(config, extract);
             doReturn(sourceJson).when(processor)
-                .createSourceJson(config, sourceFile, extract, businessUnits, Domain.FINES, "checksum", CREATOR_ID);
+                .createSourceJson(config, sourceFile, extract, businessUnits, Domain.FINES, "checksum");
             doAnswer(invocation -> {
                 sourceJson.setStatus(Status.FAILED);
                 sourceJson.setErrors("{\"message\":\"upload failed\"}");
                 return null;
             }).when(processor).uploadSourceJson(eq(config), eq(sourceJson), any());
 
-            InterfaceFileEntity result = processor.createAndUploadSourceJson(config, sourceFile, extract, CREATOR_ID);
+            InterfaceFileEntity result = processor.createAndUploadSourceJson(config, sourceFile, extract);
 
             assertThat(result).isSameAs(sourceJson);
             assertThat(result.getStatus()).isEqualTo(Status.FAILED);
@@ -368,9 +333,10 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
         @Test
         void wrapsChecksumReadFailure() {
-            try (MockedStatic<StreamUtil> checksum = mockStatic(StreamUtil.class)) {
+            try (MockedStatic<AbstractInterfaceFileProcessorService> checksum =
+                mockStatic(AbstractInterfaceFileProcessorService.class, CALLS_REAL_METHODS)) {
 
-                checksum.when(() -> StreamUtil.calculateChecksum(any(InputStream.class)))
+                checksum.when(() -> AbstractInterfaceFileProcessorService.calculateChecksum(any(InputStream.class)))
                     .thenThrow(new IOException("read failed"));
                 Throwable thrown =
                     catchThrowable(() -> service.calculateExtractChecksum("abc".getBytes(StandardCharsets.UTF_8)));
@@ -391,7 +357,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             InterfaceFileCommonDataExtract extract = extract();
 
             InterfaceFileEntity sourceJson = service.createSourceJson(
-                config, sourceFile, extract, new String[] {"BC12", "BC34"}, Domain.FINES, "checksum", CREATOR_ID);
+                config, sourceFile, extract, new String[] {"BC12", "BC34"}, Domain.FINES, "checksum");
 
             assertThat(sourceJson.getSource()).isEqualTo(Interface.NATWEST);
             assertThat(sourceJson.getTarget()).isEqualTo(Interface.OPAL);
@@ -412,10 +378,6 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
         @Test
         void populatesFilestoreUuidAndUploadsJsonBytes() throws IOException {
-            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
-                .thenReturn(mockedToken);
-            when(mockedToken.getUserId()).thenReturn(-1L);
-
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
             byte[] jsonBytes = "{}".getBytes(StandardCharsets.UTF_8);
             ArgumentCaptor<InputStream> inputStreamCaptor = ArgumentCaptor.forClass(InputStream.class);
@@ -451,10 +413,6 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
         void marksFailedWhenUploadThrowsGenericRuntimeException() {
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
 
-            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
-                .thenReturn(mockedToken);
-            when(mockedToken.getUserId()).thenReturn(-1L);
-
             doThrow(new RuntimeException("blob unavailable")).when(blobStoreService)
                 .uploadBaisFile(any(UUID.class), eq(CONTAINER), any(InputStream.class), eq(sourceJson.getChecksum()));
 
@@ -485,10 +443,6 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
         @Test
         void retriesFailedSourceJsonFilesBeforeSelectingNewBaisFiles() {
-            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
-                .thenReturn(mockedToken);
-            when(mockedToken.getUserId()).thenReturn(-1L);
-
             when(repository.findAll(ArgumentMatchers.<Specification<InterfaceFileEntity>>any()))
                 .thenReturn(List.of(sourceFile));
             when(blobStoreService.fetchInterfaceFile(anyLong(), any(UUID.class), anyString()))
@@ -533,7 +487,6 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             .status(Status.INGESTED)
             .filestoreUuid(FILE_UUID)
             .createdDatetime(LocalDateTime.now(CLOCK))
-            .createdBy(CREATOR_ID)
             .build();
     }
 
@@ -549,7 +502,6 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             .status(status)
             .createdDatetime(LocalDateTime.now(CLOCK))
             .relatedInterfaceFile(sourceFile)
-            .createdBy(CREATOR_ID)
             .build();
     }
 

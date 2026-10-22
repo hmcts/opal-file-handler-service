@@ -88,7 +88,7 @@ class AllpayBaisFileProcessorServiceTest {
         InputStream inputStream = InputStream.nullInputStream();
         when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of());
 
-        service.processFile(config, sourceFile, inputStream, -1L);
+        service.processFile(config, sourceFile, inputStream);
 
         assertThat(sourceFile.getStatus()).isEqualTo(Status.SUCCESS_NO_TRANSACTIONS);
         verify(extractionService).extractStandardData(sourceFile, inputStream);
@@ -100,7 +100,7 @@ class AllpayBaisFileProcessorServiceTest {
     void shouldNotExtractNonDatFile(String fileEnding) {
         InterfaceFileEntity sourceFile = sourceFile(fileEnding);
 
-        service.processFile(config, sourceFile, InputStream.nullInputStream(), -1L);
+        service.processFile(config, sourceFile, InputStream.nullInputStream());
 
         assertThat(sourceFile.getStatus()).isEqualTo(Status.INGESTED);
         verifyNoInteractions(extractionService, repository);
@@ -116,7 +116,6 @@ class AllpayBaisFileProcessorServiceTest {
             .fileName(FILE_NAME + fileEnding)
             .status(Status.INGESTED)
             .createdDatetime(LocalDateTime.now())
-            .createdBy(-1L)
             .build();
     }
 }

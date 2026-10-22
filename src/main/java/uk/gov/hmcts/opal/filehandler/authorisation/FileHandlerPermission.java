@@ -7,8 +7,7 @@ import uk.gov.hmcts.opal.common.user.authorisation.model.PermissionDescriptor;
 @AllArgsConstructor
 @Getter
 public enum FileHandlerPermission implements PermissionDescriptor {
-    VIEW_INTERFACE_FILES(1L, "View Interface Files"),
-    CREATE_INTERFACE_FILES(2L, "Create Interface Files");
+    ViewInterfacesFile(1L, "View Interface Files");
 
     private final long id;
     private final String description;

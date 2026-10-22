@@ -25,11 +25,10 @@ import uk.gov.hmcts.opal.filehandler.service.extraction.ExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
-import uk.gov.hmcts.opal.filehandler.util.StreamUtil;
 
 @Slf4j
 public abstract class AbstractInterfaceFileProcessorWithExtractionService<T extends InterfaceFileCommonDataExtract>
-    extends InterfaceFileProcessorService {
+    extends AbstractInterfaceFileProcessorService {
 
     @Value("${opal.file-handler-service.extraction-service.max-retries:5}")
     protected int maxRetries;
@@ -62,7 +61,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
                 sourceFile.getFilestoreUuid(),
                 config.getContainerName()).toStream();
 
-            processFile(config, sourceFile, sourceStream, getCurrentUserId());
+            processFile(config, sourceFile, sourceStream);
         }
 
         return super.selectFilesToProcess(config);
@@ -72,8 +71,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
     protected void processFile(
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
-        InputStream inputStream,
-        long creatorId
+        InputStream inputStream
     ) {
         List<T> extracts = extractionService.extractStandardData(sourceInterfaceFile, inputStream);
 
@@ -85,8 +83,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
 
         for (T extract : extracts) {
             if (preProcessExtract(config, sourceInterfaceFile, extract)) {
-                InterfaceFileEntity sourceJson = createAndUploadSourceJson(
-                    config, sourceInterfaceFile, extract, creatorId);
+                InterfaceFileEntity sourceJson = createAndUploadSourceJson(config, sourceInterfaceFile, extract);
                 if (sourceJson != null) {
                     postProcessExtract(config, sourceJson, extract);
                 }
@@ -98,7 +95,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
 
 
     InterfaceFileEntity createAndUploadSourceJson(BaisFileProcessorConfiguration config,
-        InterfaceFileEntity sourceInterfaceFile, T extract, long creatorId) {
+        InterfaceFileEntity sourceInterfaceFile, T extract) {
         byte[] jsonBytes = objectMapper.writeValueAsBytes(extract);
         String checksum = calculateExtractChecksum(jsonBytes);
 
@@ -112,7 +109,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
             config, sourceInterfaceFile, extract,
             getBusinessUnitsFromExtract(config, extract),
             getDomainFromExtract(config, extract),
-            checksum, creatorId);
+            checksum);
 
         uploadSourceJson(config, sourceJson, jsonBytes);
         return interfaceFilesRepository.save(sourceJson);
@@ -169,7 +166,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
 
     String calculateExtractChecksum(byte[] jsonBytes) {
         try {
-            return StreamUtil.calculateChecksum(new ByteArrayInputStream(jsonBytes));
+            return calculateChecksum(new ByteArrayInputStream(jsonBytes));
         } catch (IOException e) {
             throw new IllegalStateException("Unable to calculate SOURCE_JSON checksum", e);
         }
@@ -181,8 +178,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
         T extract,
         String[] businessUnitCodes,
         Domain domain,
-        String checksum,
-        long creatorId
+        String checksum
     ) {
         return InterfaceFileEntity.builder()
             .source(config.getSource())
@@ -196,7 +192,6 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
             .relatedInterfaceFile(sourceInterfaceFile)
             .businessUnitCode(businessUnitCodes)
             .paymentType(extract.getPaymentType())
-            .createdBy(creatorId)
             .build();
     }
 

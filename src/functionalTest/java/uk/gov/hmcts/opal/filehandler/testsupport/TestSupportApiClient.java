@@ -45,14 +45,7 @@ public class TestSupportApiClient {
      * @return response returned by the endpoint.
      */
     public TestHttpResponse post(String path) {
-        var headers = headersForBody(null);
-
-        // Avoid a double auth header issue with automated jobs and system user auth
-        if (path.startsWith("/automated-jobs")) {
-            headers.remove("Authorization");
-        }
-
-        return TestHttpClient.request("POST", testSupportUrl(path), headers, null);
+        return TestHttpClient.request("POST", testSupportUrl(path), headersForBody(null), null);
     }
 
     /**

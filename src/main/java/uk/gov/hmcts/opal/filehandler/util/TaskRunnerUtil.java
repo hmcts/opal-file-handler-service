@@ -7,9 +7,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.stereotype.Service;
-import uk.gov.hmcts.opal.common.user.authentication.service.SystemUserAuthenticationService;
-import uk.gov.hmcts.opal.common.user.authentication.service.SystemUserEnum;
-import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.Application;
 import uk.gov.hmcts.opal.filehandler.config.task.TaskConfiguration;
 
@@ -22,7 +19,6 @@ public class TaskRunnerUtil {
 
 
     private final Map<String, TaskConfiguration> tasks;
-    private final SystemUserAuthenticationService systemUserAuthenticationService;
 
     public static int runAutomatedTaskWithSpring(final String... args) {
         var ctx = new SpringApplicationBuilder(Application.class)
@@ -34,9 +30,7 @@ public class TaskRunnerUtil {
     }
 
     public void runAutomatedTask(String name) {
-        systemUserAuthenticationService.setupAsSystemUser(SystemUserEnum.OPAL_SYSTEM_USER);
         tasks.get(name).run();
-        SecurityUtil.clearSecurityContext();
     }
 
     public static boolean isAutomatedTask(final String[] args) {

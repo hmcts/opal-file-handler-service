@@ -2,7 +2,7 @@ import org.flywaydb.gradle.task.FlywayMigrateTask
 
 buildscript {
   dependencies {
-    classpath("org.flywaydb:flyway-database-postgresql:13.11.1")
+    classpath("org.flywaydb:flyway-database-postgresql:13.7.0")
   }
 }
 plugins {
@@ -10,16 +10,16 @@ plugins {
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
   id 'org.springframework.boot' version '4.1.1'
-  id 'io.github.ben-manes.versions' version '0.66.0'
+  id 'io.github.ben-manes.versions' version '0.64.0'
   id 'org.sonarqube' version '7.5.0.8588'
-  id "org.openapi.generator" version "7.26.0"
+  id "org.openapi.generator" version "7.25.0"
   /*
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'org.flywaydb.flyway' version '13.11.1'
-  id 'net.serenity-bdd.serenity-gradle-plugin' version '5.4.1'
+  id 'org.flywaydb.flyway' version '13.7.0'
+  id 'net.serenity-bdd.serenity-gradle-plugin' version '5.3.9'
 }
 
 application {
@@ -35,11 +35,10 @@ java {
 }
 
 ext {
-  serenityVersion = "5.4.1"
-  cucumberVersion = "8.0.4"
-  set('junit-jupiter.version', "6.1.3")
+  serenityVersion = "5.3.11"
+  cucumberVersion = "7.34.8"
   log4JVersion = "2.26.1"
-  logbackVersion = "1.6.5"
+  logbackVersion = "1.6.3"
 }
 
 def logPublishedHtmlReport = { String label, String reportDirectory ->
@@ -106,6 +105,14 @@ configurations {
 
   integrationTestImplementation.extendsFrom testImplementation
   integrationTestRuntimeOnly.extendsFrom runtimeOnly
+}
+
+configurations.configureEach {
+  resolutionStrategy {
+    force "io.cucumber:cucumber-core:${cucumberVersion}"
+    force "io.cucumber:cucumber-java:${cucumberVersion}"
+    force "io.cucumber:cucumber-junit:${cucumberVersion}"
+  }
 }
 
 xmlSchemasToGenerate.each { schemaName, schemaConfig ->
@@ -187,12 +194,11 @@ tasks.named('sonarResolver') {
 
 tasks.withType(Test).configureEach {
   useJUnitPlatform()
-  failFast = false
+  failFast = true
 
   testLogging {
     exceptionFormat = 'full'
   }
-  maxHeapSize = "2g"
 }
 
 tasks.register('functional', Test) {
@@ -218,7 +224,7 @@ tasks.register('integration', Test) {
   group = "Verification"
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
   classpath = sourceSets.integrationTest.runtimeClasspath
-  failFast = false
+  failFast = true
 }
 
 
@@ -339,8 +345,8 @@ ext['snakeyaml.version'] = '2.0'
 dependencyManagement {
   imports {
     mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2025.1.3'
-    mavenBom "com.fasterxml.jackson:jackson-bom:2.22.4"
-    mavenBom "io.netty:netty-bom:4.2.19.Final"
+    mavenBom "com.fasterxml.jackson:jackson-bom:2.22.2"
+    mavenBom "io.netty:netty-bom:4.2.18.Final"
   }
 }
 dependencies {
@@ -355,10 +361,9 @@ dependencies {
   openapiImplementation "io.swagger.core.v3:swagger-core:2.2.55"
   openapiImplementation "tools.jackson.dataformat:jackson-dataformat-yaml"
   //HMCTS
-  implementation 'uk.gov.hmcts:opal-common-lib:0.3.37'
-  implementation 'uk.gov.hmcts:spring-exception-handler:1.0.3'
+  implementation 'uk.gov.hmcts:opal-common-lib:0.3.33'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
-  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.3'
+  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.1'
 
   //Spring Boot
   implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
@@ -382,7 +387,7 @@ dependencies {
   //Other
   implementation 'org.apache.poi:poi-ooxml:5.5.1'
 
-  implementation 'com.azure:azure-storage-blob:12.36.0'
+  implementation 'com.azure:azure-storage-blob:12.35.1'
   implementation 'com.microsoft.azure:applicationinsights-web:3.7.10'
 
   implementation 'commons-logging:commons-logging:1.4.0'
@@ -391,24 +396,24 @@ dependencies {
   implementation "ch.qos.logback:logback-classic:${logbackVersion}"
   implementation "ch.qos.logback:logback-core:${logbackVersion}"
 
-  implementation 'org.flywaydb:flyway-core:13.11.1'
-  runtimeOnly 'org.flywaydb:flyway-database-postgresql:13.11.1', {
+  implementation 'org.flywaydb:flyway-core:13.7.0'
+  runtimeOnly 'org.flywaydb:flyway-database-postgresql:13.7.0', {
     exclude group: 'org.flywaydb', module: 'flyway-core'
   }
 
   // temporary bump until spring-boot-dependencies updates (CVE-2026-54291)
-  implementation 'org.postgresql:postgresql:42.7.14'
+  implementation 'org.postgresql:postgresql:42.7.13'
 
-  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:11.0.27'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-core:11.0.27'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-el:11.0.27'
-  implementation 'org.apache.tomcat:tomcat-annotations-api:11.0.27'
+  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:11.0.26'
+  implementation 'org.apache.tomcat.embed:tomcat-embed-core:11.0.26'
+  implementation 'org.apache.tomcat.embed:tomcat-embed-el:11.0.26'
+  implementation 'org.apache.tomcat:tomcat-annotations-api:11.0.26'
 
   // Azure blob storage
-  implementation 'com.azure:azure-storage-blob:12.36.0'
+  implementation 'com.azure:azure-storage-blob:12.35.1'
 
   //Annotation
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.13.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.10.Final'
 
   compileOnly 'org.projectlombok:lombok:1.18.48'
   annotationProcessor 'org.projectlombok:lombok:1.18.48'
@@ -425,21 +430,19 @@ dependencies {
   //Test
   testImplementation 'jakarta.jms:jakarta.jms-api'
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
-  testImplementation 'io.rest-assured:rest-assured:6.1.0'
+  testImplementation 'io.rest-assured:rest-assured:6.0.1'
   testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
   testImplementation 'org.junit.platform:junit-platform-suite'
-  functionalTestImplementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
-  functionalTestImplementation "io.cucumber:cucumber-java:${cucumberVersion}"
-  functionalTestImplementation "net.serenity-bdd:serenity-core:${serenityVersion}"
-  functionalTestImplementation "net.serenity-bdd:serenity-rest-assured:${serenityVersion}"
-  functionalTestImplementation "net.serenity-bdd:serenity-report-resources:${serenityVersion}"
-  functionalTestImplementation("net.serenity-bdd:serenity-cucumber:${serenityVersion}") {
-    exclude group: 'io.cucumber', module: 'cucumber-junit'
-  }
-  functionalTestImplementation "net.serenity-bdd:serenity-ensure:${serenityVersion}"
-  testImplementation 'com.hierynomus:sshj:0.41.2'
+  testImplementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
+  testImplementation "io.cucumber:cucumber-java:${cucumberVersion}"
+  testImplementation "net.serenity-bdd:serenity-core:${serenityVersion}"
+  testImplementation "net.serenity-bdd:serenity-rest-assured:${serenityVersion}"
+  testImplementation "net.serenity-bdd:serenity-report-resources:${serenityVersion}"
+  testImplementation "net.serenity-bdd:serenity-cucumber:${serenityVersion}"
+  testImplementation "net.serenity-bdd:serenity-ensure:${serenityVersion}"
+  testImplementation 'com.hierynomus:sshj:0.41.1'
 
-  integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.4.3'
+  integrationTestImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.4.2'
   integrationTestImplementation 'org.springframework.security:spring-security-test'
   integrationTestImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 

@@ -12,11 +12,11 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
-import uk.gov.hmcts.opal.filehandler.util.ReportFileValidator;
+import uk.gov.hmcts.opal.filehandler.utils.ReportFileValidator;
 
 @Slf4j
 @Service
-public class CapsReportBaisFileProcessorService extends InterfaceFileProcessorService {
+public class CapsReportBaisFileProcessorService extends AbstractInterfaceFileProcessorService {
 
     public CapsReportBaisFileProcessorService(
         Clock clock,
@@ -40,8 +40,7 @@ public class CapsReportBaisFileProcessorService extends InterfaceFileProcessorSe
     public void processFile(
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity fileEntity,
-        InputStream inputStream,
-        long creatorId) {
+        InputStream inputStream) {
         // Not Required
     }
 

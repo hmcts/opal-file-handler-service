@@ -40,7 +40,6 @@ public class InterfaceFileMapperTest {
             .checksum("A123")
             .errors("XXXX-ERROR-XXXX")
             .createdDatetime(created)
-            .createdBy(-1L)
             .build();
 
         InterfaceFileObjectInterfaceFile mappedObject = mapper.toInterfaceFileObject(entity);
@@ -72,7 +71,6 @@ public class InterfaceFileMapperTest {
             .status(Status.INGESTED)
             .fileName("CapFa.GB.2.xml")
             .createdDatetime(created)
-            .createdBy(-1L)
             .build();
 
         InterfaceFileObjectInterfaceFile mappedObject = mapper.toInterfaceFileObject(entity);

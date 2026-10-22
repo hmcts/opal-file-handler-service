@@ -51,7 +51,7 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
     @Autowired
     private CapsReportBaisFileProcessorConfiguration capsReportBaisFileProcessorConfiguration;
 
-    private final Logger logger = (Logger) LoggerFactory.getLogger(InterfaceFileProcessorService.class);
+    private final Logger logger = (Logger) LoggerFactory.getLogger(AbstractInterfaceFileProcessorService.class);
     private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 
     @BeforeEach
@@ -136,8 +136,7 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
             Domain.MAINTENANCE);
         assertBlobChecksum(CAPS_FILE, CAPS_FILE_CHECKSUM, capsReportBaisFileProcessorConfiguration.getContainerName());
         assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
-        assertReportCanBeListedAndDownloaded(CAPS_FILE, CAPS_FILE_CHECKSUM, CAPS_FILE_RESOURCE,
-            capsReportBaisFileProcessorConfiguration.getContainerName());
+        assertReportCanBeListedAndDownloaded(CAPS_FILE, CAPS_FILE_CHECKSUM, CAPS_FILE_RESOURCE);
     }
 
     @Test
@@ -277,8 +276,7 @@ public class CapsReportBaisFileProcessorServiceIntegrationTest extends AbstractB
         assertThat(storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName()))
             .containsOnlyKeys(success.getFilestoreUuid().toString());
         assertBlobChecksum(CAPS_FILE, CAPS_FILE_CHECKSUM, capsReportBaisFileProcessorConfiguration.getContainerName());
-        assertReportCanBeListedAndDownloaded(CAPS_FILE, CAPS_FILE_CHECKSUM, CAPS_FILE_RESOURCE,
-            capsReportBaisFileProcessorConfiguration.getContainerName());
+        assertReportCanBeListedAndDownloaded(CAPS_FILE, CAPS_FILE_CHECKSUM, CAPS_FILE_RESOURCE);
         assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
     }
 

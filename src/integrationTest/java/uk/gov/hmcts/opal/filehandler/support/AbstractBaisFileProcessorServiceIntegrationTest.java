@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
@@ -32,6 +31,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.CapsReportBaisFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.service.InterfaceFilesService;
+import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 
 @SpringBootTest(properties = {
@@ -56,23 +56,6 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
 
     @Autowired
     private InterfaceFilesService interfaceFilesService;
-
-    @Autowired
-    protected TestSystemUserAuthenticationService testSystemUserAuthenticationService;
-
-    protected final void setupAuthenticationAsUser(long userId) {
-        userStateStub = new UserStateStub(userId);
-        testSystemUserAuthenticationService.testSetupAsSystemUser(userStateStub);
-    }
-
-    @BeforeEach
-    protected void setupAuth() {
-        if (userStateStub == null) {
-            userStateStub = createUserStateStub();
-        }
-        testSystemUserAuthenticationService = new TestSystemUserAuthenticationService();
-        testSystemUserAuthenticationService.testSetupAsSystemUser(userStateStub);
-    }
 
     @DynamicPropertySource
     static void dynamicProperties(DynamicPropertyRegistry registry) throws IOException {
@@ -150,10 +133,8 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
                         InterfaceFileEntity::getTarget,
                         InterfaceFileEntity::getType,
                         InterfaceFileEntity::getOpalDomain,
-                        InterfaceFileEntity::getStatus,
-                        InterfaceFileEntity::getCreatedBy)
-                    .containsExactly(fileName, checksum, source, Interface.OPAL, type, domain, Status.SUCCESS,
-                        userStateStub.getUserState().getUserId());
+                        InterfaceFileEntity::getStatus)
+                    .containsExactly(fileName, checksum, source, Interface.OPAL, type, domain, Status.SUCCESS);
                 assertThat(entity.getErrors()).isNull();
             });
 
@@ -182,10 +163,9 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
                         InterfaceFileEntity::getType,
                         InterfaceFileEntity::getOpalDomain,
                         InterfaceFileEntity::getStatus,
-                        InterfaceFileEntity::getCreatedBy,
                         related -> related.getRelatedInterfaceFile().getInterfaceFileId())
                     .containsExactly(fileName, source, Interface.OPAL, Type.SOURCE_JSON, domain, Status.SUCCESS,
-                        userStateStub.getUserState().getUserId(), relatedInterfaceFileId);
+                        relatedInterfaceFileId);
                 assertThat(entity.getChecksum()).isNotBlank();
                 assertThat(entity.getFilestoreUuid()).isNotNull();
                 assertThat(entity.getErrors()).isNull();
@@ -216,41 +196,28 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
         assertThat(properties.getBlobSize()).isEqualTo(content.length);
     }
 
-    public final void assertReportCanBeListedAndDownloaded(String fileName, String checksum, String resourcePath,
-        String containerName) throws IOException {
+    public final void assertReportCanBeListedAndDownloaded(String fileName, String checksum, String resourcePath)
+        throws IOException {
         InterfaceFileEntity entity = repository.findByFileNameAndChecksumAndStatus(fileName, checksum, Status.SUCCESS)
             .orElseThrow();
-
         assertThat(entity.getBusinessUnitCode()).isNullOrEmpty();
         assertThat(entity.getPaymentType()).isNull();
         assertThat(entity.getErrors()).isNull();
-
-        var listed = repository.findAll().stream()
-            .filter(file -> entity.getSource().equals(file.getSource()))
-            .filter(file -> Status.SUCCESS.equals(file.getStatus()))
-            .toList();
-
+        var listed = interfaceFilesService.searchInterfaceFiles(SearchInterfaceFilesDto.builder()
+            .source(entity.getSource()).status(Status.SUCCESS).build());
         assertThat(listed).filteredOn(file -> file.getInterfaceFileId().equals(entity.getInterfaceFileId()))
             .singleElement().satisfies(file -> {
                 assertThat(file.getFileName()).isEqualTo(fileName);
                 assertThat(file.getFilestoreUuid()).isEqualTo(entity.getFilestoreUuid());
                 assertThat(file.getChecksum()).isEqualTo(checksum);
-                assertThat(file.getSource()).isEqualTo(entity.getSource());
+                assertThat(file.getSource().getValue()).isEqualTo(entity.getSource().name());
                 assertThat(file.getCreatedDatetime()).isEqualTo(entity.getCreatedDatetime());
                 assertThat(file.getErrors()).isNull();
             });
-
-        try (
-            InputStream expected = new ClassPathResource(resourcePath).getInputStream();
-            InputStream actual = blobServiceClient
-                .getBlobContainerClient(containerName)
-                .getBlobClient(entity.getFilestoreUuid().toString())
-                .downloadContent()
-                .toStream()
-        ) {
+        try (InputStream expected = new ClassPathResource(resourcePath).getInputStream();
+             InputStream actual = interfaceFilesService.getInterfaceFilesContent(entity.getInterfaceFileId())) {
             assertThat(actual.readAllBytes()).isEqualTo(expected.readAllBytes());
         }
-
     }
 
     public final InterfaceFileEntity createFailedInterfaceFile(String fileName, String checksum, Interface source) {
@@ -264,7 +231,6 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
             .createdDatetime(LocalDateTime.now(clock))
             .status(Status.FAILED)
             .errors("{\"message\": \"something went wrong\"}")
-            .createdBy(-1L)
             .build();
 
         return repository.save(entity);
@@ -280,7 +246,6 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
             .opalDomain(Domain.MAINTENANCE)
             .createdDatetime(LocalDateTime.now(clock))
             .status(Status.SUCCESS)
-            .createdBy(-1L)
             .build();
 
         return repository.save(entity);

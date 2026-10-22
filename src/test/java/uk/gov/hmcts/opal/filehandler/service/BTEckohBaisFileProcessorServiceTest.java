@@ -88,12 +88,11 @@ class BTEckohBaisFileProcessorServiceTest {
             .fileName("a121_00350005_300000.dat")
             .status(Status.INGESTED)
             .createdDatetime(LocalDateTime.now())
-            .createdBy(-1L)
             .build();
         InputStream inputStream = InputStream.nullInputStream();
         when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of());
 
-        service.processFile(config, sourceFile, inputStream, -1L);
+        service.processFile(config, sourceFile, inputStream);
 
         assertThat(sourceFile.getStatus()).isEqualTo(Status.SUCCESS_NO_TRANSACTIONS);
         verify(extractionService).extractStandardData(sourceFile, inputStream);

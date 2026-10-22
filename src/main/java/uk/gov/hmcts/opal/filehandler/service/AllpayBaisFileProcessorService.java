@@ -42,14 +42,13 @@ public class AllpayBaisFileProcessorService
     protected void processFile(
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
-        InputStream inputStream,
-        long creatorId
+        InputStream inputStream
     ) {
         if (!sourceInterfaceFile.getFileName().endsWith(DATA_FILE_EXTENSION)) {
             return;
         }
 
-        super.processFile(config, sourceInterfaceFile, inputStream, creatorId);
+        super.processFile(config, sourceInterfaceFile, inputStream);
     }
 
 }

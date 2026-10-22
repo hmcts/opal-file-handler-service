@@ -1,9 +1,5 @@
 package uk.gov.hmcts.opal.filehandler.support;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,20 +10,6 @@ import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.EnumMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import org.jspecify.annotations.Nullable;
@@ -49,6 +31,25 @@ import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2.UserStateV2
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStatus;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 
+import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+
 @Getter
 @Setter
 public class UserStateStub {
@@ -65,24 +66,15 @@ public class UserStateStub {
 
     @JsonIgnoreProperties({"id", "description"})
     private abstract static class PermissionJsonMixin {
-
     }
 
     public UserStateStub() {
-        this(generateJwt(), 500000000L);
+        this(generateJwt());
     }
 
     public UserStateStub(String jwtStr) {
-        this(jwtStr, 500000000L);
-    }
-
-    public UserStateStub(long userId) {
-        this(generateJwt(), userId);
-    }
-
-    private UserStateStub(String jwtStr, long userId) {
         this.jwtStr = jwtStr;
-        this.userState = getDefaultUserState(userId);
+        this.userState = getDefaultUserState();
     }
 
     private static String generateJwt() {
@@ -244,12 +236,6 @@ public class UserStateStub {
                 .businessUnitUsers(businessUnitUsers)
                 .build()
         );
-        domains.put(
-            Domain.FINES,
-            DomainBusinessUnitUsers.builder()
-                .businessUnitUsers(businessUnitUsers)
-                .build()
-        );
 
         return UserStateV2.builder()
             .userId(500000000L)
@@ -282,17 +268,13 @@ public class UserStateStub {
             .build();
     }
 
-    private UserStateV2 getDefaultUserState(long userId) {
-        return getDefaultUserStateBuilder().userId(userId).build();
+    private UserStateV2 getDefaultUserState() {
+        return getDefaultUserStateBuilder().build();
     }
 
     public void setupWithNoPermissions() {
-        this.userState = getDefaultUserState(userState.getUserId());
+        this.userState = getDefaultUserState();
         getDomainBusinessUnitUsers().getBusinessUnitUsers().clear();
-    }
-
-    public void isSystemUser(boolean value) {
-        userState.setSystemUser(value);
     }
 
     private DomainBusinessUnitUsers getDomainBusinessUnitUsers() {
@@ -300,7 +282,7 @@ public class UserStateStub {
     }
 
 
-    public void addPermissions(short businessUnitId, PermissionDescriptor... values) {
+    public void addPermissions(short businessUnitId, FileHandlerPermission... values) {
         Set<Permission> permissions = Arrays.stream(values)
             .map(this::createPermission)
             .collect(Collectors.toSet());
