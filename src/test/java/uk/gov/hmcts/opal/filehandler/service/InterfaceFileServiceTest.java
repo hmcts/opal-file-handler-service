@@ -1,6 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
@@ -26,6 +27,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
+import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
@@ -43,6 +46,7 @@ import uk.gov.hmcts.opal.filehandler.exception.InvalidInterfaceFileStatusExcepti
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingService;
+import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 
 @ExtendWith(MockitoExtension.class)
 class InterfaceFileServiceTest {
@@ -80,12 +84,13 @@ class InterfaceFileServiceTest {
     private UUID uuid;
 
     private BinaryData mockData;
-    private MockedStatic<SecurityUtil> securityUtil;
+    private MockedStatic<PermissionUtil> permissionUtil;
 
     @BeforeEach
     void setup() {
         uuid = UUID.randomUUID();
         mockData = mock(BinaryData.class);
+        permissionUtil = mockStatic(PermissionUtil.class);
         securityUtil = mockStatic(SecurityUtil.class);
     }
 
@@ -105,7 +110,7 @@ class InterfaceFileServiceTest {
 
     @AfterEach
     void teardown() {
-        securityUtil.close();
+        permissionUtil.close();
     }
 
     @Test
@@ -116,8 +121,7 @@ class InterfaceFileServiceTest {
         when(bteckohConfig.getContainerName()).thenReturn("bteckoh-report");
 
         when(repository.findById(eq(1L))).thenReturn(
-            Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.SUCCESS))
-        );
+            Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.SUCCESS)));
         when(blobStoreService.fetchInterfaceFile(eq(1L), eq(uuid), eq("bteckoh-report"))).thenReturn(mockData);
         when(userState.isSystemUser()).thenReturn(false);
         InputStream expectedStream = mock(InputStream.class);
@@ -181,12 +185,15 @@ class InterfaceFileServiceTest {
         verifyNoInteractions(loggingService);
     }
 
-    /*
-    TODO: This test is commented out due to the AC for permissions check being removed from PO-3948.
-    It will be re-added as part of PO-8686
     @Test
     void getInterfaceFileContent_missingPermissionsThrowsError() {
-        withoutPermissions();
+        when(repository.findById(1L)).thenReturn(
+            Optional.of(buildEntity(1L, uuid, Interface.BTECKOH_REPORT, Status.SUCCESS)));
+        permissionUtil.when(() ->
+            PermissionUtil.checkPermissionInDomain(
+                FileHandlerPermission.VIEW_INTERFACE_FILES,
+                uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FILE_HANDLING))
+            .thenThrow(new PermissionNotAllowedException(FileHandlerPermission.VIEW_INTERFACE_FILES));
 
         Exception e = assertThrows(
             PermissionNotAllowedException.class,
@@ -194,7 +201,6 @@ class InterfaceFileServiceTest {
         );
         assertEquals("[VIEW_INTERFACE_FILES] permission(s) are not enabled for the user.", e.getMessage());
     }
-    */
 
     @Test
     void getInterfaceFileContent_EntityNotFoundThrowsError() {

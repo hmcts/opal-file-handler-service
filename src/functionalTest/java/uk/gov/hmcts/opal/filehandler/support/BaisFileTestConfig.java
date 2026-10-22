@@ -16,7 +16,7 @@ package uk.gov.hmcts.opal.filehandler.support;
  * @param checksum expected MD5 checksum persisted by the application.
  * @param resourcePath classpath resource containing the report fixture.
  */
-public record BaisReportTestConfig(
+public record BaisFileTestConfig(
     String displayName,
     String source,
     String automatedTaskName,

@@ -291,6 +291,10 @@ public class UserStateStub {
         getDomainBusinessUnitUsers().getBusinessUnitUsers().clear();
     }
 
+    public void isSystemUser(boolean value) {
+        userState.setSystemUser(value);
+    }
+
     private DomainBusinessUnitUsers getDomainBusinessUnitUsers() {
         return userState.getDomains().get(Domain.FILE_HANDLING);
     }
