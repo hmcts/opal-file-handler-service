@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.service.BTEckohReportBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.BTEckohReportInterfaceFileProcessorService;
 
 @Component("automatedBTEckohReport")
 @ConditionalOnExpression(
@@ -15,7 +15,7 @@ import uk.gov.hmcts.opal.filehandler.service.BTEckohReportBaisFileProcessorServi
 @RequiredArgsConstructor
 public class AutomatedBTEckohReport implements TaskConfiguration {
 
-    private final BTEckohReportBaisFileProcessorService service;
+    private final BTEckohReportInterfaceFileProcessorService service;
     private final BTEckohReportBaisFileProcessorConfiguration config;
 
     @Override

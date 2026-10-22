@@ -65,7 +65,7 @@ import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
 import uk.gov.hmcts.opal.filehandler.exception.UnexpectedDomainException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
-import uk.gov.hmcts.opal.filehandler.service.extraction.ExtractionService;
+import uk.gov.hmcts.opal.filehandler.service.extraction.BankingExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.BankDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.DestinationDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
@@ -75,7 +75,7 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 import uk.gov.hmcts.opal.filehandler.util.StreamUtil;
 
 @ExtendWith(MockitoExtension.class)
-class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
+class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
 
     private static final String CONTAINER = "natwest-report";
     private static final String SOURCE_JSON_NAME = "typical.dat";
@@ -101,7 +101,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
     private BaisFileProcessorConfiguration config;
 
     @Mock
-    private ExtractionService<InterfaceFileCommonDataExtract> extractionService;
+    private BankingExtractionService<InterfaceFileCommonDataExtract> extractionService;
 
     @Mock
     private InterfaceFilePreprocessQueueService finesQueueService;
@@ -792,7 +792,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
 
     @Service
     private static class TestProcessor
-        extends AbstractBaisInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
+        extends AbstractBankingInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
 
         TestProcessor(
             FeatureFlagUtil featureFlagUtil,
@@ -801,7 +801,7 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             InterfaceFilesRepository repository,
             TransactionTemplate transactionTemplate,
             ObjectMapper objectMapper,
-            ExtractionService<InterfaceFileCommonDataExtract> extractionService,
+            BankingExtractionService<InterfaceFileCommonDataExtract> extractionService,
             InterfaceFilePreprocessQueueService finesQueueService,
             InterfaceFilePreprocessQueueService maintenanceQueueService
         ) {

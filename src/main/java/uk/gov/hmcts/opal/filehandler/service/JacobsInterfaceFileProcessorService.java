@@ -16,12 +16,10 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @Slf4j
 @Service
-public class MarstonBaisFileProcessorService
-    extends AbstractBaisInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
+public class JacobsInterfaceFileProcessorService extends
+    AbstractBankingInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
 
-
-    public MarstonBaisFileProcessorService(
-        Clock clock,
+    protected JacobsInterfaceFileProcessorService(Clock clock,
         FeatureFlagUtil featureFlagUtil,
         BaisSftpClient baisSftpClient,
         InterfaceFileBlobStoreService interfaceFileBlobStoreService,
@@ -30,21 +28,8 @@ public class MarstonBaisFileProcessorService
         ObjectMapper objectMapper,
         PacsTTPBaisExtractionService extractionService,
         FinesInterfaceFilePreprocessQueueService finesQueueService,
-        MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService
-    ) {
-        super(
-            clock,
-            featureFlagUtil,
-            baisSftpClient,
-            interfaceFileBlobStoreService,
-            interfaceFilesRepository,
-            transactionTemplate,
-            objectMapper,
-            extractionService,
-            finesQueueService,
-            maintenanceQueueService
-        );
-
+        MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService) {
+        super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
+            transactionTemplate, objectMapper, extractionService, finesQueueService, maintenanceQueueService);
     }
-
 }

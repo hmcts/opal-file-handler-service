@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.config.NatWestBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.service.NatWestBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.NatWestInterfaceFileProcessorService;
 
 @Component
 @ConditionalOnExpression(
@@ -15,7 +15,7 @@ import uk.gov.hmcts.opal.filehandler.service.NatWestBaisFileProcessorService;
 @RequiredArgsConstructor
 public class AutomatedNatWestFileTransferJob implements TaskConfiguration {
 
-    private final NatWestBaisFileProcessorService processorService;
+    private final NatWestInterfaceFileProcessorService processorService;
     private final NatWestBaisFileProcessorConfiguration processorConfiguration;
 
     @Override
