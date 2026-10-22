@@ -21,7 +21,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
-import uk.gov.hmcts.opal.filehandler.service.extraction.BankingExtractionService;
+import uk.gov.hmcts.opal.filehandler.service.extraction.ExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
@@ -34,7 +34,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
     @Value("${opal.file-handler-service.extraction-service.max-retries:5}")
     protected int maxRetries;
 
-    protected final BankingExtractionService<T> extractionService;
+    protected final ExtractionService<T> extractionService;
 
     protected AbstractInterfaceFileProcessorWithExtractionService(
         Clock clock,
@@ -44,7 +44,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
         InterfaceFilesRepository interfaceFilesRepository,
         TransactionTemplate transactionTemplate,
         ObjectMapper objectMapper,
-        BankingExtractionService<T> extractionService
+        ExtractionService<T> extractionService
     ) {
         super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
             transactionTemplate, objectMapper);
