@@ -255,9 +255,11 @@ public class InterfaceFileProcessorService {
             .status(Status.DUPLICATE)
             .filestoreUuid(duplicate.getFilestoreUuid())
             .createdDatetime(LocalDateTime.now(clock))
+            .createdBy(getCurrentUserId())
             .opalDomain(Domain.MAINTENANCE)
-            .errors(errorJson("File with name '%s' and checksum '%s' for source '%s' already processed skipping"
-                .formatted(fileName, fileChecksum, config.getSource())))
+            .errors(errorJson(
+                "File with name '%s' and checksum '%s' for source '%s' already processed skipping"
+                    .formatted(fileName, fileChecksum, config.getSource())))
             .build();
     }
 
@@ -295,11 +297,11 @@ public class InterfaceFileProcessorService {
             .checksum(fileChecksum)
             .status(Status.FAILED)
             .createdDatetime(LocalDateTime.now(clock))
+            .createdBy(getCurrentUserId())
             .opalDomain(Domain.MAINTENANCE)
             .errors(errorJson(failureMessage))
             .build();
     }
-
     private void supersedePreviousFailures(String fileName, String fileChecksum) {
         List<InterfaceFileEntity> previousFailures = interfaceFilesRepository
             .findAllByFileNameAndChecksumAndStatus(fileName, fileChecksum, Status.FAILED);
