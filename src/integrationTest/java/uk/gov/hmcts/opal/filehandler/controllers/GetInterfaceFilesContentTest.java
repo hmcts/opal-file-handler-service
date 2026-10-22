@@ -170,22 +170,26 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))
                 .andExpect(content().bytes(expectedBody));
 
-            ArgumentCaptor<PdpoLogMessage> captor = ArgumentCaptor.forClass(PdpoLogMessage.class);
-            verify(pdpoJmsTemplate).convertAndSend(eq("logging-pdpl"), captor.capture(),
-                any(MessagePostProcessor.class));
+            if (isSystemUser) {
+                verifyNoInteractions(pdpoJmsTemplate);
+            } else {
+                ArgumentCaptor<PdpoLogMessage> captor = ArgumentCaptor.forClass(PdpoLogMessage.class);
+                verify(pdpoJmsTemplate).convertAndSend(eq("logging-pdpl"), captor.capture(),
+                    any(MessagePostProcessor.class));
 
-            assertEquals("PDPO", captor.getValue().logType());
-            PdpoQueueLogDetails logDetails = captor.getValue().details();
-            assertEquals("Interface file - download", logDetails.businessIdentifier());
-            assertEquals(PersonalDataProcessingCategory.DISCLOSURE, logDetails.category());
-            assertEquals(USER_IP_ADDRESS, logDetails.ipAddress());
-            assertEquals(FIXED_DATE_TIME, logDetails.createdAt());
-            assertEquals("500000000", logDetails.createdBy().getIdentifier());
-            assertEquals(PdplIdentifierType.OPAL_USER_ID, logDetails.createdBy().getType());
-            assertNull(logDetails.recipient().getIdentifier());
-            assertNull(logDetails.recipient().getType());
-            assertEquals(Map.of(PdplIdentifierType.FILE_HANDLER_INTERFACE_FILE.getType(), List.of("1")),
-                logDetails.individuals());
+                assertEquals("PDPO", captor.getValue().logType());
+                PdpoQueueLogDetails logDetails = captor.getValue().details();
+                assertEquals("Interface file - download", logDetails.businessIdentifier());
+                assertEquals(PersonalDataProcessingCategory.DISCLOSURE, logDetails.category());
+                assertEquals(USER_IP_ADDRESS, logDetails.ipAddress());
+                assertEquals(FIXED_DATE_TIME, logDetails.createdAt());
+                assertEquals("500000000", logDetails.createdBy().getIdentifier());
+                assertEquals(PdplIdentifierType.OPAL_USER_ID, logDetails.createdBy().getType());
+                assertNull(logDetails.recipient().getIdentifier());
+                assertNull(logDetails.recipient().getType());
+                assertEquals(Map.of(PdplIdentifierType.FILE_HANDLER_INTERFACE_FILE.getType(), List.of("1")),
+                    logDetails.individuals());
+            }
 
             assertBlobStorageUnchanged();
         }
@@ -220,10 +224,14 @@ class GetInterfaceFilesContentTest extends AbstractIntegrationTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))
                 .andExpect(content().bytes(expectedBody));
 
-            ArgumentCaptor<PdpoLogMessage> captor = ArgumentCaptor.forClass(PdpoLogMessage.class);
-            verify(pdpoJmsTemplate).convertAndSend(eq("logging-pdpl"), captor.capture(),
-                any(MessagePostProcessor.class));
-            assertEquals(REMOTE_IP_ADDRESS, captor.getValue().details().ipAddress());
+            if (isSystemUser) {
+                verifyNoInteractions(pdpoJmsTemplate);
+            } else {
+                ArgumentCaptor<PdpoLogMessage> captor = ArgumentCaptor.forClass(PdpoLogMessage.class);
+                verify(pdpoJmsTemplate).convertAndSend(eq("logging-pdpl"), captor.capture(),
+                    any(MessagePostProcessor.class));
+                assertEquals(REMOTE_IP_ADDRESS, captor.getValue().details().ipAddress());
+            }
             assertBlobStorageUnchanged();
         }
 

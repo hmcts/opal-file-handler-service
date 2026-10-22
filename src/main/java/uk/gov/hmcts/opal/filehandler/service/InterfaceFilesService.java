@@ -21,7 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
-import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;

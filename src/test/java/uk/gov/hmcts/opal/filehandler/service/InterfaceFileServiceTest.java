@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
@@ -27,11 +26,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
-import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
+import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
+import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfiguration;
@@ -85,6 +84,7 @@ class InterfaceFileServiceTest {
 
     private BinaryData mockData;
     private MockedStatic<PermissionUtil> permissionUtil;
+    private MockedStatic<SecurityUtil> securityUtil;
 
     @BeforeEach
     void setup() {
@@ -111,6 +111,7 @@ class InterfaceFileServiceTest {
     @AfterEach
     void teardown() {
         permissionUtil.close();
+        securityUtil.close();
     }
 
     @Test
