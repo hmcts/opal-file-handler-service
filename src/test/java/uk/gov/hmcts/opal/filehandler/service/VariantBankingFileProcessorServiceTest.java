@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,6 +32,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
+import uk.gov.hmcts.opal.filehandler.exception.InvalidReportFileException;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.VariantBacsStandard18BaisExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
@@ -263,5 +265,51 @@ class VariantBankingFileProcessorServiceTest {
                 Status.SUCCESS);
     }
 
+    @Test
+    void shouldCreateFailureFileWhenInvalidReportFileExceptionThrown() throws Exception {
+
+        VariantBankingFileProcessorService spyService = spy(service);
+
+        InterfaceFileEntity failedEntity = InterfaceFileEntity.builder()
+            .fileName("test.dat")
+            .status(Status.FAILED)
+            .errors("Invalid file")
+            .createdBy(1L)
+            .createdDatetime(LocalDateTime.now())
+            .build();
+
+        doThrow(
+            new InvalidReportFileException(
+                "Invalid file",
+                new RuntimeException("Test cause")
+            )
+        ).when(spyService).validateFile(any());
+
+        doReturn(failedEntity)
+            .when(spyService)
+            .createFailureInterfaceFile(
+                any(),
+                anyString(),
+                anyString(),
+                anyString()
+            );
+
+        doReturn(failedEntity)
+            .when(spyService)
+            .saveInitialFile(any(InterfaceFileEntity.class));
+
+        spyService.processUploadedFile(
+            config,
+            "test.dat",
+            "content".getBytes()
+        );
+
+        verify(spyService).createFailureInterfaceFile(
+            any(),
+            eq("test.dat"),
+            anyString(),
+            eq("Invalid file")
+        );
+    }
 
 }
