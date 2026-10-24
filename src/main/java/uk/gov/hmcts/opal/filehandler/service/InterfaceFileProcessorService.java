@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.DigestUtils;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.exception.DownstreamServiceUnavailableException;
 import tools.jackson.databind.ObjectMapper;
@@ -187,14 +188,14 @@ public class InterfaceFileProcessorService {
         return saveInitialFile(entity);
     }
 
-    private InterfaceFileEntity saveInitialFile(InterfaceFileEntity entity) {
+    protected InterfaceFileEntity saveInitialFile(InterfaceFileEntity entity) {
         return transactionTemplate.execute(transactionStatus -> {
             supersedePreviousFailures(entity.getFileName(), entity.getChecksum());
             return interfaceFilesRepository.save(entity);
         });
     }
 
-    private void processIngestedFile(
+    protected void processIngestedFile(
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity entity,
         InputStream inputStream,
@@ -236,6 +237,72 @@ public class InterfaceFileProcessorService {
         }
     }
 
+    protected InterfaceFileEntity createDuplicateInterfaceFile(
+        BaisFileProcessorConfiguration config,
+        String fileName,
+        String fileChecksum,
+        InterfaceFileEntity duplicate
+    ) {
+        log.error("File with name '{}' and checksum '{}' for source '{}' is a duplicate of {}",
+            fileName, fileChecksum, config.getSource(), duplicate.getInterfaceFileId());
+
+        return InterfaceFileEntity.builder()
+            .type(Type.SOURCE)
+            .target(config.getTarget())
+            .source(config.getSource())
+            .fileName(fileName)
+            .checksum(fileChecksum)
+            .status(Status.DUPLICATE)
+            .filestoreUuid(duplicate.getFilestoreUuid())
+            .createdDatetime(LocalDateTime.now(clock))
+            .createdBy(getCurrentUserId())
+            .opalDomain(Domain.MAINTENANCE)
+            .errors(errorJson(
+                "File with name '%s' and checksum '%s' for source '%s' already processed skipping"
+                    .formatted(fileName, fileChecksum, config.getSource())))
+            .build();
+    }
+
+    protected InterfaceFileEntity createNewInterfaceFile(
+        BaisFileProcessorConfiguration config,
+        String fileName,
+        String fileChecksum,
+        UUID fileStoreUuid
+    ) {
+        return InterfaceFileEntity.builder()
+            .type(Type.SOURCE)
+            .target(config.getTarget())
+            .source(config.getSource())
+            .fileName(fileName)
+            .createdBy(getCurrentUserId())
+            .checksum(fileChecksum)
+            .status(Status.INGESTED)
+            .filestoreUuid(fileStoreUuid)
+            .createdDatetime(LocalDateTime.now(clock))
+            .opalDomain(Domain.MAINTENANCE)
+            .build();
+    }
+
+    protected InterfaceFileEntity createFailureInterfaceFile(
+        BaisFileProcessorConfiguration config,
+        String fileName,
+        String fileChecksum,
+        String failureMessage
+    ) {
+        return InterfaceFileEntity.builder()
+            .type(Type.SOURCE)
+            .target(config.getTarget())
+            .source(config.getSource())
+            .fileName(fileName)
+            .checksum(fileChecksum)
+            .status(Status.FAILED)
+            .createdDatetime(LocalDateTime.now(clock))
+            .createdBy(getCurrentUserId())
+            .opalDomain(Domain.MAINTENANCE)
+            .errors(errorJson(failureMessage))
+            .build();
+    }
+
     private void supersedePreviousFailures(String fileName, String fileChecksum) {
         List<InterfaceFileEntity> previousFailures = interfaceFilesRepository
             .findAllByFileNameAndChecksumAndStatus(fileName, fileChecksum, Status.FAILED);
@@ -249,5 +316,14 @@ public class InterfaceFileProcessorService {
 
     protected long getCurrentUserId() {
         return SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser().getUserId();
+    }
+
+    @SuppressWarnings("java:S4790") // Used for checksum, not in a sensitive context
+    protected static String calculateChecksum(InputStream stream) throws IOException {
+        return DigestUtils.md5DigestAsHex(stream);
+    }
+
+    protected Optional<InterfaceFileEntity> findDuplicateFile(String fileName, String fileChecksum) {
+        return interfaceFilesRepository.findByFileNameAndChecksumAndStatus(fileName, fileChecksum, Status.SUCCESS);
     }
 }

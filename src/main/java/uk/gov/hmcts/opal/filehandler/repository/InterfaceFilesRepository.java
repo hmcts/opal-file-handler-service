@@ -43,4 +43,5 @@ public interface InterfaceFilesRepository extends JpaRepository<InterfaceFileEnt
         String checksum,
         Status status);
 
+    Optional<InterfaceFileEntity> findByFileNameAndStatus(String fileName, Status status);
 }

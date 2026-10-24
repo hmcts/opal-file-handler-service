@@ -16,6 +16,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -371,7 +372,278 @@ class InterfaceFileProcessorServiceTest {
             assertThat(service.processCount).isZero();
             verify(baisSftpClient, never()).deleteFile(any(), any());
         }
+
+        @Test
+        void shouldLogWhenDeleteFails() {
+
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+
+            when(mockedToken.getUserId()).thenReturn(-1L);
+
+            when(baisSftpClient.deleteFile(
+                SFTP_USERNAME,
+                MATCHING_FILE))
+                .thenReturn(false);
+
+            service.run(config);
+
+            assertThat(errorLogs())
+                .anyMatch(msg ->
+                    msg.contains("Unable to delete BAIS file"));
+        }
+
+        @Test
+        void shouldRequireFeatureFlags() {
+
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+
+            when(mockedToken.getUserId()).thenReturn(-1L);
+
+            service.run(config);
+
+            verify(featureFlagUtil)
+                .requireEnabledFeature(
+                    "release-1c-banking-interfaces"
+                );
+
+            verify(featureFlagUtil)
+                .requireEnabledFeature(
+                    TEST_FEATURE_FLAG
+                );
+        }
     }
+
+    @Nested
+    class HelperMethods {
+
+        @Test
+        void shouldCreateNewInterfaceFile() {
+
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(99L);
+
+            UUID uuid = UUID.randomUUID();
+
+            InterfaceFileEntity entity =
+                service.createNewInterfaceFile(
+                    config,
+                    MATCHING_FILE,
+                    CHECKSUM,
+                    uuid
+                );
+
+            assertThat(entity.getStatus()).isEqualTo(Status.INGESTED);
+            assertThat(entity.getFilestoreUuid()).isEqualTo(uuid);
+            assertThat(entity.getCreatedBy()).isEqualTo(99L);
+            assertThat(entity.getChecksum()).isEqualTo(CHECKSUM);
+            assertThat(entity.getFileName()).isEqualTo(MATCHING_FILE);
+        }
+
+        @Test
+        void shouldCreateFailureInterfaceFile() {
+
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(99L);
+
+            InterfaceFileEntity entity =
+                service.createFailureInterfaceFile(
+                    config,
+                    MATCHING_FILE,
+                    CHECKSUM,
+                    "boom"
+                );
+
+            assertThat(entity.getStatus()).isEqualTo(Status.FAILED);
+            assertThat(entity.getErrors()).contains("boom");
+            assertThat(entity.getCreatedBy()).isEqualTo(99L);
+        }
+
+        @Test
+        void shouldCreateDuplicateInterfaceFile() {
+
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(99L);
+
+            UUID uuid = UUID.randomUUID();
+
+            InterfaceFileEntity duplicate =
+                InterfaceFileEntity.builder()
+                    .interfaceFileId(123L)
+                    .filestoreUuid(uuid)
+                    .build();
+
+            InterfaceFileEntity entity =
+                service.createDuplicateInterfaceFile(
+                    config,
+                    MATCHING_FILE,
+                    CHECKSUM,
+                    duplicate
+                );
+
+            assertThat(entity.getStatus()).isEqualTo(Status.DUPLICATE);
+            assertThat(entity.getFilestoreUuid()).isEqualTo(uuid);
+            assertThat(entity.getErrors()).contains("already processed");
+        }
+
+        @Test
+        void shouldReturnErrorJson() {
+            String json = service.errorJson("test message");
+
+            assertThat(json).contains("test message");
+            assertThat(json).contains("message");
+        }
+
+        @Test
+        void shouldGetCurrentUserId() {
+
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+
+            when(mockedToken.getUserId()).thenReturn(123L);
+
+            assertThat(service.getCurrentUserId()).isEqualTo(123L);
+        }
+
+        @Test
+        void shouldFindDuplicateFile() {
+
+            InterfaceFileEntity entity =
+                InterfaceFileEntity.builder()
+                    .interfaceFileId(1L)
+                    .build();
+
+            when(repository.findByFileNameAndChecksumAndStatus(
+                MATCHING_FILE,
+                CHECKSUM,
+                Status.SUCCESS))
+                .thenReturn(Optional.of(entity));
+
+            Optional<InterfaceFileEntity> result =
+                service.findDuplicateFile(
+                    MATCHING_FILE,
+                    CHECKSUM
+                );
+
+            assertThat(result).contains(entity);
+        }
+
+        @Test
+        void shouldCalculateChecksum() throws Exception {
+
+            String checksum =
+                InterfaceFileProcessorService.calculateChecksum(
+                    new ByteArrayInputStream(FILE_CONTENT)
+                );
+
+            assertThat(checksum).isNotBlank();
+            assertThat(checksum).hasSize(32);
+        }
+
+        @Test
+        void shouldReturnEmptyOptionalWhenDuplicateNotFound() {
+
+            when(repository.findByFileNameAndChecksumAndStatus(
+                MATCHING_FILE,
+                CHECKSUM,
+                Status.SUCCESS))
+                .thenReturn(Optional.empty());
+
+            Optional<InterfaceFileEntity> result =
+                service.findDuplicateFile(
+                    MATCHING_FILE,
+                    CHECKSUM
+                );
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        void shouldCreateExpectedErrorJson() {
+
+            String json = service.errorJson("boom");
+
+            assertThat(json)
+                .isEqualTo("{\"message\":\"boom\"}");
+        }
+    }
+
+    @Test
+    void shouldCreateDuplicateEntityWhenMatchingTypeFilenameChecksumExists() throws Exception {
+
+        when(repository.findAllByFileNameAndChecksumAndStatus(MATCHING_FILE, CHECKSUM, Status.FAILED))
+            .thenReturn(List.of());
+
+        when(repository.save(any(InterfaceFileEntity.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+        InterfaceFileEntity duplicate = InterfaceFileEntity.builder()
+            .interfaceFileId(123L)
+            .source(Interface.CAPS_REPORT)
+            .target(Interface.OPAL)
+            .type(Type.SOURCE)
+            .status(Status.SUCCESS)
+            .filestoreUuid(FILE_UUID)
+            .createdBy(1L)
+            .build();
+
+        when(repository.findByTypeAndFileNameAndChecksumAndStatus(Type.SOURCE, MATCHING_FILE, CHECKSUM, Status.SUCCESS))
+            .thenReturn(Optional.of(duplicate));
+        executeTransactionsImmediately();
+        InterfaceFileEntity result = service.ingestFile(MATCHING_FILE, FILE_CONTENT, Interface.CAPS_REPORT,
+            Interface.OPAL, Type.SOURCE, Domain.MAINTENANCE, CONTAINER,-1L);
+
+        assertThat(result.getStatus()).isEqualTo(Status.DUPLICATE);
+        assertThat(result.getFilestoreUuid()).isEqualTo(FILE_UUID);
+
+        verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+
+    }
+
+    @Test
+    void shouldUploadFileWhenDuplicateDoesNotExist() throws Exception {
+
+        executeTransactionsImmediately();
+        when(repository.findByTypeAndFileNameAndChecksumAndStatus(Type.SOURCE, MATCHING_FILE, CHECKSUM, Status.SUCCESS))
+            .thenReturn(Optional.empty());
+        when(repository.findAllByFileNameAndChecksumAndStatus(MATCHING_FILE, CHECKSUM,Status.FAILED))
+            .thenReturn(List.of());
+
+        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        InterfaceFileEntity result = service.ingestFile(MATCHING_FILE, FILE_CONTENT, Interface.CAPS_REPORT,
+            Interface.OPAL, Type.SOURCE, Domain.MAINTENANCE, CONTAINER,-1L);
+
+        assertThat(result.getStatus()).isEqualTo(Status.INGESTED);
+        assertThat(result.getFilestoreUuid()).isNotNull();
+
+        verify(blobStoreService).uploadBaisFile(any(UUID.class), eq(CONTAINER), any(InputStream.class), eq(CHECKSUM));
+
+    }
+
+    @Test
+    void shouldSupersedeExistingFailedRecordsWhenSavingNewFile() {
+
+        executeTransactionsImmediately();
+        InterfaceFileEntity failedOne = failedEntity(10L);
+        InterfaceFileEntity failedTwo = failedEntity(11L);
+
+        when(repository.findAllByFileNameAndChecksumAndStatus(
+            MATCHING_FILE, CHECKSUM, Status.FAILED)).thenReturn(List.of(failedOne, failedTwo));
+        InterfaceFileEntity entity = InterfaceFileEntity.builder().fileName(MATCHING_FILE)
+            .checksum(CHECKSUM).status(Status.INGESTED).build();
+
+        when(repository.save(any())).thenReturn(entity);
+        service.saveInitialFile(entity);
+        assertThat(failedOne.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
+
+        assertThat(failedTwo.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
+
+    }
+
 
     private void configureSuccessfulRun() {
         service.stubFilesToProcess(MATCHING_FILE);

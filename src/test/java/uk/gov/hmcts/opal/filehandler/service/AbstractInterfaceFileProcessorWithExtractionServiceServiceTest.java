@@ -98,7 +98,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
     MockedStatic<SecurityUtil> mockedSecurityUtil;
     OpalJwtAuthenticationToken mockedToken = mock(OpalJwtAuthenticationToken.class);
-    
+
     @BeforeEach
     void setUp() {
         ObjectMapper objectMapper = JsonMapper.builder().build();
@@ -310,6 +310,27 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             verify(processor).uploadSourceJson(eq(config), eq(sourceJson), any());
             verify(repository).save(sourceJson);
         }
+
+        @Test
+        void shouldNotCreateSourceJsonWhenSuccessfulDuplicateExists() {
+
+            TestProcessor processor = spy(service);
+            InterfaceFileCommonDataExtract extract = extract();
+
+            InterfaceFileEntity existingSourceJson =  sourceJsonFile(300L, Status.SUCCESS);
+
+            doReturn("checksum").when(processor).calculateExtractChecksum(any());
+            when(repository.findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
+                100L, Type.SOURCE_JSON, SOURCE_JSON_NAME,"checksum", Status.SUCCESS))
+                .thenReturn(Optional.of(existingSourceJson));
+
+            InterfaceFileEntity result = processor.createAndUploadSourceJson(
+                config, sourceFile, extract, CREATOR_ID);
+            assertThat(result).isNull();
+            verify(repository, never()).save(any(InterfaceFileEntity.class));
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+        }
+
     }
 
     @Nested
@@ -329,6 +350,17 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
         @Test
         void returnsFalseWhenSuccessfulDuplicateDoesNotExist() {
             assertThat(service.alreadyProcessedSuccessfully(sourceFile, extract(), "checksum")).isFalse();
+        }
+
+        @Test
+        void shouldSearchUsingChecksumWhenCheckingForDuplicateSourceJson() {
+
+            InterfaceFileCommonDataExtract extract = extract();
+
+            service.alreadyProcessedSuccessfully(sourceFile, extract,"checksum");
+
+            verify(repository).findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
+                100L, Type.SOURCE_JSON, SOURCE_JSON_NAME,"checksum", Status.SUCCESS);
         }
     }
 

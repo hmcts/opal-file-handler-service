@@ -434,6 +434,7 @@ components:
         - CDER
         - JACOBS
         - MARSTON
+        - VARIANT_BANKING
         - BTECKOH_REPORT
         - CAPS_REPORT
         - OPAL
