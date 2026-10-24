@@ -361,7 +361,7 @@ dependencies {
   testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.3'
 
   //Spring Boot
-  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
+  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0'
 
   implementation 'org.springframework.boot:spring-boot-flyway'
   implementation "org.springframework.boot:spring-boot-starter-web"
