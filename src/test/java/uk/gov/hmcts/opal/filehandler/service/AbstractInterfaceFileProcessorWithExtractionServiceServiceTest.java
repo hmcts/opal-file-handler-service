@@ -98,7 +98,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
     MockedStatic<SecurityUtil> mockedSecurityUtil;
     OpalJwtAuthenticationToken mockedToken = mock(OpalJwtAuthenticationToken.class);
-    
+
     @BeforeEach
     void setUp() {
         ObjectMapper objectMapper = JsonMapper.builder().build();
@@ -262,7 +262,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
-            String[] businessUnits = new String[] {"BC12"};
+            Short[] businessUnits = new Short[] {(short)12};
 
             doReturn("checksum").when(processor).calculateExtractChecksum(any());
             doReturn(false).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
@@ -288,7 +288,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
-            String[] businessUnits = new String[] {"BC12"};
+            Short[] businessUnits = new Short[] {(short)12};
 
             doReturn("checksum").when(processor).calculateExtractChecksum(any());
             doReturn(false).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
@@ -391,7 +391,8 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             InterfaceFileCommonDataExtract extract = extract();
 
             InterfaceFileEntity sourceJson = service.createSourceJson(
-                config, sourceFile, extract, new String[] {"BC12", "BC34"}, Domain.FINES, "checksum", CREATOR_ID);
+                config, sourceFile, extract, new Short[] {(short) 12, (short) 34},
+                Domain.FINES, "checksum", CREATOR_ID);
 
             assertThat(sourceJson.getSource()).isEqualTo(Interface.NATWEST);
             assertThat(sourceJson.getTarget()).isEqualTo(Interface.OPAL);
@@ -402,7 +403,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             assertThat(sourceJson.getStatus()).isEqualTo(Status.SUCCESS);
             assertThat(sourceJson.getCreatedDatetime()).isEqualTo(LocalDateTime.now(CLOCK));
             assertThat(sourceJson.getRelatedInterfaceFile()).isSameAs(sourceFile);
-            assertThat(sourceJson.getBusinessUnitCode()).containsExactly("BC12", "BC34");
+            assertThat(sourceJson.getBusinessUnitId()).containsExactly((short) 12, (short) 34);
             assertThat(sourceJson.getPaymentType()).isEqualTo(PaymentType.CASH);
         }
     }
@@ -591,11 +592,11 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
         }
 
         @Override
-        protected String[] getBusinessUnitsFromExtract(
+        protected Short[] getBusinessUnitsFromExtract(
             BaisFileProcessorConfiguration config,
             InterfaceFileCommonDataExtract extract
         ) {
-            return new String[] {"BC12"};
+            return new Short[] {12};
         }
 
         @Override

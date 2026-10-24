@@ -64,7 +64,7 @@ public class BTEckohBaisFileProcessorServiceIntegrationTest
         blobServiceClient.createBlobContainerIfNotExists(config.getContainerName());
 
         BusinessUnitBankAccountEntity bu = BusinessUnitBankAccountEntity.builder()
-            .id(1L)
+            .id((short) 1)
             .businessUnitCode(BUSINESS_UNIT_CODE)
             .domain(Domain.MAINTENANCE)
             .bankSortCode("010101")
@@ -152,7 +152,7 @@ public class BTEckohBaisFileProcessorServiceIntegrationTest
             verify(jmsTemplate, times(1)).convertAndSend(
                 eq("banking-interfaces-preprocess-interface-file-maintenance"), anyString());
 
-            assertArrayEquals(sourceFile.getBusinessUnitCode(), sourceJson.getBusinessUnitCode());
+            assertArrayEquals(sourceFile.getBusinessUnitId(), sourceJson.getBusinessUnitId());
             assertBlobChecksum(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, config.getContainerName());
             assertNumberOfSftpFiles(config.getSftpUsername(), 0);
         }

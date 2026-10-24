@@ -68,7 +68,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         void returnsAllInterfaceFiles_200(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
             userStateStub.isSystemUser(isSystemUser);
@@ -112,7 +112,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         void returnsAssociatedBusinessUnitsForEachInterfaceFile_200(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
             userStateStub.isSystemUser(isSystemUser);
@@ -124,28 +124,27 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
 
             result.andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
-
             GetInterfaceFiles200Response response = objectMapper.readValue(
                 result.andReturn().getResponse().getContentAsString(), new TypeReference<>() {
                 });
 
             List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
             assertThat(interfaceFiles).isNotEmpty().allSatisfy(interfaceFile ->
-                assertThat(interfaceFile.getBusinessUnitCodes()).isNotNull());
+                assertThat(interfaceFile.getBusinessUnitIds()).isNotNull());
 
             InterfaceFileObjectInterfaceFile fileWithMultipleBusinessUnits = interfaceFiles.stream()
                 .filter(file -> file.getInterfaceFileId().equals(10L))
                 .findFirst()
                 .orElseThrow();
-            assertThat(fileWithMultipleBusinessUnits.getBusinessUnitCodes())
-                .containsExactly("AB01", "BC01", "DD03");
+            assertThat(fileWithMultipleBusinessUnits.getBusinessUnitIds())
+                .containsExactly((short) 1, (short) 2, (short) 3);
         }
 
         @DisplayName("PO-3947 - Filters interface files correctly by status and source")
         @JiraStory("PO-3947")
         @JiraEpic("PO-3495")
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         void filtersInterfaceFilesCorrectlyBySourceAndStatus_200(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
             userStateStub.isSystemUser(isSystemUser);
@@ -175,7 +174,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         void filtersInterfaceFilesCorrectlyByTargetAndType_200(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
             userStateStub.isSystemUser(isSystemUser);
@@ -212,7 +211,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @JiraStory("PO-3947")
         @JiraEpic("PO-3495")
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         void filtersInterfaceFilesCorrectlyByDomain_200(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
             userStateStub.isSystemUser(isSystemUser);
@@ -238,7 +237,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @JiraEpic("PO-3947")
         @JiraStory("PO-8686")
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         void returnsOnlyPermittedDomainFiles(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
 
@@ -255,7 +254,8 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
             result.andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
-            GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {});
+            GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {
+            });
 
             assertThat(response.getInterfaceFiles())
                 .extracting(InterfaceFileObjectInterfaceFile::getInterfaceFileId)
@@ -267,7 +267,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @JiraStory("PO-3947")
         @JiraEpic("PO-3495")
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         void filtersInterfaceFilesCorrectlyByDates_200(boolean isSystemUser) throws Exception {
             LocalDateTime fromDate = LocalDateTime.of(2025, Month.DECEMBER, 30, 0, 0);
             LocalDateTime toDate = LocalDateTime.of(2026, Month.JANUARY, 4, 12, 30);
@@ -302,7 +302,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         void filtersInterfaceFilesCorrectlyByNotStatus_200(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
             userStateStub.isSystemUser(isSystemUser);
@@ -339,7 +339,7 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         void filtersInterfaceFilesCorrectlyByNotTarget_200(boolean isSystemUser) throws Exception {
             setupAuthorisedUser();
             userStateStub.isSystemUser(isSystemUser);
@@ -367,9 +367,10 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
         @JiraStory("PO-8669")
         @JiraEpic("PO-3495")
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         void filtersInterfaceFilesCorrectlyByBusinessUnitCode_200(boolean isSystemUser) throws Exception {
-            String businessUnitCode = "BC01";
+
+            short businessUnitId = 1;
 
             setupAuthorisedUser();
             userStateStub.isSystemUser(isSystemUser);
@@ -378,25 +379,29 @@ public class GetInterfaceFilesTest extends AbstractIntegrationTest {
                 get(URL)
                     .with(userStateStub.getAuthenticaitonRequestPostProcessor())
                     .header(HttpHeaders.AUTHORIZATION, userStateStub.getBearerToken())
-                    .param("business_unit_code", businessUnitCode));
+                    .param("business_unit_id", String.valueOf(businessUnitId)));
 
             String body = result.andReturn().getResponse().getContentAsString();
+
             result.andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
             GetInterfaceFiles200Response response = objectMapper.readValue(body, new TypeReference<>() {
-            });
+                });
 
             List<InterfaceFileObjectInterfaceFile> interfaceFiles = response.getInterfaceFiles();
-            assertThat(interfaceFiles).hasSizeGreaterThanOrEqualTo(1);
-            assertThat(interfaceFiles).allMatch(i -> i.getBusinessUnitCodes().contains(businessUnitCode));
+
+            assertThat(interfaceFiles).isNotEmpty();
+
+            assertThat(interfaceFiles)
+                .allMatch(i -> i.getBusinessUnitIds().contains(businessUnitId));
         }
 
         @DisplayName("PO-3947 – Forbidden without View Interface Files permission")
         @JiraStory("PO-3947")
         @JiraEpic("PO-3495")
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         void forbiddenWithoutInterfaceFilesPermission_403(boolean isSystemUser) throws Exception {
             userStateStub.setupWithNoPermissions();
             userStateStub.isSystemUser(isSystemUser);

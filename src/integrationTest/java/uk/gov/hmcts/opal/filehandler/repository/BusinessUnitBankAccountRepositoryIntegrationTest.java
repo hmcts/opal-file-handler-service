@@ -13,8 +13,8 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
 
 class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrationTest {
 
-    private static final long TYPICAL_ID = 920001L;
-    private static final long MAX_ID = 920002L;
+    private static final short TYPICAL_ID = 123;
+    private static final short MAX_ID = 321;
 
     @Autowired
     private EntityManager entityManager;
@@ -33,7 +33,6 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
     @Test
     void shouldPersistAndLoadTypicalBusinessUnitBankAccount() {
         BusinessUnitBankAccountEntity original = testData.saveTypicalBusinessUnitBankAccount(TYPICAL_ID, "AB01");
-
         entityManager.clear();
 
         BusinessUnitBankAccountEntity fetched = repository.findById(TYPICAL_ID).orElseThrow();
@@ -110,7 +109,7 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
     }
 
     @Nested
-    class FindByBusinessUnitCode {
+    class FindByBusinessUnitId {
         @Test
         void correctlyFetchesByDwpCourtCode() {
             BusinessUnitBankAccountEntity original =
@@ -118,9 +117,7 @@ class BusinessUnitBankAccountRepositoryIntegrationTest extends AbstractIntegrati
 
             entityManager.clear();
 
-            String businessUnitCode = original.getBusinessUnitCode();
-
-            BusinessUnitBankAccountEntity fetched = repository.findByBusinessUnitCode(businessUnitCode).orElseThrow();
+            BusinessUnitBankAccountEntity fetched = repository.findById(TYPICAL_ID).orElseThrow();
 
             assertThat(fetched.getId()).isEqualTo(original.getId());
             assertThat(fetched.getBusinessUnitCode()).isEqualTo(original.getBusinessUnitCode());
