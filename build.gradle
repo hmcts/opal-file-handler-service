@@ -39,7 +39,7 @@ ext {
   cucumberVersion = "8.0.4"
   set('junit-jupiter.version', "6.1.3")
   log4JVersion = "2.26.1"
-  logbackVersion = "1.6.5"
+  logbackVersion = "1.6.6"
 }
 
 def logPublishedHtmlReport = { String label, String reportDirectory ->
