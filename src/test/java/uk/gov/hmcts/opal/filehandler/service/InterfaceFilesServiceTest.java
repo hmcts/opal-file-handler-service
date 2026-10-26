@@ -55,6 +55,7 @@ import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
+import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
@@ -75,6 +76,9 @@ public class InterfaceFilesServiceTest {
 
     @Mock
     private InterfaceFileSpecsFactory specsFactory;
+
+    @Mock
+    private InterfaceFilesPdplLoggingService loggingService;
 
     @Mock
     private OpalJwtAuthenticationToken authToken;
@@ -110,6 +114,7 @@ public class InterfaceFilesServiceTest {
             specsFactory,
             mapper,
             mock(InterfaceFileBlobStoreService.class),
+            mock(InterfaceFilesPdplLoggingService.class),
             configMap,
             processorServicesList);
     }
@@ -507,6 +512,7 @@ public class InterfaceFilesServiceTest {
             specsFactory,
             mapper,
             null,
+            loggingService,
             Map.of("dwpBaisFileProcessorConfig", config),
             List.of(processorService));
     }
