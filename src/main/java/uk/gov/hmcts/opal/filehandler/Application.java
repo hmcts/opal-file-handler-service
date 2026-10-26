@@ -12,6 +12,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import uk.gov.hmcts.opal.common.config.ServiceBusProperties;
 import uk.gov.hmcts.opal.filehandler.config.FeignConfiguration;
 import uk.gov.hmcts.opal.filehandler.util.TaskRunnerUtil;
+import uk.gov.hmcts.opal.logging.integration.config.PdpoAsyncProperties;
+import uk.gov.hmcts.opal.logging.integration.config.PdpoSyncProperties;
 
 @SpringBootApplication(scanBasePackages = "uk.gov.hmcts.opal")
 @EnableJpaRepositories("uk.gov.hmcts.opal.*")
@@ -20,7 +22,11 @@ import uk.gov.hmcts.opal.filehandler.util.TaskRunnerUtil;
 @EnableCaching
 @Slf4j
 @ConfigurationPropertiesScan
-@EnableConfigurationProperties({ServiceBusProperties.class})
+@EnableConfigurationProperties({
+    ServiceBusProperties.class,
+    PdpoSyncProperties.class,
+    PdpoAsyncProperties.class
+})
 @SuppressWarnings("HideUtilityClassConstructor") // Spring needs a constructor, its not a utility class
 public class Application {
 
