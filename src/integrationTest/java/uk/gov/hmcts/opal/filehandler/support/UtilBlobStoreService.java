@@ -27,6 +27,11 @@ public class UtilBlobStoreService {
         return blob.getVersionId();
     }
 
+    public void createContainerIfNotExists(String containerName) {
+        BlobContainerClient container = blobServiceClient.getBlobContainerClient(containerName);
+        container.createIfNotExists();
+    }
+
     public String getBlobVersion(String containerName, String uuid) {
         BlobContainerClient container = blobServiceClient.getBlobContainerClient(containerName);
         if (!container.exists()) {
@@ -34,5 +39,21 @@ public class UtilBlobStoreService {
         }
         BlobClient blob = container.getBlobClient(uuid);
         return blob.getVersionId();
+    }
+
+    public Boolean getBlobExists(String containerName, String uuid) {
+        BlobContainerClient container = blobServiceClient.getBlobContainerClient(containerName);
+        if (!container.exists()) {
+            throw new IllegalArgumentException("Blob container does not exist");
+        }
+        BlobClient blob = container.getBlobClient(uuid);
+        return blob.exists();
+    }
+
+    public void deleteContainer(String containerName) {
+        BlobContainerClient container = blobServiceClient.getBlobContainerClient(containerName);
+        if (container.exists()) {
+            blobServiceClient.deleteBlobContainer(containerName);
+        }
     }
 }

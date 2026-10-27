@@ -192,21 +192,21 @@ opal:
       bailiffs:
         jacobs:
           container-name: ${JACOBS_AZURE_STORAGE_CONTAINER:jacobs}
-          feature-flag: bailiffs.jacobs-file-transfer-job
+          feature-flag: bailiffs-jacobs-file-transfer-job
           file-name-regex: ^\d{10}_dat_\d{10}_\d{8}_\d{6}\.txt$
           source: JACOBS
           target: OPAL
           sftp-username: ${BAIS_SFTP_JACOBS_USERNAME:}
         cder:
           container-name: ${CDER_AZURE_STORAGE_CONTAINER:cder}
-          feature-flag: bailiffs.cder-file-transfer-job
+          feature-flag: bailiffs-cder-file-transfer-job
           file-name-regex: \d{10}_dat_\d{10}_\d{8}_\d{6}.txt
           source: CDER
           target: OPAL
           sftp-username: ${BAIS_SFTP_CDER_USERNAME:}
         marston:
           container-name: ${MARSTON_AZURE_STORAGE_CONTAINER:marston}
-          feature-flag: marston-file-transfer-Job
+          feature-flag: bailiffs-marston-file-transfer-job
           file-name-regex: \d{10}_dat_\d{10}_\d{8}_\d{6}\.txt
           source: MARSTON
           target: OPAL
@@ -253,9 +253,9 @@ launchdarkly:
     bteckoh-file-transfer-job: ${BTECKOH_FILE_TRANSFER_JOB_ENABLED:false}
     natwest-file-transfer-job: ${NATWEST_FILE_TRANSFER_JOB_ENABLED:false}
     barclaycard-file-transfer-job: ${BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED:false}
-    bailiffs:
-      jacobs-file-transfer-job: ${JACOBS_FILE_TRANSFER_JOB_ENABLED:false}
-      cder-file-transfer-job: ${CDER_FILE_TRANSFER_JOB_ENABLED:false}
+    bailiffs-jacobs-file-transfer-job: ${JACOBS_FILE_TRANSFER_JOB_ENABLED:false}
+    bailiffs-cder-file-transfer-job: ${CDER_FILE_TRANSFER_JOB_ENABLED:false}
+    bailiffs-marston-file-transfer-job: ${MARSTON_FILE_TRANSFER_JOB_ENABLED:false}
 
 user:
   service:
@@ -267,3 +267,10 @@ dbMigration:
   # When true, the app will run DB migration on startup.
   # Otherwise, it will just check if all migrations have been applied (and fail to start if not).
   runOnStartup: ${RUN_DB_MIGRATION_ON_STARTUP:true}
+
+logging-service:
+  pdpl:
+    async:
+      protocol: ${SERVICEBUS_LOGGING_PDPL_PROTOCOL:amqp}
+      connection-string: ${SERVICEBUS_CONNECTION_STRING:Endpoint=sb://localhost/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=local;UseDevelopmentEmulator=true}
+      queue-name: ${SERVICEBUS_LOGGING_PDPL_QUEUE_NAME:logging-pdpl}

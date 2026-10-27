@@ -10,6 +10,8 @@ text-based API collections.
 ```text
 bruno/
 ├── collections/
+│   ├── Add interface file/
+│   │   └── Add interface file - system user.bru
 │   ├── Get interface file/
 │   │   └── Get interface file.bru
 │   ├── Get interface files/
@@ -81,6 +83,12 @@ accepted; check the service logs and database for the eventual processing status
 
 The collection obtains a local token automatically for
 `opal-test@dev.platform.hmcts.net` and stores it only as a Bruno runtime variable.
+
+The `Add interface file - system user` request uses the Azure client-credentials flow. Set
+`tenantId`, `systemClientId`, `systemClientSecret` and `uploadFilePath` in the local Bruno
+environment before running it. Do not commit populated client secrets. The request expects a
+`201` response; verify the returned `interface_file_id` in the database and confirm `created_by`
+is `-1`.
 
 ## Loading the local fixture data
 
