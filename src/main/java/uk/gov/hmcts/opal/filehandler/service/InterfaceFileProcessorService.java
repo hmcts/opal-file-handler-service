@@ -120,7 +120,7 @@ public abstract class InterfaceFileProcessorService {
             config.getSource(),
             config.getTarget(),
             Type.SOURCE,
-            Domain.MAINTENANCE,//TODO check
+            Domain.FINES,
             config.getContainerName(),
             creatorId
         );
