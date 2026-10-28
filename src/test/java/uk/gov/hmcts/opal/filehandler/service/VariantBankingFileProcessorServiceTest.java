@@ -112,7 +112,7 @@ class VariantBankingFileProcessorServiceTest {
         Optional<InterfaceFileEntity> result =
             service.findDuplicateFile(
                 "VB001.dat",
-                "different-checksum"
+                "different-checksum",Status.SUCCESS
             );
 
         assertThat(result).contains(entity);
@@ -133,20 +133,11 @@ class VariantBankingFileProcessorServiceTest {
         byte[] fileBytes = "test content".getBytes();
 
         doNothing().when(spyService)
-            .ingestUploadedFile(config, "VB001.dat", fileBytes);
+            .ingestUploadedFile(config, "VB001.dat", fileBytes,Domain.MAINTENANCE, Status.SUCCESS);
 
-        spyService.processUploadedFile(
-            config,
-            "VB001.dat",
-            fileBytes
-        );
+        spyService.processUploadedFile(config,"VB001.dat", fileBytes, Domain.MAINTENANCE, Status.SUCCESS);
+        verify(spyService).ingestUploadedFile(config,"VB001.dat", fileBytes, Domain.MAINTENANCE, Status.SUCCESS);
 
-        verify(spyService)
-            .ingestUploadedFile(
-                config,
-                "VB001.dat",
-                fileBytes
-            );
     }
 
     @Test
@@ -179,34 +170,17 @@ class VariantBankingFileProcessorServiceTest {
 
         doReturn(Optional.of(existingFile))
             .when(spyService)
-            .findDuplicateFile(anyString(), anyString());
+            .findDuplicateFile(anyString(), anyString(), any());
 
-        doReturn(duplicateFile)
-            .when(spyService)
-            .createDuplicateInterfaceFile(
-                any(),
-                anyString(),
-                anyString(),
-                eq(existingFile)
-            );
-
-        doReturn(duplicateFile)
-            .when(spyService)
-            .saveInitialFile(any());
-
-        spyService.ingestUploadedFile(
-            config,
-            "VB001.dat",
-            "content".getBytes()
-        );
+        doReturn(duplicateFile).when(spyService).createDuplicateInterfaceFile(any(), anyString(),
+                anyString(), eq(existingFile), Domain.MAINTENANCE);
+        doReturn(duplicateFile).when(spyService).saveInitialFile(any());
+        spyService.ingestUploadedFile(config,"VB001.dat",
+            "content".getBytes(), Domain.MAINTENANCE, Status.SUCCESS);
 
         verify(spyService)
-            .createDuplicateInterfaceFile(
-                any(),
-                eq("VB001.dat"),
-                anyString(),
-                eq(existingFile)
-            );
+            .createDuplicateInterfaceFile(any(), eq("VB001.dat"),
+                anyString(), eq(existingFile), Domain.MAINTENANCE);
     }
 
     @Test
@@ -215,7 +189,7 @@ class VariantBankingFileProcessorServiceTest {
 
         VariantBankingFileProcessorService spyService = spy(service);
         doReturn(1L).when(spyService).getCurrentUserId();
-        doReturn(Optional.empty()).when(spyService).findDuplicateFile(anyString(), anyString());
+        doReturn(Optional.empty()).when(spyService).findDuplicateFile(anyString(), anyString(), any());
         when(config.getContainerName()).thenReturn("variant-banking");
 
 
@@ -231,14 +205,14 @@ class VariantBankingFileProcessorServiceTest {
             .build();
 
         doReturn(ingestedEntity).when(spyService).createNewInterfaceFile(any(),
-            anyString(), anyString(), any(UUID.class));
+            anyString(), anyString(), any(UUID.class), Domain.MAINTENANCE);
 
         doReturn(ingestedEntity).when(spyService).saveInitialFile(any());
 
         doNothing().when(spyService).processIngestedFile(any(), any(), any(), anyLong());
         byte[] fileBytes = "content".getBytes();
 
-        spyService.ingestUploadedFile(config,"VB001.dat", fileBytes);
+        spyService.ingestUploadedFile(config,"VB001.dat", fileBytes, Domain.MAINTENANCE, Status.DUPLICATE);
 
         verify(interfaceFileBlobStoreService).uploadBaisFile(any(UUID.class),
                 eq("variant-banking"), any(), anyString());
@@ -255,7 +229,7 @@ class VariantBankingFileProcessorServiceTest {
         Optional<InterfaceFileEntity> result =
             service.findDuplicateFile(
                 "VB001.dat",
-                "checksum");
+                "checksum", Status.SUCCESS);
 
         assertThat(result).isEmpty();
 
@@ -287,29 +261,18 @@ class VariantBankingFileProcessorServiceTest {
 
         doReturn(failedEntity)
             .when(spyService)
-            .createFailureInterfaceFile(
-                any(),
-                anyString(),
-                anyString(),
-                anyString()
-            );
+            .createFailureInterfaceFile(any(), anyString(), anyString(),
+                anyString(), Domain.MAINTENANCE);
 
         doReturn(failedEntity)
             .when(spyService)
             .saveInitialFile(any(InterfaceFileEntity.class));
 
-        spyService.processUploadedFile(
-            config,
-            "test.dat",
-            "content".getBytes()
-        );
+        spyService.processUploadedFile(config,"test.dat",
+            "content".getBytes(), Domain.MAINTENANCE, Status.SUCCESS);
 
-        verify(spyService).createFailureInterfaceFile(
-            any(),
-            eq("test.dat"),
-            anyString(),
-            eq("Invalid file")
-        );
+        verify(spyService).createFailureInterfaceFile(any(), eq("test.dat"),
+            anyString(), eq("Invalid file"), Domain.MAINTENANCE);
     }
 
 }

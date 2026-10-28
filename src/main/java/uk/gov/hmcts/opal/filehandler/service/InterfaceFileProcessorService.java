@@ -15,13 +15,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.util.DigestUtils;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.exception.DownstreamServiceUnavailableException;
-import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -37,7 +36,7 @@ import uk.gov.hmcts.opal.filehandler.util.StreamUtil;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class InterfaceFileProcessorService {
+public abstract class InterfaceFileProcessorService {
 
     protected final Clock clock;
     private final FeatureFlagUtil featureFlagUtil;
@@ -48,14 +47,19 @@ public class InterfaceFileProcessorService {
     protected final ObjectMapper objectMapper;
 
     protected void processFile(
-        BaisFileProcessorConfiguration config,
+        FileProcessorConfiguration config,
         InterfaceFileEntity fileEntity,
         InputStream inputStream,
         long creatorId
     ) {
-        // Processors may implement their own processing logic for ingested files.
-        // This method is called after the file has been successfully ingested and stored in the blob store.
     }
+
+    protected abstract void processFile(
+        BaisFileProcessorConfiguration config,
+        InterfaceFileEntity fileEntity,
+        InputStream inputStream,
+        long creatorId
+    );
 
     protected void validateFile(InputStream inputStream) {
         // Processors may validate their input format before it is uploaded.
@@ -151,6 +155,7 @@ public class InterfaceFileProcessorService {
             .findByTypeAndFileNameAndChecksumAndStatus(
                 type, fileName, fileChecksum, Status.SUCCESS);
         try {
+
             if (duplicateOpt.isPresent()) {
                 InterfaceFileEntity duplicate = duplicateOpt.get();
                 String errorMessage = "File with name '%s' and checksum '%s' for source '%s' is a duplicate of %s"
@@ -169,6 +174,7 @@ public class InterfaceFileProcessorService {
                 entity.setFilestoreUuid(fileStoreUuid);
                 entity.setStatus(Status.INGESTED);
             }
+
         } catch (Exception e) {
             String errorMessage;
             if (e instanceof BlobUploadException) {
@@ -196,7 +202,7 @@ public class InterfaceFileProcessorService {
     }
 
     protected void processIngestedFile(
-        BaisFileProcessorConfiguration config,
+        FileProcessorConfiguration config,
         InterfaceFileEntity entity,
         InputStream inputStream,
         long creatorId
@@ -238,10 +244,11 @@ public class InterfaceFileProcessorService {
     }
 
     protected InterfaceFileEntity createDuplicateInterfaceFile(
-        BaisFileProcessorConfiguration config,
+        FileProcessorConfiguration config,
         String fileName,
         String fileChecksum,
-        InterfaceFileEntity duplicate
+        InterfaceFileEntity duplicate,
+        Domain domain
     ) {
         log.error("File with name '{}' and checksum '{}' for source '{}' is a duplicate of {}",
             fileName, fileChecksum, config.getSource(), duplicate.getInterfaceFileId());
@@ -256,7 +263,7 @@ public class InterfaceFileProcessorService {
             .filestoreUuid(duplicate.getFilestoreUuid())
             .createdDatetime(LocalDateTime.now(clock))
             .createdBy(getCurrentUserId())
-            .opalDomain(Domain.MAINTENANCE)
+            .opalDomain(domain)
             .errors(errorJson(
                 "File with name '%s' and checksum '%s' for source '%s' already processed skipping"
                     .formatted(fileName, fileChecksum, config.getSource())))
@@ -264,10 +271,11 @@ public class InterfaceFileProcessorService {
     }
 
     protected InterfaceFileEntity createNewInterfaceFile(
-        BaisFileProcessorConfiguration config,
+        FileProcessorConfiguration config,
         String fileName,
         String fileChecksum,
-        UUID fileStoreUuid
+        UUID fileStoreUuid,
+        Domain domain
     ) {
         return InterfaceFileEntity.builder()
             .type(Type.SOURCE)
@@ -279,15 +287,16 @@ public class InterfaceFileProcessorService {
             .status(Status.INGESTED)
             .filestoreUuid(fileStoreUuid)
             .createdDatetime(LocalDateTime.now(clock))
-            .opalDomain(Domain.MAINTENANCE)
+            .opalDomain(domain)
             .build();
     }
 
     protected InterfaceFileEntity createFailureInterfaceFile(
-        BaisFileProcessorConfiguration config,
+        FileProcessorConfiguration config,
         String fileName,
         String fileChecksum,
-        String failureMessage
+        String failureMessage,
+        Domain domain
     ) {
         return InterfaceFileEntity.builder()
             .type(Type.SOURCE)
@@ -298,7 +307,7 @@ public class InterfaceFileProcessorService {
             .status(Status.FAILED)
             .createdDatetime(LocalDateTime.now(clock))
             .createdBy(getCurrentUserId())
-            .opalDomain(Domain.MAINTENANCE)
+            .opalDomain(domain)
             .errors(errorJson(failureMessage))
             .build();
     }
@@ -318,12 +327,8 @@ public class InterfaceFileProcessorService {
         return SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser().getUserId();
     }
 
-    @SuppressWarnings("java:S4790") // Used for checksum, not in a sensitive context
-    protected static String calculateChecksum(InputStream stream) throws IOException {
-        return DigestUtils.md5DigestAsHex(stream);
+    protected Optional<InterfaceFileEntity> findDuplicateFile(String fileName, String fileChecksum, Status status) {
+        return interfaceFilesRepository.findByFileNameAndChecksumAndStatus(fileName, fileChecksum, status);
     }
 
-    protected Optional<InterfaceFileEntity> findDuplicateFile(String fileName, String fileChecksum) {
-        return interfaceFilesRepository.findByFileNameAndChecksumAndStatus(fileName, fileChecksum, Status.SUCCESS);
-    }
 }

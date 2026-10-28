@@ -1,5 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
+import static uk.gov.hmcts.opal.filehandler.util.StreamUtil.calculateChecksum;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Clock;
@@ -9,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
+import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
@@ -54,53 +58,64 @@ public class VariantBankingFileProcessorService
         return List.of();
     }
 
-    @Override
-    protected Optional<InterfaceFileEntity> findDuplicateFile(String fileName, String fileChecksum) {
-        return interfaceFilesRepository.findByFileNameAndStatus(fileName, Status.SUCCESS);
-    }
-
-    public void processUploadedFile(BaisFileProcessorConfiguration config, String fileName, byte[] fileBytes
+    public void processUploadedFile(FileProcessorConfiguration config, String fileName,
+        byte[] fileBytes, Domain domain, Status status
     ) throws IOException {
 
-        ingestUploadedFile(config, fileName, fileBytes);
+        ingestUploadedFile(config, fileName, fileBytes,domain, status);
     }
 
     /**
      * Processes a Variant Banking file uploaded via the Add Interface Files API.
      */
-    protected void ingestUploadedFile(BaisFileProcessorConfiguration config, String fileName, byte[] fileBytes)
+    protected void ingestUploadedFile(FileProcessorConfiguration config, String fileName,
+        byte[] fileBytes, Domain domain, Status status)
         throws IOException {
 
+        validateFileName(config, fileName);
         String fileChecksum = calculateChecksum(new ByteArrayInputStream(fileBytes));
 
-        Optional<InterfaceFileEntity> duplicate = findDuplicateFile(fileName, fileChecksum);
+        Optional<InterfaceFileEntity> duplicate = interfaceFilesRepository.findByFileNameAndStatus(fileName, status);
         InterfaceFileEntity entity;
 
         try {
             if (duplicate.isPresent()) {
-                entity = createDuplicateInterfaceFile(config, fileName, fileChecksum, duplicate.get());
+                entity = createDuplicateInterfaceFile(config, fileName, fileChecksum, duplicate.get(),domain);
             } else {
                 validateFile(new ByteArrayInputStream(fileBytes));
 
                 UUID fileStoreUuid = UUID.randomUUID();
-                interfaceFileBlobStoreService.uploadBaisFile(fileStoreUuid, config.getContainerName(),
+                interfaceFileBlobStoreService.uploadBaisFile(fileStoreUuid, config.getFeatureFlag(),
                     new ByteArrayInputStream(fileBytes), fileChecksum);
 
-                entity = createNewInterfaceFile(config, fileName, fileChecksum, fileStoreUuid);
+                entity = createNewInterfaceFile(config, fileName, fileChecksum, fileStoreUuid,domain);
             }
         } catch (InvalidReportFileException e) {
-            entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
+            entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage(),domain);
         } catch (BlobChecksumValidationException e) {
-            entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage());
+            entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage(),domain);
         } catch (BlobUploadException e) {
             entity = createFailureInterfaceFile(config, fileName, fileChecksum, "Blob upload failed for file '%s': %s"
-                .formatted(fileName, e.getMessage()));
+                .formatted(fileName, e.getMessage()),domain);
         }
 
         entity = saveInitialFile(entity);
 
         if (entity.getStatus().equals(Status.INGESTED)) {
             processIngestedFile(config, entity, new ByteArrayInputStream(fileBytes), getCurrentUserId());
+        }
+    }
+
+    private void validateFileName(
+        FileProcessorConfiguration config,
+        String fileName
+    ) {
+        if (!config.getFileNameRegex().matcher(fileName).matches()) {
+            throw new InvalidReportFileException(
+                "Filename '%s' does not match expected pattern"
+                    .formatted(fileName),
+                null
+            );
         }
     }
 }

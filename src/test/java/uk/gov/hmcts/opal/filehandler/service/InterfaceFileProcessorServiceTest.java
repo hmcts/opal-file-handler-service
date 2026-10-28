@@ -11,14 +11,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.opal.filehandler.util.StreamUtil.calculateChecksum;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Clock;
 import java.time.Instant;
@@ -432,7 +433,7 @@ class InterfaceFileProcessorServiceTest {
                     config,
                     MATCHING_FILE,
                     CHECKSUM,
-                    uuid
+                    uuid, Domain.MAINTENANCE
                 );
 
             assertThat(entity.getStatus()).isEqualTo(Status.INGESTED);
@@ -454,7 +455,7 @@ class InterfaceFileProcessorServiceTest {
                     config,
                     MATCHING_FILE,
                     CHECKSUM,
-                    "boom"
+                    "boom", Domain.MAINTENANCE
                 );
 
             assertThat(entity.getStatus()).isEqualTo(Status.FAILED);
@@ -482,7 +483,7 @@ class InterfaceFileProcessorServiceTest {
                     config,
                     MATCHING_FILE,
                     CHECKSUM,
-                    duplicate
+                    duplicate, Domain.MAINTENANCE
                 );
 
             assertThat(entity.getStatus()).isEqualTo(Status.DUPLICATE);
@@ -526,7 +527,7 @@ class InterfaceFileProcessorServiceTest {
             Optional<InterfaceFileEntity> result =
                 service.findDuplicateFile(
                     MATCHING_FILE,
-                    CHECKSUM
+                    CHECKSUM,Status.SUCCESS
                 );
 
             assertThat(result).contains(entity);
@@ -535,10 +536,7 @@ class InterfaceFileProcessorServiceTest {
         @Test
         void shouldCalculateChecksum() throws Exception {
 
-            String checksum =
-                InterfaceFileProcessorService.calculateChecksum(
-                    new ByteArrayInputStream(FILE_CONTENT)
-                );
+            String checksum = calculateChecksum(new ByteArrayInputStream(FILE_CONTENT));
 
             assertThat(checksum).isNotBlank();
             assertThat(checksum).hasSize(32);
@@ -556,7 +554,7 @@ class InterfaceFileProcessorServiceTest {
             Optional<InterfaceFileEntity> result =
                 service.findDuplicateFile(
                     MATCHING_FILE,
-                    CHECKSUM
+                    CHECKSUM,Status.DUPLICATE
                 );
 
             assertThat(result).isEmpty();
@@ -749,6 +747,7 @@ class InterfaceFileProcessorServiceTest {
             InterfaceFileEntity fileEntity,
             InputStream inputStream,
             long creatorId
+
         ) {
             processCount++;
             lastProcessConfig = config;

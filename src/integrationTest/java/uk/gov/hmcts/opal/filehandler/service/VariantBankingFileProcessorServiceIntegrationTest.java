@@ -16,8 +16,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
+import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.DWPBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.config.VariantBankingFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -50,7 +50,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
     private VariantBankingFileProcessorService service;
 
     @Autowired
-    private VariantBankingFileProcessorConfig config;
+    private BaisFileProcessorConfiguration config;
 
     @Autowired
     DWPBaisFileProcessorService dwpBaisFileProcessorService;
@@ -173,7 +173,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
 
         byte[] fileBytes = new ClassPathResource("bais-emulator/a121_240101VB001_01.dat")
             .getInputStream().readAllBytes();
-        service.processUploadedFile(config,"a121_240101VB001_01.dat", fileBytes);
+        service.processUploadedFile(config,"a121_240101VB001_01.dat", fileBytes, Domain.MAINTENANCE, Status.SUCCESS);
 
         InterfaceFileEntity sourceJsonEntity = assertSuccessfulInterfaceFileByFileName(
                 "a121_240101VB001_01.dat",
@@ -226,7 +226,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
 
         byte[] fileBytes = "different-content".getBytes();
 
-        service.processUploadedFile(config,"VB001.dat", fileBytes);
+        service.processUploadedFile(config,"VB001.dat", fileBytes, Domain.MAINTENANCE, Status.SUCCESS);
 
         InterfaceFileEntity duplicateFile =
             repository.findAll().stream()
