@@ -234,7 +234,7 @@ public class InterfaceFilesService {
                 }
 
                 try {
-                    log.info("Processing delete for interface file id: {}} and all related files...", id);
+                    log.info("Processing delete for interface file id: {} and all related files...", id);
                     processDelete(interfaceFile);
                     successIds.add(id);
                 } catch (Exception e) {
