@@ -219,7 +219,7 @@ public class InterfaceFilesService {
     }
 
     @Transactional
-    public DeleteInterfaceFilesResult deleteInterfaceFiles(List<Long> ids) {
+    public DeleteInterfaceFilesResult deleteInterfaceFiles(Set<Long> ids) {
         ArrayList<Long> successIds = new ArrayList<>();
         ArrayList<Long> ignoredIds = new ArrayList<>();
 

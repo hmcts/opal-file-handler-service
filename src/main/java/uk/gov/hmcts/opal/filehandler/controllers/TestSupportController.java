@@ -2,6 +2,7 @@ package uk.gov.hmcts.opal.filehandler.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -34,7 +35,7 @@ public class TestSupportController implements TestSupportApi {
     @Operation(summary = "Deletes a list of Interface jobs. FOR TESTING ONLY!")
     public ResponseEntity<DeleteInterfaceFilesResult> deleteInterfaceFiles(@RequestParam(value = "ids") List<Long> ids) {
         log.warn("TEST ENDPOINT: Request to delete interface files with ids: {}", ids);
-        DeleteInterfaceFilesResult result = interfaceFilesService.deleteInterfaceFiles(ids);
+        DeleteInterfaceFilesResult result = interfaceFilesService.deleteInterfaceFiles(Set.of(ids.toArray(Long[]::new)));
         return ResponseEntity.ok(result);
     }
 }
