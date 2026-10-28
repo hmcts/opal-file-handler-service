@@ -1,14 +1,18 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
+import static java.lang.String.format;
+
 import com.azure.core.util.BinaryData;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.domain.Sort;
@@ -29,6 +33,7 @@ import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
+import uk.gov.hmcts.opal.filehandler.exception.BlobDeleteException;
 import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.InvalidInterfaceFileStatusException;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
@@ -37,6 +42,7 @@ import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
+import uk.gov.hmcts.opal.filehandler.service.response.DeleteInterfaceFilesResult;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
 import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
@@ -108,7 +114,7 @@ public class InterfaceFilesService {
 
         if (entity.getStatus() != Status.SUCCESS) {
             throw new InvalidInterfaceFileStatusException(
-                String.format("Interface file with id %d could not be retrieved as it has an invalid status of:"
+                format("Interface file with id %d could not be retrieved as it has an invalid status of:"
                         + " \"%s\" only files with status: \"SUCCESS\" can be returned.",
                     id, entity.getStatus()));
         }
@@ -212,5 +218,71 @@ public class InterfaceFilesService {
                 "Internal Server Error",
                 "Failed to read file content for interface file creation ", e);
         }
+    }
+
+    @Transactional
+    public DeleteInterfaceFilesResult deleteInterfaceFiles(List<Long> ids) {
+        ArrayList<Long> successIds = new ArrayList<>();
+        ArrayList<Long> ignoredIds = new ArrayList<>();
+
+        for(Long id: ids) {
+            repository.findById(id).ifPresentOrElse(interfaceFile -> {
+                if(interfaceFile.getType() != Type.SOURCE) {
+                    log.warn("Interface file id: {} is of type {}, therefore skipping", id, interfaceFile.getType());
+                    ignoredIds.add(id);
+                    return;
+                }
+
+                try {
+                    log.info("Processing delete for interface file id: {}} and all related files...", id);
+                    processDelete(interfaceFile);
+                    successIds.add(id);
+                } catch (Exception e) {
+                    log.warn("Did not complete tree of deletes for interface file id: {}", id);
+                }
+            }, () -> {
+                log.warn("Ignored request to delete interface file with id: {} as it does not exist", id);
+                ignoredIds.add(id);
+            });
+        }
+
+        log.info("Successfully deleted all related interface files for {} out of {} requested (and ignored {})",
+            successIds.size(), ids.size(), ignoredIds.size());
+
+        ids.removeAll(successIds);
+        ids.removeAll(ignoredIds);
+
+        return DeleteInterfaceFilesResult.builder()
+            .successfullyDeletedIds(successIds)
+            .ignoredIds(ignoredIds)
+            .failedIds(ids)
+            .build();
+    }
+
+    private void processDelete(InterfaceFileEntity interfaceFile) {
+        if(interfaceFile.hasChildInterfaceFiles()) {
+            interfaceFile.getChildRelatedInterfaceFiles().stream()
+                .forEach(this::processDelete);
+        } else {
+            deleteInterfaceFile(interfaceFile);
+        }
+    }
+
+    private void deleteInterfaceFile(InterfaceFileEntity interfaceFile) {
+        Long id = interfaceFile.getInterfaceFileId();
+        String containerName =  interfaceFile.getSource().name().toLowerCase();
+        UUID filestoreUUID = interfaceFile.getFilestoreUuid();
+        log.info("Deleting interface file id: {} type: {} from blob store and db", id, interfaceFile.getType().name());
+        try {
+            blobStoreService.deleteBlob(filestoreUUID, containerName);
+            log.info("Successfully deleted Interface File id: {} filestoreUuid: {} container: {} from blob store",
+                id, filestoreUUID, containerName);
+        } catch (BlobDeleteException e) {
+            log.warn("Failed to delete Interface File id: {} filestoreUuid: {} container: {} from blob store,"
+                + "and will now skip deleting from db", id, filestoreUUID, containerName);
+            throw e;
+        }
+        repository.delete(interfaceFile);
+        log.info("Successfully deleted interface file id: {} from db", id);
     }
 }

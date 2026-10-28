@@ -1,5 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service.blobstore;
 
+import static java.lang.String.format;
+
 import com.azure.core.util.BinaryData;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
@@ -11,6 +13,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
+import uk.gov.hmcts.opal.filehandler.exception.BlobDeleteException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobStorageContainerNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobUploadException;
@@ -64,7 +67,7 @@ public class InterfaceFileBlobStoreService {
         BlobContainerClient container = blobServiceClient.getBlobContainerClient(containerName);
         if (!container.exists()) {
             throw new BlobStorageContainerNotFoundException(
-                String.format("Blob container \"%s\" does not exist", containerName)
+                format("Blob container \"%s\" does not exist", containerName)
             );
         }
         return container;
@@ -86,11 +89,24 @@ public class InterfaceFileBlobStoreService {
         BlobContainerClient container = getBlobContainerClient(containerName);
         BlobClient blob = getBlobClient(container, fileUUID.toString());
         if (blob == null) {
-            throw new BlobNotFoundException(String.format("Expected interface file id: %d to exist in blobstore "
+            throw new BlobNotFoundException(format("Expected interface file id: %d to exist in blobstore "
                     + "container: \"%s\" with name \"%s\" but this could not be located.",
                 interfaceFileId, containerName, fileUUID));
         }
 
         return getFileContents(blob);
+    }
+
+    public boolean deleteBlob(UUID filestoreUuid, String containerName) {
+        try {
+            return blobServiceClient.getBlobContainerClient(containerName)
+                .getBlobClient(filestoreUuid.toString())
+                .deleteIfExists();
+        } catch (RuntimeException e) {
+            String msg = format("Failed to delete filestoreUuid: %s from container: %s", e);
+            log.error(msg, e);
+            throw new BlobDeleteException(filestoreUuid, containerName, e);
+        }
+
     }
 }
