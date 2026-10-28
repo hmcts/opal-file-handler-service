@@ -246,7 +246,7 @@ public class InterfaceFilesService {
             });
         }
 
-        log.info("Successfully deleted all related interface files for {} out of {} requested (and ignored {})",
+        log.info("Successfully processed {} out of {} requested. (ignored {})",
             successIds.size(), ids.size(), ignoredIds.size());
 
         ids.removeAll(successIds);
