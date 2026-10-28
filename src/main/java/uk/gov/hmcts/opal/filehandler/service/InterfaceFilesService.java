@@ -271,6 +271,7 @@ public class InterfaceFilesService {
         String containerName =  interfaceFile.getSource().name().toLowerCase();
         UUID filestoreUUID = interfaceFile.getFilestoreUuid();
         log.info("Deleting interface file id: {} type: {} from blob store and db", id, interfaceFile.getType().name());
+
         try {
             blobStoreService.deleteBlob(filestoreUUID, containerName);
             log.info("Successfully deleted Interface File id: {} filestoreUuid: {} container: {} from blob store",
@@ -280,6 +281,7 @@ public class InterfaceFilesService {
                 + "and will now skip deleting from db", id, filestoreUUID, containerName);
             throw e;
         }
+
         repository.delete(interfaceFile);
         log.info("Successfully deleted interface file id: {} from db", id);
     }
