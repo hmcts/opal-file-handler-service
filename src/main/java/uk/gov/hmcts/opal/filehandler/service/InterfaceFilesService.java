@@ -1,7 +1,5 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
-import static java.lang.String.format;
-
 import com.azure.core.util.BinaryData;
 import java.io.IOException;
 import java.io.InputStream;
@@ -114,7 +112,7 @@ public class InterfaceFilesService {
 
         if (entity.getStatus() != Status.SUCCESS) {
             throw new InvalidInterfaceFileStatusException(
-                format("Interface file with id %d could not be retrieved as it has an invalid status of:"
+                String.format("Interface file with id %d could not be retrieved as it has an invalid status of:"
                         + " \"%s\" only files with status: \"SUCCESS\" can be returned.",
                     id, entity.getStatus()));
         }
