@@ -1,7 +1,5 @@
 package uk.gov.hmcts.opal.filehandler.service.blobstore;
 
-import static java.lang.String.format;
-
 import com.azure.core.util.BinaryData;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
@@ -67,7 +65,7 @@ public class InterfaceFileBlobStoreService {
         BlobContainerClient container = blobServiceClient.getBlobContainerClient(containerName);
         if (!container.exists()) {
             throw new BlobStorageContainerNotFoundException(
-                format("Blob container \"%s\" does not exist", containerName)
+                String.format("Blob container \"%s\" does not exist", containerName)
             );
         }
         return container;
@@ -89,7 +87,7 @@ public class InterfaceFileBlobStoreService {
         BlobContainerClient container = getBlobContainerClient(containerName);
         BlobClient blob = getBlobClient(container, fileUUID.toString());
         if (blob == null) {
-            throw new BlobNotFoundException(format("Expected interface file id: %d to exist in blobstore "
+            throw new BlobNotFoundException(String.format("Expected interface file id: %d to exist in blobstore "
                     + "container: \"%s\" with name \"%s\" but this could not be located.",
                 interfaceFileId, containerName, fileUUID));
         }
@@ -103,7 +101,7 @@ public class InterfaceFileBlobStoreService {
                 .getBlobClient(filestoreUuid.toString())
                 .deleteIfExists();
         } catch (RuntimeException e) {
-            String msg = format("Failed to delete filestoreUuid: %s from container: %s", e);
+            String msg = String.format("Failed to delete filestoreUuid: %s from container: %s", e);
             log.error(msg, e);
             throw new BlobDeleteException(filestoreUuid, containerName, e);
         }
