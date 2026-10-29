@@ -11,7 +11,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 @Setter
 @Component("VariantBankingFileProcessorConfiguration")
 @ConfigurationProperties("opal.file-handler-service.file-types.variant-banking")
-public class VariantBankingFileProcessorConfig implements FileProcessorConfiguration {
+public class VariantBankingFileProcessorConfig implements BaisFileProcessorConfiguration {
 
     private String featureFlag;
 
@@ -22,5 +22,7 @@ public class VariantBankingFileProcessorConfig implements FileProcessorConfigura
     private String containerName;
 
     private Pattern fileNameRegex;
+
+    private String sftpUsername;
 
 }

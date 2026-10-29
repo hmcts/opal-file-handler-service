@@ -16,8 +16,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.DWPBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.VariantBankingFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -50,7 +50,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
     private VariantBankingFileProcessorService service;
 
     @Autowired
-    private BaisFileProcessorConfiguration config;
+    private VariantBankingFileProcessorConfig config;
 
     @Autowired
     DWPBaisFileProcessorService dwpBaisFileProcessorService;
