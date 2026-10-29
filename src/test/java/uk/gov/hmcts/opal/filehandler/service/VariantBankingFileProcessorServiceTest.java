@@ -87,9 +87,7 @@ class VariantBankingFileProcessorServiceTest {
     @BeforeEach
     void setUp() {
         lenient().when(config.getFileNameRegex())
-            .thenReturn(
-                Pattern.compile("^a121_\\d{6}VB\\d{3}_\\d{2}\\.dat$")
-            );
+            .thenReturn(Pattern.compile("^a121_\\d{6}VB\\d{3}_\\d{2}\\.dat$"));
 
         lenient().when(clock.getZone())
             .thenReturn(ZoneId.systemDefault());
@@ -117,10 +115,13 @@ class VariantBankingFileProcessorServiceTest {
         byte[] fileBytes = "test content".getBytes();
 
         doNothing().when(spyService)
-            .ingestUploadedFile(config, "a121_240101VB001_01.dat", fileBytes,Domain.MAINTENANCE, Status.SUCCESS);
+            .ingestUploadedFile(config, "a121_240101VB001_01.dat", fileBytes,Domain.MAINTENANCE,
+                Status.SUCCESS);
 
-        spyService.processUploadedFile(config,"a121_240101VB001_01.dat", fileBytes, Domain.MAINTENANCE, Status.SUCCESS);
-        verify(spyService).ingestUploadedFile(config,"a121_240101VB001_01.dat", fileBytes, Domain.MAINTENANCE, Status.SUCCESS);
+        spyService.processUploadedFile(config,"a121_240101VB001_01.dat", fileBytes, Domain.MAINTENANCE,
+            Status.SUCCESS);
+        verify(spyService).ingestUploadedFile(config,"a121_240101VB001_01.dat", fileBytes,
+            Domain.MAINTENANCE, Status.SUCCESS);
 
     }
 
@@ -262,6 +263,7 @@ class VariantBankingFileProcessorServiceTest {
                 Status.SUCCESS
             );
     }
+
     @Test
     void shouldCreateFailureFileWhenInvalidReportFileExceptionThrown() throws Exception {
 
