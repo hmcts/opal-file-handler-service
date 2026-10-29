@@ -107,7 +107,7 @@ public class VariantBankingFileProcessorService
         }
     }
 
-    private void validateFileName(
+    protected void validateFileName(
         FileProcessorConfiguration config,
         String fileName
     ) {
