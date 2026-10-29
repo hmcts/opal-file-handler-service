@@ -3,12 +3,14 @@ package uk.gov.hmcts.opal.filehandler.service;
 import com.azure.core.util.BinaryData;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.domain.Sort;
@@ -29,6 +31,7 @@ import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
+import uk.gov.hmcts.opal.filehandler.exception.BlobDeleteException;
 import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.InvalidInterfaceFileStatusException;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
@@ -37,6 +40,7 @@ import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
+import uk.gov.hmcts.opal.filehandler.service.response.DeleteInterfaceFilesResult;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
 import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
@@ -211,6 +215,93 @@ public class InterfaceFilesService {
             throw new InternalServerErrorException(
                 "Internal Server Error",
                 "Failed to read file content for interface file creation ", e);
+        }
+    }
+
+    @Transactional
+    public DeleteInterfaceFilesResult deleteInterfaceFiles(Set<Long> ids) {
+        ArrayList<Long> successIds = new ArrayList<>();
+        ArrayList<Long> ignoredIds = new ArrayList<>();
+        ArrayList<Long> failedIds = new ArrayList<>();
+
+        for (Long id: ids) {
+            repository.findById(id).ifPresentOrElse(interfaceFile -> {
+                if (interfaceFile.getType() != Type.SOURCE) {
+                    log.warn("Interface file id: {} is of type {}, therefore skipping", id, interfaceFile.getType());
+                    ignoredIds.add(id);
+                    return;
+                }
+
+                try {
+                    log.info("Processing delete for interface file id: {} and all related files...", id);
+                    processDelete(interfaceFile);
+                    successIds.add(id);
+                } catch (Exception e) {
+                    log.warn("Did not complete tree of deletes for interface file id: {}", id);
+                    failedIds.add(id);
+                }
+            }, () -> {
+                log.warn("Ignored request to delete interface file with id: {} as it does not exist", id);
+                ignoredIds.add(id);
+            });
+        }
+
+        log.info("Successfully processed {} out of {} requested. (ignored {})",
+            successIds.size(), ids.size(), ignoredIds.size());
+
+        return DeleteInterfaceFilesResult.builder()
+            .successfullyDeletedIds(successIds)
+            .ignoredIds(ignoredIds)
+            .failedIds(failedIds)
+            .build();
+    }
+
+    private void processDelete(InterfaceFileEntity interfaceFile) {
+        // We can't just do a cascade delete because we need to ensure the blobs
+        // are deleted from the blob store before we delete the row from the db.
+        if (interfaceFile.hasChildren()) {
+            interfaceFile.getChildRelatedInterfaceFiles().stream()
+                .forEach(this::processDelete);
+        } else {
+            DeleteInterfaceFileResult result = deleteInterfaceFile(interfaceFile);
+            // We are at the bottom of the tree, so if no other children
+            // exist at this level then we can delete the parent
+            if (result.hadParentWithoutRemainingChildren()) {
+                processDelete(result.parent());
+            }
+        }
+    }
+
+    private DeleteInterfaceFileResult deleteInterfaceFile(InterfaceFileEntity interfaceFile) {
+        Long id = interfaceFile.getInterfaceFileId();
+        String containerName =  interfaceFile.getSource().name().toLowerCase();
+        UUID filestoreUUID = interfaceFile.getFilestoreUuid();
+        log.info("Deleting interface file id: {} type: {} from blob store and db", id, interfaceFile.getType().name());
+
+        try {
+            blobStoreService.deleteBlob(filestoreUUID, containerName);
+            log.info("Successfully deleted Interface File id: {} filestoreUuid: {} container: {} from blob store",
+                id, filestoreUUID, containerName);
+        } catch (BlobDeleteException e) {
+            log.warn("Failed to delete Interface File id: {} filestoreUuid: {} container: {} from blob store,"
+                + "and will now skip deleting from db", id, filestoreUUID, containerName);
+            throw e; // this exception will halt the tree of deletes for whatever the parent was
+        }
+
+        InterfaceFileEntity parent = null;
+        if (interfaceFile.hasParent()) {
+            // TODO might be worth double checking we need to do this
+            parent = interfaceFile.getRelatedInterfaceFile();
+            parent.getChildRelatedInterfaceFiles().remove(interfaceFile);
+        }
+        repository.delete(interfaceFile);
+        log.info("Successfully deleted interface file id: {} from db", id);
+        return new DeleteInterfaceFileResult(parent);
+    }
+
+    private record DeleteInterfaceFileResult(InterfaceFileEntity parent) {
+        boolean hadParentWithoutRemainingChildren() {
+            return parent != null && !parent.hasChildren();
         }
     }
 }
