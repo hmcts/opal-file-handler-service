@@ -215,7 +215,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
             .target(Interface.OPAL)
             .type(Type.SOURCE_JSON)
             .opalDomain(Domain.MAINTENANCE)
-            .fileName("VB001.dat")
+            .fileName("a121_240101VB001_01.dat")
             .checksum("existing-checksum")
             .status(Status.SUCCESS)
             .createdDatetime(LocalDateTime.now())
@@ -226,11 +226,11 @@ class VariantBankingFileProcessorServiceIntegrationTest
 
         byte[] fileBytes = "different-content".getBytes();
 
-        service.processUploadedFile(config,"VB001.dat", fileBytes, Domain.MAINTENANCE, Status.SUCCESS);
+        service.processUploadedFile(config,"a121_240101VB001_01.dat", fileBytes, Domain.MAINTENANCE, Status.SUCCESS);
 
         InterfaceFileEntity duplicateFile =
             repository.findAll().stream()
-                .filter(file -> file.getFileName().equals("VB001.dat"))
+                .filter(file -> file.getFileName().equals("a121_240101VB001_01.dat"))
                 .filter(file -> file.getStatus() == Status.DUPLICATE)
                 .findFirst()
                 .orElseThrow();
