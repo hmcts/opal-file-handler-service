@@ -564,13 +564,14 @@ public class InterfaceFilesServiceTest {
         assertThat(result.getIgnoredIds()).isEmpty();
         assertThat(result.getFailedIds()).isEmpty(); // TODO 1 is failing
 
-        // TODO this isn't working
+        // TODO need to use Arg Captor instead
         verify(blobStoreService).deleteBlob(transformedJsonFilestoreUuid, natwestContainer);
         verify(blobStoreService).deleteBlob(sourceJsonFilestoreUuid, natwestContainer);
         verify(blobStoreService).deleteBlob(failedSourceJsonFilestoreUuid, natwestContainer);
         verify(blobStoreService).deleteBlob(sourceFilestoreUuid, natwestContainer);
         verify(blobStoreService).deleteBlob(sourceFilestoreUuid2, natwestContainer);
 
+        // TODO need to use Arg Captor instead
         verify(repository, times(1)).delete(transformedJsonFile);
         verify(repository, times(1)).delete(sourceJsonFile);
         verify(repository, times(1)).delete(failedSourceJsonFile);
