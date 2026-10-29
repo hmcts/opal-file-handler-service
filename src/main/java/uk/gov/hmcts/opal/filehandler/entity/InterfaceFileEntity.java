@@ -109,7 +109,7 @@ public class InterfaceFileEntity {
     private Long createdBy;
 
     public boolean hasParent() {
-        return relatedInterfaceFile!= null;
+        return relatedInterfaceFile != null;
     }
 
     public boolean hasChildren() {

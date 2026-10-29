@@ -223,9 +223,9 @@ public class InterfaceFilesService {
         ArrayList<Long> successIds = new ArrayList<>();
         ArrayList<Long> ignoredIds = new ArrayList<>();
 
-        for(Long id: ids) {
+        for (Long id: ids) {
             repository.findById(id).ifPresentOrElse(interfaceFile -> {
-                if(interfaceFile.getType() != Type.SOURCE) {
+                if (interfaceFile.getType() != Type.SOURCE) {
                     log.warn("Interface file id: {} is of type {}, therefore skipping", id, interfaceFile.getType());
                     ignoredIds.add(id);
                     return;
@@ -258,7 +258,7 @@ public class InterfaceFilesService {
     }
 
     private void processDelete(InterfaceFileEntity interfaceFile) {
-        if(interfaceFile.hasChildren()) {
+        if (interfaceFile.hasChildren()) {
             interfaceFile.getChildRelatedInterfaceFiles().stream()
                 .forEach(this::processDelete);
         } else {
