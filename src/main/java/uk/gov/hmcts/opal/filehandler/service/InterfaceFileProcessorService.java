@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.exception.DownstreamServiceUnavailableException;
+import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
@@ -36,7 +37,7 @@ import uk.gov.hmcts.opal.filehandler.util.StreamUtil;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public abstract class InterfaceFileProcessorService {
+public class InterfaceFileProcessorService {
 
     protected final Clock clock;
     private final FeatureFlagUtil featureFlagUtil;
@@ -47,19 +48,14 @@ public abstract class InterfaceFileProcessorService {
     protected final ObjectMapper objectMapper;
 
     protected void processFile(
-        FileProcessorConfiguration config,
-        InterfaceFileEntity fileEntity,
-        InputStream inputStream,
-        long creatorId
-    ) {
-    }
-
-    protected abstract void processFile(
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity fileEntity,
         InputStream inputStream,
         long creatorId
-    );
+    ) {
+        // Processors may implement their own processing logic for ingested files.
+        // This method is called after the file has been successfully ingested and stored in the blob store.
+    }
 
     protected void validateFile(InputStream inputStream) {
         // Processors may validate their input format before it is uploaded.
@@ -120,7 +116,7 @@ public abstract class InterfaceFileProcessorService {
             config.getSource(),
             config.getTarget(),
             Type.SOURCE,
-            Domain.FINES,
+            Domain.MAINTENANCE,//TODO check
             config.getContainerName(),
             creatorId
         );
@@ -155,7 +151,6 @@ public abstract class InterfaceFileProcessorService {
             .findByTypeAndFileNameAndChecksumAndStatus(
                 type, fileName, fileChecksum, Status.SUCCESS);
         try {
-
             if (duplicateOpt.isPresent()) {
                 InterfaceFileEntity duplicate = duplicateOpt.get();
                 String errorMessage = "File with name '%s' and checksum '%s' for source '%s' is a duplicate of %s"
@@ -174,7 +169,6 @@ public abstract class InterfaceFileProcessorService {
                 entity.setFilestoreUuid(fileStoreUuid);
                 entity.setStatus(Status.INGESTED);
             }
-
         } catch (Exception e) {
             String errorMessage;
             if (e instanceof BlobUploadException) {
@@ -202,7 +196,7 @@ public abstract class InterfaceFileProcessorService {
     }
 
     protected void processIngestedFile(
-        FileProcessorConfiguration config,
+        BaisFileProcessorConfiguration config,
         InterfaceFileEntity entity,
         InputStream inputStream,
         long creatorId
