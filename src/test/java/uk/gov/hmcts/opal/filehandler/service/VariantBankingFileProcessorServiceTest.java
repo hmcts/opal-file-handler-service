@@ -12,8 +12,6 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity_.checksum;
-
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
 import java.time.Instant;
@@ -30,7 +28,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.support.TransactionTemplate;
-
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.filehandler.config.VariantBankingFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
