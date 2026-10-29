@@ -411,6 +411,11 @@ static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
 }
 
 withPipeline(type, product, component) {
+    afterSuccess('build') {
+        // Keep active Gradle downloads outside the workspace while ACR packages it.
+        env.GRADLE_USER_HOME = "${env.WORKSPACE}@tmp/gradle-user-home"
+    }
+
     enableDbMigration(product)
     onPR {
         loadVaultSecrets(secrets)
