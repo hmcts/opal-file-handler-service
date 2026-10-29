@@ -222,6 +222,7 @@ public class InterfaceFilesService {
     public DeleteInterfaceFilesResult deleteInterfaceFiles(Set<Long> ids) {
         ArrayList<Long> successIds = new ArrayList<>();
         ArrayList<Long> ignoredIds = new ArrayList<>();
+        ArrayList<Long> failedIds = new ArrayList<>();
 
         for (Long id: ids) {
             repository.findById(id).ifPresentOrElse(interfaceFile -> {
@@ -237,6 +238,7 @@ public class InterfaceFilesService {
                     successIds.add(id);
                 } catch (Exception e) {
                     log.warn("Did not complete tree of deletes for interface file id: {}", id);
+                    failedIds.add(id);
                 }
             }, () -> {
                 log.warn("Ignored request to delete interface file with id: {} as it does not exist", id);
@@ -247,17 +249,16 @@ public class InterfaceFilesService {
         log.info("Successfully processed {} out of {} requested. (ignored {})",
             successIds.size(), ids.size(), ignoredIds.size());
 
-        ids.removeAll(successIds);
-        ids.removeAll(ignoredIds);
-
         return DeleteInterfaceFilesResult.builder()
             .successfullyDeletedIds(successIds)
             .ignoredIds(ignoredIds)
-            .failedIds(ids)
+            .failedIds(failedIds)
             .build();
     }
 
     private void processDelete(InterfaceFileEntity interfaceFile) {
+        // We can't just do a cascade delete because we need to ensure the blobs
+        // are deleted from the blob store before we delete the row from the db.
         if (interfaceFile.hasChildren()) {
             interfaceFile.getChildRelatedInterfaceFiles().stream()
                 .forEach(this::processDelete);

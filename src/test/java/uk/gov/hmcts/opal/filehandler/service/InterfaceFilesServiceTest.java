@@ -1,34 +1,38 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.multipart.MultipartFile;
-import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.web.multipart.MultipartFile;
+import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
 import uk.gov.hmcts.opal.common.user.authorisation.model.BusinessUnitUser;
@@ -42,13 +46,16 @@ import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
+import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
+import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
+import uk.gov.hmcts.opal.filehandler.service.response.DeleteInterfaceFilesResult;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
 import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
@@ -68,6 +75,9 @@ public class InterfaceFilesServiceTest {
 
     @Mock
     private InterfaceFileSpecsFactory specsFactory;
+
+    @Mock
+    private InterfaceFileBlobStoreService blobStoreService;
 
     @Mock
     private InterfaceFilesPdplLoggingService loggingService;
@@ -471,6 +481,102 @@ public class InterfaceFilesServiceTest {
             verifyNoInteractions(repository);
             verifyNoInteractions(mapper);
         }
+    }
+
+    @Test
+    void deleteInterfaceFiles_shouldRecursivelyDeleteFilesAndRemoveBlobs() {
+        // Arrange
+        final Long sourceId = 100L, failedSourceJsonId = 200L, sourceJsonId = 300L, transformedJsonId = 400L,
+            sourceId2 = 101L;
+        final UUID sourceFilestoreUuid = UUID.randomUUID(), failedSourceJsonFilestoreUuid = UUID.randomUUID(),
+            sourceJsonFilestoreUuid = UUID.randomUUID(), transformedJsonFilestoreUuid = UUID.randomUUID(),
+            sourceFilestoreUuid2 = UUID.randomUUID();
+        final String natwestContainer = "natwest";
+
+        InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
+            .interfaceFileId(sourceId)
+            .filestoreUuid(sourceFilestoreUuid)
+            .type(Type.SOURCE)
+            .source(Interface.NATWEST)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+        InterfaceFileEntity failedSourceJsonFile = InterfaceFileEntity.builder()
+            .interfaceFileId(failedSourceJsonId)
+            .filestoreUuid(failedSourceJsonFilestoreUuid)
+            .type(Type.SOURCE_JSON)
+            .source(Interface.NATWEST)
+            .status(Status.FAILED)
+            .relatedInterfaceFile(sourceFile)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+        InterfaceFileEntity sourceJsonFile = InterfaceFileEntity.builder()
+            .interfaceFileId(sourceJsonId)
+            .filestoreUuid(sourceJsonFilestoreUuid)
+            .type(Type.SOURCE_JSON)
+            .source(Interface.NATWEST)
+            .relatedInterfaceFile(sourceFile)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+
+        InterfaceFileEntity transformedJsonFile = InterfaceFileEntity.builder()
+            .interfaceFileId(transformedJsonId)
+            .filestoreUuid(transformedJsonFilestoreUuid)
+            .type(Type.TRANSFORMED_JSON)
+            .source(Interface.NATWEST)
+            .relatedInterfaceFile(sourceJsonFile)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+        InterfaceFileEntity sourceFile2 = InterfaceFileEntity.builder()
+            .interfaceFileId(sourceId2)
+            .filestoreUuid(sourceFilestoreUuid2)
+            .type(Type.SOURCE)
+            .source(Interface.NATWEST)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+        // TODO put in separate test
+//        InterfaceFileEntity sourceJsonFile2 = InterfaceFileEntity.builder()
+//            .interfaceFileId(sourceJsonId2)
+//            .type(Type.SOURCE_JSON)
+//            .childRelatedInterfaceFiles(new HashSet<>())
+//            .build();
+
+        sourceFile.getChildRelatedInterfaceFiles().add(failedSourceJsonFile);
+        sourceFile.getChildRelatedInterfaceFiles().add(sourceJsonFile);
+        sourceJsonFile.getChildRelatedInterfaceFiles().add(transformedJsonFile);
+
+        when(repository.findById(sourceId)).thenReturn(Optional.of(sourceFile));
+        when(repository.findById(failedSourceJsonId)).thenReturn(Optional.of(failedSourceJsonFile));
+        when(repository.findById(sourceJsonId)).thenReturn(Optional.of(sourceJsonFile));
+        when(repository.findById(transformedJsonId)).thenReturn(Optional.of(transformedJsonFile));
+        when(repository.findById(sourceId2)).thenReturn(Optional.of(sourceFile2));
+
+        // Act
+        Set<Long> ids = Set.of(sourceId, sourceId2);
+        DeleteInterfaceFilesResult result = service.deleteInterfaceFiles(ids);
+
+        // Assert
+        assertThat(result.getSuccessfullyDeletedIds()).containsExactlyInAnyOrder(sourceId, sourceId2);
+        assertThat(result.getIgnoredIds()).isEmpty();
+        assertThat(result.getFailedIds()).isEmpty(); // TODO 1 is failing
+
+        // TODO this isn't working
+        verify(blobStoreService).deleteBlob(transformedJsonFilestoreUuid, natwestContainer);
+        verify(blobStoreService).deleteBlob(sourceJsonFilestoreUuid, natwestContainer);
+        verify(blobStoreService).deleteBlob(failedSourceJsonFilestoreUuid, natwestContainer);
+        verify(blobStoreService).deleteBlob(sourceFilestoreUuid, natwestContainer);
+        verify(blobStoreService).deleteBlob(sourceFilestoreUuid2, natwestContainer);
+
+        verify(repository, times(1)).delete(transformedJsonFile);
+        verify(repository, times(1)).delete(sourceJsonFile);
+        verify(repository, times(1)).delete(failedSourceJsonFile);
+        verify(repository, times(1)).delete(sourceFile);
+
+        verify(repository, times(1)).delete(sourceFile2);
     }
 
 }
