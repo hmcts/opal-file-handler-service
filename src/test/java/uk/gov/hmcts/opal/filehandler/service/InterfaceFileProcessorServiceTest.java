@@ -521,13 +521,14 @@ class InterfaceFileProcessorServiceTest {
             when(repository.findByFileNameAndChecksumAndStatus(
                 MATCHING_FILE,
                 CHECKSUM,
-                Status.SUCCESS))
+                Status.DUPLICATE))
                 .thenReturn(Optional.of(entity));
 
             Optional<InterfaceFileEntity> result =
                 service.findDuplicateFile(
                     MATCHING_FILE,
-                    CHECKSUM,Status.SUCCESS
+                    CHECKSUM,
+                    Status.DUPLICATE
                 );
 
             assertThat(result).contains(entity);
@@ -548,13 +549,14 @@ class InterfaceFileProcessorServiceTest {
             when(repository.findByFileNameAndChecksumAndStatus(
                 MATCHING_FILE,
                 CHECKSUM,
-                Status.SUCCESS))
+                Status.DUPLICATE))
                 .thenReturn(Optional.empty());
 
             Optional<InterfaceFileEntity> result =
                 service.findDuplicateFile(
                     MATCHING_FILE,
-                    CHECKSUM,Status.DUPLICATE
+                    CHECKSUM,
+                    Status.DUPLICATE
                 );
 
             assertThat(result).isEmpty();
