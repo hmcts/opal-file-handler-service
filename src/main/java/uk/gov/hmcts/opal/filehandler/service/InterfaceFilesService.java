@@ -262,19 +262,16 @@ public class InterfaceFilesService {
             interfaceFile.getChildRelatedInterfaceFiles().stream()
                 .forEach(this::processDelete);
         } else {
-            deleteInterfaceFile(interfaceFile);
-            // See comment in deleteInterfaceFile(). We might need to remove the deleted file from its
-            // parents collection (if it has a parent) to make the following code work, It depends if JPA does it
-            // immediately on the execution of delete, or whether it does it at flush, or at all.
-            if (interfaceFile.hasParent() && !interfaceFile.getRelatedInterfaceFile().hasChildren()) {
-                // if we are at the bottom of the tree, and no other children exist at this level,
-                // then we can delete the parent
-                processDelete(interfaceFile.getRelatedInterfaceFile());
+            DeleteInterfaceFileResult result = deleteInterfaceFile(interfaceFile);
+            // We are at the bottom of the tree, so if no other children
+            // exist at this level then we can delete the parent
+            if (result.hadParentWithoutRemainingChildren()) {
+                processDelete(result.parent());
             }
         }
     }
 
-    private void deleteInterfaceFile(InterfaceFileEntity interfaceFile) {
+    private DeleteInterfaceFileResult deleteInterfaceFile(InterfaceFileEntity interfaceFile) {
         Long id = interfaceFile.getInterfaceFileId();
         String containerName =  interfaceFile.getSource().name().toLowerCase();
         UUID filestoreUUID = interfaceFile.getFilestoreUuid();
@@ -287,10 +284,23 @@ public class InterfaceFilesService {
         } catch (BlobDeleteException e) {
             log.warn("Failed to delete Interface File id: {} filestoreUuid: {} container: {} from blob store,"
                 + "and will now skip deleting from db", id, filestoreUUID, containerName);
-            throw e;
+            throw e; // this exception will halt the tree of deletes for whatever the parent was
         }
 
-        repository.delete(interfaceFile); // TODO make sure we don't need to remove from parent collection
+        InterfaceFileEntity parent = null;
+        if (interfaceFile.hasParent()) {
+            // TODO might be worth double checking we need to do this
+            parent = interfaceFile.getRelatedInterfaceFile();
+            parent.getChildRelatedInterfaceFiles().remove(interfaceFile);
+        }
+        repository.delete(interfaceFile);
         log.info("Successfully deleted interface file id: {} from db", id);
+        return new DeleteInterfaceFileResult(parent);
+    }
+
+    private record DeleteInterfaceFileResult(InterfaceFileEntity parent) {
+        boolean hadParentWithoutRemainingChildren() {
+            return parent != null && !parent.hasChildren();
+        }
     }
 }
