@@ -12,6 +12,8 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity_.checksum;
+
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
 import java.time.Instant;
@@ -304,7 +306,7 @@ class VariantBankingFileProcessorServiceTest {
             "content".getBytes(), Domain.MAINTENANCE, Status.SUCCESS);
 
         verify(spyService).createFailureInterfaceFile(
-            any(),
+            eq(config),
             eq("a121_240101VB001_01.dat"),
             anyString(),
             eq("Invalid file"),
