@@ -258,11 +258,19 @@ public class InterfaceFilesService {
     }
 
     private void processDelete(InterfaceFileEntity interfaceFile) {
-        if(interfaceFile.hasChildInterfaceFiles()) {
+        if(interfaceFile.hasChildren()) {
             interfaceFile.getChildRelatedInterfaceFiles().stream()
                 .forEach(this::processDelete);
         } else {
             deleteInterfaceFile(interfaceFile);
+            // See comment in deleteInterfaceFile(). We might need to remove the deleted file from its
+            // parents collection (if it has a parent) to make the following code work, It depends if JPA does it
+            // immediately on the execution of delete, or whether it does it at flush, or at all.
+            if (interfaceFile.hasParent() && !interfaceFile.getRelatedInterfaceFile().hasChildren()) {
+                // if we are at the bottom of the tree, and no other children exist at this level,
+                // then we can delete the parent
+                processDelete(interfaceFile.getRelatedInterfaceFile());
+            }
         }
     }
 
@@ -282,7 +290,7 @@ public class InterfaceFilesService {
             throw e;
         }
 
-        repository.delete(interfaceFile);
+        repository.delete(interfaceFile); // TODO make sure we don't need to remove from parent collection
         log.info("Successfully deleted interface file id: {} from db", id);
     }
 }

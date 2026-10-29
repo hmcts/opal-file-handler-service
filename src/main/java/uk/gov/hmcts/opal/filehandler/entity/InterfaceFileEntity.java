@@ -96,6 +96,7 @@ public class InterfaceFileEntity {
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private PaymentType paymentType;
 
+    // NOTE - this is the parent (and there are other related interface files which are the children)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "related_interface_file_id")
     private InterfaceFileEntity relatedInterfaceFile;
@@ -107,8 +108,12 @@ public class InterfaceFileEntity {
     @NotNull
     private Long createdBy;
 
-    public boolean hasChildInterfaceFiles() {
-        return !getChildRelatedInterfaceFiles().isEmpty();
+    public boolean hasParent() {
+        return relatedInterfaceFile!= null;
+    }
+
+    public boolean hasChildren() {
+        return !childRelatedInterfaceFiles.isEmpty();
     }
 
 }
