@@ -119,10 +119,6 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
     }
 
 
-
-
-
-
     boolean alreadyProcessedSuccessfully(
         InterfaceFileEntity sourceInterfaceFile,
         T extract,
@@ -179,7 +175,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
         T extract,
-        String[] businessUnitCodes,
+        Short[] businessUnitIds,
         Domain domain,
         String checksum,
         long creatorId
@@ -194,7 +190,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
             .status(Status.SUCCESS)
             .createdDatetime(LocalDateTime.now(clock))
             .relatedInterfaceFile(sourceInterfaceFile)
-            .businessUnitCode(businessUnitCodes)
+            .businessUnitId(businessUnitIds)
             .paymentType(extract.getPaymentType())
             .createdBy(creatorId)
             .build();
@@ -229,7 +225,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
             sourceJson.getInterfaceFileId(), sourceJson.getFileName(), exception);
     }
 
-    protected abstract String[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract);
+    protected abstract Short[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract);
 
     protected abstract Domain getDomainFromExtract(BaisFileProcessorConfiguration config, T extract);
 

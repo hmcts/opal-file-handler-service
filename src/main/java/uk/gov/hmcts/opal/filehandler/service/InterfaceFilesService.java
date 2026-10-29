@@ -203,7 +203,7 @@ public class InterfaceFilesService {
             );
             entity.setRelatedInterfaceFile(relatedInterfaceFile);
             entity.setPaymentType(PaymentType.valueOf(metadata.getPaymentType()));
-            entity.setBusinessUnitCode(new String[] {metadata.getBusinessUnitCode()});
+            entity.setBusinessUnitId(new Short[] {metadata.getBusinessUnitId()});
             entity = repository.save(entity);
 
             return mapper.toInterfaceFileObject(getInterfaceFileEntity(entity.getInterfaceFileId()));

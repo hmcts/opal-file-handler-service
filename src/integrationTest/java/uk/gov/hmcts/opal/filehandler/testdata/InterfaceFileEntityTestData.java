@@ -43,7 +43,7 @@ public class InterfaceFileEntityTestData {
         InterfaceFileEntity child = getTypicalInterfaceFile(fileName);
 
         child.setPaymentType(PaymentType.CASH);
-        child.setBusinessUnitCode(new String[] {"AB01", "CD02"});
+        child.setBusinessUnitId(new Short[] {1, 2});
         child.setRelatedInterfaceFile(parent);
 
         return child;
@@ -62,7 +62,7 @@ public class InterfaceFileEntityTestData {
         interfaceFile.setCreatedDatetime(LocalDateTime.ofInstant(Instant.ofEpochMilli(1753279200000L),
             TimeZone.getDefault().toZoneId()));
         interfaceFile.setErrors("[{\"errorCode\": \"E001\", \"errorMessage\": \"Sample error message\"}]");
-        interfaceFile.setBusinessUnitCode(new String[] {"AB01", "CD02"});
+        interfaceFile.setBusinessUnitId(new Short[] {1, 2});
         interfaceFile.setPaymentType(PaymentType.CHEQUE);
 
         return interfaceFile;

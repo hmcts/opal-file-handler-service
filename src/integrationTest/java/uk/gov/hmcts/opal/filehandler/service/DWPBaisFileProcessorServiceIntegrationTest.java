@@ -57,7 +57,7 @@ public class DWPBaisFileProcessorServiceIntegrationTest
         repository.deleteAll();
         businessUnitBankAccountEntityTestData.clear();
         BusinessUnitBankAccountEntity bu = BusinessUnitBankAccountEntity.builder()
-            .id(1L)
+            .id((short) 1)
             .businessUnitCode(BUSINESS_UNIT_CODE)
             .domain(Domain.MAINTENANCE)
             .bankSortCode("010101")

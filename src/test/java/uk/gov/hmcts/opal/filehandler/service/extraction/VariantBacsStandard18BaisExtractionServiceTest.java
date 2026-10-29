@@ -2,7 +2,6 @@ package uk.gov.hmcts.opal.filehandler.service.extraction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -31,19 +30,19 @@ class VariantBacsStandard18BaisExtractionServiceTest {
     @Test
     void shouldReturnWhenDataIsFound() {
         when(input.getFileName()).thenReturn(FILE_NAME);
-        when(bubaRepository.findByBusinessUnitCode(eq("123")))
+        when(bubaRepository.findById((short)123))
             .thenReturn(Optional.of(mock(BusinessUnitBankAccountEntity.class)));
 
         BusinessUnitBankAccountEntity response = service.getBusinessUnitBankAccount(input);
 
-        verify(bubaRepository, times(1)).findByBusinessUnitCode(eq("123"));
+        verify(bubaRepository, times(1)).findById((short)123);
         assertThat(response).isNotNull();
     }
 
     @Test
     void shouldThrowErrorWithInvalidFilename() {
         when(input.getFileName()).thenReturn(INVALID_FILE_NAME);
-        when(bubaRepository.findByBusinessUnitCode(eq("123")))
+        when(bubaRepository.findById((short)123))
             .thenReturn(Optional.of(mock(BusinessUnitBankAccountEntity.class)));
 
         EntityNotFoundException exception = assertThrows(
@@ -57,7 +56,7 @@ class VariantBacsStandard18BaisExtractionServiceTest {
     @Test
     void shouldThrowErrorWhenBusinessUnitNotFound() {
         when(input.getFileName()).thenReturn(FILE_NAME);
-        when(bubaRepository.findByBusinessUnitCode(eq("123")))
+        when(bubaRepository.findById((short)123))
             .thenReturn(Optional.empty());
 
         EntityNotFoundException exception = assertThrows(
@@ -65,7 +64,7 @@ class VariantBacsStandard18BaisExtractionServiceTest {
             () -> service.getBusinessUnitBankAccount(input)
         );
 
-        assertThat(exception).hasMessage("Business unit bank account with business unit code '123' could not be "
+        assertThat(exception).hasMessage("Business unit bank account with business unit id '123' could not be "
             + "located for file_name 'a121_003500VB123_13.dat'");
     }
 }

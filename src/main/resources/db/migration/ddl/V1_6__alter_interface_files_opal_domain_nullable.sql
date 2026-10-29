@@ -10,7 +10,7 @@
 * Date          Author         Version     Nature of Change
 * ----------    -----------    --------    ----------------------------------------------------------------------------
 * 15/10/2026    T McCallion    1.0         PO-8686 - BE - Human authentication support / verification
-*                                          This change is covered by EI7 but needs bring forward. 
+*                                          This change is covered by EI7 but needs bring forward.
 *
 **/
 

@@ -55,7 +55,7 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
         blobServiceClient.createBlobContainerIfNotExists(configuration.getContainerName());
 
         buBankAccountTestData.clear();
-        buBankAccountTestData.saveTypicalBusinessUnitBankAccount(1L, "JA01", DWP_CODE);
+        buBankAccountTestData.saveTypicalBusinessUnitBankAccount((short) 1, "JA01", DWP_CODE);
     }
 
     @Nested
@@ -124,7 +124,7 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
 
         verify(queue).send(sourceJson.getInterfaceFileId());
 
-        assertArrayEquals(sourceFile.getBusinessUnitCode(), sourceJson.getBusinessUnitCode());
+        assertArrayEquals(sourceFile.getBusinessUnitId(), sourceJson.getBusinessUnitId());
         assertBlobChecksum(JACOBS_FILE, JACOBS_FILE_CHECKSUM, configuration.getContainerName());
         assertNumberOfSftpFiles(configuration.getSftpUsername(), 0);
     }
