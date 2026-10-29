@@ -1,6 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,16 +23,14 @@ import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
-import uk.gov.hmcts.opal.filehandler.service.extraction.PacsTTPBaisExtractionService;
+import uk.gov.hmcts.opal.filehandler.service.extraction.BacsStandard18BaisExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @ExtendWith(MockitoExtension.class)
-public class JacobsBaisFileProcessorServiceTest {
-
-    private static final String FILE_NAME = "0000015232_dat_0000000612_08011008_111355";
+class BTEckohInterfaceFileProcessorServiceTest {
 
     @Mock
     private FeatureFlagUtil featureFlagUtil;
@@ -53,7 +51,7 @@ public class JacobsBaisFileProcessorServiceTest {
     private BaisFileProcessorConfiguration config;
 
     @Mock
-    private PacsTTPBaisExtractionService extractionService;
+    private BacsStandard18BaisExtractionService extractionService;
 
     @Mock
     private FinesInterfaceFilePreprocessQueueService finesQueueService;
@@ -61,11 +59,11 @@ public class JacobsBaisFileProcessorServiceTest {
     @Mock
     private MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService;
 
-    private JacobsBaisFileProcessorService service;
+    private BTEckohInterfaceFileProcessorService service;
 
     @BeforeEach
     void setUp() {
-        service = new JacobsBaisFileProcessorService(
+        service = new BTEckohInterfaceFileProcessorService(
             Clock.systemUTC(),
             featureFlagUtil,
             baisSftpClient,
@@ -80,10 +78,19 @@ public class JacobsBaisFileProcessorServiceTest {
     }
 
     @Test
-    void shouldProcessFile() {
-        InterfaceFileEntity sourceFile = sourceFile(".txt");
+    void shouldProcessBacsStandard18File() {
+        InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
+            .interfaceFileId(100L)
+            .source(Interface.BTECKOH)
+            .target(Interface.OPAL)
+            .type(Type.SOURCE)
+            .opalDomain(Domain.MAINTENANCE)
+            .fileName("a121_00350005_300000.dat")
+            .status(Status.INGESTED)
+            .createdDatetime(LocalDateTime.now())
+            .createdBy(-1L)
+            .build();
         InputStream inputStream = InputStream.nullInputStream();
-
         when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of());
 
         service.processFile(config, sourceFile, inputStream, -1L);
@@ -93,17 +100,10 @@ public class JacobsBaisFileProcessorServiceTest {
         verify(repository).save(sourceFile);
     }
 
-    private InterfaceFileEntity sourceFile(String fileEnding) {
-        return InterfaceFileEntity.builder()
-            .interfaceFileId(100L)
-            .source(Interface.JACOBS)
-            .target(Interface.OPAL)
-            .type(Type.SOURCE)
-            .opalDomain(Domain.MAINTENANCE)
-            .fileName(FILE_NAME + fileEnding)
-            .status(Status.INGESTED)
-            .createdDatetime(LocalDateTime.now())
-            .createdBy(-1L)
-            .build();
+    @Test
+    void shouldPassImplementationSpecificDependenciesToAbstractService() {
+        assertThat(service.extractionService).isSameAs(extractionService);
+        assertThat(service.queueService(Domain.FINES)).isSameAs(finesQueueService);
+        assertThat(service.queueService(Domain.MAINTENANCE)).isSameAs(maintenanceQueueService);
     }
 }

@@ -2,6 +2,7 @@ package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
@@ -11,6 +12,8 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -30,7 +33,9 @@ import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @ExtendWith(MockitoExtension.class)
-class BTEckohBaisFileProcessorServiceTest {
+class AllpayInterfaceFileProcessorServiceTest {
+
+    private static final String FILE_NAME = "a121_00350005_300000";
 
     @Mock
     private FeatureFlagUtil featureFlagUtil;
@@ -59,11 +64,11 @@ class BTEckohBaisFileProcessorServiceTest {
     @Mock
     private MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService;
 
-    private BTEckohBaisFileProcessorService service;
+    private AllpayInterfaceFileProcessorService service;
 
     @BeforeEach
     void setUp() {
-        service = new BTEckohBaisFileProcessorService(
+        service = new AllpayInterfaceFileProcessorService(
             Clock.systemUTC(),
             featureFlagUtil,
             baisSftpClient,
@@ -78,18 +83,8 @@ class BTEckohBaisFileProcessorServiceTest {
     }
 
     @Test
-    void shouldProcessBacsStandard18File() {
-        InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
-            .interfaceFileId(100L)
-            .source(Interface.BTECKOH)
-            .target(Interface.OPAL)
-            .type(Type.SOURCE)
-            .opalDomain(Domain.MAINTENANCE)
-            .fileName("a121_00350005_300000.dat")
-            .status(Status.INGESTED)
-            .createdDatetime(LocalDateTime.now())
-            .createdBy(-1L)
-            .build();
+    void shouldProcessDatFile() {
+        InterfaceFileEntity sourceFile = sourceFile(".dat");
         InputStream inputStream = InputStream.nullInputStream();
         when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of());
 
@@ -100,10 +95,28 @@ class BTEckohBaisFileProcessorServiceTest {
         verify(repository).save(sourceFile);
     }
 
-    @Test
-    void shouldPassImplementationSpecificDependenciesToAbstractService() {
-        assertThat(service.extractionService).isSameAs(extractionService);
-        assertThat(service.queueService(Domain.FINES)).isSameAs(finesQueueService);
-        assertThat(service.queueService(Domain.MAINTENANCE)).isSameAs(maintenanceQueueService);
+    @ParameterizedTest
+    @ValueSource(strings = {".crf", ".dir", ".err", ".sta"})
+    void shouldNotExtractNonDatFile(String fileEnding) {
+        InterfaceFileEntity sourceFile = sourceFile(fileEnding);
+
+        service.processFile(config, sourceFile, InputStream.nullInputStream(), -1L);
+
+        assertThat(sourceFile.getStatus()).isEqualTo(Status.INGESTED);
+        verifyNoInteractions(extractionService, repository);
+    }
+
+    private InterfaceFileEntity sourceFile(String fileEnding) {
+        return InterfaceFileEntity.builder()
+            .interfaceFileId(100L)
+            .source(Interface.ALLPAY)
+            .target(Interface.OPAL)
+            .type(Type.SOURCE)
+            .opalDomain(Domain.MAINTENANCE)
+            .fileName(FILE_NAME + fileEnding)
+            .status(Status.INGESTED)
+            .createdDatetime(LocalDateTime.now())
+            .createdBy(-1L)
+            .build();
     }
 }

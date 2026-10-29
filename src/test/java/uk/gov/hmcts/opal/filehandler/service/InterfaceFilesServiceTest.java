@@ -243,7 +243,7 @@ public class InterfaceFilesServiceTest {
 
     @Test
     void addInterfaceFile_savesEnrichedEntityAndReturnsMappedFile() throws IOException {
-        DWPBaisFileProcessorService processorService = mock(DWPBaisFileProcessorService.class);
+        DWPInterfaceFileProcessorService processorService = mock(DWPInterfaceFileProcessorService.class);
         BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
         InterfaceFilesService uploadService = serviceWithProcessor(processorService, config);
         MultipartFile file = mock(MultipartFile.class);
@@ -299,7 +299,7 @@ public class InterfaceFilesServiceTest {
 
     @Test
     void addInterfaceFile_savesEntityWithoutRelatedFileWhenNoRelatedIdProvided() throws IOException {
-        DWPBaisFileProcessorService processorService = mock(DWPBaisFileProcessorService.class);
+        DWPInterfaceFileProcessorService processorService = mock(DWPInterfaceFileProcessorService.class);
         BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
         InterfaceFilesService uploadService = serviceWithProcessor(processorService, config);
         MultipartFile file = mock(MultipartFile.class);
@@ -350,7 +350,7 @@ public class InterfaceFilesServiceTest {
     @Test
     void addInterfaceFile_wrapsFileReadFailure() throws IOException {
         InterfaceFilesService service = serviceWithProcessor(
-            mock(DWPBaisFileProcessorService.class),
+            mock(DWPInterfaceFileProcessorService.class),
             mock(BaisFileProcessorConfiguration.class)
         );
         MultipartFile file = mock(MultipartFile.class);
