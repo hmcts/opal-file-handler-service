@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 @Setter
 @Component("VariantBankingFileProcessorConfiguration")
 @ConfigurationProperties("opal.file-handler-service.file-types.variant-banking")
-public class VariantBankingFileProcessorConfig  extends AbstractBaisFileProcessorConfiguration
-    implements BaisFileProcessorConfiguration {
+public class VariantBankingFileProcessorConfig  extends AbstractBaisFileProcessorConfiguration {
 
 }
