@@ -148,7 +148,6 @@ bais-emulator:
       - cder
       - bteckoh
       - vpfpo
-      - vpfpo-external
 bt-eckoh-report:
   image: ${IMAGE_NAME}
   environment:
