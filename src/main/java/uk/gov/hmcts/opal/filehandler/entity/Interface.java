@@ -11,6 +11,7 @@ import uk.gov.hmcts.opal.filehandler.service.InterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.service.JacobsBaisFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.service.MarstonBaisFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.service.NatWestBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.VariantBankingFileProcessorService;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileEnumInterfaceFile;
 
 @Getter
@@ -26,6 +27,7 @@ public enum Interface {
     MARSTON("marstonBaisFileBaisFileProcessorConfig", MarstonBaisFileProcessorService.class),
     BTECKOH_REPORT("BTEckohReportBaisFileProcessorConfig", BTEckohReportBaisFileProcessorService.class),
     CAPS_REPORT("capsReportBaisFileProcessorConfig", CapsReportBaisFileProcessorService.class),
+    VARIANT_BANKING("VariantBankingBaisFileProcessorConfiguration", VariantBankingFileProcessorService.class),
     OPAL(null, InterfaceFileProcessorService.class);
 
     private final String configComponentName;

@@ -21,6 +21,7 @@ import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -187,14 +188,14 @@ public class InterfaceFileProcessorService {
         return saveInitialFile(entity);
     }
 
-    private InterfaceFileEntity saveInitialFile(InterfaceFileEntity entity) {
+    protected InterfaceFileEntity saveInitialFile(InterfaceFileEntity entity) {
         return transactionTemplate.execute(transactionStatus -> {
             supersedePreviousFailures(entity.getFileName(), entity.getChecksum());
             return interfaceFilesRepository.save(entity);
         });
     }
 
-    private void processIngestedFile(
+    protected void processIngestedFile(
         BaisFileProcessorConfiguration config,
         InterfaceFileEntity entity,
         InputStream inputStream,
@@ -236,6 +237,75 @@ public class InterfaceFileProcessorService {
         }
     }
 
+    protected InterfaceFileEntity createDuplicateInterfaceFile(
+        FileProcessorConfiguration config,
+        String fileName,
+        String fileChecksum,
+        InterfaceFileEntity duplicate,
+        Domain domain
+    ) {
+        log.error("File with name '{}' and checksum '{}' for source '{}' is a duplicate of {}",
+            fileName, fileChecksum, config.getSource(), duplicate.getInterfaceFileId());
+
+        return InterfaceFileEntity.builder()
+            .type(Type.SOURCE)
+            .target(config.getTarget())
+            .source(config.getSource())
+            .fileName(fileName)
+            .checksum(fileChecksum)
+            .status(Status.DUPLICATE)
+            .filestoreUuid(duplicate.getFilestoreUuid())
+            .createdDatetime(LocalDateTime.now(clock))
+            .createdBy(getCurrentUserId())
+            .opalDomain(domain)
+            .errors(errorJson(
+                "File with name '%s' and checksum '%s' for source '%s' already processed skipping"
+                    .formatted(fileName, fileChecksum, config.getSource())))
+            .build();
+    }
+
+    protected InterfaceFileEntity createNewInterfaceFile(
+        FileProcessorConfiguration config,
+        String fileName,
+        String fileChecksum,
+        UUID fileStoreUuid,
+        Domain domain
+    ) {
+        return InterfaceFileEntity.builder()
+            .type(Type.SOURCE)
+            .target(config.getTarget())
+            .source(config.getSource())
+            .fileName(fileName)
+            .createdBy(getCurrentUserId())
+            .checksum(fileChecksum)
+            .status(Status.INGESTED)
+            .filestoreUuid(fileStoreUuid)
+            .createdDatetime(LocalDateTime.now(clock))
+            .opalDomain(domain)
+            .build();
+    }
+
+    protected InterfaceFileEntity createFailureInterfaceFile(
+        FileProcessorConfiguration config,
+        String fileName,
+        String fileChecksum,
+        String failureMessage,
+        Domain domain
+    ) {
+        return InterfaceFileEntity.builder()
+            .type(Type.SOURCE)
+            .target(config.getTarget())
+            .source(config.getSource())
+            .fileName(fileName)
+            .checksum(fileChecksum)
+            .status(Status.FAILED)
+            .createdDatetime(LocalDateTime.now(clock))
+            .createdBy(getCurrentUserId())
+            .opalDomain(domain)
+            .errors(errorJson(failureMessage))
+            .build();
+    }
+
     private void supersedePreviousFailures(String fileName, String fileChecksum) {
         List<InterfaceFileEntity> previousFailures = interfaceFilesRepository
             .findAllByFileNameAndChecksumAndStatus(fileName, fileChecksum, Status.FAILED);
@@ -250,4 +320,9 @@ public class InterfaceFileProcessorService {
     protected long getCurrentUserId() {
         return SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser().getUserId();
     }
+
+    protected Optional<InterfaceFileEntity> findDuplicateFile(String fileName, String fileChecksum, Status status) {
+        return interfaceFilesRepository.findByFileNameAndChecksumAndStatus(fileName, fileChecksum, status);
+    }
+
 }
