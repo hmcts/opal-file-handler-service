@@ -7,7 +7,7 @@ WHERE business_unit_code = 'AB01';
 INSERT INTO public.business_unit_bank_account
     (business_unit_id, business_unit_code, opal_domain,
      bank_sort_code, bank_account_number, dwp_court_code)
-SELECT 3023, 'AB01', 'MAINTENANCE', '010101', '12341234', NULL
+SELECT 3023, 'AB01', 'FINES', '010101', '12341234', NULL
 WHERE NOT EXISTS (
     SELECT 1 FROM public.business_unit_bank_account
     WHERE bank_sort_code = '010101'

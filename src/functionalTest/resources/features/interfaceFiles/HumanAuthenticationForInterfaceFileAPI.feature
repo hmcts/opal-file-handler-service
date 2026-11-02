@@ -60,8 +60,8 @@ Feature: Human authentication and domain verification for Interface File API
     Given I am testing as the "opal-test-3@dev.platform.hmcts.net" user
     When I request interface files from date "2026-10-01T00:00" to date "2026-10-01T23:59:59"
     Then the response status code is 200
-    And exactly 2 interface files are returned
-    And the returned interface file IDs are "9000000000000014,9000000000000016"
+    And exactly 3 interface files are returned
+    And the returned interface file IDs are "9000000000000008,9000000000000012,9000000000000016"
 
   @AC11 @AC13
   Scenario: E2E.09 - a human user with one domain permission also sees unassigned files
@@ -88,14 +88,14 @@ Feature: Human authentication and domain verification for Interface File API
   @AC16
   Scenario: E2E.12 - a file and its content are forbidden outside the permitted domain
     Given I am testing as the "opal-test-3@dev.platform.hmcts.net" user
-    When I call GET "/interface-files/9000000000000015"
+    When I call GET "/interface-files/9000000000000002"
     Then the response status code is 403
     And the response is a forbidden problem detail
 
   @AC16
   Scenario: E2E.12.02 - content is forbidden outside the permitted domain
     Given I am testing as the "opal-test-3@dev.platform.hmcts.net" user
-    When I request the content for interface file 9000000000000015
+    When I request the content for interface file 9000000000000002
     Then the response status code is 403
     And the response is a forbidden problem detail
 
