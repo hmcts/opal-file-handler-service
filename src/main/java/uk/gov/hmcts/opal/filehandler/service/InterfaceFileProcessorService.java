@@ -86,7 +86,7 @@ public class InterfaceFileProcessorService {
             config.getSource(),
             config.getTarget(),
             Type.SOURCE,
-            Domain.MAINTENANCE,//TODO check
+            config.getDefaultDomain(),
             config.getContainerName(),
             creatorId
         );
