@@ -229,17 +229,24 @@ public class InterfaceFilesService {
         Set<InterfaceFileEntity> interfaceFiles = getAndValidateInterfaceFilesForDeletion(ids);
 
         for (InterfaceFileEntity interfaceFile : interfaceFiles) {
-            // TODO lookup failed/supersceded and process
-//                List<InterfaceFileEntity> all = repository.findByTypeAndChecksumAndFileName(
-//                    Type.SOURCE, interfaceFile.getChecksum(), interfaceFile.getFileName());
-
             Long id = interfaceFile.getInterfaceFileId();
             try {
+                // First delete other files in the group, eg: FAILED, FAILED_SUPERSEDED and DUPLICATE that will not be
+                // related to this interface file via the related_interface_file_id foreign key
+                log.info("Deleting other interface files with same name and checksum as interface file id: {}", id);
+                List<InterfaceFileEntity> filesWithSameNameAndChecksum = repository.findByTypeAndChecksumAndFileName(
+                    Type.SOURCE, interfaceFile.getChecksum(), interfaceFile.getFileName());
+                filesWithSameNameAndChecksum.remove(interfaceFile); // we are not deleting this yet
+                filesWithSameNameAndChecksum.stream().forEach(this::deleteInterfaceFile);
+
+                // Now delete the whole tree of related files, ie those related via the related_interface_file_id
+                // foreign key. This will include the SOURCE_JSON and TRANSFORMED_JSON files. We start at the bottom of
+                // the tree and work up.
                 log.info("Processing delete for interface file id: {} and all related files...", id);
                 processDelete(interfaceFile);
                 successIds.add(id);
             } catch (Exception e) {
-                log.warn("Did not complete tree of deletes for interface file id: {}", id);
+                log.warn("Did not complete all deletes related to interface file id: {}", id);
                 failedIds.add(id);
             }
         }
@@ -302,7 +309,8 @@ public class InterfaceFilesService {
         Long id = interfaceFile.getInterfaceFileId();
         String containerName =  interfaceFile.getSource().name().toLowerCase();
         UUID filestoreUUID = interfaceFile.getFilestoreUuid();
-        log.info("Deleting interface file id: {} type: {} from blob store and db", id, interfaceFile.getType().name());
+        log.info("Deleting interface file id: {} type: {} status: {} from blob store and db", id,
+            interfaceFile.getType(), interfaceFile.getStatus());
 
         try {
             blobStoreService.deleteBlob(filestoreUUID, containerName);

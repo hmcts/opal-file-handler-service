@@ -15,6 +15,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -486,7 +487,7 @@ public class InterfaceFilesServiceTest {
     }
 
     @Test
-    void deleteInterfaceFiles_shouldRecursivelyDeleteFilesAndRemoveBlobs() {
+    void deleteInterfaceFiles_shouldRecursivelyDeleteRelatedFilesAndRemoveBlobs() {
         // Arrange
         final Long sourceId = 100L, sourceId2 = 101L;
         final UUID sourceFilestoreUuid = UUID.randomUUID(), failedSourceJsonFilestoreUuid = UUID.randomUUID(),
@@ -539,13 +540,6 @@ public class InterfaceFilesServiceTest {
             .childRelatedInterfaceFiles(new HashSet<>())
             .build();
 
-        // TODO put in separate test
-//        InterfaceFileEntity sourceJsonFile2 = InterfaceFileEntity.builder()
-//            .interfaceFileId(sourceJsonId2)
-//            .type(Type.SOURCE_JSON)
-//            .childRelatedInterfaceFiles(new HashSet<>())
-//            .build();
-
         sourceFile.getChildRelatedInterfaceFiles().add(failedSourceJsonFile);
         sourceFile.getChildRelatedInterfaceFiles().add(sourceJsonFile);
         sourceJsonFile.getChildRelatedInterfaceFiles().add(transformedJsonFile);
@@ -590,6 +584,60 @@ public class InterfaceFilesServiceTest {
             .isLessThan(repositoryDeleteArgs.indexOf(sourceJsonFile));
         assertThat(repositoryDeleteArgs.indexOf(sourceJsonFile))
             .isLessThan(repositoryDeleteArgs.indexOf(sourceFile));
+    }
+
+    @Test
+    void deleteInterfaceFiles_shouldDeleteFilesWithSameNameAndChecksumAndRemoveBlobs() {
+        // Arrange
+        final Long sourceId = 100L, supersededSourceId = 101L;
+        final UUID sourceFilestoreUuid = UUID.randomUUID(), supersededFilestoreUuid = UUID.randomUUID();
+        final String fileName = "test-file", checksum = "check";
+        final String natwestContainer = "natwest";
+
+        InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
+            .interfaceFileId(sourceId)
+            .filestoreUuid(sourceFilestoreUuid)
+            .type(Type.SOURCE)
+            .fileName(fileName)
+            .checksum(checksum)
+            .source(Interface.NATWEST)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+        InterfaceFileEntity supersededSourceFile = InterfaceFileEntity.builder()
+            .interfaceFileId(supersededSourceId)
+            .filestoreUuid(supersededFilestoreUuid)
+            .type(Type.SOURCE)
+            .source(Interface.NATWEST)
+            .status(Status.FAILED_SUPERSEDED)
+            .build();
+
+        when(repository.findById(sourceId)).thenReturn(Optional.of(sourceFile));
+        when(repository.findByTypeAndChecksumAndFileName(Type.SOURCE, checksum, fileName)).thenReturn(
+            new ArrayList<>(List.of(sourceFile, supersededSourceFile)));
+
+        // Act
+        Set<Long> ids = Set.of(sourceId);
+        DeleteInterfaceFilesResult result = service.deleteInterfaceFiles(ids);
+
+        // Assert
+        assertThat(result.getSuccessfullyDeletedIds()).containsExactly(sourceId);
+        assertThat(result.getFailedIds()).isEmpty();
+
+        ArgumentCaptor<UUID> filestoreUuidCaptor = ArgumentCaptor.forClass(UUID.class);
+        ArgumentCaptor<String> containerCaptor = ArgumentCaptor.forClass(String.class);
+        verify(blobStoreService, times(2)).deleteBlob(filestoreUuidCaptor.capture(), containerCaptor.capture());
+        assertThat(filestoreUuidCaptor.getAllValues()).containsExactly(supersededFilestoreUuid, sourceFilestoreUuid);
+        assertThat(containerCaptor.getAllValues()).containsExactly(natwestContainer, natwestContainer);
+
+        ArgumentCaptor<InterfaceFileEntity> interfaceFileCaptor = ArgumentCaptor.forClass(InterfaceFileEntity.class);
+        verify(repository, times(2)).delete(interfaceFileCaptor.capture());
+        List<InterfaceFileEntity> repositoryDeleteArgs = interfaceFileCaptor.getAllValues();
+        assertThat(interfaceFileCaptor.getAllValues()).containsExactly(supersededSourceFile, sourceFile);
+
+        ArgumentCaptor<Long> findByIdCaptor = ArgumentCaptor.forClass(Long.class);
+        verify(repository, times(1)).findById(findByIdCaptor.capture());
+        assertThat(findByIdCaptor.getValue()).isNotEqualTo(supersededSourceId);
     }
 
     @Test
