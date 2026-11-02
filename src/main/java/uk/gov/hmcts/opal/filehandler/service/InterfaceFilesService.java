@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.multipart.MultipartFile;
+import uk.gov.hmcts.common.exceptions.standard.BadRequestException;
 import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
@@ -221,39 +224,61 @@ public class InterfaceFilesService {
     @Transactional
     public DeleteInterfaceFilesResult deleteInterfaceFiles(Set<Long> ids) {
         ArrayList<Long> successIds = new ArrayList<>();
-        ArrayList<Long> ignoredIds = new ArrayList<>(); // TODO change these to upfront validation and exception
         ArrayList<Long> failedIds = new ArrayList<>();
 
-        for (Long id: ids) {
-            repository.findById(id).ifPresentOrElse(interfaceFile -> {
-                if (interfaceFile.getType() != Type.SOURCE) {
-                    log.warn("Interface file id: {} is of type {}, therefore skipping", id, interfaceFile.getType());
-                    ignoredIds.add(id);
-                    return;
-                }
+        Set<InterfaceFileEntity> interfaceFiles = getAndValidateInterfaceFilesForDeletion(ids);
 
-                try {
-                    log.info("Processing delete for interface file id: {} and all related files...", id);
-                    processDelete(interfaceFile);
-                    successIds.add(id);
-                } catch (Exception e) {
-                    log.warn("Did not complete tree of deletes for interface file id: {}", id);
-                    failedIds.add(id);
-                }
-            }, () -> {
-                log.warn("Ignored request to delete interface file with id: {} as it does not exist", id);
-                ignoredIds.add(id);
-            });
+        for (InterfaceFileEntity interfaceFile : interfaceFiles) {
+            // TODO lookup failed/supersceded and process
+//                List<InterfaceFileEntity> all = repository.findByTypeAndChecksumAndFileName(
+//                    Type.SOURCE, interfaceFile.getChecksum(), interfaceFile.getFileName());
+
+            Long id = interfaceFile.getInterfaceFileId();
+            try {
+                log.info("Processing delete for interface file id: {} and all related files...", id);
+                processDelete(interfaceFile);
+                successIds.add(id);
+            } catch (Exception e) {
+                log.warn("Did not complete tree of deletes for interface file id: {}", id);
+                failedIds.add(id);
+            }
         }
 
-        log.info("Successfully processed {} out of {} requested. (ignored {})",
-            successIds.size(), ids.size(), ignoredIds.size());
+        log.info("Successfully processed {} out of {} requested)", successIds.size(), ids.size());
 
         return DeleteInterfaceFilesResult.builder()
             .successfullyDeletedIds(successIds)
-            .ignoredIds(ignoredIds)
             .failedIds(failedIds)
             .build();
+    }
+
+    private Set<InterfaceFileEntity> getAndValidateInterfaceFilesForDeletion(Set<Long> ids) {
+        Set<InterfaceFileEntity> files = new HashSet<>();
+        Set<Long> notFoundsIds = new TreeSet<>(), invalidIds = new TreeSet<>();
+        for (Long id: ids) {
+            repository.findById(id)
+                .ifPresentOrElse(files::add, () -> notFoundsIds.add(id));
+        }
+        for (InterfaceFileEntity file: files) {
+            if(file.getType() != Type.SOURCE) {
+                invalidIds.add(file.getInterfaceFileId());
+            }
+        };
+
+        if (notFoundsIds.isEmpty() && invalidIds.isEmpty()) {
+            return files;
+        } else {
+            StringBuilder msgBuilder = new StringBuilder();
+            if(!notFoundsIds.isEmpty()) {
+                msgBuilder.append(String.format("The following interface files do not exist: %s", notFoundsIds));
+            }
+            if(!invalidIds.isEmpty()) {
+                if(!notFoundsIds.isEmpty()) msgBuilder.append(System.lineSeparator());
+                msgBuilder.append(String.format("The following interface files are not of type SOURCE: %s", invalidIds));
+            }
+
+            throw new BadRequestException("Request to delete interface files failed validation", msgBuilder.toString());
+        }
     }
 
     private void processDelete(InterfaceFileEntity interfaceFile) {

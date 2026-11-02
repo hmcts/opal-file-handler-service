@@ -33,6 +33,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.web.multipart.MultipartFile;
+import uk.gov.hmcts.common.exceptions.standard.BadRequestException;
 import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
@@ -558,7 +559,6 @@ public class InterfaceFilesServiceTest {
 
         // Assert
         assertThat(result.getSuccessfullyDeletedIds()).containsExactlyInAnyOrder(sourceId, sourceId2);
-        assertThat(result.getIgnoredIds()).isEmpty();
         assertThat(result.getFailedIds()).isEmpty();
 
         ArgumentCaptor<UUID> filestoreUuidCaptor = ArgumentCaptor.forClass(UUID.class);
@@ -590,6 +590,47 @@ public class InterfaceFilesServiceTest {
             .isLessThan(repositoryDeleteArgs.indexOf(sourceJsonFile));
         assertThat(repositoryDeleteArgs.indexOf(sourceJsonFile))
             .isLessThan(repositoryDeleteArgs.indexOf(sourceFile));
+    }
+
+    @Test
+    void deleteInterfaceFiles_notFoundIds_shouldThrowBadRequestException() {
+        // Arrange
+        Long validId = 10L, invalidId1 = 20L, invalidId2 = 30L;
+        Set<Long> ids = Set.of(validId, invalidId1, invalidId2);
+        when(repository.findById(validId)).thenReturn(Optional.of(mock(InterfaceFileEntity.class)));
+        when(repository.findById(invalidId1)).thenReturn(Optional.empty());
+        when(repository.findById(invalidId2)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> service.deleteInterfaceFiles(ids));
+        assertThat(ex.getTitle()).isEqualTo("Request to delete interface files failed validation");
+        assertThat(ex.getDetail()).contains("The following interface files do not exist: [20, 30]");
+    }
+
+
+    @Test
+    void deleteInterfaceFiles_sourceJson_transformedJson_shouldThrowBadRequestException() {
+        // Arrange
+        Long sourceId = 10L, sourceJsonId = 20L, transformedJsonId = 30L;
+        Set<Long> ids = Set.of(sourceId, sourceJsonId, transformedJsonId);
+
+        InterfaceFileEntity source = mock(InterfaceFileEntity.class);
+        when(source.getType()).thenReturn(Type.SOURCE);
+        InterfaceFileEntity sourceJson = mock(InterfaceFileEntity.class);
+        when(sourceJson.getInterfaceFileId()).thenReturn(sourceJsonId);
+        when(sourceJson.getType()).thenReturn(Type.SOURCE_JSON);
+        InterfaceFileEntity transformedJson = mock(InterfaceFileEntity.class);
+        when(transformedJson.getInterfaceFileId()).thenReturn(transformedJsonId);
+        when(transformedJson.getType()).thenReturn(Type.TRANSFORMED_JSON);
+
+        when(repository.findById(sourceId)).thenReturn(Optional.of(source));
+        when(repository.findById(sourceJsonId)).thenReturn(Optional.of(sourceJson));
+        when(repository.findById(transformedJsonId)).thenReturn(Optional.of(transformedJson));
+
+        // Act + Assert
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> service.deleteInterfaceFiles(ids));
+        assertThat(ex.getTitle()).isEqualTo("Request to delete interface files failed validation");
+        assertThat(ex.getDetail()).contains("The following interface files are not of type SOURCE: [20, 30]");
     }
 
 }

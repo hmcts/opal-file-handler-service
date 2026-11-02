@@ -13,7 +13,5 @@ public class DeleteInterfaceFilesResult {
     @NonNull
     private final Collection<Long> successfullyDeletedIds;
     @NonNull
-    private final Collection<Long> ignoredIds;
-    @NonNull
     private final Collection<Long> failedIds;
 }
