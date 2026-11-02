@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -486,12 +487,11 @@ public class InterfaceFilesServiceTest {
     @Test
     void deleteInterfaceFiles_shouldRecursivelyDeleteFilesAndRemoveBlobs() {
         // Arrange
-        final Long sourceId = 100L, failedSourceJsonId = 200L, sourceJsonId = 300L, transformedJsonId = 400L,
-            sourceId2 = 101L;
+        final Long sourceId = 100L, sourceId2 = 101L;
         final UUID sourceFilestoreUuid = UUID.randomUUID(), failedSourceJsonFilestoreUuid = UUID.randomUUID(),
             sourceJsonFilestoreUuid = UUID.randomUUID(), transformedJsonFilestoreUuid = UUID.randomUUID(),
             sourceFilestoreUuid2 = UUID.randomUUID();
-        final String natwestContainer = "natwest";
+        final String natwestContainer = "natwest", barclaycardContainer = "barclaycard";
 
         InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
             .interfaceFileId(sourceId)
@@ -502,7 +502,7 @@ public class InterfaceFilesServiceTest {
             .build();
 
         InterfaceFileEntity failedSourceJsonFile = InterfaceFileEntity.builder()
-            .interfaceFileId(failedSourceJsonId)
+            .interfaceFileId(200L)
             .filestoreUuid(failedSourceJsonFilestoreUuid)
             .type(Type.SOURCE_JSON)
             .source(Interface.NATWEST)
@@ -512,7 +512,7 @@ public class InterfaceFilesServiceTest {
             .build();
 
         InterfaceFileEntity sourceJsonFile = InterfaceFileEntity.builder()
-            .interfaceFileId(sourceJsonId)
+            .interfaceFileId(300L)
             .filestoreUuid(sourceJsonFilestoreUuid)
             .type(Type.SOURCE_JSON)
             .source(Interface.NATWEST)
@@ -522,7 +522,7 @@ public class InterfaceFilesServiceTest {
 
 
         InterfaceFileEntity transformedJsonFile = InterfaceFileEntity.builder()
-            .interfaceFileId(transformedJsonId)
+            .interfaceFileId(400L)
             .filestoreUuid(transformedJsonFilestoreUuid)
             .type(Type.TRANSFORMED_JSON)
             .source(Interface.NATWEST)
@@ -534,7 +534,7 @@ public class InterfaceFilesServiceTest {
             .interfaceFileId(sourceId2)
             .filestoreUuid(sourceFilestoreUuid2)
             .type(Type.SOURCE)
-            .source(Interface.NATWEST)
+            .source(Interface.BARCLAYCARD)
             .childRelatedInterfaceFiles(new HashSet<>())
             .build();
 
@@ -550,9 +550,6 @@ public class InterfaceFilesServiceTest {
         sourceJsonFile.getChildRelatedInterfaceFiles().add(transformedJsonFile);
 
         when(repository.findById(sourceId)).thenReturn(Optional.of(sourceFile));
-        when(repository.findById(failedSourceJsonId)).thenReturn(Optional.of(failedSourceJsonFile));
-        when(repository.findById(sourceJsonId)).thenReturn(Optional.of(sourceJsonFile));
-        when(repository.findById(transformedJsonId)).thenReturn(Optional.of(transformedJsonFile));
         when(repository.findById(sourceId2)).thenReturn(Optional.of(sourceFile2));
 
         // Act
@@ -562,22 +559,37 @@ public class InterfaceFilesServiceTest {
         // Assert
         assertThat(result.getSuccessfullyDeletedIds()).containsExactlyInAnyOrder(sourceId, sourceId2);
         assertThat(result.getIgnoredIds()).isEmpty();
-        assertThat(result.getFailedIds()).isEmpty(); // TODO 1 is failing
+        assertThat(result.getFailedIds()).isEmpty();
 
-        // TODO need to use Arg Captor instead
-        verify(blobStoreService).deleteBlob(transformedJsonFilestoreUuid, natwestContainer);
-        verify(blobStoreService).deleteBlob(sourceJsonFilestoreUuid, natwestContainer);
-        verify(blobStoreService).deleteBlob(failedSourceJsonFilestoreUuid, natwestContainer);
-        verify(blobStoreService).deleteBlob(sourceFilestoreUuid, natwestContainer);
-        verify(blobStoreService).deleteBlob(sourceFilestoreUuid2, natwestContainer);
+        ArgumentCaptor<UUID> filestoreUuidCaptor = ArgumentCaptor.forClass(UUID.class);
+        ArgumentCaptor<String> containerCaptor = ArgumentCaptor.forClass(String.class);
+        verify(blobStoreService, times(5)).deleteBlob(filestoreUuidCaptor.capture(), containerCaptor.capture());
+        List<UUID> filestoreArgs = filestoreUuidCaptor.getAllValues();
+        assertThat(filestoreArgs).containsExactlyInAnyOrder(
+            transformedJsonFilestoreUuid, sourceJsonFilestoreUuid, failedSourceJsonFilestoreUuid,
+            sourceFilestoreUuid, sourceFilestoreUuid2
+        );
+        assertThat(filestoreArgs.indexOf(transformedJsonFilestoreUuid))
+            .isLessThan(filestoreArgs.indexOf(sourceJsonFilestoreUuid));
+        assertThat(filestoreArgs.indexOf(sourceJsonFilestoreUuid))
+            .isLessThan(filestoreArgs.indexOf(sourceFilestoreUuid));
 
-        // TODO need to use Arg Captor instead
-        verify(repository, times(1)).delete(transformedJsonFile);
-        verify(repository, times(1)).delete(sourceJsonFile);
-        verify(repository, times(1)).delete(failedSourceJsonFile);
-        verify(repository, times(1)).delete(sourceFile);
+        assertThat(containerCaptor.getAllValues()).containsExactlyInAnyOrder(
+            natwestContainer, natwestContainer, natwestContainer, natwestContainer, barclaycardContainer
+        );
+        assertThat(containerCaptor.getAllValues().indexOf(barclaycardContainer))
+            .isEqualTo(filestoreArgs.indexOf(sourceFilestoreUuid2));
 
-        verify(repository, times(1)).delete(sourceFile2);
+        ArgumentCaptor<InterfaceFileEntity> interfaceFileCaptor = ArgumentCaptor.forClass(InterfaceFileEntity.class);
+        verify(repository, times(5)).delete(interfaceFileCaptor.capture());
+        List<InterfaceFileEntity> repositoryDeleteArgs = interfaceFileCaptor.getAllValues();
+        assertThat(repositoryDeleteArgs).containsExactlyInAnyOrder(
+            failedSourceJsonFile, transformedJsonFile, sourceJsonFile, sourceFile, sourceFile2
+        );
+        assertThat(repositoryDeleteArgs.indexOf(transformedJsonFile))
+            .isLessThan(repositoryDeleteArgs.indexOf(sourceJsonFile));
+        assertThat(repositoryDeleteArgs.indexOf(sourceJsonFile))
+            .isLessThan(repositoryDeleteArgs.indexOf(sourceFile));
     }
 
 }

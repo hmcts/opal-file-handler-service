@@ -261,6 +261,7 @@ public class InterfaceFilesService {
         // are deleted from the blob store before we delete the row from the db.
         if (interfaceFile.hasChildren()) {
             interfaceFile.getChildRelatedInterfaceFiles().stream()
+                .collect(Collectors.toUnmodifiableSet()) // copy because we are going to remove items from the original
                 .forEach(this::processDelete);
         } else {
             DeleteInterfaceFileResult result = deleteInterfaceFile(interfaceFile);
