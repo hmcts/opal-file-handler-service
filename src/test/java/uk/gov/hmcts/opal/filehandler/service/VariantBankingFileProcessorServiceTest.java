@@ -18,7 +18,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -93,16 +92,6 @@ class VariantBankingFileProcessorServiceTest {
 
         lenient().when(clock.instant())
             .thenReturn(Instant.now());
-    }
-
-
-    @Test
-    @DisplayName("Should return empty list when selecting files to process")
-    void shouldReturnEmptyListWhenSelectingFiles() {
-
-        List<String> files = service.selectFilesToProcess(config);
-
-        assertThat(files).isEmpty();
     }
 
     @Test

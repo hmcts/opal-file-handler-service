@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.exception.DownstreamServiceUnavailableException;
-import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
@@ -247,21 +246,18 @@ public class InterfaceFileProcessorService {
         log.error("File with name '{}' and checksum '{}' for source '{}' is a duplicate of {}",
             fileName, fileChecksum, config.getSource(), duplicate.getInterfaceFileId());
 
-        return InterfaceFileEntity.builder()
-            .type(Type.SOURCE)
-            .target(config.getTarget())
-            .source(config.getSource())
-            .fileName(fileName)
-            .checksum(fileChecksum)
-            .status(Status.DUPLICATE)
-            .filestoreUuid(duplicate.getFilestoreUuid())
-            .createdDatetime(LocalDateTime.now(clock))
-            .createdBy(getCurrentUserId())
-            .opalDomain(domain)
-            .errors(errorJson(
+        return createInterfaceFile(
+            config,
+            fileName,
+            fileChecksum,
+            Status.DUPLICATE,
+            domain,
+            duplicate.getFilestoreUuid(),
+            errorJson(
                 "File with name '%s' and checksum '%s' for source '%s' already processed skipping"
-                    .formatted(fileName, fileChecksum, config.getSource())))
-            .build();
+                    .formatted(fileName, fileChecksum, config.getSource())
+            )
+        );
     }
 
     protected InterfaceFileEntity createNewInterfaceFile(
@@ -271,18 +267,15 @@ public class InterfaceFileProcessorService {
         UUID fileStoreUuid,
         Domain domain
     ) {
-        return InterfaceFileEntity.builder()
-            .type(Type.SOURCE)
-            .target(config.getTarget())
-            .source(config.getSource())
-            .fileName(fileName)
-            .createdBy(getCurrentUserId())
-            .checksum(fileChecksum)
-            .status(Status.INGESTED)
-            .filestoreUuid(fileStoreUuid)
-            .createdDatetime(LocalDateTime.now(clock))
-            .opalDomain(domain)
-            .build();
+        return createInterfaceFile(
+            config,
+            fileName,
+            fileChecksum,
+            Status.INGESTED,
+            domain,
+            fileStoreUuid,
+            null
+        );
     }
 
     protected InterfaceFileEntity createFailureInterfaceFile(
@@ -292,17 +285,38 @@ public class InterfaceFileProcessorService {
         String failureMessage,
         Domain domain
     ) {
+        return createInterfaceFile(
+            config,
+            fileName,
+            fileChecksum,
+            Status.FAILED,
+            domain,
+            null,
+            errorJson(failureMessage)
+        );
+    }
+
+    protected InterfaceFileEntity createInterfaceFile(
+        FileProcessorConfiguration config,
+        String fileName,
+        String fileChecksum,
+        Status status,
+        Domain domain,
+        UUID fileStoreUuid,
+        String errors
+    ) {
         return InterfaceFileEntity.builder()
             .type(Type.SOURCE)
             .target(config.getTarget())
             .source(config.getSource())
             .fileName(fileName)
             .checksum(fileChecksum)
-            .status(Status.FAILED)
+            .status(status)
+            .filestoreUuid(fileStoreUuid)
             .createdDatetime(LocalDateTime.now(clock))
             .createdBy(getCurrentUserId())
             .opalDomain(domain)
-            .errors(errorJson(failureMessage))
+            .errors(errors)
             .build();
     }
 
@@ -325,4 +339,7 @@ public class InterfaceFileProcessorService {
         return interfaceFilesRepository.findByFileNameAndChecksumAndStatus(fileName, fileChecksum, status);
     }
 
+    protected void requireEnabledFeature(String featureFlag) {
+        featureFlagUtil.requireEnabledFeature(featureFlag);
+    }
 }

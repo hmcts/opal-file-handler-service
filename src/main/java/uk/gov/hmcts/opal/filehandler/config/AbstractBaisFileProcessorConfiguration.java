@@ -7,7 +7,8 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 
 @Getter
 @Setter
-public abstract class AbstractBaisFileProcessorConfiguration implements BaisFileProcessorConfiguration {
+public abstract class AbstractBaisFileProcessorConfiguration extends AbstractFileProcessorConfiguration
+    implements BaisFileProcessorConfiguration {
 
     private String containerName;
 

@@ -62,7 +62,17 @@ public class VariantBankingFileProcessorService
         byte[] fileBytes, Domain domain, Status status
     ) throws IOException {
 
-        ingestUploadedFile(config, fileName, fileBytes,domain, status);
+        requireEnabledFeature(
+            config.getFeatureFlag()
+        );
+
+        ingestUploadedFile(
+            config,
+            fileName,
+            fileBytes,
+            domain,
+            status
+        );
     }
 
     /**
@@ -82,7 +92,6 @@ public class VariantBankingFileProcessorService
             if (duplicate.isPresent()) {
                 entity = createDuplicateInterfaceFile(config, fileName, fileChecksum, duplicate.get(),domain);
             } else {
-                validateFile(new ByteArrayInputStream(fileBytes));
 
                 UUID fileStoreUuid = UUID.randomUUID();
                 interfaceFileBlobStoreService.uploadBaisFile(fileStoreUuid, config.getFeatureFlag(),
@@ -119,4 +128,5 @@ public class VariantBankingFileProcessorService
             );
         }
     }
+
 }

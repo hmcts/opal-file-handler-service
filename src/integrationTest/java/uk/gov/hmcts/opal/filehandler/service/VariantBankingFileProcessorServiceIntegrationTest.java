@@ -83,7 +83,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
             .build();
 
         businessUnitBankAccountEntityTestData.saveAndFlushBusinessUnitBankAccount(bu);
-        blobServiceClient.createBlobContainerIfNotExists(config.getContainerName());
+        blobServiceClient.createBlobContainerIfNotExists(config.getFeatureFlag());
     }
 
     @Nested
@@ -102,7 +102,13 @@ class VariantBankingFileProcessorServiceIntegrationTest
             FeatureDisabledException exception =
                 assertThrows(
                     FeatureDisabledException.class,
-                    () -> service.run(config)
+                    () -> service.processUploadedFile(
+                        config,
+                        "a121_240101VB001_01.dat",
+                        "test".getBytes(),
+                        Domain.MAINTENANCE,
+                        Status.SUCCESS
+                    )
                 );
 
             assertThat(exception)
@@ -111,6 +117,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
                         + " is not enabled"
                 );
         }
+
     }
 
     @Nested
@@ -129,7 +136,13 @@ class VariantBankingFileProcessorServiceIntegrationTest
             FeatureDisabledException exception =
                 assertThrows(
                     FeatureDisabledException.class,
-                    () -> service.run(config)
+                    () -> service.processUploadedFile(
+                        config,
+                        "a121_240101VB001_01.dat",
+                        "test".getBytes(),
+                        Domain.MAINTENANCE,
+                        Status.SUCCESS
+                    )
                 );
 
             assertThat(exception)
@@ -153,7 +166,13 @@ class VariantBankingFileProcessorServiceIntegrationTest
             FeatureDisabledException exception =
                 assertThrows(
                     FeatureDisabledException.class,
-                    () -> service.run(config)
+                    () -> service.processUploadedFile(
+                        config,
+                        "a121_240101VB001_01.dat",
+                        "test".getBytes(),
+                        Domain.MAINTENANCE,
+                        Status.SUCCESS
+                    )
                 );
 
             assertThat(exception)
@@ -200,7 +219,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
         );
 
         verify(maintenanceQueueService, times(1)).send(eq(entity.getInterfaceFileId()));
-        assertBlobChecksum(entity.getFileName(), entity.getChecksum(), config.getContainerName());
+        assertBlobChecksum(entity.getFileName(), entity.getChecksum(), config.getFeatureFlag());
 
     }
 
