@@ -29,11 +29,15 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -45,7 +49,11 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
+import uk.gov.hmcts.opal.filehandler.config.AbstractBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.AllpayBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -199,6 +207,27 @@ class InterfaceFileProcessorServiceTest {
             service.run(config);
 
             verify(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(selectedFile), any());
+        }
+
+        @ParameterizedTest
+        @MethodSource("uk.gov.hmcts.opal.filehandler.service.InterfaceFileProcessorServiceTest#defaultDomains")
+        void shouldPersistConfiguredDefaultDomain(
+            AbstractBaisFileProcessorConfiguration processorConfig, Interface source, Domain expectedDomain
+        ) {
+            processorConfig.setSftpUsername(SFTP_USERNAME);
+            processorConfig.setContainerName(CONTAINER);
+            processorConfig.setSource(source);
+            processorConfig.setTarget(Interface.OPAL);
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(-1L);
+
+            service.run(processorConfig);
+
+            assertThat(savedStatuses).containsExactly(Status.INGESTED, Status.SUCCESS);
+            assertThat(service.processCount).isOne();
+            assertThat(service.lastSavedEntity.getOpalDomain()).isEqualTo(expectedDomain);
+            assertThat(service.lastSavedEntity.getSource()).isEqualTo(source);
         }
 
         @Test
@@ -371,6 +400,14 @@ class InterfaceFileProcessorServiceTest {
             assertThat(service.processCount).isZero();
             verify(baisSftpClient, never()).deleteFile(any(), any());
         }
+    }
+
+    private static Stream<Arguments> defaultDomains() {
+        return Stream.of(
+            Arguments.of(new CapsReportBaisFileProcessorConfiguration(), Interface.CAPS_REPORT, Domain.MAINTENANCE),
+            Arguments.of(new BTEckohReportBaisFileProcessorConfiguration(), Interface.BTECKOH_REPORT, Domain.FINES),
+            Arguments.of(new AllpayBaisFileProcessorConfiguration(), Interface.ALLPAY, null)
+        );
     }
 
     private void configureSuccessfulRun() {

@@ -269,21 +269,4 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
 
         return repository.save(entity);
     }
-
-    public final InterfaceFileEntity createSuccessfulInterfaceFile(String fileName, String checksum) {
-        InterfaceFileEntity entity = InterfaceFileEntity.builder()
-            .fileName(fileName)
-            .checksum(checksum)
-            .type(Type.SOURCE)
-            .source(Interface.CAPS_REPORT)
-            .target(Interface.OPAL)
-            .opalDomain(Domain.MAINTENANCE)
-            .createdDatetime(LocalDateTime.now(clock))
-            .status(Status.SUCCESS)
-            .createdBy(-1L)
-            .build();
-
-        return repository.save(entity);
-    }
-
 }
