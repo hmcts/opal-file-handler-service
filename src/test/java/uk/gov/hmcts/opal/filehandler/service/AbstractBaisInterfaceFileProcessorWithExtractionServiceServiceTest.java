@@ -104,10 +104,10 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
     private ExtractionService<InterfaceFileCommonDataExtract> extractionService;
 
     @Mock
-    private InterfaceFilePreprocessQueueService finesQueueService;
+    private InterfaceFilePreprocessQueueService<Long> finesQueueService;
 
     @Mock
-    private InterfaceFilePreprocessQueueService maintenanceQueueService;
+    private InterfaceFilePreprocessQueueService<Long> maintenanceQueueService;
 
     MockedStatic<SecurityUtil> mockedSecurityUtil;
     OpalJwtAuthenticationToken mockedToken = mock(OpalJwtAuthenticationToken.class);
@@ -802,8 +802,8 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
             TransactionTemplate transactionTemplate,
             ObjectMapper objectMapper,
             ExtractionService<InterfaceFileCommonDataExtract> extractionService,
-            InterfaceFilePreprocessQueueService finesQueueService,
-            InterfaceFilePreprocessQueueService maintenanceQueueService
+            InterfaceFilePreprocessQueueService<Long> finesQueueService,
+            InterfaceFilePreprocessQueueService<Long> maintenanceQueueService
         ) {
             super(CLOCK, featureFlagUtil, baisSftpClient, blobStoreService, repository, transactionTemplate,
                 objectMapper, extractionService, finesQueueService, maintenanceQueueService);
