@@ -221,7 +221,7 @@ public class InterfaceFilesService {
     @Transactional
     public DeleteInterfaceFilesResult deleteInterfaceFiles(Set<Long> ids) {
         ArrayList<Long> successIds = new ArrayList<>();
-        ArrayList<Long> ignoredIds = new ArrayList<>();
+        ArrayList<Long> ignoredIds = new ArrayList<>(); // TODO change these to upfront validation and exception
         ArrayList<Long> failedIds = new ArrayList<>();
 
         for (Long id: ids) {
