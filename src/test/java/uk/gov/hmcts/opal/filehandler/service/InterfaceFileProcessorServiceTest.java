@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -42,6 +43,9 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
+import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -50,10 +54,7 @@ import tools.jackson.databind.json.JsonMapper;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.AbstractBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.config.AllpayBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -403,11 +404,26 @@ class InterfaceFileProcessorServiceTest {
     }
 
     private static Stream<Arguments> defaultDomains() {
-        return Stream.of(
-            Arguments.of(new CapsReportBaisFileProcessorConfiguration(), Interface.CAPS_REPORT, Domain.MAINTENANCE),
-            Arguments.of(new BTEckohReportBaisFileProcessorConfiguration(), Interface.BTECKOH_REPORT, Domain.FINES),
-            Arguments.of(new AllpayBaisFileProcessorConfiguration(), Interface.ALLPAY, null)
-        );
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(context, false);
+            scanner.addIncludeFilter(new AssignableTypeFilter(AbstractBaisFileProcessorConfiguration.class));
+            scanner.scan(BaisFileProcessorConfiguration.class.getPackageName());
+            context.refresh();
+
+            return Arrays.stream(Interface.values())
+                .filter(source -> source.getConfigComponentName() != null)
+                .map(source -> {
+                    AbstractBaisFileProcessorConfiguration processorConfig = context.getBean(
+                        source.getConfigComponentName(), AbstractBaisFileProcessorConfiguration.class);
+                    Domain expectedDomain = switch (source) {
+                        case CAPS_REPORT -> Domain.MAINTENANCE;
+                        case BTECKOH_REPORT -> Domain.FINES;
+                        default -> null;
+                    };
+                    return Arguments.of(processorConfig, source, expectedDomain);
+                })
+                .toList().stream();
+        }
     }
 
     private void configureSuccessfulRun() {
