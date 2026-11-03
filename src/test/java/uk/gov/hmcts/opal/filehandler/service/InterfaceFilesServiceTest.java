@@ -643,7 +643,7 @@ public class InterfaceFilesServiceTest {
     }
 
     @Test
-    void deleteInterfaceFiles_shouldCorrectlyReportFailedDeletions() {
+    void deleteInterfaceFiles_shouldCorrectlyHandleFailedDeletions() {
         // Arrange
         final Long sourceId = 100L;
         final UUID sourceFilestoreUuid = UUID.fromString("d095de29-ba2b-4421-8b00-2dc003f85f12"),
