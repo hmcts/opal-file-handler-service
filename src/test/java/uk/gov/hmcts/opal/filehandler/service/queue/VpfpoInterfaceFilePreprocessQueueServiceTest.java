@@ -24,11 +24,9 @@ class VpfpoInterfaceFilePreprocessQueueServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new VpfpoInterfaceFilePreprocessQueueService(
-            jmsTemplate,
-            "vpfpo-queue",
-            objectMapper
-        );
+
+        service = new VpfpoInterfaceFilePreprocessQueueService(jmsTemplate,"vpfpo-queue", objectMapper);
+
     }
 
     @Test
