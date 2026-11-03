@@ -9,7 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.TestPropertySource;
 import uk.gov.hmcts.opal.filehandler.config.BTEckohBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.service.BTEckohBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.BTEckohInterfaceFileProcessorService;
 
 @ExtendWith(MockitoExtension.class)
 @TestPropertySource(properties = {
@@ -18,7 +18,7 @@ import uk.gov.hmcts.opal.filehandler.service.BTEckohBaisFileProcessorService;
 public class AutomatedTaskBTEckohFileTransferJobTest {
 
     @Mock
-    private BTEckohBaisFileProcessorService service;
+    private BTEckohInterfaceFileProcessorService service;
 
     @Mock
     private BTEckohBaisFileProcessorConfiguration config;

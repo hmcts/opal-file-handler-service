@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.service.CapsReportBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.CapsReportInterfaceFileProcessorService;
 
 @Component("automatedCAPSReport")
 @ConditionalOnExpression("'${opal.automated-task}'.equals('CAPSReport') or ${opal.testing-support-endpoints.enabled}")
@@ -13,7 +13,7 @@ import uk.gov.hmcts.opal.filehandler.service.CapsReportBaisFileProcessorService;
 @RequiredArgsConstructor
 public class AutomatedCapsReport implements TaskConfiguration {
 
-    private final CapsReportBaisFileProcessorService processorService;
+    private final CapsReportInterfaceFileProcessorService processorService;
     private final CapsReportBaisFileProcessorConfiguration processorConfiguration;
 
     @Override

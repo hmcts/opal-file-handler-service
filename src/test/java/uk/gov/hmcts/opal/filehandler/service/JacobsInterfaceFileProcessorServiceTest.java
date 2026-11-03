@@ -1,8 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
@@ -12,8 +11,6 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -26,16 +23,16 @@ import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
-import uk.gov.hmcts.opal.filehandler.service.extraction.BacsStandard18BaisExtractionService;
+import uk.gov.hmcts.opal.filehandler.service.extraction.PacsTTPBaisExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @ExtendWith(MockitoExtension.class)
-class AllpayBaisFileProcessorServiceTest {
+public class JacobsInterfaceFileProcessorServiceTest {
 
-    private static final String FILE_NAME = "a121_00350005_300000";
+    private static final String FILE_NAME = "0000015232_dat_0000000612_08011008_111355";
 
     @Mock
     private FeatureFlagUtil featureFlagUtil;
@@ -56,7 +53,7 @@ class AllpayBaisFileProcessorServiceTest {
     private BaisFileProcessorConfiguration config;
 
     @Mock
-    private BacsStandard18BaisExtractionService extractionService;
+    private PacsTTPBaisExtractionService extractionService;
 
     @Mock
     private FinesInterfaceFilePreprocessQueueService finesQueueService;
@@ -64,11 +61,11 @@ class AllpayBaisFileProcessorServiceTest {
     @Mock
     private MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService;
 
-    private AllpayBaisFileProcessorService service;
+    private JacobsInterfaceFileProcessorService service;
 
     @BeforeEach
     void setUp() {
-        service = new AllpayBaisFileProcessorService(
+        service = new JacobsInterfaceFileProcessorService(
             Clock.systemUTC(),
             featureFlagUtil,
             baisSftpClient,
@@ -83,9 +80,10 @@ class AllpayBaisFileProcessorServiceTest {
     }
 
     @Test
-    void shouldProcessDatFile() {
-        InterfaceFileEntity sourceFile = sourceFile(".dat");
+    void shouldProcessFile() {
+        InterfaceFileEntity sourceFile = sourceFile(".txt");
         InputStream inputStream = InputStream.nullInputStream();
+
         when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of());
 
         service.processFile(config, sourceFile, inputStream, -1L);
@@ -95,21 +93,10 @@ class AllpayBaisFileProcessorServiceTest {
         verify(repository).save(sourceFile);
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {".crf", ".dir", ".err", ".sta"})
-    void shouldNotExtractNonDatFile(String fileEnding) {
-        InterfaceFileEntity sourceFile = sourceFile(fileEnding);
-
-        service.processFile(config, sourceFile, InputStream.nullInputStream(), -1L);
-
-        assertThat(sourceFile.getStatus()).isEqualTo(Status.INGESTED);
-        verifyNoInteractions(extractionService, repository);
-    }
-
     private InterfaceFileEntity sourceFile(String fileEnding) {
         return InterfaceFileEntity.builder()
             .interfaceFileId(100L)
-            .source(Interface.ALLPAY)
+            .source(Interface.JACOBS)
             .target(Interface.OPAL)
             .type(Type.SOURCE)
             .opalDomain(Domain.MAINTENANCE)

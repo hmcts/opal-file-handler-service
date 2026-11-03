@@ -18,7 +18,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.exception.UnexpectedDomainException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
-import uk.gov.hmcts.opal.filehandler.service.extraction.ExtractionService;
+import uk.gov.hmcts.opal.filehandler.service.extraction.BankingExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.BankDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.DestinationDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
@@ -27,14 +27,16 @@ import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @Slf4j
-public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T extends InterfaceFileCommonDataExtract>
+public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService<T
+    extends InterfaceFileCommonDataExtract>
     extends AbstractInterfaceFileProcessorWithExtractionService<T> {
 
     private static final String BUSINESS_UNIT_065 = "065";
 
     private final EnumMap<Domain, InterfaceFilePreprocessQueueService> queueServiceMap;
+    private final BankingExtractionService<T> bankingExtractionService;
 
-    protected AbstractBaisInterfaceFileProcessorWithExtractionService(
+    protected AbstractBankingInterfaceFileProcessorWithExtractionService(
         Clock clock,
         FeatureFlagUtil featureFlagUtil,
         BaisSftpClient baisSftpClient,
@@ -42,12 +44,13 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
         InterfaceFilesRepository interfaceFilesRepository,
         TransactionTemplate transactionTemplate,
         ObjectMapper objectMapper,
-        ExtractionService<T> extractionService,
+        BankingExtractionService<T> extractionService,
         InterfaceFilePreprocessQueueService finesQueueService,
         InterfaceFilePreprocessQueueService maintenanceQueueService
     ) {
         super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
             transactionTemplate, objectMapper, extractionService);
+        this.bankingExtractionService = extractionService;
         this.queueServiceMap = new EnumMap<>(Domain.class);
         this.queueServiceMap.put(Domain.FINES, finesQueueService);
         this.queueServiceMap.put(Domain.MAINTENANCE, maintenanceQueueService);
@@ -125,7 +128,7 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
         T extract) {
 
         BusinessUnitBankAccountEntity businessUnitBankAccount =
-            extractionService.getBusinessUnitBankAccount(extract);
+            bankingExtractionService.getBusinessUnitBankAccount(extract);
         Domain domain = businessUnitBankAccount.getDomain();
 
         validateSupportedDomain(sourceInterfaceFile, domain);
@@ -151,11 +154,11 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
 
     @Override
     protected String[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract) {
-        return new String[] {extractionService.getBusinessUnitBankAccount(extract).getBusinessUnitCode()};
+        return new String[] {bankingExtractionService.getBusinessUnitBankAccount(extract).getBusinessUnitCode()};
     }
 
     @Override
     protected Domain getDomainFromExtract(BaisFileProcessorConfiguration config, T extract) {
-        return extractionService.getBusinessUnitBankAccount(extract).getDomain();
+        return bankingExtractionService.getBusinessUnitBankAccount(extract).getDomain();
     }
 }

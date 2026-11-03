@@ -24,15 +24,15 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
-import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.AbstractInterfaceFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraEpic;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
 @ActiveProfiles("integration")
 @Slf4j
-public class DWPBaisFileProcessorServiceIntegrationTest
-    extends AbstractBaisFileProcessorServiceIntegrationTest {
+public class DWPInterfaceFileProcessorServiceIntegrationTest
+    extends AbstractInterfaceFileProcessorServiceIntegrationTest {
 
     private static final String CHECKSUM = "bdbbd6c4e0daba273d9387f466acb6b9";
     private static final String FILE = "0000015232_dat_0000000612_08011008_111355.txt";
@@ -41,7 +41,7 @@ public class DWPBaisFileProcessorServiceIntegrationTest
     private static final String BUSINESS_UNIT_CODE = "DW01";
 
     @Autowired
-    private DWPBaisFileProcessorService service;
+    private DWPInterfaceFileProcessorService service;
 
     @Autowired
     private DWPBaisFileProcessorConfiguration config;
@@ -136,7 +136,7 @@ public class DWPBaisFileProcessorServiceIntegrationTest
         @DisplayName("DWP file is present, read and stored correctly")
         @JiraStory("PO-6436")
         @JiraEpic("PO-3497")
-        void dwpBaisFileProcessorServiceShouldRunSuccesfully() {
+        void dwpInterfaceFileProcessorServiceShouldRunSuccesfully() {
             uploadResourceToSftp(RESOURCE, CONTAINER);
             service.run(config);
 
