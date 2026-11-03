@@ -9,6 +9,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -257,20 +258,26 @@ class VariantBankingFileProcessorServiceTest {
 
         VariantBankingFileProcessorService spyService = spy(service);
 
-        InterfaceFileEntity failedEntity = InterfaceFileEntity.builder()
-            .fileName("a121_240101VB001_01.dat")
-            .status(Status.FAILED)
-            .errors("Invalid file")
-            .createdBy(1L)
-            .createdDatetime(LocalDateTime.now())
-            .build();
+        InterfaceFileEntity failedEntity = interfaceFileEntity();
+        failedEntity.setStatus(Status.FAILED);
+        failedEntity.setErrors("Invalid file");
+
+        doNothing().when(spyService)
+            .validateFileName(any(), anyString());
 
         doThrow(
             new InvalidReportFileException(
                 "Invalid file",
                 new RuntimeException("Test cause")
             )
-        ).when(spyService).validateFile(any());
+        ).when(spyService)
+            .createNewInterfaceFile(
+                any(),
+                anyString(),
+                anyString(),
+                any(UUID.class),
+                eq(Domain.MAINTENANCE)
+        );
 
         doReturn(failedEntity)
             .when(spyService)
@@ -282,14 +289,17 @@ class VariantBankingFileProcessorServiceTest {
                 eq(Domain.MAINTENANCE)
             );
 
-        doNothing().when(spyService)
-            .validateFileName(any(), anyString());
         doReturn(failedEntity)
             .when(spyService)
             .saveInitialFile(any(InterfaceFileEntity.class));
 
-        spyService.processUploadedFile(config,"a121_240101VB001_01.dat",
-            "content".getBytes(), Domain.MAINTENANCE, Status.SUCCESS);
+        spyService.processUploadedFile(
+            config,
+            "a121_240101VB001_01.dat",
+            "content".getBytes(),
+            Domain.MAINTENANCE,
+            Status.SUCCESS
+        );
 
         verify(spyService).createFailureInterfaceFile(
             eq(config),
@@ -298,6 +308,23 @@ class VariantBankingFileProcessorServiceTest {
             eq("Invalid file"),
             eq(Domain.MAINTENANCE)
         );
+
+        verify(spyService).saveInitialFile(failedEntity);
+
+        verify(spyService, never()).processIngestedFile(
+            any(),
+            any(),
+            any(),
+            anyLong()
+        );
     }
 
+    private InterfaceFileEntity interfaceFileEntity() {
+        return InterfaceFileEntity.builder()
+            .fileName("a121_240101VB001_01.dat")
+            .status(Status.INGESTED)
+            .createdBy(1L)
+            .createdDatetime(LocalDateTime.now())
+            .build();
+    }
 }

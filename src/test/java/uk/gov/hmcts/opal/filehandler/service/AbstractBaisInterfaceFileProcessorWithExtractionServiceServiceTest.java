@@ -54,6 +54,7 @@ import tools.jackson.databind.json.JsonMapper;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -809,6 +810,11 @@ class AbstractBaisInterfaceFileProcessorWithExtractionServiceServiceTest {
                 objectMapper, extractionService, finesQueueService, maintenanceQueueService);
 
             maxRetries = 5;
+        }
+
+        @Override
+        protected String getSourceJsonContainer(FileProcessorConfiguration config) {
+            return CONTAINER;
         }
     }
 }
