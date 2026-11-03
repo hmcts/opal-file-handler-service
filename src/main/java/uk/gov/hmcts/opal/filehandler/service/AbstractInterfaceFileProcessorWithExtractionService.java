@@ -119,11 +119,6 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
         return interfaceFilesRepository.save(sourceJson);
     }
 
-
-
-
-
-
     boolean alreadyProcessedSuccessfully(
         InterfaceFileEntity sourceInterfaceFile,
         T extract,
