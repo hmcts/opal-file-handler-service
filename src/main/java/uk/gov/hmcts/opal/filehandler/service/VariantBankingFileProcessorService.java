@@ -111,7 +111,7 @@ public class VariantBankingFileProcessorService
         entity = saveInitialFile(entity);
 
         if (entity.getStatus().equals(Status.INGESTED)) {
-            processIngestedFile((BaisFileProcessorConfiguration) config, entity, new ByteArrayInputStream(fileBytes),
+            processIngestedFile(config, entity, new ByteArrayInputStream(fileBytes),
                 getCurrentUserId());
         }
     }

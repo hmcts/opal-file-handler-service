@@ -195,14 +195,14 @@ public class InterfaceFileProcessorService {
     }
 
     protected void processIngestedFile(
-        BaisFileProcessorConfiguration config,
+        FileProcessorConfiguration config,
         InterfaceFileEntity entity,
         InputStream inputStream,
         long creatorId
     ) {
         try {
             transactionTemplate.executeWithoutResult(transactionStatus -> {
-                processFile(config, entity, inputStream, creatorId);
+                processFile((BaisFileProcessorConfiguration) config, entity, inputStream, creatorId);
             });
         } catch (RuntimeException e) {
             transactionTemplate.executeWithoutResult(transactionStatus -> {
