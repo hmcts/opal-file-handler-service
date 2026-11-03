@@ -48,6 +48,7 @@ import tools.jackson.databind.json.JsonMapper;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -708,7 +709,7 @@ class InterfaceFileProcessorServiceTest {
         private RuntimeException processingFailure;
         private InvalidReportFileException validationFailure;
         private InterfaceFileEntity lastSavedEntity;
-        private BaisFileProcessorConfiguration lastProcessConfig;
+        private FileProcessorConfiguration lastProcessConfig;
         private List<String> filesToProcess;
 
         TestProcessor(
@@ -745,7 +746,7 @@ class InterfaceFileProcessorServiceTest {
 
         @Override
         protected void processFile(
-            BaisFileProcessorConfiguration config,
+            FileProcessorConfiguration config,
             InterfaceFileEntity fileEntity,
             InputStream inputStream,
             long creatorId

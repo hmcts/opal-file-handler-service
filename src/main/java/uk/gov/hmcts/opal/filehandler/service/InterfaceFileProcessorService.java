@@ -47,7 +47,7 @@ public class InterfaceFileProcessorService {
     protected final ObjectMapper objectMapper;
 
     protected void processFile(
-        BaisFileProcessorConfiguration config,
+        FileProcessorConfiguration config,
         InterfaceFileEntity fileEntity,
         InputStream inputStream,
         long creatorId
@@ -202,7 +202,7 @@ public class InterfaceFileProcessorService {
     ) {
         try {
             transactionTemplate.executeWithoutResult(transactionStatus -> {
-                processFile((BaisFileProcessorConfiguration) config, entity, inputStream, creatorId);
+                processFile(config, entity, inputStream, creatorId);
             });
         } catch (RuntimeException e) {
             transactionTemplate.executeWithoutResult(transactionStatus -> {

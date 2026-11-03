@@ -10,7 +10,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -120,7 +120,7 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
     }
 
     @Override
-    public boolean preProcessExtract(BaisFileProcessorConfiguration config,
+    public boolean preProcessExtract(FileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
         T extract) {
 
@@ -140,7 +140,7 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
     }
 
     @Override
-    public void postProcessExtract(BaisFileProcessorConfiguration config, InterfaceFileEntity sourceJson, T extract) {
+    public void postProcessExtract(FileProcessorConfiguration config, InterfaceFileEntity sourceJson, T extract) {
         if (sourceJson.getStatus() == Status.SUCCESS) {
             sendToQueue(sourceJson, sourceJson.getOpalDomain());
             if (sourceJson.getStatus() == Status.FAILED) {
@@ -150,12 +150,12 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
     }
 
     @Override
-    protected String[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract) {
+    protected String[] getBusinessUnitsFromExtract(FileProcessorConfiguration config, T extract) {
         return new String[] {extractionService.getBusinessUnitBankAccount(extract).getBusinessUnitCode()};
     }
 
     @Override
-    protected Domain getDomainFromExtract(BaisFileProcessorConfiguration config, T extract) {
+    protected Domain getDomainFromExtract(FileProcessorConfiguration config, T extract) {
         return extractionService.getBusinessUnitBankAccount(extract).getDomain();
     }
 }

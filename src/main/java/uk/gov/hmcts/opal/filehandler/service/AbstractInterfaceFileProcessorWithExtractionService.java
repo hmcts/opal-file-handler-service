@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
@@ -70,7 +71,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
 
     @Override
     protected void processFile(
-        BaisFileProcessorConfiguration config,
+        FileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
         InputStream inputStream,
         long creatorId
@@ -97,7 +98,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
     }
 
 
-    InterfaceFileEntity createAndUploadSourceJson(BaisFileProcessorConfiguration config,
+    InterfaceFileEntity createAndUploadSourceJson(FileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile, T extract, long creatorId) {
         byte[] jsonBytes = objectMapper.writeValueAsBytes(extract);
         String checksum = calculateExtractChecksum(jsonBytes);
@@ -176,7 +177,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
     }
 
     InterfaceFileEntity createSourceJson(
-        BaisFileProcessorConfiguration config,
+        FileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
         T extract,
         String[] businessUnitCodes,
@@ -201,16 +202,17 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
     }
 
     void uploadSourceJson(
-        BaisFileProcessorConfiguration config,
+        FileProcessorConfiguration config,
         InterfaceFileEntity sourceJson,
         byte[] jsonBytes
     ) {
+
         UUID filestoreUuid = UUID.randomUUID();
 
         try {
             interfaceFileBlobStoreService.uploadBaisFile(
                 filestoreUuid,
-                config.getContainerName(),
+                config.getFeatureFlag(),
                 new ByteArrayInputStream(jsonBytes),
                 sourceJson.getChecksum()
             );
@@ -229,12 +231,12 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
             sourceJson.getInterfaceFileId(), sourceJson.getFileName(), exception);
     }
 
-    protected abstract String[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract);
+    protected abstract String[] getBusinessUnitsFromExtract(FileProcessorConfiguration config, T extract);
 
-    protected abstract Domain getDomainFromExtract(BaisFileProcessorConfiguration config, T extract);
+    protected abstract Domain getDomainFromExtract(FileProcessorConfiguration config, T extract);
 
     protected abstract void postProcessExtract(
-        BaisFileProcessorConfiguration config,
+        FileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
         T extract
     );
@@ -245,7 +247,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
      * @return true if the extract should be processed, false if it should be skipped
      */
     public abstract boolean preProcessExtract(
-        BaisFileProcessorConfiguration config,
+        FileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
         T extract
     );

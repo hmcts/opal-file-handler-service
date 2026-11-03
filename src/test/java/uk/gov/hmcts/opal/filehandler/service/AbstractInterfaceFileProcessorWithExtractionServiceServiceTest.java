@@ -47,6 +47,7 @@ import tools.jackson.databind.json.JsonMapper;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -615,7 +616,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
         @Override
         protected void postProcessExtract(
-            BaisFileProcessorConfiguration config,
+            FileProcessorConfiguration config,
             InterfaceFileEntity sourceFile,
             InterfaceFileCommonDataExtract extract
         ) {
@@ -624,7 +625,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
         @Override
         protected String[] getBusinessUnitsFromExtract(
-            BaisFileProcessorConfiguration config,
+            FileProcessorConfiguration config,
             InterfaceFileCommonDataExtract extract
         ) {
             return new String[] {"BC12"};
@@ -632,7 +633,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
         @Override
         protected Domain getDomainFromExtract(
-            BaisFileProcessorConfiguration config,
+            FileProcessorConfiguration config,
             InterfaceFileCommonDataExtract extract
         ) {
             return Domain.FINES;
@@ -640,7 +641,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
         @Override
         public boolean preProcessExtract(
-            BaisFileProcessorConfiguration config,
+            FileProcessorConfiguration config,
             InterfaceFileEntity sourceFile,
             InterfaceFileCommonDataExtract extract
         ) {
