@@ -35,7 +35,7 @@ java {
 }
 
 ext {
-  serenityVersion = "5.4.1"
+  serenityVersion = "5.4.2"
   cucumberVersion = "8.0.4"
   set('junit-jupiter.version', "6.1.3")
   log4JVersion = "2.26.1"
