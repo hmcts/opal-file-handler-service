@@ -15,7 +15,7 @@ import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.DispatcherServlet;
 import uk.gov.hmcts.opal.filehandler.config.CderBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.service.CderBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.CderInterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
 @ActiveProfiles("integration")
@@ -29,7 +29,7 @@ public class AutomatedTaskCderIntegrationTest extends AbstractIntegrationTest {
     private ApplicationContext applicationContext;
 
     @MockitoBean(enforceOverride = true, reset = MockReset.NONE)
-    private CderBaisFileProcessorService service;
+    private CderInterfaceFileProcessorService service;
 
     @Test
     void shouldNotCreateWebLayer() {
