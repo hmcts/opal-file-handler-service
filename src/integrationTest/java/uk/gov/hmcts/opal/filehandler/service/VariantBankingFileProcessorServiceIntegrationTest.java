@@ -4,7 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
-
+import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
-import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.DWPBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.VariantBankingFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
@@ -88,40 +88,6 @@ class VariantBankingFileProcessorServiceIntegrationTest
 
     @Nested
     @TestPropertySource(properties = {
-        "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.variant-banking=true"
-    })
-    class BankingInterfacesDisabled {
-
-        @Test
-        @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
-        @JiraStory("PO-8744")
-        @JiraEpic("PO-3952")
-        void bankingInterfacesIsDisabled() {
-
-            FeatureDisabledException exception =
-                assertThrows(
-                    FeatureDisabledException.class,
-                    () -> service.processUploadedFile(
-                        config,
-                        "a121_240101VB001_01.dat",
-                        "test".getBytes(),
-                        Domain.MAINTENANCE,
-                        Status.SUCCESS
-                    )
-                );
-
-            assertThat(exception)
-                .hasMessage(
-                    FeatureFlags.RELEASE_1C_BANKING_INTERFACES
-                        + " is not enabled"
-                );
-        }
-
-    }
-
-    @Nested
-    @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
         "launchdarkly.default-flag-values.variant-banking=false"
     })
@@ -158,10 +124,10 @@ class VariantBankingFileProcessorServiceIntegrationTest
     class BothFeatureFlagsDisabled {
 
         @Test
-        @DisplayName("AC1: Both feature flags are false")
+        @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
         @JiraStory("PO-8744")
         @JiraEpic("PO-3952")
-        void bothFeatureFlagsAreDisabled() {
+        void bankingInterfacesIsDisabled() {
 
             FeatureDisabledException exception =
                 assertThrows(
@@ -175,11 +141,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
                     )
                 );
 
-            assertThat(exception)
-                .hasMessage(
-                    FeatureFlags.RELEASE_1C_BANKING_INTERFACES
-                        + " is not enabled"
-                );
+            assertThat(exception).hasMessage("variant-banking is not enabled");
         }
     }
 

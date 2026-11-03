@@ -624,6 +624,13 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
         }
 
         @Override
+        protected String getSourceJsonContainer(
+            FileProcessorConfiguration config
+        ) {
+            return ((BaisFileProcessorConfiguration) config).getContainerName();
+        }
+
+        @Override
         protected String[] getBusinessUnitsFromExtract(
             FileProcessorConfiguration config,
             InterfaceFileCommonDataExtract extract

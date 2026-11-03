@@ -129,4 +129,10 @@ public class VariantBankingFileProcessorService
         }
     }
 
+    @Override
+    protected String getSourceJsonContainer(
+        FileProcessorConfiguration config
+    ) {
+        return config.getFeatureFlag();
+    }
 }

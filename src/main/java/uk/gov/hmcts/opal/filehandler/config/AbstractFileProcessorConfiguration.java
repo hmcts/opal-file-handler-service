@@ -17,4 +17,6 @@ public abstract class AbstractFileProcessorConfiguration
     private Interface target;
 
     private Pattern fileNameRegex;
+
+    private String containerName;
 }

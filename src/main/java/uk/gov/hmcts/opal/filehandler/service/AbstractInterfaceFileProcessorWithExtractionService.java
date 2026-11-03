@@ -210,9 +210,10 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
         UUID filestoreUuid = UUID.randomUUID();
 
         try {
+
             interfaceFileBlobStoreService.uploadBaisFile(
                 filestoreUuid,
-                config.getFeatureFlag(),
+                getSourceJsonContainer(config),
                 new ByteArrayInputStream(jsonBytes),
                 sourceJson.getChecksum()
             );
@@ -230,6 +231,8 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
         log.error("Error processing SOURCE_JSON interfaceFileId={} fileName={}",
             sourceJson.getInterfaceFileId(), sourceJson.getFileName(), exception);
     }
+
+    protected abstract String getSourceJsonContainer(FileProcessorConfiguration config);
 
     protected abstract String[] getBusinessUnitsFromExtract(FileProcessorConfiguration config, T extract);
 
@@ -251,4 +254,5 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
         InterfaceFileEntity sourceInterfaceFile,
         T extract
     );
+
 }
