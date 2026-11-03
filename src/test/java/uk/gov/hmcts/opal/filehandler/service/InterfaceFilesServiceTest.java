@@ -491,13 +491,15 @@ public class InterfaceFilesServiceTest {
     @Test
     void deleteInterfaceFiles_shouldRecursivelyDeleteRelatedFilesAndRemoveBlobs() {
         // Arrange
-        final Long sourceId = 100L, sourceId2 = 101L;
-        final UUID sourceFilestoreUuid = UUID.fromString("aeda6410-a641-4b10-b422-d400bf7dd433"),
-            failedSourceJsonFilestoreUuid = UUID.fromString("0fb294db-a695-4df5-b324-f0e92b51b1d3"),
-            sourceJsonFilestoreUuid = UUID.fromString("33bae435-f0d6-4870-a005-afc4fae162c4"),
-            transformedJsonFilestoreUuid = UUID.fromString("515d3e37-ed95-4966-af98-e225412ef08c"),
-            sourceFilestoreUuid2 = UUID.fromString("a8027f50-6743-4ed9-bc16-4301a3db3a6f");
-        final String natwestContainer = "natwest", barclaycardContainer = "barclaycard";
+        final Long sourceId = 100L;
+        final Long sourceId2 = 101L;
+        final UUID sourceFilestoreUuid = UUID.fromString("aeda6410-a641-4b10-b422-d400bf7dd433");
+        final UUID failedSourceJsonFilestoreUuid = UUID.fromString("0fb294db-a695-4df5-b324-f0e92b51b1d3");
+        final UUID sourceJsonFilestoreUuid = UUID.fromString("33bae435-f0d6-4870-a005-afc4fae162c4");
+        final UUID transformedJsonFilestoreUuid = UUID.fromString("515d3e37-ed95-4966-af98-e225412ef08c");
+        final UUID sourceFilestoreUuid2 = UUID.fromString("a8027f50-6743-4ed9-bc16-4301a3db3a6f");
+        final String natwestContainer = "natwest";
+        final String barclaycardContainer = "barclaycard";
 
         InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
             .interfaceFileId(sourceId)
@@ -593,10 +595,12 @@ public class InterfaceFilesServiceTest {
     @Test
     void deleteInterfaceFiles_shouldDeleteFilesWithSameNameAndChecksumAndRemoveBlobs() {
         // Arrange
-        final Long sourceId = 100L, supersededSourceId = 101L;
-        final UUID sourceFilestoreUuid = UUID.fromString("92383ff4-14b7-4174-a0c3-b8165fcd687b"),
-            supersededFilestoreUuid = UUID.fromString("0d6663dc-a174-4107-9a69-746c0ef203cf");
-        final String fileName = "test-file", checksum = "check";
+        final Long sourceId = 100L;
+        final Long supersededSourceId = 101L;
+        final UUID sourceFilestoreUuid = UUID.fromString("92383ff4-14b7-4174-a0c3-b8165fcd687b");
+        final UUID supersededFilestoreUuid = UUID.fromString("0d6663dc-a174-4107-9a69-746c0ef203cf");
+        final String fileName = "test-file";
+        final String checksum = "check";
         final String natwestContainer = "natwest";
 
         InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
@@ -649,8 +653,8 @@ public class InterfaceFilesServiceTest {
     void deleteInterfaceFiles_shouldCorrectlyHandleFailedDeletions() {
         // Arrange
         final Long sourceId = 100L;
-        final UUID sourceFilestoreUuid = UUID.fromString("d095de29-ba2b-4421-8b00-2dc003f85f12"),
-            sourceJsonFilestoreUuid = UUID.fromString("c59a81b5-5f53-4dec-9366-283690875706");
+        final UUID sourceFilestoreUuid = UUID.fromString("d095de29-ba2b-4421-8b00-2dc003f85f12");
+        final UUID sourceJsonFilestoreUuid = UUID.fromString("c59a81b5-5f53-4dec-9366-283690875706");
         final String barclaycardContainer = "barclaycard";
 
         InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
@@ -692,7 +696,9 @@ public class InterfaceFilesServiceTest {
     @Test
     void deleteInterfaceFiles_notFoundIds_shouldThrowBadRequestException() {
         // Arrange
-        Long validId = 10L, invalidId1 = 20L, invalidId2 = 30L;
+        Long validId = 10L;
+        Long invalidId1 = 20L;
+        Long invalidId2 = 30L;
         Set<Long> ids = Set.of(validId, invalidId1, invalidId2);
         when(repository.findById(validId)).thenReturn(Optional.of(mock(InterfaceFileEntity.class)));
         when(repository.findById(invalidId1)).thenReturn(Optional.empty());
@@ -707,7 +713,9 @@ public class InterfaceFilesServiceTest {
     @Test
     void deleteInterfaceFiles_sourceJson_transformedJson_shouldThrowBadRequestException() {
         // Arrange
-        Long sourceId = 10L, sourceJsonId = 20L, transformedJsonId = 30L;
+        Long sourceId = 10L;
+        Long sourceJsonId = 20L;
+        Long transformedJsonId = 30L;
         Set<Long> ids = Set.of(sourceId, sourceJsonId, transformedJsonId);
 
         InterfaceFileEntity source = mock(InterfaceFileEntity.class);

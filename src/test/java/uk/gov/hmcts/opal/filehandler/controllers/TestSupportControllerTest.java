@@ -48,7 +48,9 @@ public class TestSupportControllerTest {
     @Test
     void testSupport_deleteInterfaceFiles_shouldOrchestrateCallToServiceCorrectly() {
         // Arrange
-        Long id1 = 100L, id2 = 200L, id3 = 300L;
+        Long id1 = 100L;
+        Long id2 = 200L;
+        Long id3 = 300L;
         List<Long> ids = List.of(id1, id2, id3, id3, id2);
         DeleteInterfaceFilesResultTestSupport result = mock(DeleteInterfaceFilesResultTestSupport.class);
         when(interfaceFilesService.deleteInterfaceFiles(anySet())).thenReturn(result);

@@ -1,5 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
+import static java.lang.String.format;
+
 import com.azure.core.util.BinaryData;
 import java.io.IOException;
 import java.io.InputStream;
@@ -115,7 +117,7 @@ public class InterfaceFilesService {
 
         if (entity.getStatus() != Status.SUCCESS) {
             throw new InvalidInterfaceFileStatusException(
-                String.format("Interface file with id %d could not be retrieved as it has an invalid status of:"
+                format("Interface file with id %d could not be retrieved as it has an invalid status of:"
                         + " \"%s\" only files with status: \"SUCCESS\" can be returned.",
                     id, entity.getStatus()));
         }
@@ -262,27 +264,30 @@ public class InterfaceFilesService {
 
     private Set<InterfaceFileEntity> getAndValidateInterfaceFilesForDeletion(Set<Long> ids) {
         Set<InterfaceFileEntity> files = new HashSet<>();
-        Set<Long> notFoundsIds = new TreeSet<>(), invalidIds = new TreeSet<>();
+        Set<Long> notFoundsIds = new TreeSet<>();
+        Set<Long> invalidIds = new TreeSet<>();
         for (Long id: ids) {
             repository.findById(id)
                 .ifPresentOrElse(files::add, () -> notFoundsIds.add(id));
         }
         for (InterfaceFileEntity file: files) {
-            if(file.getType() != Type.SOURCE) {
+            if (file.getType() != Type.SOURCE) {
                 invalidIds.add(file.getInterfaceFileId());
             }
-        };
+        }
 
         if (notFoundsIds.isEmpty() && invalidIds.isEmpty()) {
             return files;
         } else {
             StringBuilder msgBuilder = new StringBuilder();
-            if(!notFoundsIds.isEmpty()) {
-                msgBuilder.append(String.format("The following interface files do not exist: %s", notFoundsIds));
+            if (!notFoundsIds.isEmpty()) {
+                msgBuilder.append(format("The following interface files do not exist: %s", notFoundsIds));
             }
-            if(!invalidIds.isEmpty()) {
-                if(!notFoundsIds.isEmpty()) msgBuilder.append(System.lineSeparator());
-                msgBuilder.append(String.format("The following interface files are not of type SOURCE: %s", invalidIds));
+            if (!invalidIds.isEmpty()) {
+                if (!notFoundsIds.isEmpty()) {
+                    msgBuilder.append(System.lineSeparator());
+                }
+                msgBuilder.append(format("The following interface files are not of type SOURCE: %s", invalidIds));
             }
 
             throw new BadRequestException("Request to delete interface files failed validation", msgBuilder.toString());
