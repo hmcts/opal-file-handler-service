@@ -236,7 +236,8 @@ public class InterfaceFilesService {
                 log.info("Deleting other interface files with same name and checksum as interface file id: {}", id);
                 List<InterfaceFileEntity> filesWithSameNameAndChecksum = repository.findByTypeAndChecksumAndFileName(
                     Type.SOURCE, interfaceFile.getChecksum(), interfaceFile.getFileName());
-                filesWithSameNameAndChecksum.remove(interfaceFile); // we are not deleting this yet
+                // This query will return the original file, which we are not deleting yet.
+                filesWithSameNameAndChecksum.remove(interfaceFile);
                 filesWithSameNameAndChecksum.stream().forEach(this::deleteInterfaceFile);
 
                 // Now delete the whole tree of related files, ie those related via the related_interface_file_id
