@@ -43,9 +43,9 @@ import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
-import uk.gov.hmcts.opal.filehandler.service.response.DeleteInterfaceFilesResult;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
+import uk.gov.hmcts.opal.generated.model.DeleteInterfaceFilesResultTestSupport;
 import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 
@@ -222,7 +222,7 @@ public class InterfaceFilesService {
     }
 
     @Transactional
-    public DeleteInterfaceFilesResult deleteInterfaceFiles(Set<Long> ids) {
+    public DeleteInterfaceFilesResultTestSupport deleteInterfaceFiles(Set<Long> ids) {
         ArrayList<Long> successIds = new ArrayList<>();
         ArrayList<Long> failedIds = new ArrayList<>();
 
@@ -254,7 +254,7 @@ public class InterfaceFilesService {
 
         log.info("Successfully processed {} out of {} requested)", successIds.size(), ids.size());
 
-        return DeleteInterfaceFilesResult.builder()
+        return DeleteInterfaceFilesResultTestSupport.builder()
             .successfullyDeletedIds(successIds)
             .failedIds(failedIds)
             .build();

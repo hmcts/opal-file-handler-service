@@ -60,9 +60,9 @@ import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
-import uk.gov.hmcts.opal.filehandler.service.response.DeleteInterfaceFilesResult;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
+import uk.gov.hmcts.opal.generated.model.DeleteInterfaceFilesResultTestSupport;
 import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileEnumInterfaceFile;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
@@ -553,7 +553,7 @@ public class InterfaceFilesServiceTest {
 
         // Act
         Set<Long> ids = Set.of(sourceId, sourceId2);
-        DeleteInterfaceFilesResult result = service.deleteInterfaceFiles(ids);
+        DeleteInterfaceFilesResultTestSupport result = service.deleteInterfaceFiles(ids);
 
         // Assert
         assertThat(result.getSuccessfullyDeletedIds()).containsExactlyInAnyOrder(sourceId, sourceId2);
@@ -623,7 +623,7 @@ public class InterfaceFilesServiceTest {
 
         // Act
         Set<Long> ids = Set.of(sourceId);
-        DeleteInterfaceFilesResult result = service.deleteInterfaceFiles(ids);
+        DeleteInterfaceFilesResultTestSupport result = service.deleteInterfaceFiles(ids);
 
         // Assert
         assertThat(result.getSuccessfullyDeletedIds()).containsExactly(sourceId);
@@ -678,7 +678,7 @@ public class InterfaceFilesServiceTest {
 
         // Act
         Set<Long> ids = Set.of(sourceId);
-        DeleteInterfaceFilesResult result = service.deleteInterfaceFiles(ids);
+        DeleteInterfaceFilesResultTestSupport result = service.deleteInterfaceFiles(ids);
 
         // Assert
         assertThat(result.getFailedIds()).containsExactly(sourceId);

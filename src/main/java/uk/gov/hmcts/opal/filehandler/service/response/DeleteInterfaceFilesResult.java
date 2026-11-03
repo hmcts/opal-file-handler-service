@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 @Builder
 @RequiredArgsConstructor
 @Getter
-public class DeleteInterfaceFilesResult {
+public class DeleteInterfaceFilesResult { @Getter // TODO delete as now replaced by file generated from open api spec
     @NonNull
     private final Collection<Long> successfullyDeletedIds;
     @NonNull

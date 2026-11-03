@@ -1,19 +1,16 @@
 package uk.gov.hmcts.opal.filehandler.controllers;
 
-import io.swagger.v3.oas.annotations.Operation;
 import java.util.HashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.opal.filehandler.service.InterfaceFilesService;
-import uk.gov.hmcts.opal.filehandler.service.response.DeleteInterfaceFilesResult;
 import uk.gov.hmcts.opal.filehandler.util.TaskRunnerUtil;
 import uk.gov.hmcts.opal.generated.http.api.TestSupportApi;
+import uk.gov.hmcts.opal.generated.model.DeleteInterfaceFilesResultTestSupport;
 
 @Slf4j(topic = "opal.TestSupportController")
 @RestController
@@ -31,11 +28,10 @@ public class TestSupportController implements TestSupportApi {
         return ResponseEntity.accepted().build();
     }
 
-    @DeleteMapping("/testing-support/interface-files")
-    @Operation(summary = "Deletes a list of Interface jobs. FOR TESTING ONLY!")
-    public ResponseEntity<DeleteInterfaceFilesResult> deleteInterfaceFiles(@RequestParam(value = "ids") List<Long> ids) {
+    @Override
+    public ResponseEntity<DeleteInterfaceFilesResultTestSupport> testingSupportInterfaceFilesDelete(List<Long> ids) {
         log.warn("TEST ENDPOINT: Request to delete interface files with ids: {}", ids);
-        DeleteInterfaceFilesResult result = interfaceFilesService.deleteInterfaceFiles(new HashSet<>(ids));
+        DeleteInterfaceFilesResultTestSupport result = interfaceFilesService.deleteInterfaceFiles(new HashSet<>(ids));
         return ResponseEntity.ok(result);
     }
 }

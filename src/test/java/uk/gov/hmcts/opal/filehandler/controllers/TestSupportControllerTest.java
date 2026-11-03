@@ -21,8 +21,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import uk.gov.hmcts.opal.filehandler.service.InterfaceFilesService;
-import uk.gov.hmcts.opal.filehandler.service.response.DeleteInterfaceFilesResult;
 import uk.gov.hmcts.opal.filehandler.util.TaskRunnerUtil;
+import uk.gov.hmcts.opal.generated.model.DeleteInterfaceFilesResultTestSupport;
 
 @ExtendWith(MockitoExtension.class)
 public class TestSupportControllerTest {
@@ -50,11 +50,12 @@ public class TestSupportControllerTest {
         // Arrange
         Long id1 = 100L, id2 = 200L, id3 = 300L;
         List<Long> ids = List.of(id1, id2, id3, id3, id2);
-        DeleteInterfaceFilesResult result = mock(DeleteInterfaceFilesResult.class);
+        DeleteInterfaceFilesResultTestSupport result = mock(DeleteInterfaceFilesResultTestSupport.class);
         when(interfaceFilesService.deleteInterfaceFiles(anySet())).thenReturn(result);
 
         // Act
-        ResponseEntity<DeleteInterfaceFilesResult> response = controller.deleteInterfaceFiles(ids);
+        ResponseEntity<DeleteInterfaceFilesResultTestSupport> response =
+            controller.testingSupportInterfaceFilesDelete(ids);
 
         // Assert
         verify(interfaceFilesService, times(1)).deleteInterfaceFiles(idsArgCaptor.capture());
