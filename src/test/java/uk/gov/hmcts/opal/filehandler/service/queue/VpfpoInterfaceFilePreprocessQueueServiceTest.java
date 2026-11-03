@@ -12,7 +12,7 @@ import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.filehandler.dto.FileHandlerDraftAccountPayloadDTO;
 
 @ExtendWith(MockitoExtension.class)
-class VPFPOInterfaceFilePreprocessQueueServiceTest {
+class VpfpoInterfaceFilePreprocessQueueServiceTest {
 
     @Mock
     private JmsTemplate jmsTemplate;
@@ -20,11 +20,11 @@ class VPFPOInterfaceFilePreprocessQueueServiceTest {
     @Mock
     private ObjectMapper objectMapper;
 
-    private VPFPOInterfaceFilePreprocessQueueService service;
+    private VpfpoInterfaceFilePreprocessQueueService service;
 
     @BeforeEach
     void setUp() {
-        service = new VPFPOInterfaceFilePreprocessQueueService(
+        service = new VpfpoInterfaceFilePreprocessQueueService(
             jmsTemplate,
             "vpfpo-queue",
             objectMapper

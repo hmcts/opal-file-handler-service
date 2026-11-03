@@ -11,11 +11,11 @@ import uk.gov.hmcts.opal.filehandler.dto.FileHandlerDraftAccountPayloadDTO;
 
 @Service
 @Slf4j
-public class VPFPOInterfaceFilePreprocessQueueService
+public class VpfpoInterfaceFilePreprocessQueueService
     extends AbstractQueueService<FileHandlerDraftAccountPayloadDTO>
     implements InterfaceFilePreprocessQueueService<FileHandlerDraftAccountPayloadDTO> {
 
-    public VPFPOInterfaceFilePreprocessQueueService(
+    public VpfpoInterfaceFilePreprocessQueueService(
         @Qualifier("commonServiceBusJmsTemplate")
         JmsTemplate jmsTemplate,
         @Value("${opal.common.service-bus.queues.vpfpo-interface-file-preprocess}")
