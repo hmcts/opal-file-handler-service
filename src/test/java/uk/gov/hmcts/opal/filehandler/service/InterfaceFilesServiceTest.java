@@ -492,9 +492,11 @@ public class InterfaceFilesServiceTest {
     void deleteInterfaceFiles_shouldRecursivelyDeleteRelatedFilesAndRemoveBlobs() {
         // Arrange
         final Long sourceId = 100L, sourceId2 = 101L;
-        final UUID sourceFilestoreUuid = UUID.randomUUID(), failedSourceJsonFilestoreUuid = UUID.randomUUID(),
-            sourceJsonFilestoreUuid = UUID.randomUUID(), transformedJsonFilestoreUuid = UUID.randomUUID(),
-            sourceFilestoreUuid2 = UUID.randomUUID();
+        final UUID sourceFilestoreUuid = UUID.fromString("aeda6410-a641-4b10-b422-d400bf7dd433"),
+            failedSourceJsonFilestoreUuid = UUID.fromString("0fb294db-a695-4df5-b324-f0e92b51b1d3"),
+            sourceJsonFilestoreUuid = UUID.fromString("33bae435-f0d6-4870-a005-afc4fae162c4"),
+            transformedJsonFilestoreUuid = UUID.fromString("515d3e37-ed95-4966-af98-e225412ef08c"),
+            sourceFilestoreUuid2 = UUID.fromString("a8027f50-6743-4ed9-bc16-4301a3db3a6f");
         final String natwestContainer = "natwest", barclaycardContainer = "barclaycard";
 
         InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
@@ -592,7 +594,8 @@ public class InterfaceFilesServiceTest {
     void deleteInterfaceFiles_shouldDeleteFilesWithSameNameAndChecksumAndRemoveBlobs() {
         // Arrange
         final Long sourceId = 100L, supersededSourceId = 101L;
-        final UUID sourceFilestoreUuid = UUID.randomUUID(), supersededFilestoreUuid = UUID.randomUUID();
+        final UUID sourceFilestoreUuid = UUID.fromString("92383ff4-14b7-4174-a0c3-b8165fcd687b"),
+            supersededFilestoreUuid = UUID.fromString("0d6663dc-a174-4107-9a69-746c0ef203cf");
         final String fileName = "test-file", checksum = "check";
         final String natwestContainer = "natwest";
 
