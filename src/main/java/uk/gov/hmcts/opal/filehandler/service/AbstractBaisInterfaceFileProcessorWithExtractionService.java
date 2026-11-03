@@ -32,7 +32,7 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
 
     private static final String BUSINESS_UNIT_065 = "065";
 
-    private final EnumMap<Domain, InterfaceFilePreprocessQueueService> queueServiceMap;
+    private final EnumMap<Domain, InterfaceFilePreprocessQueueService<Long>> queueServiceMap;
 
     protected AbstractBaisInterfaceFileProcessorWithExtractionService(
         Clock clock,
@@ -43,8 +43,8 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
         TransactionTemplate transactionTemplate,
         ObjectMapper objectMapper,
         ExtractionService<T> extractionService,
-        InterfaceFilePreprocessQueueService finesQueueService,
-        InterfaceFilePreprocessQueueService maintenanceQueueService
+        InterfaceFilePreprocessQueueService<Long> finesQueueService,
+        InterfaceFilePreprocessQueueService<Long> maintenanceQueueService
     ) {
         super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
             transactionTemplate, objectMapper, extractionService);
@@ -111,8 +111,8 @@ public abstract class AbstractBaisInterfaceFileProcessorWithExtractionService<T 
         }
     }
 
-    InterfaceFilePreprocessQueueService queueService(Domain domain) {
-        InterfaceFilePreprocessQueueService queue = queueServiceMap.get(domain);
+    InterfaceFilePreprocessQueueService<Long> queueService(Domain domain) {
+        InterfaceFilePreprocessQueueService<Long> queue = queueServiceMap.get(domain);
         if (queue == null) {
             throw new IllegalStateException("Unsupported queue domain '%s'".formatted(domain));
         }

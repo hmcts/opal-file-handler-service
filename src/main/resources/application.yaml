@@ -121,6 +121,7 @@ opal:
       queues:
         maintenance-interface-file-preprocess: ${SERVICEBUS_INTERFACE_FILE_PREPROCESS_MAINTENANCE_QUEUE_NAME:banking-interfaces-preprocess-interface-file-maintenance}
         fines-interface-file-preprocess: ${SERVICEBUS_INTERFACE_FILE_PREPROCESS_FINES_QUEUE_NAME:banking-interfaces-preprocess-interface-file-fines}
+        vpfpo-interface-file-preprocess: ${SERVICEBUS_INTERFACE_FILE_PREPROCESS_VPFPO_QUEUE_NAME:banking-interfaces-preprocess-interface-file-vpfpo}
     domain: file-handler
     content-digest:
       request:
