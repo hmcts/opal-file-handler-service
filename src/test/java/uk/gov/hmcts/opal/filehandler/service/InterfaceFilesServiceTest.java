@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -51,6 +52,7 @@ import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
+import uk.gov.hmcts.opal.filehandler.exception.BlobDeleteException;
 import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
@@ -641,6 +643,50 @@ public class InterfaceFilesServiceTest {
     }
 
     @Test
+    void deleteInterfaceFiles_shouldCorrectlyReportFailedDeletions() {
+        // Arrange
+        final Long sourceId = 100L;
+        final UUID sourceFilestoreUuid = UUID.fromString("d095de29-ba2b-4421-8b00-2dc003f85f12"),
+            sourceJsonFilestoreUuid = UUID.fromString("c59a81b5-5f53-4dec-9366-283690875706");
+        final String barclaycardContainer = "barclaycard";
+
+        InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
+            .interfaceFileId(sourceId)
+            .filestoreUuid(sourceFilestoreUuid)
+            .type(Type.SOURCE)
+            .source(Interface.BARCLAYCARD)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+        InterfaceFileEntity sourceJsonFile = InterfaceFileEntity.builder()
+            .interfaceFileId(200L)
+            .filestoreUuid(sourceJsonFilestoreUuid)
+            .type(Type.SOURCE_JSON)
+            .source(Interface.BARCLAYCARD)
+            .status(Status.SUCCESS)
+            .relatedInterfaceFile(sourceFile)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+        sourceFile.getChildRelatedInterfaceFiles().add(sourceJsonFile);
+        when(repository.findById(sourceId)).thenReturn(Optional.of(sourceFile));
+        when(blobStoreService.deleteBlob(sourceJsonFilestoreUuid, barclaycardContainer))
+            .thenThrow(new BlobDeleteException(sourceFilestoreUuid, barclaycardContainer, new RuntimeException("")));
+
+        // Act
+        Set<Long> ids = Set.of(sourceId);
+        DeleteInterfaceFilesResult result = service.deleteInterfaceFiles(ids);
+
+        // Assert
+        assertThat(result.getFailedIds()).containsExactly(sourceId);
+        assertThat(result.getSuccessfullyDeletedIds()).isEmpty();
+        verify(repository, never()).delete(sourceFile);
+        verify(repository, never()).delete(sourceJsonFile);
+        verify(blobStoreService, never()).deleteBlob(sourceFilestoreUuid, barclaycardContainer);
+
+    }
+
+    @Test
     void deleteInterfaceFiles_notFoundIds_shouldThrowBadRequestException() {
         // Arrange
         Long validId = 10L, invalidId1 = 20L, invalidId2 = 30L;
@@ -654,7 +700,6 @@ public class InterfaceFilesServiceTest {
         assertThat(ex.getTitle()).isEqualTo("Request to delete interface files failed validation");
         assertThat(ex.getDetail()).contains("The following interface files do not exist: [20, 30]");
     }
-
 
     @Test
     void deleteInterfaceFiles_sourceJson_transformedJson_shouldThrowBadRequestException() {
