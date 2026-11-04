@@ -145,6 +145,7 @@ bais-emulator:
       - barclaycard
       - cder
       - bteckoh
+      - 
 bt-eckoh-report:
   image: ${IMAGE_NAME}
   environment:
