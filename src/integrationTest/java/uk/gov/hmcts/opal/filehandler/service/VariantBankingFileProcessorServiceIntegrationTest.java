@@ -24,7 +24,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import org.springframework.core.io.ClassPathResource;
 import uk.gov.hmcts.opal.filehandler.repository.BusinessUnitBankAccountRepository;
-import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.AbstractInterfaceFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
@@ -42,7 +42,7 @@ import static org.mockito.Mockito.verify;
 })
 @DisplayName("Variant Banking File Processor Service Integration Tests")
 class VariantBankingFileProcessorServiceIntegrationTest
-    extends AbstractBaisFileProcessorServiceIntegrationTest {
+    extends AbstractInterfaceFileProcessorServiceIntegrationTest {
 
     @Autowired
     private VariantBankingFileProcessorService service;
@@ -51,7 +51,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
     private VariantBankingFileProcessorConfig config;
 
     @Autowired
-    DWPBaisFileProcessorService dwpBaisFileProcessorService;
+    DWPInterfaceFileProcessorService dwpInterfaceFileProcessorService;
 
     @Autowired
     DWPBaisFileProcessorConfiguration dwpConfig;
@@ -233,7 +233,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
 
         uploadResourceToSftp(resource, container);
         businessUnitBankAccountRepository.findAll().forEach(System.out::println);
-        dwpBaisFileProcessorService.run(dwpConfig);
+        dwpInterfaceFileProcessorService.run(dwpConfig);
 
         String checksum = "bdbbd6c4e0daba273d9387f466acb6b9";
         InterfaceFileEntity parentEntity =
@@ -274,7 +274,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
 
         // First processing
         uploadResourceToSftp(resource, container);
-        dwpBaisFileProcessorService.run(dwpConfig);
+        dwpInterfaceFileProcessorService.run(dwpConfig);
 
         String checksum = "bdbbd6c4e0daba273d9387f466acb6b9";
         InterfaceFileEntity firstFile = assertSuccessfulInterfaceFile(file, checksum, Interface.DWP,
@@ -282,7 +282,7 @@ class VariantBankingFileProcessorServiceIntegrationTest
         assertThat(firstFile).isNotNull();
         // Process duplicate
         uploadResourceToSftp(resource, container);
-        dwpBaisFileProcessorService.run(dwpConfig);
+        dwpInterfaceFileProcessorService.run(dwpConfig);
 
 
         List<InterfaceFileEntity> dwpSourceFiles = repository.findAll()

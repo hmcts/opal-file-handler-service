@@ -1,4 +1,5 @@
 package uk.gov.hmcts.opal.filehandler.entity;
+
 import lombok.Getter;
 import uk.gov.hmcts.opal.filehandler.service.AllpayInterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.service.BTEckohReportInterfaceFileProcessorService;

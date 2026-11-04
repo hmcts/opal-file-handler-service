@@ -32,7 +32,7 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 @Slf4j
 @Service
 public class VariantBankingFileProcessorService
-    extends AbstractBaisInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
+    extends AbstractBankingInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
 
     public VariantBankingFileProcessorService(
         Clock clock,
