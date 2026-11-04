@@ -72,8 +72,6 @@ public class TestSupportControllerIntegrationTest extends AbstractIntegrationTes
         }
     }
 
-
-
     @TestPropertySource(properties = {
         "opal.testing-support-endpoints.enabled=false"
     })
