@@ -1,7 +1,11 @@
 package uk.gov.hmcts.opal.filehandler.service.queue;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.azure.storage.common.implementation.connectionstring.StorageAuthenticationSettings;
+import com.azure.storage.common.implementation.connectionstring.StorageAuthenticationSettings.Account;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,9 +35,12 @@ class VpfpoInterfaceFilePreprocessQueueServiceTest {
 
     @Test
     void shouldSendPayloadToQueue() throws Exception {
+
+        Account account = mock(Account.class);
+        
         FileHandlerDraftAccountPayloadDTO payload =
             FileHandlerDraftAccountPayloadDTO.builder()
-                .accountJson("{\"accountNumber\":\"12345\"}")
+                .account(account)
                 .prosecutorCode("ABC")
                 .build();
 
@@ -44,4 +51,5 @@ class VpfpoInterfaceFilePreprocessQueueServiceTest {
         service.send(payload);
         verify(jmsTemplate).convertAndSend("vpfpo-queue", serialisedPayload);
     }
+
 }
