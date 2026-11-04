@@ -72,12 +72,13 @@ public class TestSupportDeleteInterfaceFilesIntegrationTest extends AbstractCont
             interfaceFileEntityTestData.saveAndFlushInterfaceFile(file1);
 
             List<Long> ids = List.of(file2.getInterfaceFileId());
+
+            // Act + Assert
             DeleteInterfaceFilesResultTestSupport expectedResponse = DeleteInterfaceFilesResultTestSupport.builder()
                 .successfullyDeletedIds(ids)
                 .failedIds(Collections.emptyList())
                 .build();
 
-            // Act + Assert
             setupApiTest(HttpMethod.DELETE, URI)
                 .param("ids", buildParams(ids))
                 .clearPermissions()
@@ -101,12 +102,13 @@ public class TestSupportDeleteInterfaceFilesIntegrationTest extends AbstractCont
             InterfaceFileEntity interfaceFile = createSourceInterfaceFile();
 
             List<Long> ids = List.of(interfaceFile.getInterfaceFileId());
+
+            // Act + Assert
             DeleteInterfaceFilesResultTestSupport expectedResponse = DeleteInterfaceFilesResultTestSupport.builder()
                 .successfullyDeletedIds(Collections.emptyList())
                 .failedIds(ids)
                 .build();
 
-            // Act + Assert
             setupApiTest(HttpMethod.DELETE, URI)
                 .param("ids", buildParams(ids))
                 .clearPermissions()
