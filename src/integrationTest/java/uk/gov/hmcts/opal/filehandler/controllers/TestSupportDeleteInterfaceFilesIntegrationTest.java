@@ -166,7 +166,10 @@ public class TestSupportDeleteInterfaceFilesIntegrationTest extends AbstractCont
         @JiraStory("PO-11123")
         @JiraEpic("PO-3497")
         void returns404WhenFeatureIsOff() throws Exception {
-            // TODO
+            setupApiTest(HttpMethod.DELETE, URI)
+                .param("ids", buildParams(List.of(1L)))
+                .execute()
+                .assertNotFound("The requested resource could not be found");
         }
     }
 }
