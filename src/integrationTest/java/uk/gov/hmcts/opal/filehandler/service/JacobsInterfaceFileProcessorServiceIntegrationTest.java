@@ -20,7 +20,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
-import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.AbstractInterfaceFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 
 @ActiveProfiles("integration")
@@ -28,8 +28,8 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
     "opal.file-handler-service.file-types.bailiffs.jacobs.sftp-username=Jacobs",
     "launchdarkly.default-flag-values.bailiffs-jacobs-file-transfer-job=true"
 })
-public class JacobsBaisFileProcessorServiceIntegrationTest
-    extends AbstractBaisFileProcessorServiceIntegrationTest {
+public class JacobsInterfaceFileProcessorServiceIntegrationTest
+    extends AbstractInterfaceFileProcessorServiceIntegrationTest {
 
     private static final String JACOBS_FILE = "0000031712_dat_0000098475_20260408_103500.txt";
     private static final String JACOBS_FILE_CHECKSUM = "74efc9e50988e6694fa6dd55a8e739f0";
@@ -38,7 +38,7 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
     private static final String DWP_CODE = "0000031714";
 
     @Autowired
-    private JacobsBaisFileProcessorService service;
+    private JacobsInterfaceFileProcessorService service;
     
     @Autowired
     private JacobsBaisFileProcessorConfiguration configuration;
@@ -55,7 +55,7 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
         blobServiceClient.createBlobContainerIfNotExists(configuration.getContainerName());
 
         buBankAccountTestData.clear();
-        buBankAccountTestData.saveTypicalBusinessUnitBankAccount(1L, "JA01", DWP_CODE);
+        buBankAccountTestData.saveTypicalBusinessUnitBankAccount((short) 1, "JA01", DWP_CODE);
     }
 
     @Nested
@@ -124,7 +124,7 @@ public class JacobsBaisFileProcessorServiceIntegrationTest
 
         verify(queue).send(sourceJson.getInterfaceFileId());
 
-        assertArrayEquals(sourceFile.getBusinessUnitCode(), sourceJson.getBusinessUnitCode());
+        assertArrayEquals(sourceFile.getBusinessUnitId(), sourceJson.getBusinessUnitId());
         assertBlobChecksum(JACOBS_FILE, JACOBS_FILE_CHECKSUM, configuration.getContainerName());
         assertNumberOfSftpFiles(configuration.getSftpUsername(), 0);
     }

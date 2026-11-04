@@ -105,7 +105,7 @@ public class InterfaceFilesServiceTest {
     @Test
     public void getInterfaceFiles_shouldOrchestrateCallsCorrectly() {
         try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
-             MockedStatic<PermissionUtil> permissionUtil = mockStatic(PermissionUtil.class)) {
+            MockedStatic<PermissionUtil> permissionUtil = mockStatic(PermissionUtil.class)) {
             securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
             UserStateV2 userState = mock(UserStateV2.class);
             DomainBusinessUnitUsers domainUsers = mock(DomainBusinessUnitUsers.class);
@@ -254,13 +254,13 @@ public class InterfaceFilesServiceTest {
             InterfaceFileNotFoundException.class,
             () -> service.getInterfaceFileEntity(id)
         );
-        assertEquals("404 NOT_FOUND \"Interface file with id 102 could not be located.\"",exception.getMessage());
+        assertEquals("404 NOT_FOUND \"Interface file with id 102 could not be located.\"", exception.getMessage());
         verify(repository).findById(id);
     }
 
     @Test
     void addInterfaceFile_savesEnrichedEntityAndReturnsMappedFile() throws IOException {
-        DWPBaisFileProcessorService processorService = mock(DWPBaisFileProcessorService.class);
+        DWPInterfaceFileProcessorService processorService = mock(DWPInterfaceFileProcessorService.class);
         BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
         InterfaceFilesService uploadService = serviceWithProcessor(processorService, config);
         MultipartFile file = mock(MultipartFile.class);
@@ -275,7 +275,7 @@ public class InterfaceFilesServiceTest {
         AddInterfaceFileRequestMetadata metadata = addInterfaceFileMetadata()
             .relatedInterfaceFileId(15L)
             .paymentType(PaymentTypeEnumTypes.CHEQUE)
-            .businessUnitCode("1234");
+            .businessUnitId((short) 1234);
 
         when(repository.findById(15L)).thenReturn(Optional.of(relatedInterfaceFile));
         when(config.getContainerName()).thenReturn("dwp-container");
@@ -305,18 +305,19 @@ public class InterfaceFilesServiceTest {
             assertEquals(mapped, result);
             assertEquals(relatedInterfaceFile, ingestedEntity.getRelatedInterfaceFile());
             assertEquals(PaymentType.CHEQUE, ingestedEntity.getPaymentType());
-            assertArrayEquals(new String[] {"1234"}, ingestedEntity.getBusinessUnitCode());
+            assertArrayEquals(new Short[] {(short) 1234}, ingestedEntity.getBusinessUnitId());
 
             verify(repository).findById(15L);
             verify(repository).save(ingestedEntity);
             verify(repository).findById(24L);
             verify(mapper).toInterfaceFileObject(ingestedEntity);
+
         }
     }
 
     @Test
     void addInterfaceFile_savesEntityWithoutRelatedFileWhenNoRelatedIdProvided() throws IOException {
-        DWPBaisFileProcessorService processorService = mock(DWPBaisFileProcessorService.class);
+        DWPInterfaceFileProcessorService processorService = mock(DWPInterfaceFileProcessorService.class);
         BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
         InterfaceFilesService uploadService = serviceWithProcessor(processorService, config);
         MultipartFile file = mock(MultipartFile.class);
@@ -327,7 +328,7 @@ public class InterfaceFilesServiceTest {
         InterfaceFileObjectInterfaceFile mapped = mock(InterfaceFileObjectInterfaceFile.class);
         AddInterfaceFileRequestMetadata metadata = addInterfaceFileMetadata()
             .paymentType(PaymentTypeEnumTypes.CASH)
-            .businessUnitCode("9876");
+            .businessUnitId((short)9876);
 
         when(config.getContainerName()).thenReturn("dwp-container");
         when(file.getOriginalFilename()).thenReturn("source.dat");
@@ -356,7 +357,7 @@ public class InterfaceFilesServiceTest {
             assertEquals(mapped, result);
             assertNull(ingestedEntity.getRelatedInterfaceFile());
             assertEquals(PaymentType.CASH, ingestedEntity.getPaymentType());
-            assertArrayEquals(new String[] {"9876"}, ingestedEntity.getBusinessUnitCode());
+            assertArrayEquals(new Short[] {(short) 9876}, ingestedEntity.getBusinessUnitId());
 
             verify(repository).save(ingestedEntity);
             verify(repository).findById(25L);
@@ -367,7 +368,7 @@ public class InterfaceFilesServiceTest {
     @Test
     void addInterfaceFile_wrapsFileReadFailure() throws IOException {
         InterfaceFilesService service = serviceWithProcessor(
-            mock(DWPBaisFileProcessorService.class),
+            mock(DWPInterfaceFileProcessorService.class),
             mock(BaisFileProcessorConfiguration.class)
         );
         MultipartFile file = mock(MultipartFile.class);

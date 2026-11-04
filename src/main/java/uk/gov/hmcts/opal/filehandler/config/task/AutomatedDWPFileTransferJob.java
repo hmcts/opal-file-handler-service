@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.config.DWPBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.service.DWPBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.DWPInterfaceFileProcessorService;
 
 @Component
 @ConditionalOnExpression(
@@ -15,7 +15,7 @@ import uk.gov.hmcts.opal.filehandler.service.DWPBaisFileProcessorService;
 @RequiredArgsConstructor
 public class AutomatedDWPFileTransferJob implements TaskConfiguration {
 
-    private final DWPBaisFileProcessorService processorService;
+    private final DWPInterfaceFileProcessorService processorService;
     private final DWPBaisFileProcessorConfiguration processorConfiguration;
 
     @Override

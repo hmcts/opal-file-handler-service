@@ -31,13 +31,18 @@ jobs:
           else
             echo "mode=auto-update" >> "$GITHUB_OUTPUT"
           fi
+      - name: Fetch master
+        run: git fetch "https://github.com/${{ github.event.pull_request.base.repo.full_name }}.git" master:refs/remotes/origin/master
+      - name: Reject changes to existing master Flyway migrations
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node bin/ci/flyway-master-check.cjs
       - name: Reject automatic Flyway migration updates from forks
         if: steps.flyway_mode.outputs.mode == 'auto-update' && github.event.pull_request.head.repo.full_name != github.repository
         run: |
           echo "Automatic Flyway migration updates are supported only for same-repository pull requests. Add the disable_migration_update label to run duplicate detection without automatic renaming." >&2
           exit 1
-      - name: Fetch master
-        run: git fetch "https://github.com/${{ github.event.pull_request.base.repo.full_name }}.git" master:refs/remotes/origin/master
       - name: Check for duplicate Flyway scripts
         run: ./bin/ci/flyway-dupe-checker.sh --mode=${{ steps.flyway_mode.outputs.mode }} --summary-file flyway-rename-summary.md
       - name: Detect Flyway migration renames

@@ -145,7 +145,7 @@ public class InterfaceFilesStepDef extends BaseStepDef {
 
     /**
      * Asserts all supplied metadata fields for the interface file identified by its filestore UUID.
-     * Use the value {@code null} in the table when a response field is expected to be absent.
+     * Use the value {@id null} in the table when a response field is expected to be absent.
      *
      * @param filestoreUuid filestore UUID used to locate the response item.
      * @param expectedDetails expected response field values.
@@ -193,37 +193,37 @@ public class InterfaceFilesStepDef extends BaseStepDef {
     }
 
     /**
-     * Asserts that every returned interface file contains the supplied business-unit code.
+     * Asserts that every returned interface file contains the supplied business-unit ID.
      *
-     * @param businessUnitCode expected business-unit code.
+     * @param businessUnitId expected business-unit ID.
      */
-    @Then("every returned interface file contains business unit code {string}")
-    public void everyReturnedInterfaceFileContainsBusinessUnitCode(String businessUnitCode) {
+    @Then("every returned interface file contains business unit id {string}")
+    public void everyReturnedInterfaceFileContainsBusinessUnitId(String businessUnitId) {
         List<Map<String, Object>> interfaceFiles = getInterfaceFiles();
         assertTrue(!interfaceFiles.isEmpty(), "No interface files were returned");
         interfaceFiles.forEach(interfaceFile -> {
-            Object businessUnitCodes = interfaceFile.get("business_unit_codes");
+            Object businessUnitIds = interfaceFile.get("business_unit_ids");
             assertTrue(
-                businessUnitCodes instanceof List<?> codes && codes.contains(businessUnitCode),
+                businessUnitIds instanceof List<?> ids && ids.contains(Integer.valueOf(businessUnitId)),
                 "Interface file " + interfaceFile.get("interface_file_id")
-                    + " does not contain business unit code " + businessUnitCode
+                    + " does not contain business unit id " + businessUnitId
             );
         });
     }
 
     /**
-     * Asserts that every returned interface file includes at least one business-unit code.
+     * Asserts that every returned interface file includes at least one business-unit id.
      */
-    @Then("every returned interface file has at least one business unit code")
-    public void everyReturnedInterfaceFileHasAtLeastOneBusinessUnitCode() {
+    @Then("every returned interface file has at least one business unit id")
+    public void everyReturnedInterfaceFileHasAtLeastOneBusinessUnitId() {
         List<Map<String, Object>> interfaceFiles = getInterfaceFiles();
         assertTrue(!interfaceFiles.isEmpty(), "No interface files were returned");
         interfaceFiles.forEach(interfaceFile -> {
-            Object businessUnitCodes = interfaceFile.get("business_unit_codes");
+            Object businessUnitIds = interfaceFile.get("business_unit_ids");
             assertTrue(
-                businessUnitCodes instanceof List<?> codes && !codes.isEmpty(),
+                businessUnitIds instanceof List<?> ids && !ids.isEmpty(),
                 "Interface file " + interfaceFile.get("interface_file_id")
-                    + " does not contain a business unit code"
+                    + " does not contain a business unit id"
             );
         });
     }

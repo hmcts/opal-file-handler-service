@@ -7,7 +7,7 @@ Feature: CAPS report ingestion
     When the "CAPS" report ingestion job is requested through testing support
     Then the testing-support request is accepted
     And a successful "CAPS_REPORT" interface file is stored
-    And the stored CAPS report can be retrieved by interface file ID
+    And the stored "CAPS" report can be retrieved by interface file ID
     And the stored "CAPS" report content matches the bais "file"
     And the configured "CAPS" report no longer exists on bais
 

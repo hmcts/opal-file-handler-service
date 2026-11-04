@@ -89,7 +89,7 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
         assertThat(loaded.getStatus()).isEqualTo(interfaceFile.getStatus());
         assertThat(loaded.getCreatedDatetime()).isEqualTo(interfaceFile.getCreatedDatetime());
         assertThat(loaded.getErrors()).isEqualTo(interfaceFile.getErrors());
-        assertThat(loaded.getBusinessUnitCode()).containsExactly(interfaceFile.getBusinessUnitCode());
+        assertThat(loaded.getBusinessUnitId()).containsExactly(interfaceFile.getBusinessUnitId());
         assertThat(loaded.getPaymentType()).isEqualTo(interfaceFile.getPaymentType());
         assertThat(loaded.getRelatedInterfaceFile()).isNull();
     }
@@ -267,7 +267,7 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
             .checksum(checksum)
             .status(status)
             .createdDatetime(LocalDateTime.now())
-            .businessUnitCode(new String[] {"BC12"})
+            .businessUnitId(new Short[] {12})
             .relatedInterfaceFile(sourceFile)
             .createdBy(-1L)
             .build();

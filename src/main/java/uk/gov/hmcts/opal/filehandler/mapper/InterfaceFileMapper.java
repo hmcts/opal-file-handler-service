@@ -11,7 +11,7 @@ import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 public interface InterfaceFileMapper {
 
     @Mapping(target = "domain", source = "opalDomain")
-    @Mapping(target = "businessUnitCodes", source = "businessUnitCode")
+    @Mapping(target = "businessUnitIds", source = "businessUnitId")
     InterfaceFileObjectInterfaceFile toInterfaceFileObject(InterfaceFileEntity interfaceFile);
 
     default List<InterfaceFileObjectInterfaceFile> toInterfaceFileObjects(

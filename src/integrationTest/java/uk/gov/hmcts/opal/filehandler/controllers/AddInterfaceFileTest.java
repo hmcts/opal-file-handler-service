@@ -84,7 +84,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     private AddInterfaceFileRequestMetadata buildMetaData(InterfaceFileEnumInterfaceFile source, Long relatedId) {
         return AddInterfaceFileRequestMetadata.builder()
             .fileName("file-name.dat")
-            .businessUnitCode("010")
+            .businessUnitId((short) 10)
             .paymentType(PaymentTypeEnumTypes.CASH)
             .type(InterfaceFileTypeEnumInterfaceFile.SOURCE)
             .domain(DomainEnumTypes.FINES)
@@ -154,6 +154,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     @Nested
     @DisplayName("Feature Flag On")
     class FeatureOn {
+
         @BeforeAll
         static void setupData() throws IOException {
             utilBlobStoreService = new UtilBlobStoreService();
@@ -164,7 +165,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         }
 
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("Correctly adds a new interface file on the db and blob store")
@@ -178,7 +179,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
 
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
 
-            InterfaceFileObjectInterfaceFile response =  setupFileUploadApiTest(HttpMethod.POST, URI)
+            InterfaceFileObjectInterfaceFile response = setupFileUploadApiTest(HttpMethod.POST, URI)
                 .includeMultipartBody(
                     "file", "some-file-name", "application/json", fileContents)
                 .includeMultipartBody(
@@ -191,14 +192,13 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
                 .assertSuccess(HttpStatus.CREATED)
                 .getResponseBodyAsObject(InterfaceFileObjectInterfaceFile.class);
 
-
             assertResponse(expectedResponse, response);
             assertExistsInDatabase(response.getInterfaceFileId());
             assertAddedToBlobStorage("bteckoh-report", response.getFilestoreUuid().toString());
         }
 
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("Fails when user has no permissions")
@@ -220,7 +220,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         }
 
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("Correctly sets related interface file")
@@ -236,7 +236,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT,
                 originalEntity.getInterfaceFileId()));
 
-            InterfaceFileObjectInterfaceFile response =  setupFileUploadApiTest(HttpMethod.POST, URI)
+            InterfaceFileObjectInterfaceFile response = setupFileUploadApiTest(HttpMethod.POST, URI)
                 .includeMultipartBody("file", "some-other-file-name", "application/json", fileContents)
                 .includeMultipartBody("metadata", "metadata.json", "application/json", metadata.getBytes())
                 .includeContentDigest()
@@ -247,13 +247,12 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
                 .assertSuccess(HttpStatus.CREATED)
                 .getResponseBodyAsObject(InterfaceFileObjectInterfaceFile.class);
 
-
             assertResponse(expectedResponse, response);
             assertExistsInDatabase(response.getInterfaceFileId());
         }
 
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("Correctly adds a duplicate file")
@@ -274,7 +273,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
                         + "\"}", null, 1L)
             );
 
-            InterfaceFileObjectInterfaceFile response =  setupFileUploadApiTest(HttpMethod.POST, URI)
+            InterfaceFileObjectInterfaceFile response = setupFileUploadApiTest(HttpMethod.POST, URI)
                 .includeMultipartBody("file", "some-file-name", "application/json", fileContents)
                 .includeMultipartBody("metadata", "metadata.json", "application/json", metadata.getBytes())
                 .includeContentDigest()
@@ -284,7 +283,6 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
                 .execute()
                 .assertSuccess(HttpStatus.CREATED)
                 .getResponseBodyAsObject(InterfaceFileObjectInterfaceFile.class);
-
 
             assertResponse(expectedResponse, response);
             assertDuplicateExistsInDatabase("some-file-name", "d553f8f289bd08e5c513de5c000c0374");
@@ -297,7 +295,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         }
 
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("AC4 - Repeating an INGESTED file creates a new record and blob")
@@ -320,7 +318,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         }
 
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("AC2 - Invalid BTEckoh JSON is recorded as FAILED without a blob reference")
@@ -340,7 +338,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         }
 
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("AC2 - Different metadata and multipart filenames are accepted")
@@ -358,7 +356,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         }
 
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("AC2 - Reject a multipart upload without the required file")
@@ -379,7 +377,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         }
 
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("AC2 - Reject a multipart upload without the required metadata")
@@ -422,7 +420,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     class FeatureOff {
 
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("API should return 404 when feature flag is off")
@@ -444,6 +442,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     })
     @Nested
     class BlobStorageFailure {
+
         @BeforeAll
         static void setupData() throws IOException {
             URL url = Resources.getResource(bteckohResourcePath);
@@ -451,7 +450,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
         }
 
         @ParameterizedTest
-        @ValueSource(booleans = { false, true })
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("Correctly handles a blob store upload failure")
