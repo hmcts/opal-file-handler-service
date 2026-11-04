@@ -40,8 +40,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -57,6 +57,7 @@ import tools.jackson.databind.json.JsonMapper;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.config.AbstractBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.AbstractFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -280,7 +281,10 @@ class InterfaceFileProcessorServiceTest {
                 .thenReturn(mockedToken);
             when(mockedToken.getUserId()).thenReturn(-1L);
 
-            service.run(processorConfig);
+            service = new TestProcessor(featureFlagUtil, baisSftpClient, blobStoreService, repository,
+                transactionTemplate, objectMapper, processorConfig);
+            service.stubFilesToProcess(MATCHING_FILE);
+            service.run();
 
             assertThat(savedStatuses).containsExactly(Status.INGESTED, Status.SUCCESS);
             assertThat(service.processCount).isOne();
@@ -467,12 +471,14 @@ class InterfaceFileProcessorServiceTest {
     private static Stream<Arguments> defaultDomains() {
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
             ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(context, false);
-            scanner.addIncludeFilter(new AssignableTypeFilter(AbstractBaisFileProcessorConfiguration.class));
+            scanner.addIncludeFilter(new AssignableTypeFilter(AbstractFileProcessorConfiguration.class));
             scanner.scan(BaisFileProcessorConfiguration.class.getPackageName());
             context.refresh();
 
             return Arrays.stream(Interface.values())
                 .filter(source -> source.getConfigComponentName() != null)
+                .filter(source -> BaisFileProcessorConfiguration.class.isAssignableFrom(
+                    context.getType(source.getConfigComponentName())))
                 .map(source -> {
                     AbstractBaisFileProcessorConfiguration processorConfig = context.getBean(
                         source.getConfigComponentName(), AbstractBaisFileProcessorConfiguration.class);

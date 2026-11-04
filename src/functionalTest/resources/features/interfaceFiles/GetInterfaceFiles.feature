@@ -83,20 +83,20 @@ Feature: Get Interface Files
   @JIRA-STORY:PO-3947 @JIRA-EPIC:PO-3495
   Scenario: Applies all interface file filters together
     When I request interface files with filters:
-      | source    | BTECKOH_REPORT   |
+      | source    | CAPS_REPORT      |
       | target    | OPAL             |
       | type      | SOURCE           |
-      | domain    | FINES            |
+      | domain    | MAINTENANCE      |
       | status    | INGESTED         |
       | from_date | 2099-01-01T20:00 |
       | to_date   | 2099-01-01T20:00 |
     Then the response status code is 200
     And exactly 1 interface files are returned
     And every returned interface file has details:
-      | source | BTECKOH_REPORT |
+      | source | CAPS_REPORT |
       | target | OPAL        |
       | type   | SOURCE      |
-      | domain | FINES       |
+      | domain | MAINTENANCE |
       | status | INGESTED    |
 
   @JIRA-STORY:PO-3947 @JIRA-EPIC:PO-3495
