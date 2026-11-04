@@ -4,7 +4,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.azure.storage.common.implementation.connectionstring.StorageAuthenticationSettings;
 import com.azure.storage.common.implementation.connectionstring.StorageAuthenticationSettings.Account;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +36,7 @@ class VpfpoInterfaceFilePreprocessQueueServiceTest {
     void shouldSendPayloadToQueue() throws Exception {
 
         Account account = mock(Account.class);
-        
+
         FileHandlerDraftAccountPayloadDTO payload =
             FileHandlerDraftAccountPayloadDTO.builder()
                 .account(account)
