@@ -45,7 +45,7 @@ public class InterfaceFileEntityTestData {
         child.setPaymentType(PaymentType.CASH);
         child.setBusinessUnitCode(new String[] {"AB01", "CD02"});
         child.setRelatedInterfaceFile(parent);
-
+        parent.getChildRelatedInterfaceFiles().add(child);
         return child;
     }
 

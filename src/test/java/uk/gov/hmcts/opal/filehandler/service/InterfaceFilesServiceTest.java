@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -494,7 +496,6 @@ public class InterfaceFilesServiceTest {
         final Long sourceId = 100L;
         final Long sourceId2 = 101L;
         final UUID sourceFilestoreUuid = UUID.fromString("aeda6410-a641-4b10-b422-d400bf7dd433");
-        final UUID failedSourceJsonFilestoreUuid = UUID.fromString("0fb294db-a695-4df5-b324-f0e92b51b1d3");
         final UUID sourceJsonFilestoreUuid = UUID.fromString("33bae435-f0d6-4870-a005-afc4fae162c4");
         final UUID transformedJsonFilestoreUuid = UUID.fromString("515d3e37-ed95-4966-af98-e225412ef08c");
         final UUID sourceFilestoreUuid2 = UUID.fromString("a8027f50-6743-4ed9-bc16-4301a3db3a6f");
@@ -511,7 +512,6 @@ public class InterfaceFilesServiceTest {
 
         InterfaceFileEntity failedSourceJsonFile = InterfaceFileEntity.builder()
             .interfaceFileId(200L)
-            .filestoreUuid(failedSourceJsonFilestoreUuid)
             .type(Type.SOURCE_JSON)
             .source(Interface.NATWEST)
             .status(Status.FAILED)
@@ -563,11 +563,11 @@ public class InterfaceFilesServiceTest {
 
         ArgumentCaptor<UUID> filestoreUuidCaptor = ArgumentCaptor.forClass(UUID.class);
         ArgumentCaptor<String> containerCaptor = ArgumentCaptor.forClass(String.class);
-        verify(blobStoreService, times(5)).deleteBlob(filestoreUuidCaptor.capture(), containerCaptor.capture());
+        // only 4 times as the failed json filestore id was left null
+        verify(blobStoreService, times(4)).deleteBlob(filestoreUuidCaptor.capture(), containerCaptor.capture());
         List<UUID> filestoreArgs = filestoreUuidCaptor.getAllValues();
         assertThat(filestoreArgs).containsExactlyInAnyOrder(
-            transformedJsonFilestoreUuid, sourceJsonFilestoreUuid, failedSourceJsonFilestoreUuid,
-            sourceFilestoreUuid, sourceFilestoreUuid2
+            transformedJsonFilestoreUuid, sourceJsonFilestoreUuid, sourceFilestoreUuid, sourceFilestoreUuid2
         );
         assertThat(filestoreArgs.indexOf(transformedJsonFilestoreUuid))
             .isLessThan(filestoreArgs.indexOf(sourceJsonFilestoreUuid));
@@ -575,7 +575,7 @@ public class InterfaceFilesServiceTest {
             .isLessThan(filestoreArgs.indexOf(sourceFilestoreUuid));
 
         assertThat(containerCaptor.getAllValues()).containsExactlyInAnyOrder(
-            natwestContainer, natwestContainer, natwestContainer, natwestContainer, barclaycardContainer
+            natwestContainer, natwestContainer, natwestContainer, barclaycardContainer
         );
         assertThat(containerCaptor.getAllValues().indexOf(barclaycardContainer))
             .isEqualTo(filestoreArgs.indexOf(sourceFilestoreUuid2));
@@ -597,15 +597,14 @@ public class InterfaceFilesServiceTest {
         // Arrange
         final Long sourceId = 100L;
         final Long supersededSourceId = 101L;
-        final UUID sourceFilestoreUuid = UUID.fromString("92383ff4-14b7-4174-a0c3-b8165fcd687b");
-        final UUID supersededFilestoreUuid = UUID.fromString("0d6663dc-a174-4107-9a69-746c0ef203cf");
+        final UUID filestoreUuid = UUID.fromString("92383ff4-14b7-4174-a0c3-b8165fcd687b");
         final String fileName = "test-file";
         final String checksum = "check";
         final String natwestContainer = "natwest";
 
         InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
             .interfaceFileId(sourceId)
-            .filestoreUuid(sourceFilestoreUuid)
+            .filestoreUuid(filestoreUuid)
             .type(Type.SOURCE)
             .fileName(fileName)
             .checksum(checksum)
@@ -615,7 +614,7 @@ public class InterfaceFilesServiceTest {
 
         InterfaceFileEntity supersededSourceFile = InterfaceFileEntity.builder()
             .interfaceFileId(supersededSourceId)
-            .filestoreUuid(supersededFilestoreUuid)
+            .filestoreUuid(filestoreUuid)
             .type(Type.SOURCE)
             .source(Interface.NATWEST)
             .status(Status.FAILED_SUPERSEDED)
@@ -624,6 +623,8 @@ public class InterfaceFilesServiceTest {
         when(repository.findById(sourceId)).thenReturn(Optional.of(sourceFile));
         when(repository.findByTypeAndChecksumAndFileName(Type.SOURCE, checksum, fileName)).thenReturn(
             new ArrayList<>(List.of(sourceFile, supersededSourceFile)));
+        when(repository.existsByFilestoreUuidAndInterfaceFileIdNot(eq(filestoreUuid), anyLong()))
+            .thenReturn(true, false);
 
         // Act
         Set<Long> ids = Set.of(sourceId);
@@ -633,11 +634,7 @@ public class InterfaceFilesServiceTest {
         assertThat(result.getSuccessfullyDeletedIds()).containsExactly(sourceId);
         assertThat(result.getFailedIds()).isEmpty();
 
-        ArgumentCaptor<UUID> filestoreUuidCaptor = ArgumentCaptor.forClass(UUID.class);
-        ArgumentCaptor<String> containerCaptor = ArgumentCaptor.forClass(String.class);
-        verify(blobStoreService, times(2)).deleteBlob(filestoreUuidCaptor.capture(), containerCaptor.capture());
-        assertThat(filestoreUuidCaptor.getAllValues()).containsExactly(supersededFilestoreUuid, sourceFilestoreUuid);
-        assertThat(containerCaptor.getAllValues()).containsExactly(natwestContainer, natwestContainer);
+        verify(blobStoreService, times(1)).deleteBlob(filestoreUuid, natwestContainer);
 
         ArgumentCaptor<InterfaceFileEntity> interfaceFileCaptor = ArgumentCaptor.forClass(InterfaceFileEntity.class);
         verify(repository, times(2)).delete(interfaceFileCaptor.capture());

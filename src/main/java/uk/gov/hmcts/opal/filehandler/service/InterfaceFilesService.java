@@ -312,31 +312,47 @@ public class InterfaceFilesService {
     }
 
     private DeleteInterfaceFileResult deleteInterfaceFile(InterfaceFileEntity interfaceFile) {
-        Long id = interfaceFile.getInterfaceFileId();
-        String containerName =  interfaceFile.getSource().name().toLowerCase();
-        UUID filestoreUUID = interfaceFile.getFilestoreUuid();
-        log.info("Deleting interface file id: {} type: {} status: {} from blob store and db", id,
+        if( interfaceFile.getFilestoreUuid() != null) {
+            deleteBlobIfNotShared(interfaceFile);
+        }
+
+        log.info("Deleting interface file id: {} type: {} status: {} from db", interfaceFile.getInterfaceFileId(),
+            interfaceFile.getType(), interfaceFile.getStatus());
+
+        InterfaceFileEntity parent = null;
+        if (interfaceFile.hasParent()) {
+            parent = interfaceFile.getRelatedInterfaceFile();
+            parent.getChildRelatedInterfaceFiles().remove(interfaceFile);
+        }
+        repository.delete(interfaceFile);
+        log.info("Successfully deleted interface file id: {} from db", interfaceFile.getInterfaceFileId());
+        return new DeleteInterfaceFileResult(parent);
+    }
+
+    private void deleteBlobIfNotShared(InterfaceFileEntity interfaceFile) {
+        final Long id = interfaceFile.getInterfaceFileId();
+        final UUID filestoreUUID = interfaceFile.getFilestoreUuid();
+        final String containerName =  interfaceFile.getSource().name().toLowerCase();
+
+        if (repository.existsByFilestoreUuidAndInterfaceFileIdNot(filestoreUUID, id)) {
+            log.info("Skipping deleting interface file id: {} type: {} status: {} from blob store as it is referenced "
+                    + "by other interface file rows", id, interfaceFile.getType(), interfaceFile.getStatus());
+            return;
+        }
+
+        log.info("Deleting interface file id: {} type: {} status: {} from blob store", id,
             interfaceFile.getType(), interfaceFile.getStatus());
 
         try {
             blobStoreService.deleteBlob(filestoreUUID, containerName);
-            log.info("Successfully deleted Interface File id: {} filestoreUuid: {} container: {} from blob store",
+            log.info(
+                "Successfully deleted Interface File id: {} filestoreUuid: {} container: {} from blob store",
                 id, filestoreUUID, containerName);
         } catch (BlobDeleteException e) {
             log.warn("Failed to delete Interface File id: {} filestoreUuid: {} container: {} from blob store,"
                 + "and will now skip deleting from db", id, filestoreUUID, containerName);
             throw e; // this exception will halt the tree of deletes for whatever the parent was
         }
-
-        InterfaceFileEntity parent = null;
-        if (interfaceFile.hasParent()) {
-            // TODO might be worth double checking we need to do this
-            parent = interfaceFile.getRelatedInterfaceFile();
-            parent.getChildRelatedInterfaceFiles().remove(interfaceFile);
-        }
-        repository.delete(interfaceFile);
-        log.info("Successfully deleted interface file id: {} from db", id);
-        return new DeleteInterfaceFileResult(parent);
     }
 
     private record DeleteInterfaceFileResult(InterfaceFileEntity parent) {
