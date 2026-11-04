@@ -3,10 +3,11 @@ package uk.gov.hmcts.opal.filehandler.service;
 import static uk.gov.hmcts.opal.filehandler.util.StringUtil.isBlank;
 
 import java.time.Clock;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
@@ -31,7 +32,7 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
     extends InterfaceFileCommonDataExtract>
     extends AbstractInterfaceFileProcessorWithExtractionService<T> {
 
-    private static final String BUSINESS_UNIT_065 = "065";
+    private static final short BUSINESS_UNIT_065 = (short)65;
 
     private final EnumMap<Domain, InterfaceFilePreprocessQueueService> queueServiceMap;
     private final BankingExtractionService<T> bankingExtractionService;
@@ -73,13 +74,20 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
         BusinessUnitBankAccountEntity businessUnitBankAccount,
         Domain domain
     ) {
-        Set<String> businessUnitCodes = new LinkedHashSet<>();
-        if (sourceInterfaceFile.getBusinessUnitCode() != null) {
-            businessUnitCodes.addAll(Arrays.asList(sourceInterfaceFile.getBusinessUnitCode()));
-        }
-        businessUnitCodes.add(businessUnitBankAccount.getBusinessUnitCode());
+        Set<Short> businessUnitIds = new LinkedHashSet<>();
 
-        sourceInterfaceFile.setBusinessUnitCode(businessUnitCodes.toArray(String[]::new));
+        if (sourceInterfaceFile.getBusinessUnitId() != null) {
+            Collections.addAll(
+                businessUnitIds,
+                sourceInterfaceFile.getBusinessUnitId()
+            );
+        }
+
+        businessUnitIds.add(businessUnitBankAccount.getId());
+
+        sourceInterfaceFile.setBusinessUnitId(
+            businessUnitIds.toArray(new Short[0])
+        );
         sourceInterfaceFile.setOpalDomain(domain);
     }
 
@@ -134,7 +142,7 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
         validateSupportedDomain(sourceInterfaceFile, domain);
         updateSourceBusinessUnitAndDomain(sourceInterfaceFile, businessUnitBankAccount, domain);
 
-        if (BUSINESS_UNIT_065.equals(businessUnitBankAccount.getBusinessUnitCode())) {
+        if (BUSINESS_UNIT_065 == businessUnitBankAccount.getId()) {
             return false;
         }
 
@@ -153,8 +161,8 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
     }
 
     @Override
-    protected String[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract) {
-        return new String[] {bankingExtractionService.getBusinessUnitBankAccount(extract).getBusinessUnitCode()};
+    protected Short[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract) {
+        return new Short[] {bankingExtractionService.getBusinessUnitBankAccount(extract).getId()};
     }
 
     @Override

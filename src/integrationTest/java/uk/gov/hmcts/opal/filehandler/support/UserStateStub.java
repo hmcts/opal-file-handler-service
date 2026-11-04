@@ -128,6 +128,7 @@ public class UserStateStub {
         this.isStubbed = true;
     }
 
+
     public OpalJwtAuthenticationToken getOpalJwtAuthenticationToken() {
         return new OpalJwtAuthenticationToken(getUserState(), Domain.FILE_HANDLING,
             parseJwt(jwtStr),

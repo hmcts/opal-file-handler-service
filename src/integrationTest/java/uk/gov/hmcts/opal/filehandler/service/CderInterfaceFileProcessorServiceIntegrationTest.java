@@ -58,7 +58,7 @@ public class CderInterfaceFileProcessorServiceIntegrationTest
     void setUp() {
         repository.deleteAll();
         businessUnitBankAccountEntityTestData.clear();
-        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount(1L, "BC12", DWP_CODE);
+        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount((short) 1, "BC12", DWP_CODE);
         blobServiceClient.createBlobContainerIfNotExists(configuration.getContainerName());
     }
 

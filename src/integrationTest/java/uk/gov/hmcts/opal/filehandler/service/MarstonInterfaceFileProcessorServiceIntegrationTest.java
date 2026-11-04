@@ -194,7 +194,7 @@ public class MarstonInterfaceFileProcessorServiceIntegrationTest
     private void businessUnitBankAccountExtractedData() {
         businessUnitBankAccountEntityTestData.saveAndFlushBusinessUnitBankAccount(
             BusinessUnitBankAccountEntity.builder()
-                .id(1L)
+                .id((short) 1)
                 .businessUnitCode("MR01")
                 .domain(Domain.FINES)
                 .bankSortCode("560033")

@@ -27,8 +27,8 @@ import org.hibernate.validator.constraints.Length;
 public class BusinessUnitBankAccountEntity {
 
     @Id
-    @Column(name = "business_unit_bank_account_id", nullable = false)
-    private Long id;
+    @Column(name = "business_unit_id", nullable = false)
+    private Short id;
 
     @Column(name = "business_unit_code", nullable = false)
     @Length(max = 4)

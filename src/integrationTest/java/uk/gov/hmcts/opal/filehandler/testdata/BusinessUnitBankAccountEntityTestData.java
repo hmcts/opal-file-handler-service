@@ -12,12 +12,12 @@ public class BusinessUnitBankAccountEntityTestData {
 
     private final BusinessUnitBankAccountRepository repository;
 
-    public BusinessUnitBankAccountEntity getTypicalBusinessUnitBankAccount(long id, String businessUnitCode) {
+    public BusinessUnitBankAccountEntity getTypicalBusinessUnitBankAccount(short id, String businessUnitCode) {
         return getTypicalBusinessUnitBankAccount(id, businessUnitCode, null);
     }
 
     public BusinessUnitBankAccountEntity getTypicalBusinessUnitBankAccount(
-        long id, String businessUnitCode, String dwpCourtCode) {
+        short id, String businessUnitCode, String dwpCourtCode) {
         return BusinessUnitBankAccountEntity.builder()
             .id(id)
             .businessUnitCode(businessUnitCode)
@@ -28,7 +28,7 @@ public class BusinessUnitBankAccountEntityTestData {
             .build();
     }
 
-    public BusinessUnitBankAccountEntity getMaximumBusinessUnitBankAccount(long id) {
+    public BusinessUnitBankAccountEntity getMaximumBusinessUnitBankAccount(short id) {
         return BusinessUnitBankAccountEntity.builder()
             .id(id)
             .businessUnitCode("Z999")
@@ -39,16 +39,16 @@ public class BusinessUnitBankAccountEntityTestData {
             .build();
     }
 
-    public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(long id, String businessUnitCode) {
+    public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(Short id, String businessUnitCode) {
         return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitCode));
     }
 
     public BusinessUnitBankAccountEntity saveTypicalBusinessUnitBankAccount(
-        long id, String businessUnitCode, String dwpCourtCode) {
+        Short id, String businessUnitCode, String dwpCourtCode) {
         return repository.save(getTypicalBusinessUnitBankAccount(id, businessUnitCode, dwpCourtCode));
     }
 
-    public BusinessUnitBankAccountEntity saveMaximumBusinessUnitBankAccount(long id) {
+    public BusinessUnitBankAccountEntity saveMaximumBusinessUnitBankAccount(short id) {
         return repository.save(getMaximumBusinessUnitBankAccount(id));
     }
 

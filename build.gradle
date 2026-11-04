@@ -159,6 +159,12 @@ openApiGenerate {
   openapiNormalizer = [
           REF_AS_PARENT_IN_ALLOF: "true"
   ]
+  importMappings = [
+    Short: "java.lang.Short"
+  ]
+  typeMappings = [
+    "integer+int16": "short"
+  ]
   configOptions = [
           dateLibrary                         : "java8-localdatetime",
           interfaceOnly                       : "true",
