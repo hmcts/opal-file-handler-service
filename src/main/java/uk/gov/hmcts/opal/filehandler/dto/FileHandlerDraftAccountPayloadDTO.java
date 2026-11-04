@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import uk.gov.hmcts.opal.filehandler.entity.Account;
 
 @Data
 @Builder
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class FileHandlerDraftAccountPayloadDTO {
 
-    private String accountJson;
+    private Account account;
     private String prosecutorCode;
 
 }
