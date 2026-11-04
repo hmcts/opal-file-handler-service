@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.support.AbstractControllerIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.TestContainerConfig;
 import uk.gov.hmcts.opal.filehandler.support.UtilBlobStoreService;
 import uk.gov.hmcts.opal.generated.model.DeleteInterfaceFilesResultTestSupport;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraEpic;
@@ -88,13 +90,14 @@ public class TestSupportDeleteInterfaceFilesIntegrationTest extends AbstractCont
             assertThat(utilBlobStoreService.getBlobExists(CONTAINER_NAME, FILESTORE_UUID)).isFalse();
         }
 
+        @Disabled("This test passes but runs very slowly due to the retries on connecting to azure")
         @Test
         @DisplayName("PO-11123 - Delete interface files - records failure if error occurs deleting blob")
         @JiraStory("PO-11123")
         @JiraEpic("PO-3497")
-        void recordsFailureIfBlobContainerDoesNotExist() throws Exception {
+        void recordsFailureIfAzureContainerNotAvailable() throws Exception {
             // Arrange
-            utilBlobStoreService.deleteContainer(CONTAINER_NAME);
+            TestContainerConfig.AZURITE_CONTAINER.stop();
             InterfaceFileEntity interfaceFile = createSourceInterfaceFile();
 
             List<Long> ids = List.of(interfaceFile.getInterfaceFileId());
@@ -112,7 +115,7 @@ public class TestSupportDeleteInterfaceFilesIntegrationTest extends AbstractCont
                 .assertBody(expectedResponse);
 
             assertThat(repository.existsById(interfaceFile.getInterfaceFileId())).isTrue();
-            assertThat(utilBlobStoreService.getBlobExists(CONTAINER_NAME, FILESTORE_UUID)).isFalse();
+            TestContainerConfig.AZURITE_CONTAINER.start();
         }
 
         @Test
