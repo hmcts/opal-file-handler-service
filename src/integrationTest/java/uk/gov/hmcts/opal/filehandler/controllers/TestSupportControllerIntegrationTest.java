@@ -70,16 +70,6 @@ public class TestSupportControllerIntegrationTest extends AbstractIntegrationTes
             res.andExpect(status().is(202));
             assertTrue(AutomatedTestTaskConfig.RunWasCalled);
         }
-
-        @Test
-        @DisplayName("PO-11123 - Delete interface files test")
-        @JiraStory("PO-11123")
-        @JiraEpic("PO-3497")
-        void successfullyDeletesInterfaceFiles() throws Exception {
-
-
-            // TODO
-        }
     }
 
 

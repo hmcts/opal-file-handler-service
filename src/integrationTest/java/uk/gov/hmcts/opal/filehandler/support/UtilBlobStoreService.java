@@ -5,6 +5,7 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import java.io.ByteArrayInputStream;
+import java.util.UUID;
 
 public class UtilBlobStoreService {
 
@@ -14,6 +15,10 @@ public class UtilBlobStoreService {
         blobServiceClient = new BlobServiceClientBuilder()
             .connectionString(TestContainerConfig.azuriteConnectionString())
             .buildClient();
+    }
+
+    public String storeBlob(byte[] file, String containerName, UUID uuid) {
+        return storeBlob(file, containerName, uuid.toString());
     }
 
     public String storeBlob(byte[] file, String containerName, String uuid) {
@@ -39,6 +44,10 @@ public class UtilBlobStoreService {
         }
         BlobClient blob = container.getBlobClient(uuid);
         return blob.getVersionId();
+    }
+
+    public Boolean getBlobExists(String containerName, UUID uuid) {
+        return getBlobExists(containerName, uuid.toString());
     }
 
     public Boolean getBlobExists(String containerName, String uuid) {

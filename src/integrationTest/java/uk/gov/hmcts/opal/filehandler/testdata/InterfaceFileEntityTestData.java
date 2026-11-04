@@ -24,12 +24,18 @@ public class InterfaceFileEntityTestData {
     private final Clock clock;
 
     public InterfaceFileEntity getTypicalInterfaceFile(String fileName) {
+        return getTypicalInterfaceFile(fileName, null, null);
+    }
+
+    public InterfaceFileEntity getTypicalInterfaceFile(String fileName, UUID filestoreUuid, String checksum) {
         return repository.save(InterfaceFileEntity.builder()
             .source(Interface.NATWEST)
             .target(Interface.OPAL)
             .type(Type.SOURCE_JSON)
             .opalDomain(Domain.FINES)
             .fileName(fileName)
+            .filestoreUuid(filestoreUuid)
+            .checksum(checksum)
             .status(Status.INGESTED)
             .createdDatetime(LocalDateTime.now(clock).truncatedTo(ChronoUnit.MICROS))
             .createdBy(-1L)
