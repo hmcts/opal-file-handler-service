@@ -24,14 +24,15 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
-import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.AbstractInterfaceFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
     "launchdarkly.default-flag-values.natwest-file-transfer-job=true",
 })
-public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
+public class NatWestInterfaceFileProcessorServiceIntegrationTest
+    extends AbstractInterfaceFileProcessorServiceIntegrationTest {
 
     private static final String NATWEST_FILE = "Y01A.CARS.#D.SBURZ38.D080426";
     private static final String NATWEST_FILE_CHECKSUM = "3e7eb40eae410fee9a8d999bdcd7c302";
@@ -42,7 +43,7 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
-    private NatWestBaisFileProcessorService natWestBaisFileProcessorService;
+    private NatWestInterfaceFileProcessorService natWestInterfaceFileProcessorService;
 
     @Autowired
     private NatWestBaisFileProcessorConfiguration natWestBaisFileProcessorConfiguration;
@@ -57,7 +58,7 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
     void setUp() {
         repository.deleteAll();
         businessUnitBankAccountEntityTestData.clear();
-        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount(1L, BUSINESS_UNIT_CODE);
+        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount((short) 1, BUSINESS_UNIT_CODE);
         blobServiceClient.createBlobContainerIfNotExists(natWestBaisFileProcessorConfiguration.getContainerName());
     }
 
@@ -72,7 +73,7 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
         @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                natWestBaisFileProcessorService.run(natWestBaisFileProcessorConfiguration));
+                natWestInterfaceFileProcessorService.run(natWestBaisFileProcessorConfiguration));
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -90,7 +91,7 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
         @DisplayName("AC1: Feature flag 'natwest-file-transfer-job' is false")
         void natWestFileTransferJobIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                natWestBaisFileProcessorService.run(natWestBaisFileProcessorConfiguration));
+                natWestInterfaceFileProcessorService.run(natWestBaisFileProcessorConfiguration));
 
             assertThat(exception).hasMessage("natwest-file-transfer-job is not enabled");
         }
@@ -108,7 +109,7 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
         @DisplayName("AC1: Both feature flags are false")
         void bothFeatureFlagsAreDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                natWestBaisFileProcessorService.run(natWestBaisFileProcessorConfiguration));
+                natWestInterfaceFileProcessorService.run(natWestBaisFileProcessorConfiguration));
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -117,10 +118,10 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
 
     @Test
     @DisplayName("AC2: NatWest file is present, read, extracted and stored correctly")
-    void natWestBaisFileProcessorServiceShouldRunSuccessfully() throws Exception {
+    void natWestInterfaceFileProcessorServiceShouldRunSuccessfully() throws Exception {
         uploadResourceToSftp(NATWEST_FILE_RESOURCE, NATWEST_FILE_CONTAINER);
 
-        natWestBaisFileProcessorService.run(natWestBaisFileProcessorConfiguration);
+        natWestInterfaceFileProcessorService.run(natWestBaisFileProcessorConfiguration);
 
         InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
             NATWEST_FILE, NATWEST_FILE_CHECKSUM, Interface.NATWEST, Type.SOURCE, Domain.FINES);

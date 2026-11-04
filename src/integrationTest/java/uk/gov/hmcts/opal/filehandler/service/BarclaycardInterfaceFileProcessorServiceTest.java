@@ -24,14 +24,14 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
-import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.AbstractInterfaceFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
     "launchdarkly.default-flag-values.barclaycard-file-transfer-job=true",
 })
-public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFileProcessorServiceIntegrationTest {
+public class BarclaycardInterfaceFileProcessorServiceTest extends AbstractInterfaceFileProcessorServiceIntegrationTest {
 
     private static final String BARCLAYCARD_FILE = "a121_00010065_317608.dat";
     private static final String BARCLAYCARD_FILE_CHECKSUM = "3e7eb40eae410fee9a8d999bdcd7c302";
@@ -42,7 +42,7 @@ public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFilePro
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
-    private BarclaycardBaisFileProcessorService service;
+    private BarclaycardInterfaceFileProcessorService service;
 
     @Autowired
     private BarclaycardBaisFileProcessorConfiguration configuration;
@@ -57,7 +57,7 @@ public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFilePro
     void setUp() {
         repository.deleteAll();
         businessUnitBankAccountEntityTestData.clear();
-        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount(1L, BUSINESS_UNIT_CODE);
+        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount((short) 1, BUSINESS_UNIT_CODE);
         blobServiceClient.createBlobContainerIfNotExists(configuration.getContainerName());
     }
 
@@ -99,7 +99,7 @@ public class BarclaycardBaisFileProcessorServiceTest extends AbstractBaisFilePro
 
     @Test
     @DisplayName("AC2: When Barclaycard file is present it should be read and stored correctly")
-    void natWestBaisFileProcessorServiceShouldRunSuccessfully() throws Exception {
+    void natWestInterfaceFileProcessorServiceShouldRunSuccessfully() throws Exception {
         uploadResourceToSftp(BARCLAYCARD_FILE_RESOURCE, BARCLAYCARD_FILE_CONTAINER);
 
         service.run(configuration);

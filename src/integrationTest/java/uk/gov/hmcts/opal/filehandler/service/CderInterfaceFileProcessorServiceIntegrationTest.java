@@ -24,14 +24,15 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
-import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.AbstractInterfaceFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
     "launchdarkly.default-flag-values.bailiffs-cder-file-transfer-job=true"
 })
-public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
+public class CderInterfaceFileProcessorServiceIntegrationTest
+    extends AbstractInterfaceFileProcessorServiceIntegrationTest {
 
     private static final String CDER_FILE = "0000031712_dat_0000098475_20260408_103500.txt";
     private static final String CDER_FILE_CHECKSUM = "74efc9e50988e6694fa6dd55a8e739f0";
@@ -42,7 +43,7 @@ public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFil
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
-    private CderBaisFileProcessorService service;
+    private CderInterfaceFileProcessorService service;
 
     @Autowired
     private CderBaisFileProcessorConfiguration configuration;
@@ -57,7 +58,7 @@ public class CderBaisFileProcessorServiceIntegrationTest extends AbstractBaisFil
     void setUp() {
         repository.deleteAll();
         businessUnitBankAccountEntityTestData.clear();
-        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount(1L, "BC12", DWP_CODE);
+        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount((short) 1, "BC12", DWP_CODE);
         blobServiceClient.createBlobContainerIfNotExists(configuration.getContainerName());
     }
 

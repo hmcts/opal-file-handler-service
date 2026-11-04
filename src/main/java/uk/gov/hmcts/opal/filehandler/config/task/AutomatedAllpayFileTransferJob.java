@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.config.AllpayBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.service.AllpayBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.AllpayInterfaceFileProcessorService;
 
 @Component
 @RequiredArgsConstructor
@@ -15,7 +15,7 @@ import uk.gov.hmcts.opal.filehandler.service.AllpayBaisFileProcessorService;
 @Slf4j
 public class AutomatedAllpayFileTransferJob implements TaskConfiguration {
 
-    private final AllpayBaisFileProcessorService fileProcessorService;
+    private final AllpayInterfaceFileProcessorService fileProcessorService;
     private final AllpayBaisFileProcessorConfiguration configuration;
 
     @Override

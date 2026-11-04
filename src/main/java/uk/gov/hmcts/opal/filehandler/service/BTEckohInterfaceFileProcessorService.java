@@ -15,10 +15,10 @@ import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @Service
-public class BTEckohBaisFileProcessorService
-    extends AbstractBaisInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
+public class BTEckohInterfaceFileProcessorService
+    extends AbstractBankingInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
 
-    protected BTEckohBaisFileProcessorService(
+    protected BTEckohInterfaceFileProcessorService(
         Clock clock,
         FeatureFlagUtil featureFlagUtil,
         BaisSftpClient baisSftpClient,

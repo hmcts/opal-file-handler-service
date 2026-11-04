@@ -1,88 +1,83 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.eq;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
-import uk.gov.hmcts.opal.filehandler.config.BTEckohBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.DWPBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
+import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
-import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
+import uk.gov.hmcts.opal.filehandler.support.AbstractInterfaceFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraEpic;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
 @ActiveProfiles("integration")
-public class BTEckohBaisFileProcessorServiceIntegrationTest
-    extends AbstractBaisFileProcessorServiceIntegrationTest {
+@Slf4j
+public class DWPInterfaceFileProcessorServiceIntegrationTest
+    extends AbstractInterfaceFileProcessorServiceIntegrationTest {
 
-    private static final String BANKING_INTERFACES_ENABLED_PROPERTY =
-        "launchdarkly.default-flag-values.release-1c-banking-interfaces";
-    private static final String FEATURE_FLAG = "bteckoh-file-transfer-job";
-    private static final String JOB_PROPERTY = "launchdarkly.default-flag-values." + FEATURE_FLAG;
-
-    private static final String BUSINESS_UNIT_CODE = "AB01";
-    private static final String BTECKOH_FILE = "a121_00350005_300000.dat";
-    private static final String BTECKOH_FILE_CHECKSUM = "f3f29c87cf2058c337fa6f130dd66b28";
-    private static final String BTECKOH_FILE_RESOURCE = "bais-emulator/" + BTECKOH_FILE;
-    private static final String BTECKOH_FILE_CONTAINER = "/home/BTEckoh/" + BTECKOH_FILE;
+    private static final String CHECKSUM = "bdbbd6c4e0daba273d9387f466acb6b9";
+    private static final String FILE = "0000015232_dat_0000000612_08011008_111355.txt";
+    private static final String RESOURCE = "bais-emulator/" + FILE;
+    private static final String CONTAINER = "/home/DWP/" + FILE;
+    private static final String BUSINESS_UNIT_CODE = "DW01";
 
     @Autowired
-    private BTEckohBaisFileProcessorService service;
+    private DWPInterfaceFileProcessorService service;
 
     @Autowired
-    private BTEckohBaisFileProcessorConfiguration config;
+    private DWPBaisFileProcessorConfiguration config;
 
     @Autowired
     private BusinessUnitBankAccountEntityTestData businessUnitBankAccountEntityTestData;
 
-    @MockitoBean(name = "commonServiceBusJmsTemplate")
-    private JmsTemplate jmsTemplate;
+    @MockitoBean
+    private MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService;
 
     @BeforeEach
     void setUp() {
         repository.deleteAll();
         businessUnitBankAccountEntityTestData.clear();
-
-        blobServiceClient.createBlobContainerIfNotExists(config.getContainerName());
-
         BusinessUnitBankAccountEntity bu = BusinessUnitBankAccountEntity.builder()
-            .id(1L)
+            .id((short) 1)
             .businessUnitCode(BUSINESS_UNIT_CODE)
             .domain(Domain.MAINTENANCE)
             .bankSortCode("010101")
             .bankAccountNumber("12341234")
+            .dwpCourtCode("DWP1234567")
             .build();
         businessUnitBankAccountEntityTestData.saveAndFlushBusinessUnitBankAccount(bu);
+        blobServiceClient.createBlobContainerIfNotExists(config.getContainerName());
     }
 
     @Nested
     @TestPropertySource(properties = {
-        BANKING_INTERFACES_ENABLED_PROPERTY + "=false",
-        JOB_PROPERTY + "=true"
+        "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
+        "launchdarkly.default-flag-values.BTEckoh-Report-file-transfer-job=true"
     })
     public class BankingInterfacesDisabled {
 
         @Test
         @DisplayName("Feature flag 'release-1c-banking-interfaces' is false")
-        @JiraStory("PO-6428")
+        @JiraStory("PO-6436")
         @JiraEpic("PO-3497")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
@@ -94,33 +89,33 @@ public class BTEckohBaisFileProcessorServiceIntegrationTest
 
     @Nested
     @TestPropertySource(properties = {
-        BANKING_INTERFACES_ENABLED_PROPERTY + "=true",
-        JOB_PROPERTY + "=false"
+        "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
+        "launchdarkly.default-flag-values.dwp-file-transfer-job=false"
     })
-    public class JobFeatureFlagIsDisabled {
+    public class DWPFileTransferJobDisabled {
 
         @Test
-        @DisplayName("Feature flag 'bteckoh-file-transfer-job' is false")
-        @JiraStory("PO-6428")
+        @DisplayName("Feature flag 'dwp-file-transfer-job' is false")
+        @JiraStory("PO-6436")
         @JiraEpic("PO-3497")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
                 service.run(config));
 
-            assertThat(exception).hasMessage(FEATURE_FLAG + " is not enabled");
+            assertThat(exception).hasMessage("dwp-file-transfer-job is not enabled");
         }
     }
 
     @Nested
     @TestPropertySource(properties = {
-        BANKING_INTERFACES_ENABLED_PROPERTY + "=false",
-        JOB_PROPERTY + "=false"
+        "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
+        "launchdarkly.default-flag-values.dwp-file-transfer-job=false"
     })
     public class BothFeatureFlagsDisabled {
 
         @Test
         @DisplayName("Both feature flags are false")
-        @JiraStory("PO-6428")
+        @JiraStory("PO-6436")
         @JiraEpic("PO-3497")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
@@ -130,32 +125,30 @@ public class BTEckohBaisFileProcessorServiceIntegrationTest
         }
     }
 
-    @DisplayName("When a BTEckoh file is present it should be read and stored correctly")
     @Nested
     @TestPropertySource(properties = {
-        BANKING_INTERFACES_ENABLED_PROPERTY + "=true",
-        JOB_PROPERTY + "=true",
+        "opal.file-handler-service.file-types.dwp.sftp-username=DWP",
+        "launchdarkly.default-flag-values.dwp-file-transfer-job=true",
     })
-    public class ReadAndStoreBTEckohFileCorrectly {
-        @Test
-        void readAndStoreBTEckohFileCorrectly() {
-            uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
+    public class FeatureOnTests {
 
+        @Test
+        @DisplayName("DWP file is present, read and stored correctly")
+        @JiraStory("PO-6436")
+        @JiraEpic("PO-3497")
+        void dwpInterfaceFileProcessorServiceShouldRunSuccesfully() {
+            uploadResourceToSftp(RESOURCE, CONTAINER);
             service.run(config);
 
-            var sourceFile = assertSuccessfulInterfaceFile(
-                BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH, Type.SOURCE, Domain.MAINTENANCE);
-
-            var sourceJson = assertSuccessfulSourceJsonInterfaceFile(
-                BTECKOH_FILE, Interface.BTECKOH, Domain.MAINTENANCE, sourceFile.getInterfaceFileId());
-
-            verify(jmsTemplate, times(1)).convertAndSend(
-                eq("banking-interfaces-preprocess-interface-file-maintenance"), anyString());
-
-            assertArrayEquals(sourceFile.getBusinessUnitCode(), sourceJson.getBusinessUnitCode());
-            assertBlobChecksum(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, config.getContainerName());
+            InterfaceFileEntity parentEntity = assertSuccessfulInterfaceFile(FILE, CHECKSUM, Interface.DWP,
+                Type.SOURCE, Domain.MAINTENANCE);
+            InterfaceFileEntity childEntity = assertSuccessfulSourceJsonInterfaceFile(FILE, Interface.DWP,
+                Domain.MAINTENANCE, parentEntity.getInterfaceFileId());
+            assertBlobChecksum(FILE, CHECKSUM, config.getContainerName());
             assertNumberOfSftpFiles(config.getSftpUsername(), 0);
+
+            verify(maintenanceQueueService, times(1))
+                .send(eq(childEntity.getInterfaceFileId()));
         }
     }
-
 }
