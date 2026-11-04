@@ -24,4 +24,3 @@ class TypeTest {
         assertThrows(NullPointerException.class, () -> Type.valueOf((InterfaceFileTypeEnumInterfaceFile) null));
     }
 }
-

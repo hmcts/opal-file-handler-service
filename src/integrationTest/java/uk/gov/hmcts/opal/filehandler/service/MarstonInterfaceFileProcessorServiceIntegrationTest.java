@@ -27,7 +27,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
-import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.AbstractInterfaceFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 
 @ActiveProfiles("integration")
@@ -36,7 +36,8 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
     "launchdarkly.default-flag-values.bailiffs-marston-file-transfer-job=true",
 })
 @Slf4j
-public class MarstonBaisFileProcessorServiceIntegrationTest   extends AbstractBaisFileProcessorServiceIntegrationTest {
+public class MarstonInterfaceFileProcessorServiceIntegrationTest
+    extends AbstractInterfaceFileProcessorServiceIntegrationTest {
 
     private static final String MARSTON_FILE =
         "1234567890_dat_0987654321_20260910_143015.txt";
@@ -52,7 +53,7 @@ public class MarstonBaisFileProcessorServiceIntegrationTest   extends AbstractBa
 
 
     @Autowired
-    private MarstonBaisFileProcessorService service;
+    private MarstonInterfaceFileProcessorService service;
     @Autowired
     BusinessUnitBankAccountEntityTestData businessUnitBankAccountEntityTestData;
     @Autowired
@@ -123,7 +124,7 @@ public class MarstonBaisFileProcessorServiceIntegrationTest   extends AbstractBa
 
     @Test
     @DisplayName("AC2: Marston file is present, read and stored correctly")
-    void marstonBaisFileProcessorServiceShouldRunSuccessfully() {
+    void marstonInterfaceFileProcessorServiceShouldRunSuccessfully() {
 
         uploadResourceToSftp(MARSTON_FILE_RESOURCE, MARSTON_FILE_CONTAINER);
         service.run(config);

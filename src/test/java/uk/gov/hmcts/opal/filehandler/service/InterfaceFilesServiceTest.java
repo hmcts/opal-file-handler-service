@@ -47,6 +47,7 @@ import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
+import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
@@ -67,6 +68,9 @@ public class InterfaceFilesServiceTest {
 
     @Mock
     private InterfaceFileSpecsFactory specsFactory;
+
+    @Mock
+    private InterfaceFilesPdplLoggingService loggingService;
 
     @Mock
     private OpalJwtAuthenticationToken authToken;
@@ -239,7 +243,7 @@ public class InterfaceFilesServiceTest {
 
     @Test
     void addInterfaceFile_savesEnrichedEntityAndReturnsMappedFile() throws IOException {
-        DWPBaisFileProcessorService processorService = mock(DWPBaisFileProcessorService.class);
+        DWPInterfaceFileProcessorService processorService = mock(DWPInterfaceFileProcessorService.class);
         BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
         InterfaceFilesService uploadService = serviceWithProcessor(processorService, config);
         MultipartFile file = mock(MultipartFile.class);
@@ -295,7 +299,7 @@ public class InterfaceFilesServiceTest {
 
     @Test
     void addInterfaceFile_savesEntityWithoutRelatedFileWhenNoRelatedIdProvided() throws IOException {
-        DWPBaisFileProcessorService processorService = mock(DWPBaisFileProcessorService.class);
+        DWPInterfaceFileProcessorService processorService = mock(DWPInterfaceFileProcessorService.class);
         BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
         InterfaceFilesService uploadService = serviceWithProcessor(processorService, config);
         MultipartFile file = mock(MultipartFile.class);
@@ -346,7 +350,7 @@ public class InterfaceFilesServiceTest {
     @Test
     void addInterfaceFile_wrapsFileReadFailure() throws IOException {
         InterfaceFilesService service = serviceWithProcessor(
-            mock(DWPBaisFileProcessorService.class),
+            mock(DWPInterfaceFileProcessorService.class),
             mock(BaisFileProcessorConfiguration.class)
         );
         MultipartFile file = mock(MultipartFile.class);
@@ -436,6 +440,7 @@ public class InterfaceFilesServiceTest {
             specsFactory,
             mapper,
             null,
+            loggingService,
             Map.of("dwpBaisFileProcessorConfig", config),
             List.of(processorService));
     }

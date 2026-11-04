@@ -24,7 +24,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
-import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.AbstractInterfaceFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 
 @ActiveProfiles("integration")
@@ -32,7 +32,8 @@ import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestD
     "opal.file-handler-service.file-types.allpay.sftp-username=AllPay",
     "launchdarkly.default-flag-values.allpay-file-transfer-job=true"
 })
-public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
+public class AllpayInterfaceFileProcessorServiceIntegrationTest
+    extends AbstractInterfaceFileProcessorServiceIntegrationTest {
 
     private static final String BUSINESS_UNIT_CODE = "AB01";
     private static final String ALLPAY_FILE = "a121_00350005_300000";
@@ -41,7 +42,7 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
     private static final String ALLPAY_FILE_CONTAINER = "/home/AllPay/" + ALLPAY_FILE;
 
     @Autowired
-    private AllpayBaisFileProcessorService allpayBaisFileProcessorService;
+    private AllpayInterfaceFileProcessorService allpayInterfaceFileProcessorService;
 
     @Autowired
     private AllpayBaisFileProcessorConfiguration allpayBaisFileProcessorConfiguration;
@@ -81,7 +82,7 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
         @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                allpayBaisFileProcessorService.run(allpayBaisFileProcessorConfiguration));
+                allpayInterfaceFileProcessorService.run(allpayBaisFileProcessorConfiguration));
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -99,7 +100,7 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
         @DisplayName("AC1: Feature flag 'allpay-file-transfer-job' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                allpayBaisFileProcessorService.run(allpayBaisFileProcessorConfiguration));
+                allpayInterfaceFileProcessorService.run(allpayBaisFileProcessorConfiguration));
 
             assertThat(exception).hasMessage("allpay-file-transfer-job is not enabled");
         }
@@ -117,7 +118,7 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
         @DisplayName("AC1: Both feature flags are false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                allpayBaisFileProcessorService.run(allpayBaisFileProcessorConfiguration));
+                allpayInterfaceFileProcessorService.run(allpayBaisFileProcessorConfiguration));
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -130,7 +131,7 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
         String file = ALLPAY_FILE + ".dat";
 
         uploadResourceToSftp(ALLPAY_FILE_RESOURCE + ".dat", ALLPAY_FILE_CONTAINER + ".dat");
-        allpayBaisFileProcessorService.run(allpayBaisFileProcessorConfiguration);
+        allpayInterfaceFileProcessorService.run(allpayBaisFileProcessorConfiguration);
 
         InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
             file, ALLPAY_FILE_CHECKSUM, Interface.ALLPAY, Type.SOURCE, Domain.MAINTENANCE);
@@ -149,7 +150,7 @@ public class AllpayBaisFileProcessorServiceIntegrationTest extends AbstractBaisF
         String container = ALLPAY_FILE_CONTAINER + fileEnding;
 
         uploadResourceToSftp(resource, container);
-        allpayBaisFileProcessorService.run(allpayBaisFileProcessorConfiguration);
+        allpayInterfaceFileProcessorService.run(allpayBaisFileProcessorConfiguration);
 
         String file = ALLPAY_FILE + fileEnding;
 

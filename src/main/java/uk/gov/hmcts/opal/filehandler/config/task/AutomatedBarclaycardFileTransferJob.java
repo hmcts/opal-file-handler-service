@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.opal.filehandler.config.BarclaycardBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.service.BarclaycardBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.BarclaycardInterfaceFileProcessorService;
 
 @Component
 @ConditionalOnExpression(
@@ -15,7 +15,7 @@ import uk.gov.hmcts.opal.filehandler.service.BarclaycardBaisFileProcessorService
 @RequiredArgsConstructor
 public class AutomatedBarclaycardFileTransferJob implements TaskConfiguration {
 
-    private final BarclaycardBaisFileProcessorService service;
+    private final BarclaycardInterfaceFileProcessorService service;
     private final BarclaycardBaisFileProcessorConfiguration configuration;
 
     @Override

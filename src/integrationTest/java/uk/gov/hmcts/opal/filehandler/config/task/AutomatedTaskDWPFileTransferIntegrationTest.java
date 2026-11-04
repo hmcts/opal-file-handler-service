@@ -14,7 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.DispatcherServlet;
 import uk.gov.hmcts.opal.filehandler.config.DWPBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.service.DWPBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.DWPInterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
 @ActiveProfiles("integration")
@@ -29,7 +29,7 @@ public class AutomatedTaskDWPFileTransferIntegrationTest extends AbstractIntegra
 
     // placeholder mock until the actual service is implemented formally
     @MockitoBean(enforceOverride = true, reset = MockReset.NONE)
-    private DWPBaisFileProcessorService service;
+    private DWPInterfaceFileProcessorService service;
 
     @Test
     void shouldNotCreateWebLayer() {
