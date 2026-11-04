@@ -6,8 +6,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.azure.storage.blob.BlobClient;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -16,36 +14,38 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
-import uk.gov.hmcts.opal.filehandler.config.NatWestBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.BarclaycardBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
-import uk.gov.hmcts.opal.filehandler.support.AbstractBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.AbstractInterfaceFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 
 @ActiveProfiles("integration")
 @TestPropertySource(properties = {
-    "launchdarkly.default-flag-values.natwest-file-transfer-job=true",
+    "launchdarkly.default-flag-values.barclaycard-file-transfer-job=true",
 })
-public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBaisFileProcessorServiceIntegrationTest {
+public class BarclaycardInterfaceFileProcessorServiceTest extends AbstractInterfaceFileProcessorServiceIntegrationTest {
 
-    private static final String NATWEST_FILE = "Y01A.CARS.#D.SBURZ38.D080426";
-    private static final String NATWEST_FILE_CHECKSUM = "3e7eb40eae410fee9a8d999bdcd7c302";
-    private static final String NATWEST_FILE_RESOURCE = "bais-emulator/" + NATWEST_FILE;
-    private static final String NATWEST_FILE_CONTAINER = "/home/NATWEST/" + NATWEST_FILE;
+    private static final String BARCLAYCARD_FILE = "a121_00010065_317608.dat";
+    private static final String BARCLAYCARD_FILE_CHECKSUM = "3e7eb40eae410fee9a8d999bdcd7c302";
+    private static final String BARCLAYCARD_FILE_RESOURCE = "bais-emulator/" + BARCLAYCARD_FILE;
+    private static final String BARCLAYCARD_FILE_CONTAINER = "/home/BARCLAYCARD/" + BARCLAYCARD_FILE;
     private static final String BUSINESS_UNIT_CODE = "BC12";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
-    private NatWestBaisFileProcessorService natWestBaisFileProcessorService;
+    private BarclaycardInterfaceFileProcessorService service;
 
     @Autowired
-    private NatWestBaisFileProcessorConfiguration natWestBaisFileProcessorConfiguration;
+    private BarclaycardBaisFileProcessorConfiguration configuration;
 
     @Autowired
     private BusinessUnitBankAccountEntityTestData businessUnitBankAccountEntityTestData;
@@ -58,49 +58,31 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
         repository.deleteAll();
         businessUnitBankAccountEntityTestData.clear();
         businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount((short) 1, BUSINESS_UNIT_CODE);
-        blobServiceClient.createBlobContainerIfNotExists(natWestBaisFileProcessorConfiguration.getContainerName());
+        blobServiceClient.createBlobContainerIfNotExists(configuration.getContainerName());
     }
 
-    @Nested
-    @TestPropertySource(properties = {
-        "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.natwest-file-transfer-job=true"
-    })
-    public class BankingInterfacesDisabled {
-
-        @Test
-        @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
-        void bankingInterfacesIsDisabled() {
-            FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                natWestBaisFileProcessorService.run(natWestBaisFileProcessorConfiguration));
-
-            assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
-        }
-
-    }
 
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
-        "launchdarkly.default-flag-values.natwest-file-transfer-job=false"
+        "launchdarkly.default-flag-values.barclaycard-file-transfer-job=false"
     })
     public class NatWestFileTransferJobDisabled {
 
         @Test
-        @DisplayName("AC1: Feature flag 'natwest-file-transfer-job' is false")
-        void natWestFileTransferJobIsDisabled() {
-            FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                natWestBaisFileProcessorService.run(natWestBaisFileProcessorConfiguration));
-
-            assertThat(exception).hasMessage("natwest-file-transfer-job is not enabled");
+        @DisplayName("AC1: Feature flag 'barclaycard-file-transfer-job' is false")
+        void barclaycardFileTransferJobIsDisabled() {
+            FeatureDisabledException exception = assertThrows(
+                FeatureDisabledException.class, () -> service.run(configuration)
+            );
+            assertThat(exception).hasMessage("barclaycard-file-transfer-job is not enabled");
         }
-
     }
 
     @Nested
     @TestPropertySource(properties = {
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=false",
-        "launchdarkly.default-flag-values.natwest-file-transfer-job=false"
+        "launchdarkly.default-flag-values.barclays-file-transfer-job=false"
     })
     public class BothFeatureFlagsDisabled {
 
@@ -108,39 +90,38 @@ public class NatWestBaisFileProcessorServiceIntegrationTest extends AbstractBais
         @DisplayName("AC1: Both feature flags are false")
         void bothFeatureFlagsAreDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                natWestBaisFileProcessorService.run(natWestBaisFileProcessorConfiguration));
+                service.run(configuration)
+            );
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
-
     }
 
     @Test
-    @DisplayName("AC2: NatWest file is present, read, extracted and stored correctly")
-    void natWestBaisFileProcessorServiceShouldRunSuccessfully() throws Exception {
-        uploadResourceToSftp(NATWEST_FILE_RESOURCE, NATWEST_FILE_CONTAINER);
+    @DisplayName("AC2: When Barclaycard file is present it should be read and stored correctly")
+    void natWestInterfaceFileProcessorServiceShouldRunSuccessfully() throws Exception {
+        uploadResourceToSftp(BARCLAYCARD_FILE_RESOURCE, BARCLAYCARD_FILE_CONTAINER);
 
-        natWestBaisFileProcessorService.run(natWestBaisFileProcessorConfiguration);
+        service.run(configuration);
 
         InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
-            NATWEST_FILE, NATWEST_FILE_CHECKSUM, Interface.NATWEST, Type.SOURCE, Domain.FINES);
+            BARCLAYCARD_FILE, BARCLAYCARD_FILE_CHECKSUM, Interface.BARCLAYCARD, Type.SOURCE, Domain.FINES);
         InterfaceFileEntity sourceJsonFile = assertSuccessfulSourceJsonInterfaceFile(
-            NATWEST_FILE, Interface.NATWEST, Domain.FINES, sourceFile.getInterfaceFileId());
-        assertBlobChecksum(NATWEST_FILE, NATWEST_FILE_CHECKSUM,
-            natWestBaisFileProcessorConfiguration.getContainerName());
+            BARCLAYCARD_FILE, Interface.BARCLAYCARD, Domain.FINES, sourceFile.getInterfaceFileId());
+        assertBlobChecksum(BARCLAYCARD_FILE, BARCLAYCARD_FILE_CHECKSUM, configuration.getContainerName());
         assertSourceJsonContents(sourceJsonFile);
-        assertNumberOfSftpFiles(natWestBaisFileProcessorConfiguration.getSftpUsername(), 0);
+        assertNumberOfSftpFiles(configuration.getSftpUsername(), 0);
         verify(finesQueueService, times(1)).send(sourceJsonFile.getInterfaceFileId());
     }
 
     private void assertSourceJsonContents(InterfaceFileEntity sourceJson) throws Exception {
         BlobClient client = blobServiceClient
-            .getBlobContainerClient(natWestBaisFileProcessorConfiguration.getContainerName())
+            .getBlobContainerClient(configuration.getContainerName())
             .getBlobClient(sourceJson.getFilestoreUuid().toString());
 
         JsonNode json = objectMapper.readTree(client.downloadContent().toBytes());
 
-        assertThat(json.get("file_name").asText()).isEqualTo(NATWEST_FILE);
+        assertThat(json.get("file_name").asText()).isEqualTo(BARCLAYCARD_FILE);
         assertThat(json.get("payment_type").asText()).isEqualTo("CASH");
         assertThat(json.at("/destination_details/bank_details/sort_code").asText()).isEqualTo("560033");
         assertThat(json.at("/destination_details/bank_details/account_number").asText()).isEqualTo("27048527");

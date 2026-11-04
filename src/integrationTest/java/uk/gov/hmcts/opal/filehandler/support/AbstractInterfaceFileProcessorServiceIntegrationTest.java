@@ -30,7 +30,7 @@ import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
-import uk.gov.hmcts.opal.filehandler.service.CapsReportBaisFileProcessorServiceIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.service.CapsReportInterfaceFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.service.InterfaceFilesService;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 
@@ -40,7 +40,7 @@ import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 })
 @Slf4j
 @Testcontainers
-public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractIntegrationTest {
+public class AbstractInterfaceFileProcessorServiceIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private Clock clock;
@@ -81,8 +81,8 @@ public class AbstractBaisFileProcessorServiceIntegrationTest extends AbstractInt
 
         ByteArrayOutputStream privateKeyStreamOut;
 
-        try (InputStream privateKeyStream = CapsReportBaisFileProcessorServiceIntegrationTest.class.getClassLoader()
-            .getResourceAsStream("bais-emulator/keys/bais-sftp-key")) {
+        try (InputStream privateKeyStream = CapsReportInterfaceFileProcessorServiceIntegrationTest.class
+            .getClassLoader().getResourceAsStream("bais-emulator/keys/bais-sftp-key")) {
 
             privateKeyStreamOut = new ByteArrayOutputStream();
             privateKeyStream.transferTo(privateKeyStreamOut);
