@@ -312,7 +312,7 @@ public class InterfaceFilesService {
     }
 
     private DeleteInterfaceFileResult deleteInterfaceFile(InterfaceFileEntity interfaceFile) {
-        if( interfaceFile.getFilestoreUuid() != null) {
+        if (interfaceFile.getFilestoreUuid() != null) {
             deleteBlobIfNotShared(interfaceFile);
         }
 
