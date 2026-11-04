@@ -103,9 +103,15 @@ class VariantBankingFileProcessorServiceTest {
 
         byte[] fileBytes = "test content".getBytes();
 
-        doNothing().when(spyService)
-            .ingestUploadedFile(config, "a121_240101VB001_01.dat", fileBytes,Domain.MAINTENANCE,
-                Status.SUCCESS);
+        doReturn(InterfaceFileEntity.builder().build())
+            .when(spyService)
+            .ingestUploadedFile(
+                config,
+                "a121_240101VB001_01.dat",
+                fileBytes,
+                Domain.MAINTENANCE,
+                Status.SUCCESS
+            );
 
         spyService.processUploadedFile(config,"a121_240101VB001_01.dat", fileBytes, Domain.MAINTENANCE,
             Status.SUCCESS);

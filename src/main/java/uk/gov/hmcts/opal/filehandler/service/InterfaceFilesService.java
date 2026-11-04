@@ -181,32 +181,53 @@ public class InterfaceFilesService {
         }
 
         try {
-            //Ensure the related interface file exists if provided
+            // Ensure the related interface file exists if provided
             InterfaceFileEntity relatedInterfaceFile = null;
             if (metadata.getRelatedInterfaceFileId() != null) {
                 relatedInterfaceFile = getInterfaceFileEntity(metadata.getRelatedInterfaceFileId());
             }
+
             Interface source = Interface.valueOf(metadata.getSource());
             InterfaceFileProcessorService processorService =
                 getProcessorService(source);
             BaisFileProcessorConfiguration config = getConfig(source);
 
-            InterfaceFileEntity entity = processorService.ingestFile(
-                file.getOriginalFilename(),
-                file.getBytes(),
-                Interface.valueOf(metadata.getSource()),
-                Interface.valueOf(metadata.getTarget()),
-                Type.valueOf(metadata.getType()),
-                Domain.valueOf(metadata.getDomain()),
-                config.getContainerName(),
-                SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser().getUserId()
-            );
+            InterfaceFileEntity entity;
+
+            if (source == Interface.VARIANT_BANKING) {
+
+                entity = ((VariantBankingFileProcessorService) processorService)
+                    .processUploadedFile(
+                        config,
+                        file.getOriginalFilename(),
+                        file.getBytes(),
+                        Domain.valueOf(metadata.getDomain()),
+                        Status.SUCCESS
+                    );
+
+            } else {
+
+                entity = processorService.ingestFile(
+                    file.getOriginalFilename(),
+                    file.getBytes(),
+                    Interface.valueOf(metadata.getSource()),
+                    Interface.valueOf(metadata.getTarget()),
+                    Type.valueOf(metadata.getType()),
+                    Domain.valueOf(metadata.getDomain()),
+                    config.getContainerName(),
+                    SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser().getUserId()
+                );
+            }
+
             entity.setRelatedInterfaceFile(relatedInterfaceFile);
             entity.setPaymentType(PaymentType.valueOf(metadata.getPaymentType()));
             entity.setBusinessUnitCode(new String[] {metadata.getBusinessUnitCode()});
             entity = repository.save(entity);
 
-            return mapper.toInterfaceFileObject(getInterfaceFileEntity(entity.getInterfaceFileId()));
+            return mapper.toInterfaceFileObject(
+                getInterfaceFileEntity(entity.getInterfaceFileId())
+            );
+
         } catch (IOException e) {
             throw new InternalServerErrorException(
                 "Internal Server Error",
@@ -214,3 +235,5 @@ public class InterfaceFilesService {
         }
     }
 }
+
+

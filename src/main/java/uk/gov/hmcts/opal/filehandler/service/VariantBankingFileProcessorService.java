@@ -58,15 +58,19 @@ public class VariantBankingFileProcessorService
         return List.of();
     }
 
-    public void processUploadedFile(FileProcessorConfiguration config, String fileName,
-        byte[] fileBytes, Domain domain, Status status
+    public InterfaceFileEntity processUploadedFile(
+        FileProcessorConfiguration config,
+        String fileName,
+        byte[] fileBytes,
+        Domain domain,
+        Status status
     ) throws IOException {
 
         requireEnabledFeature(
             config.getFeatureFlag()
         );
 
-        ingestUploadedFile(
+        return ingestUploadedFile(
             config,
             fileName,
             fileBytes,
@@ -78,7 +82,7 @@ public class VariantBankingFileProcessorService
     /**
      * Processes a Variant Banking file uploaded via the Add Interface Files API.
      */
-    protected void ingestUploadedFile(FileProcessorConfiguration config, String fileName,
+    protected InterfaceFileEntity ingestUploadedFile(FileProcessorConfiguration config, String fileName,
         byte[] fileBytes, Domain domain, Status status)
         throws IOException {
 
@@ -117,6 +121,8 @@ public class VariantBankingFileProcessorService
                 getCurrentUserId());
         }
         System.out.println("createFailureInterfaceFile returned = " + entity);
+
+        return entity;
     }
 
     protected void validateFileName(
