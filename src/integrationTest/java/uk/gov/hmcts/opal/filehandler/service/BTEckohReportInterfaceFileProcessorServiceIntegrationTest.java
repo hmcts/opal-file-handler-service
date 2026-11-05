@@ -52,7 +52,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
     @Autowired
     private BTEckohReportBaisFileProcessorConfiguration config;
 
-    private final Logger logger = (Logger) LoggerFactory.getLogger(InterfaceFileProcessorService.class);
+    private final Logger logger = (Logger) LoggerFactory.getLogger(SftpFileIngestionService.class);
     private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 
     @BeforeEach

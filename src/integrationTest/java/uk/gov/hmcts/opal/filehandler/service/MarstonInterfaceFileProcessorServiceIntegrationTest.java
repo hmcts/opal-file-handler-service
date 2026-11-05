@@ -63,7 +63,7 @@ public class MarstonInterfaceFileProcessorServiceIntegrationTest
     private FinesInterfaceFilePreprocessQueueService finesQueueService;
 
     private final Logger logger =
-        (Logger) LoggerFactory.getLogger(InterfaceFileProcessorService.class);
+        (Logger) LoggerFactory.getLogger(SftpFileIngestionService.class);
 
     private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 

@@ -52,7 +52,7 @@ public class CapsReportInterfaceFileProcessorServiceIntegrationTest
     @Autowired
     private CapsReportBaisFileProcessorConfiguration capsReportBaisFileProcessorConfiguration;
 
-    private final Logger logger = (Logger) LoggerFactory.getLogger(InterfaceFileProcessorService.class);
+    private final Logger logger = (Logger) LoggerFactory.getLogger(SftpFileIngestionService.class);
     private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 
     @BeforeEach
