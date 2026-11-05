@@ -285,7 +285,7 @@ class VariantBankingFileProcessorServiceTest {
                 anyString(),
                 any(UUID.class),
                 eq(Domain.MAINTENANCE)
-            );
+        );
 
         doReturn(failedEntity)
             .when(spyService)
