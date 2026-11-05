@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jms.core.JmsTemplate;
 import tools.jackson.databind.ObjectMapper;
+import uk.gov.hmcts.opal.filehandler.dto.DraftAccountResponseDto;
 import uk.gov.hmcts.opal.filehandler.dto.FileHandlerDraftAccountPayloadDTO;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,11 +36,9 @@ class VpfpoInterfaceFilePreprocessQueueServiceTest {
     @Test
     void shouldSendPayloadToQueue() throws Exception {
 
-        Account account = mock(Account.class);
-
         FileHandlerDraftAccountPayloadDTO payload =
             FileHandlerDraftAccountPayloadDTO.builder()
-                .account(account)
+                .account(createDraftAccountResponseDto())
                 .prosecutorCode("ABC")
                 .build();
 
@@ -49,6 +48,34 @@ class VpfpoInterfaceFilePreprocessQueueServiceTest {
         when(objectMapper.writeValueAsString(payload)).thenReturn(serialisedPayload);
         service.send(payload);
         verify(jmsTemplate).convertAndSend("vpfpo-queue", serialisedPayload);
+    }
+
+    private DraftAccountResponseDto createDraftAccountResponseDto() {
+        return DraftAccountResponseDto.builder()
+            .draftAccountId(1L)
+            .businessUnitId((short) 17)
+            .submittedBy("test.user")
+            .submittedByName("Test User")
+            .account("""
+            {
+              "account_number": "12345678",
+              "prosecutor_case_reference": "ABC123"
+            }
+            """)
+            .accountSnapshot("""
+            {
+              "account_number": "12345678"
+            }
+            """)
+            .statusMessage("Draft account created")
+            .timelineData("""
+            {
+              "event": "ACCOUNT_CREATED"
+            }
+            """)
+            .accountNumber("12345678")
+            .accountId(100L)
+            .build();
     }
 
 }
