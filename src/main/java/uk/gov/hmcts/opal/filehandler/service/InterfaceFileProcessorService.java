@@ -119,8 +119,7 @@ public class InterfaceFileProcessorService {
             .build();
 
         Optional<InterfaceFileEntity> duplicateOpt =
-            getDuplicateFile(type, fileName, fileChecksum
-        );
+            getDuplicateFile(type, fileName, fileChecksum);
         try {
             if (duplicateOpt.isPresent()) {
                 InterfaceFileEntity duplicate = duplicateOpt.get();
