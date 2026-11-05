@@ -318,11 +318,11 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
 
-            InterfaceFileEntity existingSourceJson =  sourceJsonFile(300L, Status.SUCCESS);
+            InterfaceFileEntity existingSourceJson = sourceJsonFile(300L, Status.SUCCESS);
 
             doReturn("checksum").when(processor).calculateExtractChecksum(any());
             when(repository.findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
-                100L, Type.SOURCE_JSON, SOURCE_JSON_NAME,"checksum", Status.SUCCESS))
+                100L, Type.SOURCE_JSON, SOURCE_JSON_NAME, "checksum", Status.SUCCESS))
                 .thenReturn(Optional.of(existingSourceJson));
 
             InterfaceFileEntity result = processor.createAndUploadSourceJson(
@@ -358,10 +358,10 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
             InterfaceFileCommonDataExtract extract = extract();
 
-            service.alreadyProcessedSuccessfully(sourceFile, extract,"checksum");
+            service.alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
 
             verify(repository).findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
-                100L, Type.SOURCE_JSON, SOURCE_JSON_NAME,"checksum", Status.SUCCESS);
+                100L, Type.SOURCE_JSON, SOURCE_JSON_NAME, "checksum", Status.SUCCESS);
         }
     }
 
@@ -621,13 +621,6 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             InterfaceFileCommonDataExtract extract
         ) {
             postProcessedFiles.add(sourceFile);
-        }
-
-        @Override
-        protected String getSourceJsonContainer(
-            FileProcessorConfiguration config
-        ) {
-            return ((BaisFileProcessorConfiguration) config).getContainerName();
         }
 
         @Override

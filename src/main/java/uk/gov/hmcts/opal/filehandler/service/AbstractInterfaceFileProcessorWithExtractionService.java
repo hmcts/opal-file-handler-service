@@ -208,7 +208,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
 
             interfaceFileBlobStoreService.uploadBaisFile(
                 filestoreUuid,
-                getSourceJsonContainer(config),
+                config.getContainerName(),
                 new ByteArrayInputStream(jsonBytes),
                 sourceJson.getChecksum()
             );
@@ -226,8 +226,6 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
         log.error("Error processing SOURCE_JSON interfaceFileId={} fileName={}",
             sourceJson.getInterfaceFileId(), sourceJson.getFileName(), exception);
     }
-
-    protected abstract String getSourceJsonContainer(FileProcessorConfiguration config);
 
     protected abstract String[] getBusinessUnitsFromExtract(FileProcessorConfiguration config, T extract);
 

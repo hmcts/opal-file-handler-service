@@ -5,6 +5,8 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 
 public interface FileProcessorConfiguration {
 
+    String getContainerName();
+
     String getFeatureFlag();
 
     Interface getSource();

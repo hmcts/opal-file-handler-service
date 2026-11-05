@@ -5,12 +5,14 @@ import static uk.gov.hmcts.opal.filehandler.util.StreamUtil.calculateChecksum;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Clock;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
+import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -24,8 +26,6 @@ import uk.gov.hmcts.opal.filehandler.service.extraction.VariantBacsStandard18Bai
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
-import java.util.List;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
@@ -53,7 +53,7 @@ public class VariantBankingFileProcessorService
     @Override
     protected List<String> selectFilesToProcess(BaisFileProcessorConfiguration config) {
         log.info("Variant Banking files are supplied by Add Interface Files API. "
-                + "Skipping BAIS SFTP file selection.");
+            + "Skipping BAIS SFTP file selection.");
 
         return List.of();
     }
@@ -94,22 +94,22 @@ public class VariantBankingFileProcessorService
 
         try {
             if (duplicate.isPresent()) {
-                entity = createDuplicateInterfaceFile(config, fileName, fileChecksum, duplicate.get(),domain);
+                entity = createDuplicateInterfaceFile(config, fileName, fileChecksum, duplicate.get(), domain);
             } else {
 
                 UUID fileStoreUuid = UUID.randomUUID();
                 interfaceFileBlobStoreService.uploadBaisFile(fileStoreUuid, config.getFeatureFlag(),
                     new ByteArrayInputStream(fileBytes), fileChecksum);
 
-                entity = createNewInterfaceFile(config, fileName, fileChecksum, fileStoreUuid,domain);
+                entity = createNewInterfaceFile(config, fileName, fileChecksum, fileStoreUuid, domain);
             }
         } catch (InvalidReportFileException e) {
-            entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage(),domain);
+            entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage(), domain);
         } catch (BlobChecksumValidationException e) {
-            entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage(),domain);
+            entity = createFailureInterfaceFile(config, fileName, fileChecksum, e.getMessage(), domain);
         } catch (BlobUploadException e) {
             entity = createFailureInterfaceFile(config, fileName, fileChecksum, "Blob upload failed for file '%s': %s"
-                .formatted(fileName, e.getMessage()),domain);
+                .formatted(fileName, e.getMessage()), domain);
         }
 
         System.out.println("entity before save = " + entity);
@@ -136,12 +136,5 @@ public class VariantBankingFileProcessorService
                 null
             );
         }
-    }
-
-    @Override
-    protected String getSourceJsonContainer(
-        FileProcessorConfiguration config
-    ) {
-        return config.getFeatureFlag();
     }
 }
