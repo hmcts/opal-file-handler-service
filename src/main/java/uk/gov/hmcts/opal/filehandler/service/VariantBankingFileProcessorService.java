@@ -112,15 +112,12 @@ public class VariantBankingFileProcessorService
                 .formatted(fileName, e.getMessage()), domain);
         }
 
-        System.out.println("entity before save = " + entity);
-        System.out.println("status before save = " + entity.getStatus());
         entity = saveInitialFile(entity);
 
         if (entity.getStatus().equals(Status.INGESTED)) {
             processIngestedFile(config, entity, new ByteArrayInputStream(fileBytes),
                 getCurrentUserId());
         }
-        System.out.println("createFailureInterfaceFile returned = " + entity);
 
         return entity;
     }

@@ -14,6 +14,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.util.regex.Pattern;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.BeforeEach;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -35,6 +36,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
+import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
 import uk.gov.hmcts.opal.filehandler.exception.InvalidReportFileException;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.VariantBacsStandard18BaisExtractionService;
@@ -374,6 +376,88 @@ class VariantBankingFileProcessorServiceTest {
         );
     }
 
+    @Test
+    void shouldThrowExceptionWhenFilenameDoesNotMatchPattern() {
+
+        assertThatThrownBy(
+            () -> service.validateFileName(
+                config,
+                "bad-file-name.dat"
+            )
+        )
+            .isInstanceOf(InvalidReportFileException.class)
+            .hasMessageContaining("does not match expected pattern");
+    }
+
+    @Test
+    void shouldCreateFailureFileWhenBlobChecksumValidationExceptionThrown() throws Exception {
+
+        VariantBankingFileProcessorService spyService = spy(service);
+
+        when(interfaceFilesRepository.findByFileNameAndStatus(
+            "a121_240101VB001_01.dat",
+            Status.SUCCESS))
+            .thenReturn(Optional.empty());
+
+        when(config.getFeatureFlag()).thenReturn("variant-banking");
+
+        InterfaceFileEntity failedEntity = interfaceFileEntity();
+        failedEntity.setStatus(Status.FAILED);
+
+        doReturn(failedEntity)
+            .when(spyService)
+            .createFailureInterfaceFile(
+                any(),
+                anyString(),
+                anyString(),
+                anyString(),
+                eq(Domain.MAINTENANCE)
+            );
+
+        doReturn(failedEntity)
+            .when(spyService)
+            .saveInitialFile(any());
+
+        doThrow(
+            new BlobChecksumValidationException(
+                UUID.randomUUID(),
+                "expected-checksum",
+                "actual-checksum"
+            )
+        ).when(interfaceFileBlobStoreService)
+            .uploadBaisFile(
+                any(UUID.class),
+                anyString(),
+                any(),
+                anyString()
+            );
+
+        spyService.ingestUploadedFile(
+            config,
+            "a121_240101VB001_01.dat",
+            "content".getBytes(),
+            Domain.MAINTENANCE,
+            Status.SUCCESS
+        );
+
+        verify(interfaceFileBlobStoreService)
+            .uploadBaisFile(
+                any(UUID.class),
+                anyString(),
+                any(),
+                anyString()
+            );
+
+        verify(spyService)
+            .createFailureInterfaceFile(
+                any(),
+                eq("a121_240101VB001_01.dat"),
+                anyString(),
+                anyString(),
+                eq(Domain.MAINTENANCE)
+            );
+    }
+
     private InterfaceFileEntity interfaceFileEntity() {
         return InterfaceFileEntity.builder()
             .fileName("a121_240101VB001_01.dat")
@@ -382,4 +466,6 @@ class VariantBankingFileProcessorServiceTest {
             .createdDatetime(LocalDateTime.now())
             .build();
     }
+
+
 }

@@ -4,7 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
@@ -12,11 +16,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.azure.core.util.BinaryData;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -42,11 +49,13 @@ import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
+import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
+import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
@@ -80,6 +89,9 @@ public class InterfaceFilesServiceTest {
 
     @Mock
     private List<InterfaceFileProcessorService> processorServicesList;
+
+    @Mock
+    private InterfaceFileBlobStoreService blobStoreService;
 
     @InjectMocks
     private InterfaceFilesService service;
@@ -404,6 +416,79 @@ public class InterfaceFilesServiceTest {
         verifyNoInteractions(file, repository);
     }
 
+    @Test
+    void addInterfaceFile_shouldUseVariantBankingProcessor() throws IOException {
+
+        VariantBankingFileProcessorService processorService =
+            mock(VariantBankingFileProcessorService.class);
+
+        BaisFileProcessorConfiguration config =
+            mock(BaisFileProcessorConfiguration.class);
+
+        InterfaceFilesService uploadService =
+            serviceWithProcessor(processorService, config);
+
+        MultipartFile file = mock(MultipartFile.class);
+
+        byte[] fileBytes = "variant-content".getBytes();
+
+        InterfaceFileEntity ingestedEntity = InterfaceFileEntity.builder()
+            .interfaceFileId(99L)
+            .build();
+
+        InterfaceFileObjectInterfaceFile mapped =
+            mock(InterfaceFileObjectInterfaceFile.class);
+
+        AddInterfaceFileRequestMetadata metadata =
+            new AddInterfaceFileRequestMetadata()
+                .source(InterfaceFileEnumInterfaceFile.VARIANT_BANKING)
+                .target(InterfaceFileEnumInterfaceFile.OPAL)
+                .type(InterfaceFileTypeEnumInterfaceFile.SOURCE_JSON)
+                .domain(DomainEnumTypes.MAINTENANCE);
+
+        when(file.getOriginalFilename())
+            .thenReturn("a121_240101VB001_01.dat");
+
+        when(file.getBytes())
+            .thenReturn(fileBytes);
+
+        when(processorService.processUploadedFile(
+            any(),
+            anyString(),
+            any(),
+            eq(Domain.MAINTENANCE),
+            any()
+        )).thenReturn(ingestedEntity);
+
+        when(repository.save(ingestedEntity))
+            .thenReturn(ingestedEntity);
+
+        when(repository.findById(99L))
+            .thenReturn(Optional.of(ingestedEntity));
+
+        when(mapper.toInterfaceFileObject(ingestedEntity))
+            .thenReturn(mapped);
+
+        try (
+            MockedStatic<SecurityUtil> ignored =
+                authenticateWithCreatePermissionInAllDomains();
+            MockedStatic<PermissionUtil> permissionUtil =
+                mockStatic(PermissionUtil.class)
+        ) {
+
+            uploadService.addInterfaceFile(file, metadata);
+
+            verify(processorService)
+                .processUploadedFile(
+                    any(),
+                    eq("a121_240101VB001_01.dat"),
+                    eq(fileBytes),
+                    eq(Domain.MAINTENANCE),
+                    eq(Status.SUCCESS)
+                );
+        }
+    }
+
     private MockedStatic<SecurityUtil> authenticateWithPermission(
         uk.gov.hmcts.opal.common.user.authorisation.model.Domain domain,
         FileHandlerPermission permission) {
@@ -471,6 +556,120 @@ public class InterfaceFilesServiceTest {
             verifyNoInteractions(repository);
             verifyNoInteractions(mapper);
         }
+    }
+
+    @Test
+    void getInterfaceFilesContent_shouldLogPdplForNonSystemUser() {
+
+        Long id = 1L;
+
+        InterfaceFileEntity entity = mock(InterfaceFileEntity.class);
+        BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
+        BinaryData binaryData = mock(BinaryData.class);
+        InputStream inputStream = mock(InputStream.class);
+        UserStateV2 userState = mock(UserStateV2.class);
+
+        InterfaceFilesService service = new InterfaceFilesService(
+            repository,
+            specsFactory,
+            mapper,
+            blobStoreService,
+            loggingService,
+            Map.of("dwpBaisFileProcessorConfig", config),
+            List.of()
+        );
+
+        InterfaceFilesService spyService = spy(service);
+
+        doReturn(entity).when(spyService).getInterfaceFileEntity(id);
+
+        when(entity.getStatus()).thenReturn(Status.SUCCESS);
+        when(entity.getSource()).thenReturn(Interface.DWP);
+        when(entity.getOpalDomain()).thenReturn(null);
+        when(entity.getFilestoreUuid()).thenReturn(UUID.randomUUID());
+
+        when(config.getContainerName()).thenReturn("container");
+
+        when(binaryData.toStream()).thenReturn(inputStream);
+
+        when(blobStoreService.fetchInterfaceFile(
+            eq(id),
+            any(),
+            eq("container")
+        )).thenReturn(binaryData);
+
+        when(userState.isSystemUser()).thenReturn(false);
+
+        try (
+            MockedStatic<SecurityUtil> securityUtil =
+                mockStatic(SecurityUtil.class);
+            MockedStatic<PermissionUtil> permissionUtil =
+                mockStatic(PermissionUtil.class)
+        ) {
+
+            securityUtil.when(
+                SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser
+            ).thenReturn(authToken);
+
+            when(authToken.getUserState()).thenReturn(userState);
+
+            InputStream result = spyService.getInterfaceFilesContent(id);
+
+            assertEquals(inputStream, result);
+
+            verify(loggingService).logPdpl(id, userState);
+        }
+    }
+
+    private MockedStatic<SecurityUtil> authenticateWithCreatePermissionInAllDomains() {
+
+        UserStateV2 userState = UserStateV2.builder()
+            .userId(1L)
+            .username("test")
+            .domains(Map.of(
+                uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FINES,
+                DomainBusinessUnitUsers.builder()
+                    .businessUnitUsers(List.of(
+                        BusinessUnitUser.builder()
+                            .businessUnitUserId("FINES1")
+                            .businessUnitId((short) 1)
+                            .permissions(Set.of(
+                                new Permission(
+                                    19L,
+                                    FileHandlerPermission.CREATE_INTERFACE_FILES.getDescription()
+                                )
+                            ))
+                            .build()
+                    ))
+                    .build(),
+
+                uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FILE_HANDLING,
+                DomainBusinessUnitUsers.builder()
+                    .businessUnitUsers(List.of(
+                        BusinessUnitUser.builder()
+                            .businessUnitUserId("FH1")
+                            .businessUnitId((short) 2)
+                            .permissions(Set.of(
+                                new Permission(
+                                    19L,
+                                    FileHandlerPermission.CREATE_INTERFACE_FILES.getDescription()
+                                )
+                            ))
+                            .build()
+                    ))
+                    .build()
+            ))
+            .build();
+
+        MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
+
+        securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+            .thenReturn(authToken);
+
+        lenient().when(authToken.getUserState()).thenReturn(userState);
+        lenient().when(authToken.getUserId()).thenReturn(1L);
+
+        return securityUtil;
     }
 
 }
