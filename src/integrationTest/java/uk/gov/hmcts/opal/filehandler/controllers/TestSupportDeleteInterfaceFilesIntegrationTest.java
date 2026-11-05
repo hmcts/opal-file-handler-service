@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 @ActiveProfiles(profiles = {"integration"})
 @Import(IntegrationSecurityConfiguration.class)
 public class TestSupportDeleteInterfaceFilesIntegrationTest extends AbstractControllerIntegrationTest {
-    private static final String URI = "/testing-support/interface-files/";
+    private static final String URI = "/testing-support/interface-files";
     private static final String CONTAINER_NAME = "natwest";
     private static final String FILE_NAME = "file-to-delete.dat";
     private static final UUID FILESTORE_UUID = UUID.fromString("86f86146-08fe-4520-b6db-68bf65e635b4");
@@ -92,7 +93,7 @@ public class TestSupportDeleteInterfaceFilesIntegrationTest extends AbstractCont
             assertThat(utilBlobStoreService.getBlobExists(CONTAINER_NAME, FILESTORE_UUID)).isFalse();
         }
 
-        // @Disabled("This test passes but runs very slowly due to the retries on connecting to azure")
+        @Disabled("This test passes but runs very slowly due to the retries on connecting to azure")
         @Test
         @DisplayName("PO-11123 - Delete interface files - returns 500 if error occurs deleting blobs")
         @JiraStory("PO-11123")

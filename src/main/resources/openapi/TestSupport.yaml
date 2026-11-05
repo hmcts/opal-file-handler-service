@@ -61,7 +61,7 @@ paths:
             application/json+problem:
               schema:
                 $ref: './common.yaml#/components/schemas/ProblemDetail'
-  /testing-support/interface-files/:
+  /testing-support/interface-files:
     delete:
       tags:
         - Test Support
