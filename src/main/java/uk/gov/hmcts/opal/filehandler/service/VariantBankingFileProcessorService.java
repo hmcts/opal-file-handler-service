@@ -13,7 +13,7 @@ import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
-import uk.gov.hmcts.opal.filehandler.service.extraction.PacsTTPBaisExtractionService;
+import uk.gov.hmcts.opal.filehandler.service.extraction.VariantBacsStandard18BaisExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
@@ -33,7 +33,7 @@ public class VariantBankingFileProcessorService
         InterfaceFilesRepository interfaceFilesRepository,
         TransactionTemplate transactionTemplate,
         ObjectMapper objectMapper,
-        PacsTTPBaisExtractionService extractionService,
+        VariantBacsStandard18BaisExtractionService extractionService,
         FinesInterfaceFilePreprocessQueueService finesQueueService,
         MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService,
         DWPBaisFileProcessorConfiguration config
