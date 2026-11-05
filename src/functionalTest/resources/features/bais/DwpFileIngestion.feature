@@ -1,7 +1,7 @@
 @Opal @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @JIRA-STORY:PO-6436 @BaisFileFixture
 Feature: DWP file ingestion
 
-  # The fixture maps DWP1234567 to business unit DW01 and its MAINTENANCE bank account.
+  # The fixture maps DWP1234567 to business unit DW01 and its FINES bank account.
   Scenario: A valid DWP file is ingested
     Given the configured "DWP" file is available on bais
     When I am testing as the "opal-test@dev.platform.hmcts.net" user

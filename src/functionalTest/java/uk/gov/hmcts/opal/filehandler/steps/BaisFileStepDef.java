@@ -218,7 +218,7 @@ public class BaisFileStepDef extends BaseStepDef {
         assertNotNull(successfulInterfaceFile, "Source metadata was not retrieved");
         Map<String, Object> jsonFile = awaitSuccessfulInterfaceFile(forSource("DWP"), "SOURCE_JSON");
         assertEquals("OPAL", jsonFile.get("target"));
-        assertEquals("MAINTENANCE", jsonFile.get("domain"));
+        assertEquals("FINES", jsonFile.get("domain"));
         assertNotNull(jsonFile.get("filestore_uuid"));
         Response response = authorisedJsonRequest().accept("application/octet-stream").when()
             .get(getTestUrl() + "/interface-files/" + jsonFile.get("interface_file_id") + "/content");

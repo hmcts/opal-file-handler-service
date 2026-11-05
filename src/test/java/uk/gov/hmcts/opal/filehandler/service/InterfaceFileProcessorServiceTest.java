@@ -24,20 +24,28 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
+import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -45,6 +53,7 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
+import uk.gov.hmcts.opal.filehandler.config.AbstractBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -199,6 +208,27 @@ class InterfaceFileProcessorServiceTest {
             service.run(config);
 
             verify(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(selectedFile), any());
+        }
+
+        @ParameterizedTest
+        @MethodSource("uk.gov.hmcts.opal.filehandler.service.InterfaceFileProcessorServiceTest#defaultDomains")
+        void shouldPersistConfiguredDefaultDomain(
+            AbstractBaisFileProcessorConfiguration processorConfig, Interface source, Domain expectedDomain
+        ) {
+            processorConfig.setSftpUsername(SFTP_USERNAME);
+            processorConfig.setContainerName(CONTAINER);
+            processorConfig.setSource(source);
+            processorConfig.setTarget(Interface.OPAL);
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(-1L);
+
+            service.run(processorConfig);
+
+            assertThat(savedStatuses).containsExactly(Status.INGESTED, Status.SUCCESS);
+            assertThat(service.processCount).isOne();
+            assertThat(service.lastSavedEntity.getOpalDomain()).isEqualTo(expectedDomain);
+            assertThat(service.lastSavedEntity.getSource()).isEqualTo(source);
         }
 
         @Test
@@ -370,6 +400,29 @@ class InterfaceFileProcessorServiceTest {
                     + "expected '3685d7f2b30e9b34b8d3e5496fb45506' but was '00000000000000000000000000000000'");
             assertThat(service.processCount).isZero();
             verify(baisSftpClient, never()).deleteFile(any(), any());
+        }
+    }
+
+    private static Stream<Arguments> defaultDomains() {
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(context, false);
+            scanner.addIncludeFilter(new AssignableTypeFilter(AbstractBaisFileProcessorConfiguration.class));
+            scanner.scan(BaisFileProcessorConfiguration.class.getPackageName());
+            context.refresh();
+
+            return Arrays.stream(Interface.values())
+                .filter(source -> source.getConfigComponentName() != null)
+                .map(source -> {
+                    AbstractBaisFileProcessorConfiguration processorConfig = context.getBean(
+                        source.getConfigComponentName(), AbstractBaisFileProcessorConfiguration.class);
+                    Domain expectedDomain = switch (source) {
+                        case CAPS_REPORT -> Domain.MAINTENANCE;
+                        case BTECKOH_REPORT -> Domain.FINES;
+                        default -> null;
+                    };
+                    return Arguments.of(processorConfig, source, expectedDomain);
+                })
+                .toList().stream();
         }
     }
 
