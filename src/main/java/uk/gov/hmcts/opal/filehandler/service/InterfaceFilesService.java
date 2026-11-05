@@ -1,6 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import com.azure.core.util.BinaryData;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.multipart.MultipartFile;
+import uk.gov.hmcts.common.exceptions.bespoke.BusinessRuleViolationException;
 import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
@@ -41,6 +43,7 @@ import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
 import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
+import uk.gov.hmcts.opal.generated.model.InterfaceFileTypeEnumInterfaceFile;
 
 @Service
 @Slf4j
@@ -171,7 +174,12 @@ public class InterfaceFilesService {
     @Transactional
     public InterfaceFileObjectInterfaceFile addInterfaceFile(MultipartFile file,
         AddInterfaceFileRequestMetadata metadata) {
-
+        boolean shouldPreProcess = Boolean.TRUE.equals(metadata.getShouldPreProcessFile());
+        if (shouldPreProcess && !InterfaceFileTypeEnumInterfaceFile.SOURCE.equals(metadata.getType())) {
+            throw new BusinessRuleViolationException(
+                "Invalid type",
+                "Type must be SOURCE when should_pre_process_file is true");
+        }
         DomainEnumTypes metadataDomain = metadata.getDomain();
         Domain fromMetadata = Domain.valueOf(metadataDomain);
 
@@ -207,9 +215,20 @@ public class InterfaceFilesService {
             );
             entity.setRelatedInterfaceFile(relatedInterfaceFile);
             entity.setPaymentType(PaymentType.valueOf(metadata.getPaymentType()));
-            entity.setBusinessUnitId(new Short[] {metadata.getBusinessUnitId()});
+
+            entity.setBusinessUnitId(metadata.getBusinessUnitId() == null
+                ? null : new Short[] {metadata.getBusinessUnitId()});
+
             entity = repository.save(entity);
 
+            if (shouldPreProcess) {
+                processorService.processFile(
+                    entity,
+                    new ByteArrayInputStream(file.getBytes()),
+                    SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser().getUserId()
+                );
+            }
+            processorService.completeIngestion(metadata.getFileName(), entity, false);
             return mapper.toInterfaceFileObject(getInterfaceFileEntity(entity.getInterfaceFileId()));
         } catch (IOException e) {
             throw new InternalServerErrorException(
