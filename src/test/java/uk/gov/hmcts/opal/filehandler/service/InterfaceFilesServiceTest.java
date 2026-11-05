@@ -18,7 +18,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -298,8 +301,12 @@ public class InterfaceFilesServiceTest {
         }
     }
 
-    @Test
-    void addInterfaceFile_savesEntityWithoutRelatedFileWhenNoRelatedIdProvided() throws IOException {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    @DisplayName("Uses the external processor and container for inbound and outbound uploads")
+    void addInterfaceFile_savesEntityWithoutRelatedFileWhenNoRelatedIdProvided(boolean outbound) throws IOException {
+        Interface source = outbound ? Interface.OPAL : Interface.DWP;
+        Interface target = outbound ? Interface.DWP : Interface.OPAL;
         DWPInterfaceFileProcessorService processorService = mock(DWPInterfaceFileProcessorService.class);
         BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
         InterfaceFilesService uploadService = serviceWithProcessor(processorService, config);
@@ -310,6 +317,8 @@ public class InterfaceFilesServiceTest {
             .build();
         InterfaceFileObjectInterfaceFile mapped = mock(InterfaceFileObjectInterfaceFile.class);
         AddInterfaceFileRequestMetadata metadata = addInterfaceFileMetadata()
+            .source(InterfaceFileEnumInterfaceFile.valueOf(source.name()))
+            .target(InterfaceFileEnumInterfaceFile.valueOf(target.name()))
             .paymentType(PaymentTypeEnumTypes.CASH)
             .businessUnitId((short)9876);
 
@@ -321,8 +330,8 @@ public class InterfaceFilesServiceTest {
         when(processorService.ingestFile(
             "source.dat",
             fileBytes,
-            Interface.DWP,
-            Interface.OPAL,
+            source,
+            target,
             Type.TRANSFORMED_JSON,
             Domain.FINES,
             "dwp-container",
@@ -342,6 +351,8 @@ public class InterfaceFilesServiceTest {
             assertEquals(PaymentType.CASH, ingestedEntity.getPaymentType());
             assertArrayEquals(new Short[] {(short) 9876}, ingestedEntity.getBusinessUnitId());
 
+            verify(processorService).ingestFile("source.dat", fileBytes, source, target,
+                Type.TRANSFORMED_JSON, Domain.FINES, "dwp-container", 1L);
             verify(repository).save(ingestedEntity);
             verify(repository).findById(25L);
             verify(mapper).toInterfaceFileObject(ingestedEntity);

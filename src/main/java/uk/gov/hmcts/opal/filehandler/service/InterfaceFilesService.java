@@ -84,8 +84,8 @@ public class InterfaceFilesService {
     }
 
 
-    private FileProcessorConfiguration getConfig(Interface source) {
-        return configs.get(source.getConfigComponentName());
+    private FileProcessorConfiguration getConfig(Interface interfaceType) {
+        return configs.get(interfaceType.getConfigComponentName());
     }
 
 
@@ -113,7 +113,9 @@ public class InterfaceFilesService {
                     id, entity.getStatus()));
         }
 
-        FileProcessorConfiguration config = getConfig(entity.getSource());
+        FileProcessorConfiguration config = getConfig(getInterfaceType(
+            entity.getSource(), entity.getTarget()
+        ));
         String containerName = config.getContainerName();
 
         BinaryData file = blobStoreService.fetchInterfaceFile(id, entity.getFilestoreUuid(), containerName);
@@ -186,10 +188,12 @@ public class InterfaceFilesService {
             if (metadata.getRelatedInterfaceFileId() != null) {
                 relatedInterfaceFile = getInterfaceFileEntity(metadata.getRelatedInterfaceFileId());
             }
-            Interface source = Interface.valueOf(metadata.getSource());
-            InterfaceFileProcessorService processorService =
-                getProcessorService(source);
-            FileProcessorConfiguration config = getConfig(source);
+            Interface interfaceType = getInterfaceType(
+                Interface.valueOf(metadata.getSource()),
+                Interface.valueOf(metadata.getTarget())
+            );
+            InterfaceFileProcessorService processorService = getProcessorService(interfaceType);
+            FileProcessorConfiguration config = getConfig(interfaceType);
 
             InterfaceFileEntity entity = processorService.ingestFile(
                 file.getOriginalFilename(),
@@ -212,5 +216,9 @@ public class InterfaceFilesService {
                 "Internal Server Error",
                 "Failed to read file content for interface file creation ", e);
         }
+    }
+
+    private Interface getInterfaceType(Interface source, Interface target) {
+        return Interface.OPAL.equals(source) ? target : source;
     }
 }
