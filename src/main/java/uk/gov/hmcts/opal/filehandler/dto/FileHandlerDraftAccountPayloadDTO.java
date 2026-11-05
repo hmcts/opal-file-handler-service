@@ -1,6 +1,5 @@
 package uk.gov.hmcts.opal.filehandler.dto;
 
-import com.azure.storage.common.implementation.connectionstring.StorageAuthenticationSettings.Account;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
