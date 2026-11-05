@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.TimeZone;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,7 @@ public class InterfaceFileEntityTestData {
             .checksum(checksum)
             .status(Status.INGESTED)
             .createdDatetime(LocalDateTime.now(clock).truncatedTo(ChronoUnit.MICROS))
+            .childRelatedInterfaceFiles(new HashSet<>())
             .createdBy(-1L)
             .build());
     }
