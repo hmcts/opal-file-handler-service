@@ -94,10 +94,10 @@ public class TestSupportDeleteInterfaceFilesIntegrationTest extends AbstractCont
 
         // @Disabled("This test passes but runs very slowly due to the retries on connecting to azure")
         @Test
-        @DisplayName("PO-11123 - Delete interface files - records failure if error occurs deleting blob")
+        @DisplayName("PO-11123 - Delete interface files - returns 500 if error occurs deleting blobs")
         @JiraStory("PO-11123")
         @JiraEpic("PO-3497")
-        void recordsFailureIfAzureContainerNotAvailable() throws Exception {
+        void throwsErrorIfAzureContainerNotAvailable_500() throws Exception {
             // Arrange
             TestContainerConfig.AZURITE_CONTAINER.stop();
             InterfaceFileEntity interfaceFile = createSourceInterfaceFile();
