@@ -1,6 +1,5 @@
 package uk.gov.hmcts.opal.filehandler.entity;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -100,7 +99,7 @@ public class InterfaceFileEntity {
     @JoinColumn(name = "related_interface_file_id")
     private InterfaceFileEntity relatedInterfaceFile;
 
-    @OneToMany(mappedBy = "relatedInterfaceFile", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "relatedInterfaceFile")
     private Set<InterfaceFileEntity> childRelatedInterfaceFiles;
 
     @Column(nullable = false)
