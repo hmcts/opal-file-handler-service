@@ -101,7 +101,8 @@ public class InterfaceFileBlobStoreService {
                 .getBlobClient(filestoreUuid.toString())
                 .deleteIfExists();
         } catch (Exception e) {
-            String msg = String.format("Failed to delete filestoreUuid: %s from container: %s", e);
+            String msg = String.format("Failed to delete filestoreUuid: %s from container: %s",
+                filestoreUuid, containerName);
             log.error(msg, e);
             throw new ServiceUnavailableException("Azure blob storage error", msg, e);
         }
