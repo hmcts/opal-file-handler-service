@@ -79,7 +79,13 @@ paths:
           required: true
       responses:
         200:
-          description: Request was valid. See response body for details of result.
+          description: All interface files successfully deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/deleteInterfaceFilesResult'
+        207:
+          description: Some interface files successfully deleted, some failed
           content:
             application/json:
               schema:

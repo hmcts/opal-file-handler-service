@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,6 +28,7 @@ import uk.gov.hmcts.opal.filehandler.support.AbstractControllerIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.support.TestContainerConfig;
 import uk.gov.hmcts.opal.filehandler.support.UtilBlobStoreService;
 import uk.gov.hmcts.opal.generated.model.DeleteInterfaceFilesResultTestSupport;
+import uk.gov.hmcts.opal.generated.model.ProblemDetailCommon;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraEpic;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
@@ -91,7 +92,7 @@ public class TestSupportDeleteInterfaceFilesIntegrationTest extends AbstractCont
             assertThat(utilBlobStoreService.getBlobExists(CONTAINER_NAME, FILESTORE_UUID)).isFalse();
         }
 
-        @Disabled("This test passes but runs very slowly due to the retries on connecting to azure")
+//        @Disabled("This test passes but runs very slowly due to the retries on connecting to azure")
         @Test
         @DisplayName("PO-11123 - Delete interface files - records failure if error occurs deleting blob")
         @JiraStory("PO-11123")
@@ -104,18 +105,21 @@ public class TestSupportDeleteInterfaceFilesIntegrationTest extends AbstractCont
             List<Long> ids = List.of(interfaceFile.getInterfaceFileId());
 
             // Act + Assert
-            DeleteInterfaceFilesResultTestSupport expectedResponse = DeleteInterfaceFilesResultTestSupport.builder()
-                .successfullyDeletedIds(Collections.emptyList())
-                .failedIds(ids)
+            ProblemDetailCommon expectedResponse = ProblemDetailCommon.builder()
+                .title("Failed to delete interface files")
+                .detail("Process exited cleanly but errors were encountered. See logs for details")
                 .build();
 
-            setupApiTest(HttpMethod.DELETE, URI)
+            ProblemDetail responseBody = setupApiTest(HttpMethod.DELETE, URI)
                 .param("ids", buildParams(ids))
                 .clearPermissions()
                 .execute()
-                .assertSuccess(HttpStatus.OK)
-                .assertBody(expectedResponse);
+                .assertStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+                .getResponseBodyAsObject(ProblemDetail.class);
 
+            assertThat(responseBody.getTitle()).isEqualTo("Failed to delete interface files");
+            assertThat(responseBody.getDetail()).isEqualTo("Process exited cleanly but errors were "
+                + "encountered. See logs for details");
             assertThat(repository.existsById(interfaceFile.getInterfaceFileId())).isTrue();
             TestContainerConfig.AZURITE_CONTAINER.start();
         }
