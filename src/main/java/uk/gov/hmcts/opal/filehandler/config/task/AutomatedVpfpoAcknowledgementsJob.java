@@ -21,6 +21,6 @@ public class AutomatedVpfpoAcknowledgementsJob implements TaskConfiguration {
 
         acknowledgementService.generateAcknowledgements();
 
-    log.info("Completed VPFPO Acknowledgements Job");
+        log.info("Completed VPFPO Acknowledgements Job");
     }
 }
