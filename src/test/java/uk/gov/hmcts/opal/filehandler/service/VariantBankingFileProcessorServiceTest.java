@@ -260,6 +260,55 @@ class VariantBankingFileProcessorServiceTest {
     }
 
     @Test
+    void shouldNotProcessIngestedFileWhenCreatedEntityIsNotIngested() throws Exception {
+
+        VariantBankingFileProcessorService spyService = spy(service);
+
+        when(interfaceFilesRepository.findByFileNameAndStatus(
+            "a121_240101VB001_01.dat",
+            Status.SUCCESS
+        )).thenReturn(Optional.empty());
+
+        when(config.getFeatureFlag()).thenReturn("variant-banking");
+
+        InterfaceFileEntity failedEntity = InterfaceFileEntity.builder()
+            .fileName("a121_240101VB001_01.dat")
+            .status(Status.FAILED)
+            .createdBy(1L)
+            .createdDatetime(LocalDateTime.now())
+            .build();
+
+        doReturn(failedEntity).when(spyService)
+            .createNewInterfaceFile(
+                any(),
+                anyString(),
+                anyString(),
+                any(UUID.class),
+                eq(Domain.MAINTENANCE)
+            );
+
+        doReturn(failedEntity)
+            .when(spyService)
+            .saveInitialFile(any());
+
+        spyService.ingestUploadedFile(
+            config,
+            "a121_240101VB001_01.dat",
+            "content".getBytes(),
+            Domain.MAINTENANCE,
+            Status.SUCCESS
+        );
+
+        verify(spyService, never())
+            .processIngestedFile(
+                any(),
+                any(),
+                any(),
+                anyLong()
+            );
+    }
+
+    @Test
     void shouldCreateFailureFileWhenInvalidReportFileExceptionThrown() throws Exception {
 
         VariantBankingFileProcessorService spyService = spy(service);
