@@ -39,6 +39,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.common.exceptions.standard.BadRequestException;
 import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
+import uk.gov.hmcts.common.exceptions.standard.ServiceUnavailableException;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
 import uk.gov.hmcts.opal.common.user.authorisation.model.BusinessUnitUser;
@@ -675,7 +676,7 @@ public class InterfaceFilesServiceTest {
         sourceFile.getChildRelatedInterfaceFiles().add(sourceJsonFile);
         when(repository.findById(sourceId)).thenReturn(Optional.of(sourceFile));
         when(blobStoreService.deleteBlob(sourceJsonFilestoreUuid, barclaycardContainer))
-            .thenThrow(new RuntimeException("Blob deletion failed"));
+            .thenThrow(new ServiceUnavailableException("Error", "Blob deletion failed"));
 
         // Act
         Set<Long> ids = Set.of(sourceId);
