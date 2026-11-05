@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
