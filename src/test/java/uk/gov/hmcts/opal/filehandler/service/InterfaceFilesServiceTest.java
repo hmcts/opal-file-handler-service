@@ -555,7 +555,7 @@ public class InterfaceFilesServiceTest {
         when(repository.findById(sourceId2)).thenReturn(Optional.of(sourceFile2));
 
         // Act
-        Set<Long> ids = Set.of(sourceId, sourceId2);
+        List<Long> ids = List.of(sourceId, sourceId2);
         DeleteInterfaceFilesResultTestSupport result = service.deleteInterfaceFiles(ids);
 
         // Assert
@@ -628,7 +628,7 @@ public class InterfaceFilesServiceTest {
             .thenReturn(true, false);
 
         // Act
-        Set<Long> ids = Set.of(sourceId);
+        List<Long> ids = List.of(sourceId);
         DeleteInterfaceFilesResultTestSupport result = service.deleteInterfaceFiles(ids);
 
         // Assert
@@ -679,7 +679,7 @@ public class InterfaceFilesServiceTest {
             .thenThrow(new ServiceUnavailableException("Error", "Blob deletion failed"));
 
         // Act
-        Set<Long> ids = Set.of(sourceId);
+        List<Long> ids = List.of(sourceId);
         DeleteInterfaceFilesResultTestSupport result = service.deleteInterfaceFiles(ids);
 
         // Assert
@@ -697,7 +697,7 @@ public class InterfaceFilesServiceTest {
         Long validId = 10L;
         Long invalidId1 = 20L;
         Long invalidId2 = 30L;
-        Set<Long> ids = Set.of(validId, invalidId1, invalidId2);
+        List<Long> ids = List.of(validId, invalidId1, invalidId2);
         when(repository.findById(validId)).thenReturn(Optional.of(mock(InterfaceFileEntity.class)));
         when(repository.findById(invalidId1)).thenReturn(Optional.empty());
         when(repository.findById(invalidId2)).thenReturn(Optional.empty());
@@ -714,7 +714,7 @@ public class InterfaceFilesServiceTest {
         Long sourceId = 10L;
         Long sourceJsonId = 20L;
         Long transformedJsonId = 30L;
-        Set<Long> ids = Set.of(sourceId, sourceJsonId, transformedJsonId);
+        List<Long> ids = List.of(sourceId, sourceJsonId, transformedJsonId);
 
         InterfaceFileEntity source = mock(InterfaceFileEntity.class);
         when(source.getType()).thenReturn(Type.SOURCE);

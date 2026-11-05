@@ -3,7 +3,7 @@ package uk.gov.hmcts.opal.filehandler.controllers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -12,7 +12,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -36,7 +35,7 @@ public class TestSupportControllerTest {
     private InterfaceFilesService interfaceFilesService;
 
     @Captor
-    private ArgumentCaptor<Set<Long>> idsArgCaptor;
+    private ArgumentCaptor<List<Long>> idsArgCaptor;
 
     @InjectMocks
     private TestSupportController controller;
@@ -54,9 +53,9 @@ public class TestSupportControllerTest {
         Long id1 = 100L;
         Long id2 = 200L;
         Long id3 = 300L;
-        List<Long> ids = List.of(id1, id2, id3, id3, id2);
+        List<Long> ids = List.of(id1, id2, id3);
         DeleteInterfaceFilesResultTestSupport result = mock(DeleteInterfaceFilesResultTestSupport.class);
-        when(interfaceFilesService.deleteInterfaceFiles(anySet())).thenReturn(result);
+        when(interfaceFilesService.deleteInterfaceFiles(anyList())).thenReturn(result);
 
         // Act
         ResponseEntity<DeleteInterfaceFilesResultTestSupport> response =
@@ -64,7 +63,7 @@ public class TestSupportControllerTest {
 
         // Assert
         verify(interfaceFilesService, times(1)).deleteInterfaceFiles(idsArgCaptor.capture());
-        assertThat(idsArgCaptor.getValue()).containsExactlyInAnyOrder(id1, id2, id3);
+        assertThat(idsArgCaptor.getValue()).containsExactly(id1, id2, id3);
         assertThat(response.getBody()).isSameAs(result);
     }
 
@@ -76,7 +75,7 @@ public class TestSupportControllerTest {
             .successfullyDeletedIds(ids)
             .failedIds(Collections.emptyList())
             .build();
-        when(interfaceFilesService.deleteInterfaceFiles(anySet())).thenReturn(result);
+        when(interfaceFilesService.deleteInterfaceFiles(anyList())).thenReturn(result);
 
         // Act
         ResponseEntity<DeleteInterfaceFilesResultTestSupport> response = controller
@@ -95,7 +94,7 @@ public class TestSupportControllerTest {
             .successfullyDeletedIds(Collections.emptyList())
             .failedIds(ids)
             .build();
-        when(interfaceFilesService.deleteInterfaceFiles(anySet())).thenReturn(result);
+        when(interfaceFilesService.deleteInterfaceFiles(anyList())).thenReturn(result);
 
         // Act + Assert
         InternalServerErrorException ex = assertThrows(InternalServerErrorException.class, () ->
@@ -115,7 +114,7 @@ public class TestSupportControllerTest {
             .successfullyDeletedIds(List.of(1L))
             .failedIds(List.of(2L))
             .build();
-        when(interfaceFilesService.deleteInterfaceFiles(anySet())).thenReturn(result);
+        when(interfaceFilesService.deleteInterfaceFiles(anyList())).thenReturn(result);
 
         // Act
         ResponseEntity<DeleteInterfaceFilesResultTestSupport> response = controller

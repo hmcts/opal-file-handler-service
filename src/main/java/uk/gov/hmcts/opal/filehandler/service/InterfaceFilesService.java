@@ -222,7 +222,7 @@ public class InterfaceFilesService {
     }
 
     @Transactional
-    public DeleteInterfaceFilesResultTestSupport deleteInterfaceFiles(Set<Long> ids) {
+    public DeleteInterfaceFilesResultTestSupport deleteInterfaceFiles(List<Long> ids) {
         ArrayList<Long> successIds = new ArrayList<>();
         ArrayList<Long> failedIds = new ArrayList<>();
 
@@ -260,7 +260,11 @@ public class InterfaceFilesService {
             .build();
     }
 
-    private List<InterfaceFileEntity> getAndValidateInterfaceFilesForDeletion(Set<Long> ids) {
+    private List<InterfaceFileEntity> getAndValidateInterfaceFilesForDeletion(List<Long> ids) {
+        ids = ids.stream()
+            .distinct()
+            .collect(Collectors.toList());
+
         List<InterfaceFileEntity> files = new ArrayList<>();
         Set<Long> notFoundsIds = new TreeSet<>();
         Set<Long> invalidIds = new TreeSet<>();

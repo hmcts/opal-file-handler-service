@@ -1,6 +1,5 @@
 package uk.gov.hmcts.opal.filehandler.controllers;
 
-import java.util.HashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +32,7 @@ public class TestSupportController implements TestSupportApi {
     @Override
     public ResponseEntity<DeleteInterfaceFilesResultTestSupport> testingSupportInterfaceFilesDelete(List<Long> ids) {
         log.warn("TEST ENDPOINT: Request to delete interface files with ids: {}", ids);
-        DeleteInterfaceFilesResultTestSupport result = interfaceFilesService.deleteInterfaceFiles(new HashSet<>(ids));
+        DeleteInterfaceFilesResultTestSupport result = interfaceFilesService.deleteInterfaceFiles(ids);
         if (result.getFailedIds().size() == 0) {
             return ResponseEntity.ok(result);
         } else if (result.getSuccessfullyDeletedIds().size() > 0) {
