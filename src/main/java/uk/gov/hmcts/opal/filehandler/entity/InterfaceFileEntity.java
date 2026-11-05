@@ -100,7 +100,7 @@ public class InterfaceFileEntity {
     @JoinColumn(name = "related_interface_file_id")
     private InterfaceFileEntity relatedInterfaceFile;
 
-    @OneToMany(mappedBy = "relatedInterfaceFile", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "relatedInterfaceFile", cascade = CascadeType.ALL)
     private Set<InterfaceFileEntity> childRelatedInterfaceFiles;
 
     @Column(nullable = false)
