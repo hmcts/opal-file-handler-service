@@ -8,7 +8,6 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import java.io.IOException;
-import org.springframework.util.DigestUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.util.DigestUtils;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfiguration;
@@ -52,7 +52,10 @@ public class CapsReportInterfaceFileProcessorServiceIntegrationTest
     @Autowired
     private CapsReportBaisFileProcessorConfiguration capsReportBaisFileProcessorConfiguration;
 
-    private final Logger logger = (Logger) LoggerFactory.getLogger(SftpFileIngestionService.class);
+    private final Logger sftpFileIngestionServiceLogger =
+        (Logger) LoggerFactory.getLogger(SftpFileIngestionService.class);
+    private final Logger interfaceFileProcessorServiceLogger =
+        (Logger) LoggerFactory.getLogger(InterfaceFileProcessorService.class);
     private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 
     @BeforeEach
@@ -62,14 +65,16 @@ public class CapsReportInterfaceFileProcessorServiceIntegrationTest
             capsReportBaisFileProcessorConfiguration.getContainerName());
 
         logAppender.start();
-        logger.addAppender(logAppender);
+        sftpFileIngestionServiceLogger.addAppender(logAppender);
+        interfaceFileProcessorServiceLogger.addAppender(logAppender);
     }
 
     @AfterEach
     void tearDown() {
         clearReportFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(),
             capsReportBaisFileProcessorConfiguration.getContainerName());
-        logger.detachAppender(logAppender);
+        sftpFileIngestionServiceLogger.detachAppender(logAppender);
+        interfaceFileProcessorServiceLogger.detachAppender(logAppender);
         logAppender.stop();
     }
 

@@ -2,9 +2,7 @@ package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import org.springframework.data.domain.Sort;
-import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
-import uk.gov.hmcts.opal.filehandler.entity.Domain;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -16,17 +14,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
 import uk.gov.hmcts.opal.filehandler.config.MarstonBaisFileBaisFileProcessorConfig;
+import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
+import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
+import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractInterfaceFileProcessorServiceIntegrationTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 
@@ -62,8 +63,10 @@ public class MarstonInterfaceFileProcessorServiceIntegrationTest
     @MockitoBean
     private FinesInterfaceFilePreprocessQueueService finesQueueService;
 
-    private final Logger logger =
+    private final Logger sftpFileIngestionServiceLogger =
         (Logger) LoggerFactory.getLogger(SftpFileIngestionService.class);
+    private final Logger interfaceFileProcessorServiceLogger =
+        (Logger) LoggerFactory.getLogger(InterfaceFileProcessorService.class);
 
     private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 
@@ -73,13 +76,15 @@ public class MarstonInterfaceFileProcessorServiceIntegrationTest
         blobServiceClient.createBlobContainerIfNotExists(config.getContainerName());
         businessUnitBankAccountExtractedData();
         logAppender.start();
-        logger.addAppender(logAppender);
+        sftpFileIngestionServiceLogger.addAppender(logAppender);
+        interfaceFileProcessorServiceLogger.addAppender(logAppender);
     }
 
 
     @AfterEach
     void tearDown() {
-        logger.detachAppender(logAppender);
+        sftpFileIngestionServiceLogger.detachAppender(logAppender);
+        interfaceFileProcessorServiceLogger.detachAppender(logAppender);
         logAppender.stop();
     }
 
@@ -138,8 +143,8 @@ public class MarstonInterfaceFileProcessorServiceIntegrationTest
         assertThat(mostRecent.getStatus()).isEqualTo(Status.SUCCESS);
         assertThat(mostRecent.getType()).isEqualTo(Type.SOURCE_JSON);
 
-        assertBlobChecksum(MARSTON_FILE,MARSTON_FILE_CHECKSUM,config.getContainerName());
-        assertNumberOfSftpFiles(config.getSftpUsername(),0);
+        assertBlobChecksum(MARSTON_FILE, MARSTON_FILE_CHECKSUM, config.getContainerName());
+        assertNumberOfSftpFiles(config.getSftpUsername(), 0);
     }
 
     @Test
@@ -164,13 +169,13 @@ public class MarstonInterfaceFileProcessorServiceIntegrationTest
     @DisplayName("AC5: Duplicate file with no previous success should process")
     void processDuplicateWithoutPreviousSuccess() {
 
-        createFailedInterfaceFile(MARSTON_FILE,MARSTON_FILE_CHECKSUM,Interface.MARSTON);
-        uploadResourceToSftp(MARSTON_FILE_RESOURCE,MARSTON_FILE_CONTAINER);
+        createFailedInterfaceFile(MARSTON_FILE, MARSTON_FILE_CHECKSUM, Interface.MARSTON);
+        uploadResourceToSftp(MARSTON_FILE_RESOURCE, MARSTON_FILE_CONTAINER);
         service.run();
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
-        assertEntitiesWithStatus(MARSTON_FILE,MARSTON_FILE_CHECKSUM,Status.FAILED);
+        assertEntitiesWithStatus(MARSTON_FILE, MARSTON_FILE_CHECKSUM, Status.FAILED);
         assertMarston();
-        assertBlobChecksum(MARSTON_FILE,MARSTON_FILE_CHECKSUM, config.getContainerName());
+        assertBlobChecksum(MARSTON_FILE, MARSTON_FILE_CHECKSUM, config.getContainerName());
     }
 
     private void assertMarston() {
