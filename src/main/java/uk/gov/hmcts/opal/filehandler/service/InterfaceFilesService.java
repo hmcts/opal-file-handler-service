@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -228,7 +227,7 @@ public class InterfaceFilesService {
         ArrayList<Long> successIds = new ArrayList<>();
         ArrayList<Long> failedIds = new ArrayList<>();
 
-        Set<InterfaceFileEntity> interfaceFiles = getAndValidateInterfaceFilesForDeletion(ids);
+        List<InterfaceFileEntity> interfaceFiles = getAndValidateInterfaceFilesForDeletion(ids);
 
         for (InterfaceFileEntity interfaceFile : interfaceFiles) {
             Long id = interfaceFile.getInterfaceFileId();
@@ -262,8 +261,8 @@ public class InterfaceFilesService {
             .build();
     }
 
-    private Set<InterfaceFileEntity> getAndValidateInterfaceFilesForDeletion(Set<Long> ids) {
-        Set<InterfaceFileEntity> files = new HashSet<>();
+    private List<InterfaceFileEntity> getAndValidateInterfaceFilesForDeletion(Set<Long> ids) {
+        List<InterfaceFileEntity> files = new ArrayList<>();
         Set<Long> notFoundsIds = new TreeSet<>();
         Set<Long> invalidIds = new TreeSet<>();
         for (Long id: ids) {
