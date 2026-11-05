@@ -21,7 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.json.JsonMapper;
-import uk.gov.hmcts.opal.filehandler.config.DWPBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.VariantBankingFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
@@ -70,9 +70,9 @@ class VariantBankingFileProcessorServiceTest {
     @BeforeEach
     void setUp() {
         service = new VariantBankingFileProcessorService(
-            Clock.systemUTC(), featureFlagUtil, baisSftpClient, blobStoreService, repository,
+            Clock.systemUTC(), featureFlagUtil, blobStoreService, repository,
             transactionTemplate, JsonMapper.builder().build(), extractionService,
-            finesQueueService, maintenanceQueueService, new DWPBaisFileProcessorConfiguration());
+            finesQueueService, maintenanceQueueService, new VariantBankingFileProcessorConfig());
     }
 
     @Nested

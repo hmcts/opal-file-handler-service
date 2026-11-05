@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
-import uk.gov.hmcts.opal.filehandler.config.DWPBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.VariantBankingFileProcessorConfig;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
@@ -17,7 +17,6 @@ import uk.gov.hmcts.opal.filehandler.service.extraction.VariantBacsStandard18Bai
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
-import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @Slf4j
@@ -28,7 +27,6 @@ public class VariantBankingFileProcessorService
     public VariantBankingFileProcessorService(
         Clock clock,
         FeatureFlagUtil featureFlagUtil,
-        BaisSftpClient baisSftpClient,
         InterfaceFileBlobStoreService interfaceFileBlobStoreService,
         InterfaceFilesRepository interfaceFilesRepository,
         TransactionTemplate transactionTemplate,
@@ -36,11 +34,11 @@ public class VariantBankingFileProcessorService
         VariantBacsStandard18BaisExtractionService extractionService,
         FinesInterfaceFilePreprocessQueueService finesQueueService,
         MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService,
-        DWPBaisFileProcessorConfiguration config
+        VariantBankingFileProcessorConfig config
     ) {
         super(clock, featureFlagUtil, interfaceFileBlobStoreService, interfaceFilesRepository,
             transactionTemplate, objectMapper, extractionService,
-            new SftpFileIngestionService(config, baisSftpClient),
+            new UploadedFileIngestionService(),
             config, finesQueueService, maintenanceQueueService);
     }
 
