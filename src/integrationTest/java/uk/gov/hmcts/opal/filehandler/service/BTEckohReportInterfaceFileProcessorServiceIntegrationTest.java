@@ -82,7 +82,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(config));
+                service.run());
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -100,7 +100,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Feature flag 'bteckoh-report-file-transfer-job' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(config));
+                service.run());
 
             assertThat(exception).hasMessage("bteckoh-report-file-transfer-job is not enabled");
         }
@@ -118,7 +118,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Both feature flags are false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(config));
+                service.run());
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -129,7 +129,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
     @DisplayName("AC2: BTEckoh-Report file is present, read and stored correctly")
     void btEckohReportInterfaceFileProcessorServiceShouldRunSuccesfully() throws IOException {
         uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
-        service.run(config);
+        service.run();
 
         assertSuccessfulInterfaceFile(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE,
             Domain.MAINTENANCE);
@@ -145,7 +145,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
         setupAuthenticationAsUser(-1L);
         uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
 
-        service.run(config);
+        service.run();
 
         assertThat(assertSuccessfulInterfaceFile(
             BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE, Domain.MAINTENANCE
@@ -157,7 +157,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
     void whenNoFilesArePresentServiceSucceeds() {
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
         final var before = storedBlobs(config.getContainerName());
-        service.run(config);
+        service.run();
         assertThat(storedBlobs(config.getContainerName())).isEqualTo(before);
 
         assertThat(repository.findAll()).isEmpty();
@@ -173,14 +173,14 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
     @DisplayName("AC4: Duplicate file with previous success should reject")
     void duplicateFileShouldReject() {
         uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
-        service.run(config);
+        service.run();
         final InterfaceFileEntity success = assertSuccessfulInterfaceFile(
             BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE, Domain.MAINTENANCE);
         final var before = storedBlobs(config.getContainerName());
         uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
         uploadResourceToSftp(BTECKOH_FILE_RESOURCE_2, BTECKOH_FILE_CONTAINER_2);
 
-        service.run(config);
+        service.run();
 
         assertNumberOfEntitiesWithStatus(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Status.SUCCESS, 1);
         assertNumberOfEntitiesWithStatus(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Status.DUPLICATE, 1);
@@ -213,7 +213,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
         createFailedInterfaceFile(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT);
         uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
 
-        service.run(config);
+        service.run();
 
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
         assertEntitiesWithStatus(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Status.FAILED_SUPERSEDED);
@@ -229,7 +229,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
         final var before = storedBlobs(config.getContainerName());
         uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER + ".unsupported");
 
-        service.run(config);
+        service.run();
 
         assertThat(repository.findAll()).isEmpty();
         assertThat(storedBlobs(config.getContainerName())).isEqualTo(before);
@@ -247,7 +247,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
             checksum = DigestUtils.md5DigestAsHex(input);
         }
 
-        service.run(config);
+        service.run();
 
         var failed = repository.findByFileNameAndChecksumAndStatus(
             BTECKOH_FILE, checksum, Status.FAILED).orElseThrow();
@@ -256,7 +256,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
         assertThat(storedBlobs(config.getContainerName())).isEqualTo(before);
         assertThat(sftpClient.listRegularFiles(config.getSftpUsername())).containsExactly(BTECKOH_FILE);
 
-        service.run(config);
+        service.run();
 
         assertThat(repository.findAll()).hasSize(2);
         assertThat(repository.findById(failed.getInterfaceFileId()).orElseThrow().getStatus())
@@ -274,13 +274,13 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
     @DisplayName("PO-6382: Corrected report succeeds and preserves the failed attempt")
     void correctedReportCanBeIngested() throws IOException {
         uploadResourceToSftp("bais-emulator/malformed-report.txt", BTECKOH_FILE_CONTAINER);
-        service.run(config);
+        service.run();
         assertThat(repository.findAll()).singleElement().satisfies(file ->
             assertThat(file.getStatus()).isEqualTo(Status.FAILED));
         final var failedId = repository.findAll().getFirst().getInterfaceFileId();
 
         uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
-        service.run(config);
+        service.run();
 
         assertThat(repository.findAll()).hasSize(2);
         assertThat(repository.findById(failedId).orElseThrow().getStatus()).isEqualTo(Status.FAILED);

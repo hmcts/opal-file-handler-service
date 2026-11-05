@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.config.task;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -13,7 +12,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.DispatcherServlet;
-import uk.gov.hmcts.opal.filehandler.config.BarclaycardBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.service.BarclaycardInterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
@@ -38,6 +36,6 @@ public class AutomatedTaskBarclaycardIntegrationTest extends AbstractIntegration
 
     @Test
     void shouldCallAutomatedTaskRun() {
-        verify(service, times(1)).run(any(BarclaycardBaisFileProcessorConfiguration.class));
+        verify(service, times(1)).run();
     }
 }

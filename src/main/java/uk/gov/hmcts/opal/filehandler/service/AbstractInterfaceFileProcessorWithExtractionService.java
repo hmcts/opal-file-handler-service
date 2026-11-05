@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
@@ -23,7 +24,6 @@ import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.ExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
-import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 import uk.gov.hmcts.opal.filehandler.util.StreamUtil;
 
@@ -39,20 +39,21 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
     protected AbstractInterfaceFileProcessorWithExtractionService(
         Clock clock,
         FeatureFlagUtil featureFlagUtil,
-        BaisSftpClient baisSftpClient,
         InterfaceFileBlobStoreService interfaceFileBlobStoreService,
         InterfaceFilesRepository interfaceFilesRepository,
         TransactionTemplate transactionTemplate,
         ObjectMapper objectMapper,
-        ExtractionService<T> extractionService
+        ExtractionService<T> extractionService,
+        FileIngestionService<String> ingestionService,
+        FileProcessorConfiguration config
     ) {
-        super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
-            transactionTemplate, objectMapper);
+        super(clock, featureFlagUtil, interfaceFileBlobStoreService, interfaceFilesRepository,
+            transactionTemplate, objectMapper, ingestionService, config);
         this.extractionService = extractionService;
     }
 
     @Override
-    protected List<String> selectFilesToProcess(BaisFileProcessorConfiguration config) {
+    protected List<String> selectFilesToProcess() {
         List<InterfaceFileEntity> sourceFilesToRetry = interfaceFilesRepository.findAll(
             sourceFilesWithJsonFailuresWithinRetryLimit(config.getSource(), maxRetries));
 
@@ -62,15 +63,14 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
                 sourceFile.getFilestoreUuid(),
                 config.getContainerName()).toStream();
 
-            processFile(config, sourceFile, sourceStream, getCurrentUserId());
+            processFile(sourceFile, sourceStream, getCurrentUserId());
         }
 
-        return super.selectFilesToProcess(config);
+        return super.selectFilesToProcess();
     }
 
     @Override
     protected void processFile(
-        BaisFileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
         InputStream inputStream,
         long creatorId
@@ -84,11 +84,11 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
         }
 
         for (T extract : extracts) {
-            if (preProcessExtract(config, sourceInterfaceFile, extract)) {
+            if (preProcessExtract(sourceInterfaceFile, extract)) {
                 InterfaceFileEntity sourceJson = createAndUploadSourceJson(
-                    config, sourceInterfaceFile, extract, creatorId);
+                    sourceInterfaceFile, extract, creatorId);
                 if (sourceJson != null) {
-                    postProcessExtract(config, sourceJson, extract);
+                    postProcessExtract(sourceJson, extract);
                 }
             }
         }
@@ -97,7 +97,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
     }
 
 
-    InterfaceFileEntity createAndUploadSourceJson(BaisFileProcessorConfiguration config,
+    InterfaceFileEntity createAndUploadSourceJson(
         InterfaceFileEntity sourceInterfaceFile, T extract, long creatorId) {
         byte[] jsonBytes = objectMapper.writeValueAsBytes(extract);
         String checksum = calculateExtractChecksum(jsonBytes);
@@ -108,13 +108,12 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
 
         supersedeFailedSourceJson(sourceInterfaceFile, extract, checksum);
 
-        InterfaceFileEntity sourceJson = createSourceJson(
-            config, sourceInterfaceFile, extract,
-            getBusinessUnitsFromExtract(config, extract),
-            getDomainFromExtract(config, extract),
+        InterfaceFileEntity sourceJson = createSourceJson(sourceInterfaceFile, extract,
+            getBusinessUnitsFromExtract(extract),
+            getDomainFromExtract(extract),
             checksum, creatorId);
 
-        uploadSourceJson(config, sourceJson, jsonBytes);
+        uploadSourceJson(sourceJson, jsonBytes);
         return interfaceFilesRepository.save(sourceJson);
     }
 
@@ -172,7 +171,6 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
     }
 
     InterfaceFileEntity createSourceJson(
-        BaisFileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
         T extract,
         Short[] businessUnitIds,
@@ -197,7 +195,6 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
     }
 
     void uploadSourceJson(
-        BaisFileProcessorConfiguration config,
         InterfaceFileEntity sourceJson,
         byte[] jsonBytes
     ) {
@@ -225,12 +222,11 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
             sourceJson.getInterfaceFileId(), sourceJson.getFileName(), exception);
     }
 
-    protected abstract Short[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract);
+    protected abstract Short[] getBusinessUnitsFromExtract(T extract);
 
-    protected abstract Domain getDomainFromExtract(BaisFileProcessorConfiguration config, T extract);
+    protected abstract Domain getDomainFromExtract(T extract);
 
     protected abstract void postProcessExtract(
-        BaisFileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
         T extract
     );
@@ -241,7 +237,6 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
      * @return true if the extract should be processed, false if it should be skipped
      */
     public abstract boolean preProcessExtract(
-        BaisFileProcessorConfiguration config,
         InterfaceFileEntity sourceInterfaceFile,
         T extract
     );

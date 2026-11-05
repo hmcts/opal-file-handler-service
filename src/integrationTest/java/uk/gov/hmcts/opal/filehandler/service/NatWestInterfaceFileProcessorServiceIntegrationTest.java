@@ -73,7 +73,7 @@ public class NatWestInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                natWestInterfaceFileProcessorService.run(natWestBaisFileProcessorConfiguration));
+                natWestInterfaceFileProcessorService.run());
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -91,7 +91,7 @@ public class NatWestInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Feature flag 'natwest-file-transfer-job' is false")
         void natWestFileTransferJobIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                natWestInterfaceFileProcessorService.run(natWestBaisFileProcessorConfiguration));
+                natWestInterfaceFileProcessorService.run());
 
             assertThat(exception).hasMessage("natwest-file-transfer-job is not enabled");
         }
@@ -109,7 +109,7 @@ public class NatWestInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Both feature flags are false")
         void bothFeatureFlagsAreDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                natWestInterfaceFileProcessorService.run(natWestBaisFileProcessorConfiguration));
+                natWestInterfaceFileProcessorService.run());
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -121,7 +121,7 @@ public class NatWestInterfaceFileProcessorServiceIntegrationTest
     void natWestInterfaceFileProcessorServiceShouldRunSuccessfully() throws Exception {
         uploadResourceToSftp(NATWEST_FILE_RESOURCE, NATWEST_FILE_CONTAINER);
 
-        natWestInterfaceFileProcessorService.run(natWestBaisFileProcessorConfiguration);
+        natWestInterfaceFileProcessorService.run();
 
         InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
             NATWEST_FILE, NATWEST_FILE_CHECKSUM, Interface.NATWEST, Type.SOURCE, Domain.FINES);

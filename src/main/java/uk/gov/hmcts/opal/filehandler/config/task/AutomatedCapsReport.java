@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.service.CapsReportInterfaceFileProcessorService;
 
 @Component("automatedCAPSReport")
@@ -14,13 +13,12 @@ import uk.gov.hmcts.opal.filehandler.service.CapsReportInterfaceFileProcessorSer
 public class AutomatedCapsReport implements TaskConfiguration {
 
     private final CapsReportInterfaceFileProcessorService processorService;
-    private final CapsReportBaisFileProcessorConfiguration processorConfiguration;
 
     @Override
     public void run() {
         log.info("Starting automated CAPS report");
 
-        processorService.run(processorConfiguration);
+        processorService.run();
 
         log.info("Completed automated CAPS report");
     }

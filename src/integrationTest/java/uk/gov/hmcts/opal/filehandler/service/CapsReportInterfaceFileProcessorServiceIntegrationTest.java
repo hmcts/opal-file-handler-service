@@ -84,7 +84,7 @@ public class CapsReportInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                capsReportInterfaceFileProcessorService.run(capsReportBaisFileProcessorConfiguration));
+                capsReportInterfaceFileProcessorService.run());
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -102,7 +102,7 @@ public class CapsReportInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Feature flag 'caps-report-file-transfer-job' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                capsReportInterfaceFileProcessorService.run(capsReportBaisFileProcessorConfiguration));
+                capsReportInterfaceFileProcessorService.run());
 
             assertThat(exception).hasMessage("caps-report-file-transfer-job is not enabled");
         }
@@ -120,7 +120,7 @@ public class CapsReportInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Both feature flags are false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                capsReportInterfaceFileProcessorService.run(capsReportBaisFileProcessorConfiguration));
+                capsReportInterfaceFileProcessorService.run());
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -131,7 +131,7 @@ public class CapsReportInterfaceFileProcessorServiceIntegrationTest
     @DisplayName("AC2: CAPS file is present, read and stored correctly")
     void capsReportInterfaceFileProcessorServiceShouldRunSuccesfully() throws IOException {
         uploadResourceToSftp(CAPS_FILE_RESOURCE, CAPS_FILE_CONTAINER);
-        capsReportInterfaceFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+        capsReportInterfaceFileProcessorService.run();
 
         assertSuccessfulInterfaceFile(CAPS_FILE, CAPS_FILE_CHECKSUM, Interface.CAPS_REPORT, Type.SOURCE,
             Domain.MAINTENANCE);
@@ -146,7 +146,7 @@ public class CapsReportInterfaceFileProcessorServiceIntegrationTest
     void whenNoFilesArePresentServiceSucceeds() {
         assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
         final var before = storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName());
-        capsReportInterfaceFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+        capsReportInterfaceFileProcessorService.run();
         assertThat(storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName())).isEqualTo(before);
 
         assertThat(repository.findAll()).isEmpty();
@@ -161,14 +161,14 @@ public class CapsReportInterfaceFileProcessorServiceIntegrationTest
     @DisplayName("AC4: Duplicate file with previous success should reject")
     void duplicateFileShouldReject() {
         uploadResourceToSftp(CAPS_FILE_RESOURCE, CAPS_FILE_CONTAINER);
-        capsReportInterfaceFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+        capsReportInterfaceFileProcessorService.run();
         final InterfaceFileEntity success = assertSuccessfulInterfaceFile(
             CAPS_FILE, CAPS_FILE_CHECKSUM, Interface.CAPS_REPORT, Type.SOURCE, Domain.MAINTENANCE);
         final var before = storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName());
 
         uploadResourceToSftp(CAPS_FILE_RESOURCE, CAPS_FILE_CONTAINER);
         uploadResourceToSftp(CAPS_FILE_RESOURCE_2, CAPS_FILE_CONTAINER_2);
-        capsReportInterfaceFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+        capsReportInterfaceFileProcessorService.run();
 
         assertEntitiesWithStatus(CAPS_FILE_2, CAPS_FILE_CHECKSUM_2, Status.SUCCESS);
         assertEntitiesWithStatus(CAPS_FILE, CAPS_FILE_CHECKSUM, Status.DUPLICATE);
@@ -200,7 +200,7 @@ public class CapsReportInterfaceFileProcessorServiceIntegrationTest
         createFailedInterfaceFile(CAPS_FILE, CAPS_FILE_CHECKSUM, Interface.CAPS_REPORT);
         uploadResourceToSftp(CAPS_FILE_RESOURCE, CAPS_FILE_CONTAINER);
 
-        capsReportInterfaceFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+        capsReportInterfaceFileProcessorService.run();
 
         assertNumberOfSftpFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername(), 0);
         assertEntitiesWithStatus(CAPS_FILE, CAPS_FILE_CHECKSUM, Status.FAILED_SUPERSEDED);
@@ -216,7 +216,7 @@ public class CapsReportInterfaceFileProcessorServiceIntegrationTest
         final var before = storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName());
         uploadResourceToSftp(CAPS_FILE_RESOURCE, CAPS_FILE_CONTAINER + ".unsupported");
 
-        capsReportInterfaceFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+        capsReportInterfaceFileProcessorService.run();
 
         assertThat(repository.findAll()).isEmpty();
         assertThat(storedBlobs(capsReportBaisFileProcessorConfiguration.getContainerName())).isEqualTo(before);
@@ -234,7 +234,7 @@ public class CapsReportInterfaceFileProcessorServiceIntegrationTest
             checksum = DigestUtils.md5DigestAsHex(input);
         }
 
-        capsReportInterfaceFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+        capsReportInterfaceFileProcessorService.run();
 
         var failed = repository.findByFileNameAndChecksumAndStatus(
             CAPS_FILE, checksum, Status.FAILED).orElseThrow();
@@ -244,7 +244,7 @@ public class CapsReportInterfaceFileProcessorServiceIntegrationTest
         assertThat(sftpClient.listRegularFiles(capsReportBaisFileProcessorConfiguration.getSftpUsername()))
             .containsExactly(CAPS_FILE);
 
-        capsReportInterfaceFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+        capsReportInterfaceFileProcessorService.run();
 
         assertThat(repository.findAll()).hasSize(2);
         assertThat(repository.findById(failed.getInterfaceFileId()).orElseThrow().getStatus())
@@ -263,13 +263,13 @@ public class CapsReportInterfaceFileProcessorServiceIntegrationTest
     @DisplayName("PO-6382: Corrected report succeeds and preserves the failed attempt")
     void correctedReportCanBeIngested() throws IOException {
         uploadResourceToSftp("bais-emulator/malformed-report.txt", CAPS_FILE_CONTAINER);
-        capsReportInterfaceFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+        capsReportInterfaceFileProcessorService.run();
         assertThat(repository.findAll()).singleElement().satisfies(file ->
             assertThat(file.getStatus()).isEqualTo(Status.FAILED));
         final var failedId = repository.findAll().getFirst().getInterfaceFileId();
 
         uploadResourceToSftp(CAPS_FILE_RESOURCE, CAPS_FILE_CONTAINER);
-        capsReportInterfaceFileProcessorService.run(capsReportBaisFileProcessorConfiguration);
+        capsReportInterfaceFileProcessorService.run();
 
         assertThat(repository.findAll()).hasSize(2);
         assertThat(repository.findById(failedId).orElseThrow().getStatus()).isEqualTo(Status.FAILED);

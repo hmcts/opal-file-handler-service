@@ -95,7 +95,7 @@ public class MarstonInterfaceFileProcessorServiceIntegrationTest
 
             FeatureDisabledException exception = assertThrows(
                 FeatureDisabledException.class,
-                () -> service.run(config));
+                () -> service.run());
 
             assertThat(exception)
                 .hasMessage("bailiffs-marston-file-transfer-job is not enabled");
@@ -114,7 +114,7 @@ public class MarstonInterfaceFileProcessorServiceIntegrationTest
 
             FeatureDisabledException exception = assertThrows(
                 FeatureDisabledException.class,
-                () -> service.run(config));
+                () -> service.run());
 
             assertThat(exception)
                 .hasMessage("release-1c-banking-interfaces is not enabled");
@@ -127,7 +127,7 @@ public class MarstonInterfaceFileProcessorServiceIntegrationTest
     void marstonInterfaceFileProcessorServiceShouldRunSuccessfully() {
 
         uploadResourceToSftp(MARSTON_FILE_RESOURCE, MARSTON_FILE_CONTAINER);
-        service.run(config);
+        service.run();
 
         InterfaceFileEntity mostRecent = repository.findAll(
             Sort.by(Sort.Direction.ASC, "createdDatetime")
@@ -147,7 +147,7 @@ public class MarstonInterfaceFileProcessorServiceIntegrationTest
     void whenNoFilesArePresentServiceSucceeds() {
 
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
-        service.run(config);
+        service.run();
         assertThat(repository.findAll()).isEmpty();
         assertThat(logAppender.list)
             .filteredOn(event -> event.getLevel() == Level.INFO)
@@ -166,7 +166,7 @@ public class MarstonInterfaceFileProcessorServiceIntegrationTest
 
         createFailedInterfaceFile(MARSTON_FILE,MARSTON_FILE_CHECKSUM,Interface.MARSTON);
         uploadResourceToSftp(MARSTON_FILE_RESOURCE,MARSTON_FILE_CONTAINER);
-        service.run(config);
+        service.run();
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
         assertEntitiesWithStatus(MARSTON_FILE,MARSTON_FILE_CHECKSUM,Status.FAILED);
         assertMarston();
