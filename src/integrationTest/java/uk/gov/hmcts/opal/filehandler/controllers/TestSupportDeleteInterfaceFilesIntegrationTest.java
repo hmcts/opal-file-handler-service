@@ -92,7 +92,7 @@ public class TestSupportDeleteInterfaceFilesIntegrationTest extends AbstractCont
             assertThat(utilBlobStoreService.getBlobExists(CONTAINER_NAME, FILESTORE_UUID)).isFalse();
         }
 
-//        @Disabled("This test passes but runs very slowly due to the retries on connecting to azure")
+        // @Disabled("This test passes but runs very slowly due to the retries on connecting to azure")
         @Test
         @DisplayName("PO-11123 - Delete interface files - records failure if error occurs deleting blob")
         @JiraStory("PO-11123")
