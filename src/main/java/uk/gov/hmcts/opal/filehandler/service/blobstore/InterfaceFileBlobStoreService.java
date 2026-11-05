@@ -101,7 +101,7 @@ public class InterfaceFileBlobStoreService {
                 .getBlobClient(filestoreUuid.toString())
                 .deleteIfExists();
         } catch (RuntimeException e) {
-            String msg = String.format("Failed to delete filestoreUuid: %s from container: %s", e);
+            String msg = String.format("Failed to delete filestoreUuid: %s from container: %s", e, containerName);
             log.error(msg, e);
             throw new BlobDeleteException(filestoreUuid, containerName, e);
         }
