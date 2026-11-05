@@ -35,7 +35,6 @@ import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
-import uk.gov.hmcts.opal.filehandler.exception.BlobDeleteException;
 import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.InvalidInterfaceFileStatusException;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
@@ -347,7 +346,7 @@ public class InterfaceFilesService {
             log.info(
                 "Successfully deleted Interface File id: {} filestoreUuid: {} container: {} from blob store",
                 id, filestoreUUID, containerName);
-        } catch (BlobDeleteException e) {
+        } catch (Exception e) {
             log.warn("Failed to delete Interface File id: {} filestoreUuid: {} container: {} from blob store,"
                 + "and will now skip deleting from db", id, filestoreUUID, containerName);
             throw e; // this exception will halt the tree of deletes for whatever the parent was

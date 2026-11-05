@@ -11,7 +11,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
-import uk.gov.hmcts.opal.filehandler.exception.BlobDeleteException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobStorageContainerNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobUploadException;
@@ -96,15 +95,8 @@ public class InterfaceFileBlobStoreService {
     }
 
     public boolean deleteBlob(UUID filestoreUuid, String containerName) {
-        try {
-            return blobServiceClient.getBlobContainerClient(containerName)
-                .getBlobClient(filestoreUuid.toString())
-                .deleteIfExists();
-        } catch (RuntimeException e) {
-            String msg = String.format("Failed to delete filestoreUuid: %s from container: %s", e, containerName);
-            log.error(msg, e);
-            throw new BlobDeleteException(filestoreUuid, containerName, e);
-        }
-
+        return blobServiceClient.getBlobContainerClient(containerName)
+            .getBlobClient(filestoreUuid.toString())
+            .deleteIfExists();
     }
 }

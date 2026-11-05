@@ -54,7 +54,6 @@ import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
-import uk.gov.hmcts.opal.filehandler.exception.BlobDeleteException;
 import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
@@ -676,7 +675,7 @@ public class InterfaceFilesServiceTest {
         sourceFile.getChildRelatedInterfaceFiles().add(sourceJsonFile);
         when(repository.findById(sourceId)).thenReturn(Optional.of(sourceFile));
         when(blobStoreService.deleteBlob(sourceJsonFilestoreUuid, barclaycardContainer))
-            .thenThrow(new BlobDeleteException(sourceFilestoreUuid, barclaycardContainer, new RuntimeException("")));
+            .thenThrow(new RuntimeException("Blob deletion failed"));
 
         // Act
         Set<Long> ids = Set.of(sourceId);
