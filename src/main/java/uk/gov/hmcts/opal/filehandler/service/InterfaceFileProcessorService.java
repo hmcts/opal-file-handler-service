@@ -117,9 +117,10 @@ public class InterfaceFileProcessorService {
             .opalDomain(domain)
             .createdBy(creatorId)
             .build();
-        Optional<InterfaceFileEntity> duplicateOpt = interfaceFilesRepository
-            .findByTypeAndFileNameAndChecksumAndStatus(
-                type, fileName, fileChecksum, Status.SUCCESS);
+
+        Optional<InterfaceFileEntity> duplicateOpt =
+            getDuplicateFile(type, fileName, fileChecksum
+        );
         try {
             if (duplicateOpt.isPresent()) {
                 InterfaceFileEntity duplicate = duplicateOpt.get();
@@ -156,6 +157,15 @@ public class InterfaceFileProcessorService {
             }
         }
         return saveInitialFile(entity);
+    }
+
+    protected Optional<InterfaceFileEntity> getDuplicateFile(
+        Type type,
+        String fileName,
+        String fileChecksum) {
+        return interfaceFilesRepository
+            .findByTypeAndFileNameAndChecksumAndStatusIn(
+                type, fileName, fileChecksum, List.of(Status.SUCCESS, Status.SUCCESS_NO_TRANSACTIONS));
     }
 
     private InterfaceFileEntity saveInitialFile(InterfaceFileEntity entity) {
