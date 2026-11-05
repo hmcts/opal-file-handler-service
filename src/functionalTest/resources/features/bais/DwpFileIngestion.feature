@@ -13,14 +13,12 @@ Feature: DWP file ingestion
     And the stored "DWP" file content matches the bais "file"
     And the DWP JSON file contains the extracted payments and bank details
     And the "DWP" JSON file contains the following extracted data
-      | field                                           | value      |
-      | payment_type                                    | CASH       |
-      | destination_details.bank_details.sort_code      | 010101     |
-      | destination_details.bank_details.account_number | 12341234   |
-      | transactions.size()                             | 5          |
-      | transactions[0].amount                          | 2125       |
-      | transactions[0].transaction_code                | 99         |
-      | dwp_court_code                                  | DWP1234567 |
+      | field                              | value      |
+      | transactions[0].date_entry_applied | 07/04/2026 |
+      | transactions[1].date_entry_applied | 06/04/2026 |
+      | transactions[2].date_entry_applied | 08/04/2026 |
+      | transactions[3].date_entry_applied | 10/04/2026 |
+      | transactions[4].date_entry_applied | 01/04/2026 |
     And the configured "DWP" file no longer exists on bais
 
   Scenario: A duplicate DWP file is detected
