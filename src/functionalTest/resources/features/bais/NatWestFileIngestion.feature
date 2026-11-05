@@ -1,6 +1,7 @@
 @Opal @PO-6398 @BaisFileFixture
 Feature: NatWest file ingestion
 
+  @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @JIRA-STORY:PO-7244
   Scenario: A valid NatWest file is ingested
     Given the configured "NatWest" file is available on bais
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
@@ -9,6 +10,14 @@ Feature: NatWest file ingestion
     And a successful "NATWEST" interface file is stored
     And the stored "NatWest" file can be retrieved by interface file ID
     And the stored "NatWest" file content matches the bais "file"
+    And the "NatWest" JSON file contains the following extracted data
+      | field                                           | value    |
+      | payment_type                                    | CASH     |
+      | destination_details.bank_details.sort_code      | 560035   |
+      | destination_details.bank_details.account_number | 27048529 |
+      | transactions.size()                             | 2        |
+      | transactions[0].amount                          | 1500     |
+      | transactions[0].transaction_code                | 99       |
     And the configured "NatWest" file no longer exists on bais
 
   Scenario: A duplicate NatWest file is detected

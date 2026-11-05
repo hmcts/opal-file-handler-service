@@ -1,6 +1,7 @@
 @Opal @PO-6438 @BaisFileFixture
 Feature: CDER file ingestion
 
+  @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @JIRA-STORY:PO-7244
   Scenario: A valid CDER file is ingested
     Given the configured "Cder" file is available on bais
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
@@ -9,6 +10,21 @@ Feature: CDER file ingestion
     And a successful "CDER" interface file is stored
     And the stored "Cder" file can be retrieved by interface file ID
     And the stored "Cder" file content matches the bais "file"
+    And the "Cder" JSON file contains the following extracted data
+      | field                                                | value      |
+      | payment_type                                         | CASH       |
+      | destination_details.bank_details.sort_code           | 560036     |
+      | destination_details.bank_details.account_number      | 27048530   |
+      | transactions.size()                                  | 2          |
+      | transactions[0].amount                               | 1000       |
+      | transactions[0].transaction_code                     | 99         |
+      | dwp_court_code                                       | 0000031715 |
+      | transactions[0].originator_details.account_reference | 23000106E  |
+      | transactions[0].date_entry_applied                   | 03/09/2023 |
+      | transactions[1].amount                               | 5000       |
+      | transactions[1].transaction_code                     | 99         |
+      | transactions[1].originator_details.account_reference | 23000113P  |
+      | transactions[1].date_entry_applied                   | 01/09/2023 |
     And the configured "Cder" file no longer exists on bais
 
   Scenario: A duplicate CDER file is detected

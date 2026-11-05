@@ -11,6 +11,7 @@ import static uk.gov.hmcts.opal.filehandler.support.BaisFileTestData.forSource;
 import static uk.gov.hmcts.opal.filehandler.support.SftpRetry.withRetry;
 
 import com.google.common.io.Resources;
+import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -211,6 +212,27 @@ public class BaisFileStepDef extends BaseStepDef {
             response.getBody().asByteArray(),
             "Stored " + config.displayName() + " file content differs from the SFTP " + fileDescription
         );
+    }
+
+    @Then("the {string} JSON file contains the following extracted data")
+    public void jsonFileContainsExtractedData(String displayName, DataTable expectedData) {
+        BaisFileTestConfig config = forDisplayName(displayName);
+        assertNotNull(successfulInterfaceFile, "Source metadata was not retrieved");
+        Map<String, Object> jsonFile = awaitSuccessfulInterfaceFile(config, "SOURCE_JSON");
+        assertEquals(config.source(), jsonFile.get("source"));
+        assertEquals("OPAL", jsonFile.get("target"));
+        assertEquals(config.expectedDomain(), jsonFile.get("domain"));
+        assertNotNull(jsonFile.get("filestore_uuid"));
+
+        Response response = authorisedJsonRequest().accept("application/octet-stream").when()
+            .get(getTestUrl() + "/interface-files/" + jsonFile.get("interface_file_id") + "/content");
+        assertEquals(200, response.statusCode(), "Extracted JSON could not be retrieved");
+        assertEquals(jsonFile.get("checksum"), DigestUtils.md5Hex(response.asByteArray()));
+        assertEquals(config.fileName(), response.jsonPath().getString("file_name"));
+        for (Map<String, String> expected : expectedData.asMaps(String.class, String.class)) {
+            assertEquals(expected.get("value"), response.jsonPath().getString(expected.get("field")),
+                config.displayName() + " extracted field " + expected.get("field"));
+        }
     }
 
     @Then("the DWP JSON file contains the extracted payments and bank details")

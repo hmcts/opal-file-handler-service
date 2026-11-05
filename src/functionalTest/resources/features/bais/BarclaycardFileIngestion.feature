@@ -1,6 +1,7 @@
 @Opal @PO-6427 @BaisFileFixture
 Feature: Barclaycard file ingestion
 
+  @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @JIRA-STORY:PO-7244
   Scenario: A valid Barclaycard file is ingested
     Given the configured "Barclaycard" file is available on bais
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
@@ -9,6 +10,14 @@ Feature: Barclaycard file ingestion
     And a successful "BARCLAYCARD" interface file is stored
     And the stored "Barclaycard" file can be retrieved by interface file ID
     And the stored "Barclaycard" file content matches the bais "file"
+    And the "Barclaycard" JSON file contains the following extracted data
+      | field                                           | value    |
+      | payment_type                                    | CASH     |
+      | destination_details.bank_details.sort_code      | 560034   |
+      | destination_details.bank_details.account_number | 27048528 |
+      | transactions.size()                             | 2        |
+      | transactions[0].amount                          | 1500     |
+      | transactions[0].transaction_code                | 99       |
     And the configured "Barclaycard" file no longer exists on bais
 
   Scenario: A duplicate Barclaycard file is detected

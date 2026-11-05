@@ -2,6 +2,7 @@
 Feature: DWP file ingestion
 
   # The fixture maps DWP1234567 to business unit DW01 and its MAINTENANCE bank account.
+  @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @JIRA-STORY:PO-7244
   Scenario: A valid DWP file is ingested
     Given the configured "DWP" file is available on bais
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
@@ -11,6 +12,15 @@ Feature: DWP file ingestion
     And the stored "DWP" file can be retrieved by interface file ID
     And the stored "DWP" file content matches the bais "file"
     And the DWP JSON file contains the extracted payments and bank details
+    And the "DWP" JSON file contains the following extracted data
+      | field                                           | value      |
+      | payment_type                                    | CASH       |
+      | destination_details.bank_details.sort_code      | 010101     |
+      | destination_details.bank_details.account_number | 12341234   |
+      | transactions.size()                             | 5          |
+      | transactions[0].amount                          | 2125       |
+      | transactions[0].transaction_code                | 99         |
+      | dwp_court_code                                  | DWP1234567 |
     And the configured "DWP" file no longer exists on bais
 
   Scenario: A duplicate DWP file is detected
