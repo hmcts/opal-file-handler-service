@@ -4,6 +4,7 @@ import java.time.Clock;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
+import uk.gov.hmcts.opal.filehandler.config.CderBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.PacsTTPBaisExtractionService;
@@ -15,7 +16,7 @@ import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @Service
 public class CderInterfaceFileProcessorService extends
-    AbstractBankingInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract>   {
+    AbstractBankingInterfaceFileProcessorWithExtractionService<InterfaceFileCommonDataExtract> {
 
     public CderInterfaceFileProcessorService(Clock clock,
         FeatureFlagUtil featureFlagUtil,
@@ -26,9 +27,12 @@ public class CderInterfaceFileProcessorService extends
         ObjectMapper objectMapper,
         PacsTTPBaisExtractionService extractionService,
         FinesInterfaceFilePreprocessQueueService finesQueueService,
-        MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService) {
-        super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
-            transactionTemplate, objectMapper, extractionService, finesQueueService, maintenanceQueueService);
+        MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService,
+        CderBaisFileProcessorConfiguration config) {
+        super(clock, featureFlagUtil, interfaceFileBlobStoreService, interfaceFilesRepository,
+            transactionTemplate, objectMapper, extractionService,
+            new SftpFileIngestionService(config, baisSftpClient),
+            config, finesQueueService, maintenanceQueueService);
     }
 
 }

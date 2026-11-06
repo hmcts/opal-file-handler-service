@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.opal.filehandler.config.BTEckohBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.service.BTEckohInterfaceFileProcessorService;
 
 @Component
@@ -16,14 +15,11 @@ import uk.gov.hmcts.opal.filehandler.service.BTEckohInterfaceFileProcessorServic
 public class AutomatedBTEckohFileTransferJob implements TaskConfiguration {
 
     private final BTEckohInterfaceFileProcessorService fileProcessorService;
-    private final BTEckohBaisFileProcessorConfiguration configuration;
 
     @Override
     public void run() {
         log.info("Starting BTEckoh File Transfer Job");
-
-        fileProcessorService.run(configuration);
-
+        fileProcessorService.run();
         log.info("Completed BTEckoh File Transfer Job");
     }
 }

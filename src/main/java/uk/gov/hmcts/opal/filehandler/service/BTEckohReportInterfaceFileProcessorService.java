@@ -5,7 +5,7 @@ import java.time.Clock;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
@@ -23,9 +23,12 @@ public class BTEckohReportInterfaceFileProcessorService extends InterfaceFilePro
         InterfaceFileBlobStoreService interfaceFileBlobStoreService,
         InterfaceFilesRepository interfaceFilesRepository,
         TransactionTemplate transactionTemplate,
-        ObjectMapper objectMapper) {
-        super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
-            transactionTemplate, objectMapper);
+        ObjectMapper objectMapper,
+        BTEckohReportBaisFileProcessorConfiguration config) {
+        super(clock, featureFlagUtil, interfaceFileBlobStoreService, interfaceFilesRepository,
+            transactionTemplate, objectMapper,
+            new SftpFileIngestionService(config, baisSftpClient),
+            config);
     }
 
     @Override
@@ -34,7 +37,7 @@ public class BTEckohReportInterfaceFileProcessorService extends InterfaceFilePro
     }
 
     @Override
-    protected void processFile(BaisFileProcessorConfiguration config, InterfaceFileEntity fileEntity,
+    protected void processFile(InterfaceFileEntity fileEntity,
         InputStream inputStream, long creatorId) {
 
     }

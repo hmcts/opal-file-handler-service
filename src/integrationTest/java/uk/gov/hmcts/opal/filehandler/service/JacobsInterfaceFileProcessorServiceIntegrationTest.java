@@ -69,7 +69,7 @@ public class JacobsInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(configuration));
+                service.run());
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -86,7 +86,7 @@ public class JacobsInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Feature flag 'bailiffs-jacobs-file-transfer-job' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(configuration));
+                service.run());
 
             assertThat(exception).hasMessage("bailiffs-jacobs-file-transfer-job is not enabled");
         }
@@ -103,7 +103,7 @@ public class JacobsInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Both feature flags are false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(configuration));
+                service.run());
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -114,7 +114,7 @@ public class JacobsInterfaceFileProcessorServiceIntegrationTest
     void whenJacobsFileIsPresentReadAndStoreCorrectly() {
         uploadResourceToSftp(JACOBS_FILE_RESOURCE, JACOBS_FILE_CONTAINER);
 
-        service.run(configuration);
+        service.run();
 
         var sourceFile = assertSuccessfulInterfaceFile(
             JACOBS_FILE, JACOBS_FILE_CHECKSUM, Interface.JACOBS, Type.SOURCE, Domain.FINES);

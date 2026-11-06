@@ -96,6 +96,7 @@ class InterfaceFileProcessorServiceTest {
     private List<Status> savedStatuses;
 
     private final Logger logger = (Logger) LoggerFactory.getLogger(InterfaceFileProcessorService.class);
+    private final Logger ingestionLogger = (Logger) LoggerFactory.getLogger(SftpFileIngestionService.class);
     private final ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
 
     MockedStatic<SecurityUtil> mockedSecurityUtil;
@@ -108,6 +109,7 @@ class InterfaceFileProcessorServiceTest {
 
         logAppender.start();
         logger.addAppender(logAppender);
+        ingestionLogger.addAppender(logAppender);
 
         service = new TestProcessor(
             featureFlagUtil,
@@ -115,7 +117,8 @@ class InterfaceFileProcessorServiceTest {
             blobStoreService,
             repository,
             transactionTemplate,
-            objectMapper
+            objectMapper,
+            config
         );
 
         lenient().when(config.getFeatureFlag()).thenReturn(TEST_FEATURE_FLAG);
@@ -131,6 +134,7 @@ class InterfaceFileProcessorServiceTest {
     @AfterEach
     void tearDown() {
         logger.detachAppender(logAppender);
+        ingestionLogger.detachAppender(logAppender);
         logAppender.stop();
         mockedSecurityUtil.close();
     }
@@ -143,7 +147,7 @@ class InterfaceFileProcessorServiceTest {
             service.useDefaultFileSelection();
             when(baisSftpClient.listRegularFiles(SFTP_USERNAME)).thenReturn(List.of());
 
-            assertThat(service.selectFilesToProcess(config)).isEmpty();
+            assertThat(service.selectFilesToProcess()).isEmpty();
 
             assertThat(logAppender.list)
                 .filteredOn(event -> event.getLevel() == Level.INFO)
@@ -157,7 +161,7 @@ class InterfaceFileProcessorServiceTest {
             service.useDefaultFileSelection();
             when(baisSftpClient.listRegularFiles(SFTP_USERNAME)).thenReturn(List.of(IGNORED_FILE, MATCHING_FILE));
 
-            List<String> selectedFiles = service.selectFilesToProcess(config);
+            List<String> selectedFiles = service.selectFilesToProcess();
 
             assertThat(selectedFiles).containsExactly(MATCHING_FILE);
             assertThat(errorLogs()).contains(
@@ -172,7 +176,7 @@ class InterfaceFileProcessorServiceTest {
             when(baisSftpClient.listRegularFiles(SFTP_USERNAME))
                 .thenReturn(List.of(MATCHING_FILE, secondMatchingFile));
 
-            List<String> selectedFiles = service.selectFilesToProcess(config);
+            List<String> selectedFiles = service.selectFilesToProcess();
 
             assertThat(selectedFiles).containsExactly(MATCHING_FILE, secondMatchingFile);
             assertThat(errorLogs()).isEmpty();
@@ -196,7 +200,7 @@ class InterfaceFileProcessorServiceTest {
                 .thenReturn(mockedToken);
             when(mockedToken.getUserId()).thenReturn(-1L);
 
-            service.run(config);
+            service.run();
 
             verify(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(selectedFile), any());
         }
@@ -224,7 +228,7 @@ class InterfaceFileProcessorServiceTest {
             when(repository.findByTypeAndFileNameAndChecksumAndStatus(
                 Type.SOURCE, MATCHING_FILE, CHECKSUM, Status.SUCCESS)).thenReturn(Optional.of(duplicate));
 
-            service.run(config);
+            service.run();
 
             assertThat(service.processCount).isZero();
             assertThat(savedStatuses).containsExactly(Status.DUPLICATE);
@@ -256,7 +260,7 @@ class InterfaceFileProcessorServiceTest {
                 .when(blobStoreService)
                 .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
 
-            service.run(config);
+            service.run();
 
             assertThat(savedStatuses).containsExactly(Status.FAILED);
             assertThat(service.lastSavedEntity.getFilestoreUuid()).isNull();
@@ -279,7 +283,7 @@ class InterfaceFileProcessorServiceTest {
                 .thenReturn(mockedToken);
             when(mockedToken.getUserId()).thenReturn(-1L);
 
-            service.run(config);
+            service.run();
 
             assertThat(savedStatuses).containsExactly(Status.FAILED);
             assertThat(service.lastSavedEntity.getStatus()).isEqualTo(Status.FAILED);
@@ -302,7 +306,7 @@ class InterfaceFileProcessorServiceTest {
                 .thenReturn(mockedToken);
             when(mockedToken.getUserId()).thenReturn(-1L);
 
-            service.run(config);
+            service.run();
 
             assertThat(savedStatuses).containsExactly(Status.INGESTED, Status.FAILED);
             assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
@@ -323,7 +327,7 @@ class InterfaceFileProcessorServiceTest {
                 .thenReturn(mockedToken);
             when(mockedToken.getUserId()).thenReturn(-1L);
 
-            service.run(config);
+            service.run();
 
             assertThat(service.lastProcessConfig).isSameAs(config);
             assertThat(firstFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
@@ -342,7 +346,7 @@ class InterfaceFileProcessorServiceTest {
             doThrow(new BaisSftpFileDownloadException("first download failed"))
                 .when(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(firstFile), any());
 
-            service.run(config);
+            service.run();
 
             verify(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(secondFile), any());
             assertThat(service.processCount).isOne();
@@ -362,7 +366,7 @@ class InterfaceFileProcessorServiceTest {
                 .when(blobStoreService)
                 .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
 
-            service.run(config);
+            service.run();
 
             assertThat(service.lastSavedEntity.getStatus()).isEqualTo(Status.FAILED);
             assertThat(objectMapper.readTree(service.lastSavedEntity.getErrors()).get("message").asString())
@@ -445,10 +449,11 @@ class InterfaceFileProcessorServiceTest {
             InterfaceFileBlobStoreService blobStoreService,
             InterfaceFilesRepository repository,
             TransactionTemplate transactionTemplate,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            BaisFileProcessorConfiguration config
         ) {
-            super(CLOCK, featureFlagUtil, baisSftpClient, blobStoreService, repository,
-                transactionTemplate, objectMapper);
+            super(CLOCK, featureFlagUtil, blobStoreService, repository,
+                transactionTemplate, objectMapper, new SftpFileIngestionService(config, baisSftpClient), config);
         }
 
         void stubFilesToProcess(String... fileNames) {
@@ -460,8 +465,8 @@ class InterfaceFileProcessorServiceTest {
         }
 
         @Override
-        protected List<String> selectFilesToProcess(BaisFileProcessorConfiguration config) {
-            return filesToProcess == null ? super.selectFilesToProcess(config) : filesToProcess;
+        protected List<String> selectFilesToProcess() {
+            return filesToProcess == null ? super.selectFilesToProcess() : filesToProcess;
         }
 
         @Override
@@ -473,13 +478,12 @@ class InterfaceFileProcessorServiceTest {
 
         @Override
         protected void processFile(
-            BaisFileProcessorConfiguration config,
             InterfaceFileEntity fileEntity,
             InputStream inputStream,
             long creatorId
         ) {
             processCount++;
-            lastProcessConfig = config;
+            lastProcessConfig = (BaisFileProcessorConfiguration) config;
 
             if (processingFailure != null) {
                 throw processingFailure;
