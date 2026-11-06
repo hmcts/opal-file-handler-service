@@ -3,6 +3,7 @@ package uk.gov.hmcts.opal.filehandler.service.blobstore;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
@@ -78,6 +80,35 @@ class InterfaceFileBlobStoreServiceTest {
         verify(blobContainerClient).getBlobClient(BLOB_NAME);
         verify(blobClient).upload(baisFileStream);
         verify(blobClient, never()).deleteIfExists();
+    }
+
+    @Test
+    void uploadXmlFile_usesAcknowledgementFilenameAndAllowsRetryingUpload() {
+        String fileName = "vp000359_35_99991165_ack.xml";
+        String containerName = "vpfpo-acknowledgements";
+        when(blobServiceClient.getBlobContainerClient(containerName)).thenReturn(blobContainerClient);
+        when(blobContainerClient.exists()).thenReturn(true);
+        when(blobContainerClient.getBlobClient(fileName)).thenReturn(blobClient);
+        byte[] xml = "<AcknowledgementMessage/>".getBytes(StandardCharsets.UTF_8);
+
+        blobStoreService.uploadXmlFile(fileName, containerName, xml);
+
+        ArgumentCaptor<BinaryData> data = ArgumentCaptor.forClass(BinaryData.class);
+        verify(blobClient).upload(data.capture(), eq(true));
+        assertThat(data.getValue().toBytes()).isEqualTo(xml);
+    }
+
+    @Test
+    void uploadXmlFile_propagatesUploadFailure() {
+        String fileName = "vp000359_35_99991165_ack.xml";
+        when(blobServiceClient.getBlobContainerClient(BLOB_CONTAINER_NAME)).thenReturn(blobContainerClient);
+        when(blobContainerClient.exists()).thenReturn(true);
+        when(blobContainerClient.getBlobClient(fileName)).thenReturn(blobClient);
+        IllegalStateException failure = new IllegalStateException("Upload failed");
+        doThrow(failure).when(blobClient).upload(any(BinaryData.class), eq(true));
+
+        assertThat(assertThrows(IllegalStateException.class,
+            () -> blobStoreService.uploadXmlFile(fileName, BLOB_CONTAINER_NAME, BAIS_FILE_CONTENT))).isSameAs(failure);
     }
 
     @Test

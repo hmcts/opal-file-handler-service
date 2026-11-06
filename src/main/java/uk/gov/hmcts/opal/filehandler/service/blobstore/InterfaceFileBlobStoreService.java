@@ -22,6 +22,10 @@ public class InterfaceFileBlobStoreService {
 
     private final BlobServiceClient blobServiceClient;
 
+    public void uploadXmlFile(String fileName, String containerName, byte[] xml) {
+        getBlobContainerClient(containerName).getBlobClient(fileName).upload(BinaryData.fromBytes(xml), true);
+    }
+
     public void uploadBaisFile(UUID fileUuid, String containerName, InputStream stream, String expectedChecksum) {
         BlobClient blobClient = blobServiceClient
             .getBlobContainerClient(containerName)
