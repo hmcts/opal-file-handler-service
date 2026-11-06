@@ -1,12 +1,13 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
-import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 
 public interface FileIngestionService<T> {
+
     List<T> getFiles();
 
-    InputStream getFile(T file);
+    ByteArrayOutputStream getFile(T fileName);
 
-    void deleteFile(T file);
+    boolean deleteFile(T file);
 }

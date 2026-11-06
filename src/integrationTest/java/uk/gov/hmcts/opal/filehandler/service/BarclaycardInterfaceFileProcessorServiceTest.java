@@ -57,7 +57,7 @@ public class BarclaycardInterfaceFileProcessorServiceTest extends AbstractInterf
     void setUp() {
         repository.deleteAll();
         businessUnitBankAccountEntityTestData.clear();
-        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount(1L, BUSINESS_UNIT_CODE);
+        businessUnitBankAccountEntityTestData.saveTypicalBusinessUnitBankAccount((short) 1, BUSINESS_UNIT_CODE);
         blobServiceClient.createBlobContainerIfNotExists(configuration.getContainerName());
     }
 
@@ -73,7 +73,7 @@ public class BarclaycardInterfaceFileProcessorServiceTest extends AbstractInterf
         @DisplayName("AC1: Feature flag 'barclaycard-file-transfer-job' is false")
         void barclaycardFileTransferJobIsDisabled() {
             FeatureDisabledException exception = assertThrows(
-                FeatureDisabledException.class, () -> service.run(configuration)
+                FeatureDisabledException.class, () -> service.run()
             );
             assertThat(exception).hasMessage("barclaycard-file-transfer-job is not enabled");
         }
@@ -90,7 +90,7 @@ public class BarclaycardInterfaceFileProcessorServiceTest extends AbstractInterf
         @DisplayName("AC1: Both feature flags are false")
         void bothFeatureFlagsAreDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(configuration)
+                service.run()
             );
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
@@ -102,7 +102,7 @@ public class BarclaycardInterfaceFileProcessorServiceTest extends AbstractInterf
     void natWestInterfaceFileProcessorServiceShouldRunSuccessfully() throws Exception {
         uploadResourceToSftp(BARCLAYCARD_FILE_RESOURCE, BARCLAYCARD_FILE_CONTAINER);
 
-        service.run(configuration);
+        service.run();
 
         InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
             BARCLAYCARD_FILE, BARCLAYCARD_FILE_CHECKSUM, Interface.BARCLAYCARD, Type.SOURCE, Domain.FINES);

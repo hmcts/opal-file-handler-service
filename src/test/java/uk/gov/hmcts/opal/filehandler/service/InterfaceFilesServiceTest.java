@@ -1,7 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
@@ -18,7 +18,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -88,7 +91,7 @@ public class InterfaceFilesServiceTest {
     @Test
     public void getInterfaceFiles_shouldOrchestrateCallsCorrectly() {
         try (MockedStatic<SecurityUtil> securityUtil = mockStatic(SecurityUtil.class);
-             MockedStatic<PermissionUtil> permissionUtil = mockStatic(PermissionUtil.class)) {
+            MockedStatic<PermissionUtil> permissionUtil = mockStatic(PermissionUtil.class)) {
             securityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser).thenReturn(authToken);
             UserStateV2 userState = mock(UserStateV2.class);
             DomainBusinessUnitUsers domainUsers = mock(DomainBusinessUnitUsers.class);
@@ -237,7 +240,7 @@ public class InterfaceFilesServiceTest {
             InterfaceFileNotFoundException.class,
             () -> service.getInterfaceFileEntity(id)
         );
-        assertEquals("404 NOT_FOUND \"Interface file with id 102 could not be located.\"",exception.getMessage());
+        assertEquals("404 NOT_FOUND \"Interface file with id 102 could not be located.\"", exception.getMessage());
         verify(repository).findById(id);
     }
 
@@ -258,7 +261,7 @@ public class InterfaceFilesServiceTest {
         AddInterfaceFileRequestMetadata metadata = addInterfaceFileMetadata()
             .relatedInterfaceFileId(15L)
             .paymentType(PaymentTypeEnumTypes.CHEQUE)
-            .businessUnitCode("1234");
+            .businessUnitId((short) 1234);
 
         when(repository.findById(15L)).thenReturn(Optional.of(relatedInterfaceFile));
         when(config.getContainerName()).thenReturn("dwp-container");
@@ -288,17 +291,22 @@ public class InterfaceFilesServiceTest {
             assertEquals(mapped, result);
             assertEquals(relatedInterfaceFile, ingestedEntity.getRelatedInterfaceFile());
             assertEquals(PaymentType.CHEQUE, ingestedEntity.getPaymentType());
-            assertArrayEquals(new String[] {"1234"}, ingestedEntity.getBusinessUnitCode());
+            assertArrayEquals(new Short[] {(short) 1234}, ingestedEntity.getBusinessUnitId());
 
             verify(repository).findById(15L);
             verify(repository).save(ingestedEntity);
             verify(repository).findById(24L);
             verify(mapper).toInterfaceFileObject(ingestedEntity);
+
         }
     }
 
-    @Test
-    void addInterfaceFile_savesEntityWithoutRelatedFileWhenNoRelatedIdProvided() throws IOException {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    @DisplayName("Uses the external processor and container for inbound and outbound uploads")
+    void addInterfaceFile_savesEntityWithoutRelatedFileWhenNoRelatedIdProvided(boolean outbound) throws IOException {
+        Interface source = outbound ? Interface.OPAL : Interface.DWP;
+        Interface target = outbound ? Interface.DWP : Interface.OPAL;
         DWPInterfaceFileProcessorService processorService = mock(DWPInterfaceFileProcessorService.class);
         BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
         InterfaceFilesService uploadService = serviceWithProcessor(processorService, config);
@@ -309,8 +317,10 @@ public class InterfaceFilesServiceTest {
             .build();
         InterfaceFileObjectInterfaceFile mapped = mock(InterfaceFileObjectInterfaceFile.class);
         AddInterfaceFileRequestMetadata metadata = addInterfaceFileMetadata()
+            .source(InterfaceFileEnumInterfaceFile.valueOf(source.name()))
+            .target(InterfaceFileEnumInterfaceFile.valueOf(target.name()))
             .paymentType(PaymentTypeEnumTypes.CASH)
-            .businessUnitCode("9876");
+            .businessUnitId((short)9876);
 
         when(config.getContainerName()).thenReturn("dwp-container");
         when(file.getOriginalFilename()).thenReturn("source.dat");
@@ -320,8 +330,8 @@ public class InterfaceFilesServiceTest {
         when(processorService.ingestFile(
             "source.dat",
             fileBytes,
-            Interface.DWP,
-            Interface.OPAL,
+            source,
+            target,
             Type.TRANSFORMED_JSON,
             Domain.FINES,
             "dwp-container",
@@ -339,8 +349,10 @@ public class InterfaceFilesServiceTest {
             assertEquals(mapped, result);
             assertNull(ingestedEntity.getRelatedInterfaceFile());
             assertEquals(PaymentType.CASH, ingestedEntity.getPaymentType());
-            assertArrayEquals(new String[] {"9876"}, ingestedEntity.getBusinessUnitCode());
+            assertArrayEquals(new Short[] {(short) 9876}, ingestedEntity.getBusinessUnitId());
 
+            verify(processorService).ingestFile("source.dat", fileBytes, source, target,
+                Type.TRANSFORMED_JSON, Domain.FINES, "dwp-container", 1L);
             verify(repository).save(ingestedEntity);
             verify(repository).findById(25L);
             verify(mapper).toInterfaceFileObject(ingestedEntity);

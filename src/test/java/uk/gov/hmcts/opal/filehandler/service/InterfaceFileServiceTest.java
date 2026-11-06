@@ -13,6 +13,8 @@ import static org.mockito.Mockito.when;
 
 import com.azure.core.util.BinaryData;
 import java.io.InputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +22,12 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -32,7 +38,7 @@ import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.BTEckohReportBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.CapsReportBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -72,7 +78,7 @@ class InterfaceFileServiceTest {
     private OpalJwtAuthenticationToken authToken;
 
     @Mock
-    private Map<String, BaisFileProcessorConfiguration> configs;
+    private Map<String, FileProcessorConfiguration> configs;
 
     @Mock
     private List<InterfaceFileProcessorService> processorServicesList;
@@ -137,6 +143,42 @@ class InterfaceFileServiceTest {
         securityUtil.verify(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser);
         verify(authToken).getUserState();
         verify(loggingService).logPdpl(1L, userState);
+    }
+
+    @Nested
+    @DisplayName("Container selection")
+    class ContainerSelection {
+
+        @ParameterizedTest
+        @CsvSource({
+            "BTECKOH_REPORT, OPAL, BTEckohReportBaisFileProcessorConfig, bteckoh-report",
+            "OPAL, BTECKOH_REPORT, BTEckohReportBaisFileProcessorConfig, bteckoh-report",
+            "CAPS_REPORT, OPAL, capsReportBaisFileProcessorConfig, caps-report",
+            "OPAL, CAPS_REPORT, capsReportBaisFileProcessorConfig, caps-report"
+        })
+        @DisplayName("Uses the external interface configuration for inbound and outbound files")
+        void usesExternalInterfaceContainer(Interface source, Interface target, String configName, String container)
+            throws IOException {
+            withPermissions();
+            withUserState();
+            InterfaceFileEntity entity = buildEntity(1L, uuid, source, Status.SUCCESS);
+            entity.setTarget(target);
+            FileProcessorConfiguration config = source == Interface.CAPS_REPORT || target == Interface.CAPS_REPORT
+                ? capsConfig : bteckohConfig;
+            when(repository.findById(1L)).thenReturn(Optional.of(entity));
+            when(configs.get(configName)).thenReturn(config);
+            when(config.getContainerName()).thenReturn(container);
+            when(blobStoreService.fetchInterfaceFile(1L, uuid, container))
+                .thenReturn(BinaryData.fromString("file-content"));
+            when(userState.isSystemUser()).thenReturn(true);
+
+            InputStream result = interfaceFileService.getInterfaceFilesContent(1L);
+
+            assertEquals("file-content", new String(result.readAllBytes(), StandardCharsets.UTF_8));
+            verify(configs).get(configName);
+            verifyNoMoreInteractions(configs);
+            verify(blobStoreService).fetchInterfaceFile(1L, uuid, container);
+        }
     }
 
     @Test
@@ -282,7 +324,7 @@ class InterfaceFileServiceTest {
             .interfaceFileId(id)
             .filestoreUuid(fsuuid)
             .source(source)
-            .target(Interface.BTECKOH_REPORT)
+            .target(Interface.OPAL)
             .type(Type.SOURCE)
             .opalDomain(Domain.FILE_HANDLER)
             .fileName("fileName")

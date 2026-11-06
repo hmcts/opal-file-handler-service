@@ -29,6 +29,6 @@ public class AutomatedTaskBTEckohFileTransferJobTest {
     @Test
     void jobCallsServiceRun() {
         job.run();
-        verify(service).run(config);
+        verify(service).run();
     }
 }

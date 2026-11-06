@@ -45,8 +45,8 @@ public class InterfaceFileSpecsFactory {
         if (searchDto.getNotStatuses() != null && !searchDto.getNotStatuses().isEmpty()) {
             specs.add(hasStatusNotIn(searchDto.getNotStatuses()));
         }
-        if (searchDto.getBusinessUnitCode() != null) {
-            specs.add(hasBusinessUnitCode(searchDto.getBusinessUnitCode()));
+        if (searchDto.getBusinessUnitId() != null) {
+            specs.add(hasBusinessUnitId(searchDto.getBusinessUnitId()));
         }
         if (searchDto.getFromDate() != null) {
             specs.add(fromDate(searchDto.getFromDate()));
@@ -146,7 +146,7 @@ public class InterfaceFileSpecsFactory {
                 .not();
     }
 
-    private static Specification<InterfaceFileEntity> hasBusinessUnitCode(String businessUnitCode) {
+    private static Specification<InterfaceFileEntity> hasBusinessUnitId(short businessUnitId) {
         return (root, query, builder) -> {
             // Note - the postgres array_position function actually returns null when the item does not exist,
             // but hibernate is wrapping the call in a "coalesce" and returning 0 instead, which works because
@@ -154,8 +154,8 @@ public class InterfaceFileSpecsFactory {
             //
             // (I also tried using isMember() instead of native SQL function, but hibernate seemed to be recognising
             // the field as a string instead of a string array so it did not work.)
-            Expression<Collection<String>> pathExp = root.get(InterfaceFileEntity_.BUSINESS_UNIT_CODE);
-            Expression<String> valueExp = builder.literal(businessUnitCode);
+            Expression<Collection<String>> pathExp = root.get(InterfaceFileEntity_.BUSINESS_UNIT_ID);
+            Expression<Short> valueExp = builder.literal(businessUnitId);
             Expression<Integer> funcExp = builder.function("array_position", Integer.class, pathExp, valueExp);
             return builder.notEqual(funcExp, 0);
         };

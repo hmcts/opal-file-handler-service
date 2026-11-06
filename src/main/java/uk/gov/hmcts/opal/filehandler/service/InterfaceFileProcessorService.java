@@ -7,20 +7,16 @@ import java.io.InputStream;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.exception.DownstreamServiceUnavailableException;
-import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -29,25 +25,24 @@ import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.exception.BlobUploadException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
-import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 import uk.gov.hmcts.opal.filehandler.util.StreamUtil;
 
 @Slf4j
 @RequiredArgsConstructor
-@Component
 public class InterfaceFileProcessorService {
 
     protected final Clock clock;
     private final FeatureFlagUtil featureFlagUtil;
-    private final BaisSftpClient baisSftpClient;
     protected final InterfaceFileBlobStoreService interfaceFileBlobStoreService;
     protected final InterfaceFilesRepository interfaceFilesRepository;
     private final TransactionTemplate transactionTemplate;
     protected final ObjectMapper objectMapper;
 
+    protected final FileIngestionService<String> fileIngestionService;
+    protected final FileProcessorConfiguration config;
+
     protected void processFile(
-        BaisFileProcessorConfiguration config,
         InterfaceFileEntity fileEntity,
         InputStream inputStream,
         long creatorId
@@ -60,53 +55,29 @@ public class InterfaceFileProcessorService {
         // Processors may validate their input format before it is uploaded.
     }
 
-    public void run(BaisFileProcessorConfiguration config) {
+    public void run() {
         featureFlagUtil.requireEnabledFeature(FeatureFlags.RELEASE_1C_BANKING_INTERFACES);
         featureFlagUtil.requireEnabledFeature(config.getFeatureFlag());
 
-        List<String> baisFiles = selectFilesToProcess(config);
+        List<String> baisFiles = selectFilesToProcess();
 
         for (String fileName : baisFiles) {
             try {
-                ingestFile(config, fileName, getCurrentUserId());
+                ingestFile(fileName, getCurrentUserId());
             } catch (IOException | RuntimeException e) {
                 log.error("Failed to ingest file '{}'", fileName, e);
             }
         }
     }
 
-    protected List<String> selectFilesToProcess(BaisFileProcessorConfiguration config) {
-        log.info("Selecting files to process from BAIS for user '{}' and source '{}'",
-            config.getSftpUsername(), config.getSource());
-        List<String> baisFiles = baisSftpClient.listRegularFiles(config.getSftpUsername());
-
-        if (baisFiles.isEmpty()) {
-            log.info("No files found in BAIS for user '{}' when processing source '{}'", config.getSftpUsername(),
-                config.getSource());
-            return List.of();
-        }
-
-        Map<Boolean, List<String>> filesByMatch = baisFiles.stream()
-            .collect(Collectors.partitioningBy(fileName ->
-                config.getFileNameRegex().matcher(fileName).matches()));
-
-        List<String> matchingFiles = filesByMatch.get(true);
-        List<String> ignoringFiles = filesByMatch.get(false);
-
-        if (!ignoringFiles.isEmpty()) {
-            log.error("Found {} additional files in BAIS for user '{}' that did not match the regex for source '{}' "
-                    + "and were ignored: {}",
-                ignoringFiles.size(), config.getSftpUsername(), config.getSource(), String.join(", ", ignoringFiles));
-        }
-
-        return matchingFiles;
+    protected List<String> selectFilesToProcess() {
+        return fileIngestionService.getFiles();
     }
 
-    private void ingestFile(BaisFileProcessorConfiguration config, String fileName, Long creatorId) throws IOException {
+    private void ingestFile(String fileName, Long creatorId) throws IOException {
         final byte[] downloadedBytes;
 
-        try (ByteArrayOutputStream downloadStream = new ByteArrayOutputStream()) {
-            baisSftpClient.downloadFile(config.getSftpUsername(), fileName, downloadStream);
+        try (ByteArrayOutputStream downloadStream = fileIngestionService.getFile(fileName)) {
             downloadedBytes = downloadStream.toByteArray();
         }
 
@@ -120,10 +91,10 @@ public class InterfaceFileProcessorService {
             creatorId
         );
         if (entity.getStatus().equals(Status.INGESTED)) {
-            processIngestedFile(config, entity, new ByteArrayInputStream(downloadedBytes), creatorId);
+            processIngestedFile(entity, new ByteArrayInputStream(downloadedBytes), creatorId);
         }
 
-        completeIngestion(config, fileName, entity);
+        completeIngestion(fileName, entity);
     }
 
     public InterfaceFileEntity ingestFile(
@@ -195,14 +166,13 @@ public class InterfaceFileProcessorService {
     }
 
     private void processIngestedFile(
-        BaisFileProcessorConfiguration config,
         InterfaceFileEntity entity,
         InputStream inputStream,
         long creatorId
     ) {
         try {
             transactionTemplate.executeWithoutResult(transactionStatus -> {
-                processFile(config, entity, inputStream, creatorId);
+                processFile(entity, inputStream, creatorId);
             });
         } catch (RuntimeException e) {
             transactionTemplate.executeWithoutResult(transactionStatus -> {
@@ -216,12 +186,12 @@ public class InterfaceFileProcessorService {
         }
     }
 
-    private void completeIngestion(BaisFileProcessorConfiguration config, String fileName, InterfaceFileEntity entity) {
+    private void completeIngestion(String fileName, InterfaceFileEntity entity) {
         if (entity.getStatus().equals(Status.FAILED)) {
             return;
         }
 
-        boolean deleted = baisSftpClient.deleteFile(config.getSftpUsername(), fileName);
+        boolean deleted = fileIngestionService.deleteFile(fileName);
 
         if (!deleted) {
             log.error("Unable to delete BAIS file '{}' for interfaceFileId={}",

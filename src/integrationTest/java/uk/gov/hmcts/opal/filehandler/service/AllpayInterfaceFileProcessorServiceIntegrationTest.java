@@ -62,7 +62,7 @@ public class AllpayInterfaceFileProcessorServiceIntegrationTest
         businessUnitBankAccountEntityTestData.clear();
 
         BusinessUnitBankAccountEntity bu = BusinessUnitBankAccountEntity.builder()
-            .id(1L)
+            .id((short) 1)
             .businessUnitCode(BUSINESS_UNIT_CODE)
             .domain(Domain.MAINTENANCE)
             .bankSortCode("010101")
@@ -82,7 +82,7 @@ public class AllpayInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                allpayInterfaceFileProcessorService.run(allpayBaisFileProcessorConfiguration));
+                allpayInterfaceFileProcessorService.run());
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -100,7 +100,7 @@ public class AllpayInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Feature flag 'allpay-file-transfer-job' is false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                allpayInterfaceFileProcessorService.run(allpayBaisFileProcessorConfiguration));
+                allpayInterfaceFileProcessorService.run());
 
             assertThat(exception).hasMessage("allpay-file-transfer-job is not enabled");
         }
@@ -118,7 +118,7 @@ public class AllpayInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Both feature flags are false")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                allpayInterfaceFileProcessorService.run(allpayBaisFileProcessorConfiguration));
+                allpayInterfaceFileProcessorService.run());
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -131,7 +131,7 @@ public class AllpayInterfaceFileProcessorServiceIntegrationTest
         String file = ALLPAY_FILE + ".dat";
 
         uploadResourceToSftp(ALLPAY_FILE_RESOURCE + ".dat", ALLPAY_FILE_CONTAINER + ".dat");
-        allpayInterfaceFileProcessorService.run(allpayBaisFileProcessorConfiguration);
+        allpayInterfaceFileProcessorService.run();
 
         InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
             file, ALLPAY_FILE_CHECKSUM, Interface.ALLPAY, Type.SOURCE, Domain.MAINTENANCE);
@@ -150,7 +150,7 @@ public class AllpayInterfaceFileProcessorServiceIntegrationTest
         String container = ALLPAY_FILE_CONTAINER + fileEnding;
 
         uploadResourceToSftp(resource, container);
-        allpayInterfaceFileProcessorService.run(allpayBaisFileProcessorConfiguration);
+        allpayInterfaceFileProcessorService.run();
 
         String file = ALLPAY_FILE + fileEnding;
 

@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.opal.filehandler.config.CderBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.service.CderInterfaceFileProcessorService;
 
 @Component
@@ -16,13 +15,12 @@ import uk.gov.hmcts.opal.filehandler.service.CderInterfaceFileProcessorService;
 public class AutomatedCderFileTransferJob implements TaskConfiguration {
 
     private final CderInterfaceFileProcessorService service;
-    private final CderBaisFileProcessorConfiguration configuration;
 
     @Override
     public void run() {
         log.info("Starting CDER File Transfer Job");
 
-        service.run(configuration);
+        service.run();
 
         log.info("Completed CDER File Transfer Job");
     }

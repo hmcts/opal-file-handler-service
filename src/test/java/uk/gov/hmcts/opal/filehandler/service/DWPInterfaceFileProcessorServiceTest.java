@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.json.JsonMapper;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.DWPBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -49,7 +49,7 @@ public class DWPInterfaceFileProcessorServiceTest {
     private TransactionTemplate transactionTemplate;
 
     @Mock
-    private BaisFileProcessorConfiguration config;
+    private DWPBaisFileProcessorConfiguration config;
 
     @Mock
     private PacsTTPBaisExtractionService extractionService;
@@ -74,7 +74,8 @@ public class DWPInterfaceFileProcessorServiceTest {
             JsonMapper.builder().build(),
             extractionService,
             finesQueueService,
-            maintenanceQueueService
+            maintenanceQueueService,
+            config
         );
     }
 
@@ -84,7 +85,7 @@ public class DWPInterfaceFileProcessorServiceTest {
         InputStream inputStream = InputStream.nullInputStream();
         when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of());
 
-        service.processFile(config, sourceFile, inputStream, -1L);
+        service.processFile(sourceFile, inputStream, -1L);
 
         assertThat(sourceFile.getStatus()).isEqualTo(Status.SUCCESS_NO_TRANSACTIONS);
         verify(extractionService).extractStandardData(sourceFile, inputStream);

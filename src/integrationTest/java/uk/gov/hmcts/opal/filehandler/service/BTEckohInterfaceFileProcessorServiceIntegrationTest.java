@@ -64,7 +64,7 @@ public class BTEckohInterfaceFileProcessorServiceIntegrationTest
         blobServiceClient.createBlobContainerIfNotExists(config.getContainerName());
 
         BusinessUnitBankAccountEntity bu = BusinessUnitBankAccountEntity.builder()
-            .id(1L)
+            .id((short) 1)
             .businessUnitCode(BUSINESS_UNIT_CODE)
             .domain(Domain.MAINTENANCE)
             .bankSortCode("010101")
@@ -86,7 +86,7 @@ public class BTEckohInterfaceFileProcessorServiceIntegrationTest
         @JiraEpic("PO-3497")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(config));
+                service.run());
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -105,7 +105,7 @@ public class BTEckohInterfaceFileProcessorServiceIntegrationTest
         @JiraEpic("PO-3497")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(config));
+                service.run());
 
             assertThat(exception).hasMessage(FEATURE_FLAG + " is not enabled");
         }
@@ -124,7 +124,7 @@ public class BTEckohInterfaceFileProcessorServiceIntegrationTest
         @JiraEpic("PO-3497")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(config));
+                service.run());
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -141,7 +141,7 @@ public class BTEckohInterfaceFileProcessorServiceIntegrationTest
         void readAndStoreBTEckohFileCorrectly() {
             uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
 
-            service.run(config);
+            service.run();
 
             var sourceFile = assertSuccessfulInterfaceFile(
                 BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH, Type.SOURCE, Domain.MAINTENANCE);
@@ -152,7 +152,7 @@ public class BTEckohInterfaceFileProcessorServiceIntegrationTest
             verify(jmsTemplate, times(1)).convertAndSend(
                 eq("banking-interfaces-preprocess-interface-file-maintenance"), anyString());
 
-            assertArrayEquals(sourceFile.getBusinessUnitCode(), sourceJson.getBusinessUnitCode());
+            assertArrayEquals(sourceFile.getBusinessUnitId(), sourceJson.getBusinessUnitId());
             assertBlobChecksum(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, config.getContainerName());
             assertNumberOfSftpFiles(config.getSftpUsername(), 0);
         }
