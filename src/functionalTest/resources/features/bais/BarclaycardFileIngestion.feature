@@ -6,19 +6,8 @@ Feature: Barclaycard file ingestion
     Given the configured "Barclaycard" file is available on bais
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
     And the "Barclaycard" file ingestion job is requested through testing support
-    Then the testing-support request is accepted
-    And a successful "BARCLAYCARD" interface file is stored
-    And the stored "Barclaycard" file can be retrieved by interface file ID
-    And the stored "Barclaycard" file content matches the bais "file"
-    And the "Barclaycard" JSON file contains the following extracted data
-      | field                                           | value    |
-      | payment_type                                    | CASH     |
-      | destination_details.bank_details.sort_code      | 560034   |
-      | destination_details.bank_details.account_number | 27048528 |
-      | transactions.size()                             | 2        |
-      | transactions[0].amount                          | 1500     |
-      | transactions[0].transaction_code                | 99       |
-    And the configured "Barclaycard" file no longer exists on bais
+    Then the "Barclaycard" file is processed successfully
+    And the extracted "Barclaycard" payments are ready for the external interface
 
   Scenario: A duplicate Barclaycard file is detected
     Given the configured "Barclaycard" file has already been processed

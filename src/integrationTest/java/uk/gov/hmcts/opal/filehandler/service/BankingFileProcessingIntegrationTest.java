@@ -20,6 +20,20 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Import;
+import uk.gov.hmcts.opal.filehandler.config.task.AutomatedAllpayFileTransferJob;
+import uk.gov.hmcts.opal.filehandler.config.task.AutomatedBTEckohFileTransferJob;
+import uk.gov.hmcts.opal.filehandler.config.task.AutomatedBarclaycardFileTransferJob;
+import uk.gov.hmcts.opal.filehandler.config.task.AutomatedCderFileTransferJob;
+import uk.gov.hmcts.opal.filehandler.config.task.AutomatedDWPFileTransferJob;
+import uk.gov.hmcts.opal.filehandler.config.task.AutomatedJacobsFileTransferJob;
+import uk.gov.hmcts.opal.filehandler.config.task.AutomatedMarstonFileTransferJob;
+import uk.gov.hmcts.opal.filehandler.config.task.AutomatedNatWestFileTransferJob;
+import uk.gov.hmcts.opal.filehandler.config.task.TaskRunner;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.images.builder.Transferable;
@@ -165,6 +179,67 @@ public class BankingFileProcessingIntegrationTest extends AbstractInterfaceFileP
         assertThat(storedBlobs(configuration.getContainerName())).isEqualTo(beforeReplay);
         verifyNoMoreInteractions(finesQueue, maintenanceQueue);
         assertNumberOfSftpFiles(file.username(), 0);
+    }
+
+    static Stream<BankingFile> finesBankingFiles() {
+        return bankingFiles().map(file -> new BankingFile(file.processorBean(), file.configBean(),
+            file.username(), file.fileName(), Domain.FINES, file.courtCode()));
+    }
+
+    @ParameterizedTest(name = "{0}: Fines-mapped payments recover to the Fines queue exactly once")
+    @MethodSource("finesBankingFiles")
+    @JiraStory("PO-7244")
+    @JiraEpic("PO-3497")
+    void finesMappedPaymentsReachFinesQueue(BankingFile bankingFile) throws Exception {
+        // Domain is reference-data driven; cover the ticket's Fines route as well as Maintenance fixtures.
+        queueRecoveryProcessesStoredBlobOnce(bankingFile);
+    }
+
+    @ParameterizedTest(name = "{0}: configured automatic startup processes Fines payments")
+    @MethodSource("finesBankingFiles")
+    @JiraStory("PO-7244")
+    @JiraEpic("PO-3497")
+    void automaticStartupProcessesPayments(BankingFile bankingFile) throws IOException {
+        prepare(bankingFile);
+        String task = switch (file.processorBean()) {
+            case "DWP" -> "DWP";
+            case "jacobs" -> "Jacobs";
+            case "cder" -> "Cder";
+            case "marston" -> "Marston";
+            case "natWest" -> "NatWest";
+            case "barclaycard" -> "Barclaycard";
+            case "allpay" -> "Allpay";
+            case "BTEckoh" -> "BTEckoh";
+            default -> throw new IllegalArgumentException("Unknown banking task " + file.processorBean());
+        };
+        // Boot invokes the real ApplicationRunner; no processor or testing-support endpoint is called here.
+        try (ConfigurableApplicationContext taskContext = new SpringApplicationBuilder(AutomaticBankingTasks.class)
+            .parent((ConfigurableApplicationContext) applicationContext)
+            .web(WebApplicationType.NONE)
+            .run("--opal.automated-task=" + task + "FileTransferJob",
+                "--opal.testing-support-endpoints.enabled=false", "--spring.main.banner-mode=off")) {
+            assertThat(taskContext.getBeansOfType(TaskRunner.class)).hasSize(1);
+            assertThat(records()).hasSize(2).allSatisfy(record ->
+                assertThat(record.getStatus()).isEqualTo(Status.SUCCESS));
+            assertThat(records()).filteredOn(record -> record.getType() == Type.SOURCE_JSON)
+                .singleElement().satisfies(json -> {
+                    assertThat(json.getOpalDomain()).isEqualTo(Domain.FINES);
+                    assertThat(json.getBusinessUnitId()).containsExactly(BUSINESS_UNIT_ID);
+                    assertThat(json.getFilestoreUuid()).isNotNull();
+                    verify(finesQueue).send(json.getInterfaceFileId());
+                });
+            verifyNoInteractions(maintenanceQueue);
+            verifyNoMoreInteractions(finesQueue);
+            assertNumberOfSftpFiles(file.username(), 0);
+        }
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    @Import({TaskRunner.class, AutomatedDWPFileTransferJob.class, AutomatedJacobsFileTransferJob.class,
+        AutomatedCderFileTransferJob.class, AutomatedMarstonFileTransferJob.class,
+        AutomatedNatWestFileTransferJob.class, AutomatedBarclaycardFileTransferJob.class,
+        AutomatedAllpayFileTransferJob.class, AutomatedBTEckohFileTransferJob.class})
+    static class AutomaticBankingTasks {
     }
 
     static Stream<BankingFile> dwpAndBailiffFiles() {

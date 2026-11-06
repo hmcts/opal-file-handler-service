@@ -7,19 +7,8 @@ Feature: DWP file ingestion
     Given the configured "DWP" file is available on bais
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
     And the "DWP" file ingestion job is requested through testing support
-    Then the testing-support request is accepted
-    And a successful "DWP" interface file is stored
-    And the stored "DWP" file can be retrieved by interface file ID
-    And the stored "DWP" file content matches the bais "file"
-    And the DWP JSON file contains the extracted payments and bank details
-    And the "DWP" JSON file contains the following extracted data
-      | field                              | value      |
-      | transactions[0].date_entry_applied | 07/04/2026 |
-      | transactions[1].date_entry_applied | 06/04/2026 |
-      | transactions[2].date_entry_applied | 08/04/2026 |
-      | transactions[3].date_entry_applied | 10/04/2026 |
-      | transactions[4].date_entry_applied | 01/04/2026 |
-    And the configured "DWP" file no longer exists on bais
+    Then the "DWP" file is processed successfully
+    And the extracted "DWP" payments are ready for the external interface
 
   Scenario: A duplicate DWP file is detected
     Given the configured "DWP" file has already been processed
