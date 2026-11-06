@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
+import uk.gov.hmcts.opal.filehandler.config.DWPBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.PacsTTPBaisExtractionService;
@@ -29,9 +30,12 @@ public class DWPInterfaceFileProcessorService
         ObjectMapper objectMapper,
         PacsTTPBaisExtractionService extractionService,
         FinesInterfaceFilePreprocessQueueService finesQueueService,
-        MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService
+        MaintenanceInterfaceFilePreprocessQueueService maintenanceQueueService,
+        DWPBaisFileProcessorConfiguration config
     ) {
-        super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
-            transactionTemplate, objectMapper, extractionService, finesQueueService, maintenanceQueueService);
+        super(clock, featureFlagUtil, interfaceFileBlobStoreService, interfaceFilesRepository,
+            transactionTemplate, objectMapper, extractionService,
+            new SftpFileIngestionService(config, baisSftpClient),
+            config, finesQueueService, maintenanceQueueService);
     }
 }

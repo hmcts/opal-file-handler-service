@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.config.task;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -38,7 +37,7 @@ public class AutomatedTaskAllpayIntegrationTest extends AbstractIntegrationTest 
 
     @Test
     void shouldCallAutomatedTaskRun() throws IOException {
-        verify(service, times(1)).run(any());
+        verify(service, times(1)).run();
     }
 
 }
