@@ -42,7 +42,7 @@ public class TestSupportDeleteInterfaceFilesIntegrationTest extends AbstractCont
     private static final String FILE_NAME = "file-to-delete.dat";
     private static final String FILE_NAME_2 = "file-to-delete-2.dat";
     private static final UUID FILESTORE_UUID = UUID.fromString("86f86146-08fe-4520-b6db-68bf65e635b4");
-    private static final UUID FILESTORE_UUID_2 = UUID.fromString("86f86146-08fe-4520-b6db-68bf65e635b4");
+    private static final UUID FILESTORE_UUID_2 = UUID.fromString("df728569-7a48-4aad-91f5-f9ec437bf850");
     private static UtilBlobStoreService utilBlobStoreService;
 
     @Autowired
