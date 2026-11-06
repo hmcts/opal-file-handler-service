@@ -40,7 +40,9 @@ public class TestSupportDeleteInterfaceFilesIntegrationTest extends AbstractCont
     private static final String URI = "/testing-support/interface-files";
     private static final String CONTAINER_NAME = "natwest";
     private static final String FILE_NAME = "file-to-delete.dat";
+    private static final String FILE_NAME_2 = "file-to-delete-2.dat";
     private static final UUID FILESTORE_UUID = UUID.fromString("86f86146-08fe-4520-b6db-68bf65e635b4");
+    private static final UUID FILESTORE_UUID_2 = UUID.fromString("86f86146-08fe-4520-b6db-68bf65e635b4");
     private static UtilBlobStoreService utilBlobStoreService;
 
     @Autowired
@@ -91,6 +93,40 @@ public class TestSupportDeleteInterfaceFilesIntegrationTest extends AbstractCont
             assertThat(repository.existsById(file1.getInterfaceFileId())).isFalse();
             assertThat(repository.existsById(file2.getInterfaceFileId())).isFalse();
             assertThat(utilBlobStoreService.getBlobExists(CONTAINER_NAME, FILESTORE_UUID)).isFalse();
+        }
+
+        @Test
+        @DisplayName("PO-11123 - Delete related interface files - successfully deletes related SOURCE and SOURCE_JSON")
+        @JiraStory("PO-11123")
+        @JiraEpic("PO-3497")
+        void successfullyDeletesRelatedInterfaceFiles() throws Exception {
+            // Arrange
+            utilBlobStoreService.createContainerIfNotExists(CONTAINER_NAME);
+            utilBlobStoreService.storeBlob(new byte[] { 0, 1, 2, 3}, CONTAINER_NAME, FILESTORE_UUID);
+            utilBlobStoreService.storeBlob(new byte[] { 2, 3, 4, 5}, CONTAINER_NAME, FILESTORE_UUID_2);
+            InterfaceFileEntity file1 = createSourceInterfaceFile();
+            InterfaceFileEntity file2 = interfaceFileEntityTestData
+                .saveTypicalRelatedChildInterfaceFile(FILE_NAME_2, FILESTORE_UUID_2, "0987654321", file1);
+
+            List<Long> ids = List.of(file1.getInterfaceFileId());
+
+            // Act + Assert
+            DeleteInterfaceFilesResultTestSupport expectedResponse = DeleteInterfaceFilesResultTestSupport.builder()
+                .successfullyDeletedIds(ids)
+                .failedIds(Collections.emptyList())
+                .build();
+
+            setupApiTest(HttpMethod.DELETE, URI)
+                .param("ids", buildParams(ids))
+                .clearPermissions()
+                .execute()
+                .assertSuccess(HttpStatus.OK)
+                .assertBody(expectedResponse);
+
+            assertThat(repository.existsById(file1.getInterfaceFileId())).isFalse();
+            assertThat(repository.existsById(file2.getInterfaceFileId())).isFalse();
+            assertThat(utilBlobStoreService.getBlobExists(CONTAINER_NAME, FILESTORE_UUID)).isFalse();
+            assertThat(utilBlobStoreService.getBlobExists(CONTAINER_NAME, FILESTORE_UUID_2)).isFalse();
         }
 
         @Disabled("This test passes but runs very slowly due to the retries on connecting to azure")

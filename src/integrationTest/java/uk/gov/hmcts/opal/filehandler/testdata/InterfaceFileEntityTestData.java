@@ -44,12 +44,30 @@ public class InterfaceFileEntityTestData {
             .build());
     }
 
+    public InterfaceFileEntity saveTypicalRelatedChildInterfaceFile(
+        String fileName,
+        UUID filestoreUuid,
+        String checksum,
+        InterfaceFileEntity parent
+    ) {
+        InterfaceFileEntity child = getTypicalRelatedChildInterfaceFile(fileName, parent);
+        child.setFilestoreUuid(filestoreUuid);
+        child.setChecksum(checksum);
+        saveAndFlushInterfaceFile(child);
+        return child;
+    }
+
     public InterfaceFileEntity getTypicalRelatedChildInterfaceFile(
         String fileName,
         InterfaceFileEntity parent
     ) {
         InterfaceFileEntity child = getTypicalInterfaceFile(fileName);
 
+        if (parent.getType() == Type.SOURCE) {
+            child.setType(Type.SOURCE_JSON);
+        } else {
+            child.setType(Type.TRANSFORMED_JSON);
+        }
         child.setPaymentType(PaymentType.CASH);
         child.setBusinessUnitId(new Short[] {1, 2});
         child.setRelatedInterfaceFile(parent);
