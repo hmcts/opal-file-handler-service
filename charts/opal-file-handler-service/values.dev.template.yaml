@@ -126,6 +126,8 @@ blobstorage:
       - barclaycard
       - cder
       - bteckoh
+      - vpfpo
+      - vpfpo-external
 bais-emulator:
   enabled: true
   azureName: "opalfilebaisapr${CHANGE_ID}"
