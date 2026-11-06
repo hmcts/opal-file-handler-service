@@ -646,8 +646,8 @@ public class InterfaceFilesServiceTest {
         when(repository.findById(sourceId)).thenReturn(Optional.of(sourceFile));
         when(repository.findByTypeAndChecksumAndFileName(Type.SOURCE, checksum, fileName)).thenReturn(
             new ArrayList<>(List.of(sourceFile, supersededSourceFile)));
-        when(repository.existsByFilestoreUuidAndInterfaceFileIdNot(eq(filestoreUuid), anyLong()))
-            .thenReturn(true, false);
+        when(repository.existsByFilestoreUuidAndSourceAndInterfaceFileIdNot(
+            eq(filestoreUuid), eq(Interface.NATWEST), anyLong())).thenReturn(true, false);
 
         // Act
         List<Long> ids = List.of(sourceId);
