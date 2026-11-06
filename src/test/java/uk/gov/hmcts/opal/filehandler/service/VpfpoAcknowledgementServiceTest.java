@@ -3,13 +3,17 @@ package uk.gov.hmcts.opal.filehandler.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -17,14 +21,15 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.hmcts.opal.filehandler.config.VpfpoAcknowledgementsConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.VpfpoRegistrationEntity;
 import uk.gov.hmcts.opal.filehandler.entity.VpfpoRegistrationStatus;
 import uk.gov.hmcts.opal.filehandler.repository.VpfpoRegistrationRepository;
+import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 
 @ExtendWith(MockitoExtension.class)
 class VpfpoAcknowledgementServiceTest {
@@ -35,8 +40,20 @@ class VpfpoAcknowledgementServiceTest {
     @Spy
     private VpfpoAcknowledgementXmlService xmlService;
 
-    @InjectMocks
+    @Mock
+    private InterfaceFileBlobStoreService blobStore;
+
     private VpfpoAcknowledgementService service;
+
+    @BeforeEach
+    void setUp() {
+        VpfpoAcknowledgementsConfiguration configuration = new VpfpoAcknowledgementsConfiguration();
+        configuration.setContainerName("vpfpo-acknowledgements");
+        service = new VpfpoAcknowledgementService(repository, xmlService, blobStore, configuration);
+    }
+
+    @Captor
+    private ArgumentCaptor<byte[]> uploadedXml;
 
     @Captor
     private ArgumentCaptor<List<VpfpoRegistrationEntity>> groups;
@@ -50,6 +67,10 @@ class VpfpoAcknowledgementServiceTest {
         service.generateAcknowledgements();
 
         verify(xmlService).generate(List.of(first, second));
+        verify(blobStore).uploadXmlFile(eq("vp000123_01_99990002_ack.xml"),
+            eq("vpfpo-acknowledgements"), uploadedXml.capture());
+        assertThat(new String(uploadedXml.getValue(), StandardCharsets.UTF_8))
+            .contains("<TicketNumber>T0100145</TicketNumber>", "<FineAccountNumber>12345</FineAccountNumber>");
         assertThat(first.getAcknowledged()).isFalse();
         assertThat(second.getAcknowledged()).isFalse();
         assertThat(first.getAcknowledgementFileName()).isNull();
@@ -83,7 +104,7 @@ class VpfpoAcknowledgementServiceTest {
 
         service.generateAcknowledgements();
 
-        verifyNoInteractions(xmlService);
+        verifyNoInteractions(xmlService, blobStore);
     }
 
     @ParameterizedTest
@@ -124,7 +145,7 @@ class VpfpoAcknowledgementServiceTest {
 
         service.generateAcknowledgements();
 
-        verifyNoInteractions(xmlService);
+        verifyNoInteractions(xmlService, blobStore);
     }
 
     @Test
@@ -151,7 +172,7 @@ class VpfpoAcknowledgementServiceTest {
 
         service.generateAcknowledgements();
 
-        verifyNoInteractions(xmlService);
+        verifyNoInteractions(xmlService, blobStore);
     }
 
     @Test
@@ -165,7 +186,7 @@ class VpfpoAcknowledgementServiceTest {
 
         service.generateAcknowledgements();
 
-        verifyNoInteractions(xmlService);
+        verifyNoInteractions(xmlService, blobStore);
     }
 
     @Test
@@ -200,7 +221,7 @@ class VpfpoAcknowledgementServiceTest {
 
         service.generateAcknowledgements();
 
-        verifyNoInteractions(xmlService);
+        verifyNoInteractions(xmlService, blobStore);
     }
 
     @ParameterizedTest
@@ -210,7 +231,7 @@ class VpfpoAcknowledgementServiceTest {
 
         assertThatThrownBy(service::generateAcknowledgements).isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("vp" + fileGen + "_");
-        verifyNoInteractions(xmlService);
+        verifyNoInteractions(xmlService, blobStore);
     }
 
     @Test
@@ -221,6 +242,20 @@ class VpfpoAcknowledgementServiceTest {
 
         assertThatThrownBy(service::generateAcknowledgements).isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Incomplete or invalid VPFPO acknowledgement data");
+        assertThat(published.getAcknowledged()).isFalse();
+        assertThat(published.getAcknowledgementFileName()).isNull();
+        verify(repository, never()).saveAllAndFlush(any());
+    }
+
+    @Test
+    void propagatesUploadFailureWithoutChangingAcknowledgementState() {
+        VpfpoRegistrationEntity published = registration("000123", 1, 2);
+        when(repository.findAll()).thenReturn(List.of(published));
+        IllegalStateException failure = new IllegalStateException("Storage unavailable");
+        doThrow(failure).when(blobStore).uploadXmlFile(any(), any(), any());
+
+        assertThatThrownBy(service::generateAcknowledgements).isSameAs(failure);
+
         assertThat(published.getAcknowledged()).isFalse();
         assertThat(published.getAcknowledgementFileName()).isNull();
         verify(repository, never()).saveAllAndFlush(any());

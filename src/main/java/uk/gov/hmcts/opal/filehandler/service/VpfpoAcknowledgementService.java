@@ -9,10 +9,12 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import uk.gov.hmcts.opal.filehandler.config.VpfpoAcknowledgementsConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.VpfpoRegistrationEntity;
 import uk.gov.hmcts.opal.filehandler.entity.VpfpoRegistrationStatus;
 import uk.gov.hmcts.opal.filehandler.repository.VpfpoRegistrationRepository;
+import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +26,8 @@ public class VpfpoAcknowledgementService {
 
     private final VpfpoRegistrationRepository vpfpoRegistrationRepository;
     private final VpfpoAcknowledgementXmlService xmlService;
+    private final InterfaceFileBlobStoreService blobStore;
+    private final VpfpoAcknowledgementsConfiguration configuration;
 
     public void generateAcknowledgements() {
         for (var entry : findAllGroupedByFileGenAndCtoCodeAndLjaCode().entrySet()) {
@@ -62,7 +66,8 @@ public class VpfpoAcknowledgementService {
         String fileName = String.format(Locale.ROOT, "vp%s_%02d_9999%04d_ack.xml",
             key.fileGen(), key.ctoCode(), key.ljaCode());
 
-        log.info("Generated VPFPO acknowledgement file {} with {} registrations", fileName, published.size());
+        blobStore.uploadXmlFile(fileName, configuration.getContainerName(), xml);
+        log.info("Uploaded VPFPO acknowledgement file {} with {} registrations", fileName, published.size());
     }
 
     private Map<VpfpoRegistrationGroupKey, List<VpfpoRegistrationEntity>>
