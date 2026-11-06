@@ -42,6 +42,10 @@ public class InterfaceFileProcessorService {
     protected final FileIngestionService<String> fileIngestionService;
     protected final FileProcessorConfiguration config;
 
+    protected void processFile(InterfaceFileEntity fileEntity, InputStream inputStream) {
+        processFile(fileEntity, inputStream, getCurrentUserId());
+    }
+
     protected void processFile(
         InterfaceFileEntity fileEntity,
         InputStream inputStream,
@@ -195,16 +199,22 @@ public class InterfaceFileProcessorService {
         }
     }
 
-    private void completeIngestion(String fileName, InterfaceFileEntity entity) {
+    public void completeIngestion(String fileName, InterfaceFileEntity entity) {
+        completeIngestion(fileName, entity, true);
+    }
+
+    public void completeIngestion(String fileName, InterfaceFileEntity entity,
+        boolean deleteIngestedFileFromSourceLocation) {
         if (entity.getStatus().equals(Status.FAILED)) {
             return;
         }
 
-        boolean deleted = fileIngestionService.deleteFile(fileName);
-
-        if (!deleted) {
-            log.error("Unable to delete BAIS file '{}' for interfaceFileId={}",
-                fileName, entity.getInterfaceFileId());
+        if (deleteIngestedFileFromSourceLocation) {
+            boolean deleted = fileIngestionService.deleteFile(fileName);
+            if (!deleted) {
+                log.error("Unable to delete BAIS file '{}' for interfaceFileId={}",
+                    fileName, entity.getInterfaceFileId());
+            }
         }
 
         if (entity.getStatus().equals(Status.INGESTED)) {
