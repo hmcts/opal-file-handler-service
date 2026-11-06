@@ -132,6 +132,8 @@ opal:
       supported-algorithms:
         sha-512: SHA-512
   file-handler-service:
+    vpfpo-acknowledgements:
+      container-name: ${VPFPO_ACKNOWLEDGEMENTS_AZURE_STORAGE_CONTAINER:vpfpo-acknowledgements}
     extraction-service:
       max-retries: ${EXTRACTION_SERVICE_MAX_RETRIES:5}
     file-store:
