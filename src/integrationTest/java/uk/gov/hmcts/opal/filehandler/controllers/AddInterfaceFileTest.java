@@ -18,7 +18,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
@@ -83,7 +84,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     private AddInterfaceFileRequestMetadata buildMetaData(InterfaceFileEnumInterfaceFile source, Long relatedId) {
         return AddInterfaceFileRequestMetadata.builder()
             .fileName("file-name.dat")
-            .businessUnitCode("010")
+            .businessUnitId((short) 10)
             .paymentType(PaymentTypeEnumTypes.CASH)
             .type(InterfaceFileTypeEnumInterfaceFile.SOURCE)
             .domain(DomainEnumTypes.FINES)
@@ -153,6 +154,7 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     @Nested
     @DisplayName("Feature Flag On")
     class FeatureOn {
+
         @BeforeAll
         static void setupData() throws IOException {
             utilBlobStoreService = new UtilBlobStoreService();
@@ -162,11 +164,12 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             fileContents = Resources.toByteArray(url);
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("Correctly adds a new interface file on the db and blob store")
-        void addNewInterfaceFileToDBAndBlobStore() {
+        void addNewInterfaceFileToDBAndBlobStore(boolean isSystemUser) {
             InterfaceFileObjectInterfaceFile expectedResponse = buildExpectedResponse(
                 buildEntity("some-file-name",
                     "d553f8f289bd08e5c513de5c000c0374",
@@ -176,29 +179,30 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
 
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
 
-            InterfaceFileObjectInterfaceFile response =  setupFileUploadApiTest(HttpMethod.POST, URI)
+            InterfaceFileObjectInterfaceFile response = setupFileUploadApiTest(HttpMethod.POST, URI)
                 .includeMultipartBody(
                     "file", "some-file-name", "application/json", fileContents)
                 .includeMultipartBody(
                     "metadata", "metadata.json", "application/json", metadata.getBytes())
                 .includeContentDigest()
                 .clearPermissions()
-                .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
+                .addPermission((short) 2, FileHandlerPermission.CREATE_INTERFACE_FILES)
+                .systemUser(isSystemUser)
                 .execute()
                 .assertSuccess(HttpStatus.CREATED)
                 .getResponseBodyAsObject(InterfaceFileObjectInterfaceFile.class);
-
 
             assertResponse(expectedResponse, response);
             assertExistsInDatabase(response.getInterfaceFileId());
             assertAddedToBlobStorage("bteckoh-report", response.getFilestoreUuid().toString());
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("Fails when user has no permissions")
-        void failsWhenUserHasNoPermission() {
+        void failsWhenUserHasNoPermission(boolean isSystemUser) {
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
 
             setupFileUploadApiTest(HttpMethod.POST, URI)
@@ -208,17 +212,19 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
                     "metadata", "metadata.json", "application/json", metadata.getBytes())
                 .includeContentDigest()
                 .clearPermissions()
+                .systemUser(isSystemUser)
                 .execute()
                 .assertForbidden();
 
             assertDatabaseUnchanged();
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("Correctly sets related interface file")
-        void relatedFileIsSetCorrectly() {
+        void relatedFileIsSetCorrectly(boolean isSystemUser) {
             InterfaceFileEntity originalEntity = buildEntity("some-file-name",
                 "d553f8f289bd08e5c513de5c000c0374", Status.SUCCESS, null, null, 1L);
             insertInterfaceFileEntity(originalEntity);
@@ -230,26 +236,27 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT,
                 originalEntity.getInterfaceFileId()));
 
-            InterfaceFileObjectInterfaceFile response =  setupFileUploadApiTest(HttpMethod.POST, URI)
+            InterfaceFileObjectInterfaceFile response = setupFileUploadApiTest(HttpMethod.POST, URI)
                 .includeMultipartBody("file", "some-other-file-name", "application/json", fileContents)
                 .includeMultipartBody("metadata", "metadata.json", "application/json", metadata.getBytes())
                 .includeContentDigest()
                 .clearPermissions()
-                .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
+                .addPermission((short) 2, FileHandlerPermission.CREATE_INTERFACE_FILES)
+                .systemUser(isSystemUser)
                 .execute()
                 .assertSuccess(HttpStatus.CREATED)
                 .getResponseBodyAsObject(InterfaceFileObjectInterfaceFile.class);
-
 
             assertResponse(expectedResponse, response);
             assertExistsInDatabase(response.getInterfaceFileId());
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("Correctly adds a duplicate file")
-        void rejectsDuplicateCorrectly() {
+        void rejectsDuplicateCorrectly(boolean isSystemUser) {
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
 
             InterfaceFileEntity originalEntity = buildEntity(
@@ -266,16 +273,16 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
                         + "\"}", null, 1L)
             );
 
-            InterfaceFileObjectInterfaceFile response =  setupFileUploadApiTest(HttpMethod.POST, URI)
+            InterfaceFileObjectInterfaceFile response = setupFileUploadApiTest(HttpMethod.POST, URI)
                 .includeMultipartBody("file", "some-file-name", "application/json", fileContents)
                 .includeMultipartBody("metadata", "metadata.json", "application/json", metadata.getBytes())
                 .includeContentDigest()
                 .clearPermissions()
-                .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
+                .addPermission((short) 2, FileHandlerPermission.CREATE_INTERFACE_FILES)
+                .systemUser(isSystemUser)
                 .execute()
                 .assertSuccess(HttpStatus.CREATED)
                 .getResponseBodyAsObject(InterfaceFileObjectInterfaceFile.class);
-
 
             assertResponse(expectedResponse, response);
             assertDuplicateExistsInDatabase("some-file-name", "d553f8f289bd08e5c513de5c000c0374");
@@ -287,18 +294,19 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             );
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("AC4 - Repeating an INGESTED file creates a new record and blob")
-        void ingestedFileIsNotDuplicate() {
+        void ingestedFileIsNotDuplicate(boolean isSystemUser) {
             InterfaceFileEntity original = buildEntity("some-file-name",
                 "d553f8f289bd08e5c513de5c000c0374", Status.INGESTED, null, null, 1L);
             insertInterfaceFileEntity(original);
             utilBlobStoreService.storeBlob(fileContents, "bteckoh-report", uuid.toString());
 
             InterfaceFileObjectInterfaceFile response = uploadContent(fileContents,
-                buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
+                buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null), isSystemUser);
 
             assertEquals(StatusEnumInterfaceFile.INGESTED, response.getStatus());
             assertNotEquals(original.getInterfaceFileId(), response.getInterfaceFileId());
@@ -309,14 +317,15 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             assertAddedToBlobStorage("bteckoh-report", uuid.toString());
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("AC2 - Invalid BTEckoh JSON is recorded as FAILED without a blob reference")
-        void invalidContentIsRecordedAsFailed() {
+        void invalidContentIsRecordedAsFailed(boolean isSystemUser) {
             InterfaceFileObjectInterfaceFile response = uploadContent(
                 "{}".getBytes(StandardCharsets.UTF_8),
-                buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
+                buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null), isSystemUser);
 
             assertEquals(StatusEnumInterfaceFile.FAILED, response.getStatus());
             assertNull(response.getFilestoreUuid());
@@ -328,15 +337,16 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             assertNull(stored.getFilestoreUuid());
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("AC2 - Different metadata and multipart filenames are accepted")
-        void differentMetadataFilenameIsAccepted() {
+        void differentMetadataFilenameIsAccepted(boolean isSystemUser) {
             AddInterfaceFileRequestMetadata metadata = buildMetaData(
                 InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null);
             metadata.setFileName("different-metadata-name.xlsx");
-            InterfaceFileObjectInterfaceFile response = uploadContent(fileContents, metadata);
+            InterfaceFileObjectInterfaceFile response = uploadContent(fileContents, metadata, isSystemUser);
 
             assertEquals(StatusEnumInterfaceFile.INGESTED, response.getStatus());
             assertEquals("some-file-name", response.getFileName());
@@ -345,13 +355,14 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
             assertAddedToBlobStorage("bteckoh-report", response.getFilestoreUuid().toString());
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("AC2 - Reject a multipart upload without the required file")
         @JiraDefect("PO-10908")
         @Disabled("PO-10908: missing multipart parts return 500; re-enable when fixed to return 400")
-        void rejectsMissingFilePart() {
+        void rejectsMissingFilePart(boolean isSystemUser) {
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
             setupFileUploadApiTest(HttpMethod.POST, URI)
                 .includeMultipartBody("metadata", "metadata.json", "application/json",
@@ -359,37 +370,41 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
                 .includeContentDigest()
                 .clearPermissions()
                 .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
+                .systemUser(isSystemUser)
                 .execute()
                 .assertStatus(HttpStatus.BAD_REQUEST);
             assertDatabaseUnchanged();
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("AC2 - Reject a multipart upload without the required metadata")
         @JiraDefect("PO-10908")
         @Disabled("PO-10908: missing multipart parts return 500; re-enable when fixed to return 400")
-        void rejectsMissingMetadataPart() {
+        void rejectsMissingMetadataPart(boolean isSystemUser) {
             setupFileUploadApiTest(HttpMethod.POST, URI)
                 .includeMultipartBody("file", "some-file-name", "application/octet-stream", fileContents)
                 .includeContentDigest()
                 .clearPermissions()
                 .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
+                .systemUser(isSystemUser)
                 .execute()
                 .assertStatus(HttpStatus.BAD_REQUEST);
             assertDatabaseUnchanged();
         }
 
         private InterfaceFileObjectInterfaceFile uploadContent(
-            byte[] content, AddInterfaceFileRequestMetadata metadata) {
+            byte[] content, AddInterfaceFileRequestMetadata metadata, boolean isSystemUser) {
             return setupFileUploadApiTest(HttpMethod.POST, URI)
                 .includeMultipartBody("file", "some-file-name", "application/octet-stream", content)
                 .includeMultipartBody("metadata", "metadata.json", "application/json",
                     toJsonString(metadata).getBytes(StandardCharsets.UTF_8))
                 .includeContentDigest()
                 .clearPermissions()
-                .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
+                .addPermission((short) 2, FileHandlerPermission.CREATE_INTERFACE_FILES)
+                .systemUser(isSystemUser)
                 .execute()
                 .assertSuccess(HttpStatus.CREATED)
                 .getResponseBodyAsObject(InterfaceFileObjectInterfaceFile.class);
@@ -404,16 +419,18 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     @Nested
     class FeatureOff {
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("API should return 404 when feature flag is off")
-        void addInterfaceFile_shouldReturn404_whenFeatureFlagIsOff() throws Exception {
+        void addInterfaceFile_shouldReturn404_whenFeatureFlagIsOff(boolean isSystemUser) throws Exception {
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
             setupFileUploadApiTest(HttpMethod.POST, URI)
                 .includeMultipartBody("file", "some-file-name", "application/json", fileContents)
                 .includeMultipartBody("metadata", "metadata.json", "application/json", metadata.getBytes())
                 .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
+                .systemUser(isSystemUser)
                 .execute()
                 .assertFeatureFlagDisabledResponse();
         }
@@ -425,17 +442,19 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
     })
     @Nested
     class BlobStorageFailure {
+
         @BeforeAll
         static void setupData() throws IOException {
             URL url = Resources.getResource(bteckohResourcePath);
             fileContents = Resources.toByteArray(url);
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(booleans = {false, true})
         @JiraStory("PO-6453")
         @JiraEpic("PO-3497")
         @DisplayName("Correctly handles a blob store upload failure")
-        void blobstoreUploadfailure() {
+        void blobstoreUploadfailure(boolean isSystemUser) {
             String metadata = toJsonString(buildMetaData(InterfaceFileEnumInterfaceFile.BTECKOH_REPORT, null));
             String problemDetail = "Blob upload failed for file 'some-file-name': Status code 404, "
                 + "\"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Error>\n  <Code>ContainerNotFound"
@@ -449,7 +468,8 @@ public class AddInterfaceFileTest extends AbstractControllerIntegrationTest {
                 .includeMultipartBody("metadata", "metadata.json", "application/json", metadata.getBytes())
                 .includeContentDigest()
                 .clearPermissions()
-                .addPermission((short) 1, FileHandlerPermission.VIEW_INTERFACE_FILES)
+                .addPermission((short) 2, FileHandlerPermission.CREATE_INTERFACE_FILES)
+                .systemUser(isSystemUser)
                 .execute()
                 .assertProblemDetails(HttpStatus.SERVICE_UNAVAILABLE, problemDetail, "Service Unavailable", false);
 

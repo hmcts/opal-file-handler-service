@@ -28,8 +28,6 @@ import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient.Interfac
  */
 public class AddInterfaceFileStepDef extends BaseStepDef {
 
-    private static final long HUMAN_TEST_USER_ID = 500000000L;
-
     private static final String WORKBOOK = "test-data/bteckoh-report/bteckoh-test-file.xlsx";
     private String fileName;
     private byte[] content;
@@ -64,17 +62,22 @@ public class AddInterfaceFileStepDef extends BaseStepDef {
 
     @When("I upload the BTEckoh interface file")
     public void uploadWorkbook() {
-        upload(BearerTokenStepDef.getToken(), fileName);
+        upload(BearerTokenStepDef.getToken(), fileName, "FINES");
+    }
+
+    @When("I upload the BTEckoh interface file for domain {string}")
+    public void uploadWorkbookForDomain(String domain) {
+        upload(BearerTokenStepDef.getToken(), fileName, domain);
     }
 
     @When("I upload the BTEckoh interface file without a token")
     public void uploadWithoutToken() {
-        upload(null, fileName);
+        upload(null, fileName, "FINES");
     }
 
     @When("I upload the BTEckoh interface file with a different metadata filename")
     public void uploadWithDifferentMetadataFilename() {
-        upload(BearerTokenStepDef.getToken(), "metadata-" + fileName);
+        upload(BearerTokenStepDef.getToken(), "metadata-" + fileName, "FINES");
     }
 
     @When("I upload invalid JSON as a BTEckoh interface file")
@@ -123,7 +126,7 @@ public class AddInterfaceFileStepDef extends BaseStepDef {
             assertEquals("SOURCE", record.type());
             assertEquals("FINES", record.domain());
             assertEquals(DigestUtils.md5Hex(content), record.checksum());
-            assertEquals(HUMAN_TEST_USER_ID, record.createdBy(),
+            assertEquals(expectedHumanUserId(), record.createdBy(),
                 "The uploaded interface file should be attributed to the human test user");
             assertEquals(record.filestoreUuid() == null ? null : record.filestoreUuid().toString(),
                 lastResponse().jsonPath().getString("filestore_uuid"));
@@ -181,15 +184,23 @@ public class AddInterfaceFileStepDef extends BaseStepDef {
         }
     }
 
-    private void upload(String token, String metadataFilename) {
+    private void upload(String token, String metadataFilename, String domain) {
         String metadata = """
-            {"source":"BTECKOH_REPORT","target":"OPAL","type":"SOURCE","domain":"FINES",
+            {"source":"BTECKOH_REPORT","target":"OPAL","type":"SOURCE","domain":"%s",
              "file_name":"%s","payment_type":"CASH","should_pre_process_file":false}
-            """.formatted(metadataFilename);
+            """.formatted(domain, metadataFilename);
         jsonRequestWithOptionalToken(token)
             .contentType("multipart/form-data")
             .multiPart("file", fileName, content, "application/octet-stream")
             .multiPart("metadata", "metadata.json", metadata.getBytes(StandardCharsets.UTF_8), "application/json")
             .when().post(getTestUrl() + "/interface-files");
+    }
+
+    private long expectedHumanUserId() {
+        return switch (scenarioContext().getCurrentUserOrDefault(BearerTokenStepDef.DEFAULT_USER)) {
+            case "opal-test-3@dev.platform.hmcts.net" -> 500000002L;
+            case "opal-test@dev.platform.hmcts.net" -> 500000000L;
+            default -> throw new IllegalStateException("No functional-test user ID configured for the current user");
+        };
     }
 }

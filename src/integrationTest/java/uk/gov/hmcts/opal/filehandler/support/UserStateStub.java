@@ -128,6 +128,7 @@ public class UserStateStub {
         this.isStubbed = true;
     }
 
+
     public OpalJwtAuthenticationToken getOpalJwtAuthenticationToken() {
         return new OpalJwtAuthenticationToken(getUserState(), Domain.FILE_HANDLING,
             parseJwt(jwtStr),
@@ -289,6 +290,10 @@ public class UserStateStub {
     public void setupWithNoPermissions() {
         this.userState = getDefaultUserState(userState.getUserId());
         getDomainBusinessUnitUsers().getBusinessUnitUsers().clear();
+    }
+
+    public void isSystemUser(boolean value) {
+        userState.setSystemUser(value);
     }
 
     private DomainBusinessUnitUsers getDomainBusinessUnitUsers() {

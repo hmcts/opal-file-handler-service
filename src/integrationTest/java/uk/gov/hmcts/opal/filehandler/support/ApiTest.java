@@ -35,6 +35,11 @@ public class ApiTest {
         return this;
     }
 
+    public ApiTest systemUser(boolean isSystemUser) {
+        userStateStub.isSystemUser(isSystemUser);
+        return this;
+    }
+
     public ApiTest addPermission(short businessUnit, FileHandlerPermission permission) {
         userStateStub.addPermissions(businessUnit, permission);
         return this;
@@ -55,6 +60,14 @@ public class ApiTest {
             requestBuilder.with(userStateStub.getAuthenticaitonRequestPostProcessor())
                 .header("Authorization", userStateStub.getBearerToken());
         }
+        return this;
+    }
+
+    public ApiTest param(String name, String value) {
+        if (requestBuilder == null) {
+            build();
+        }
+        requestBuilder.param(name, value);
         return this;
     }
 

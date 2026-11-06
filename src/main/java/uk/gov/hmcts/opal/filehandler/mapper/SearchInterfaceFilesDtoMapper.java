@@ -21,7 +21,7 @@ public interface SearchInterfaceFilesDtoMapper {
         DomainEnumTypes domain,
         StatusEnumInterfaceFile status,
         List<StatusEnumInterfaceFile> notStatuses,
-        String businessUnitCode,
+        Short businessUnitId,
         LocalDateTime fromDate,
         LocalDateTime toDate);
 }

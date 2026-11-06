@@ -3,8 +3,10 @@ package uk.gov.hmcts.opal.filehandler.service;
 import com.azure.core.util.BinaryData;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
+import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -32,9 +35,11 @@ import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
+import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
+import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
 
 @Service
@@ -45,19 +50,22 @@ public class InterfaceFilesService {
     private final InterfaceFileSpecsFactory specsFactory;
     private final InterfaceFileMapper mapper;
     private final InterfaceFileBlobStoreService blobStoreService;
-    private final Map<String, BaisFileProcessorConfiguration> configs;
+    private final InterfaceFilesPdplLoggingService loggingService;
+    private final Map<String, FileProcessorConfiguration> configs;
     private final Map<Class<? extends InterfaceFileProcessorService>, InterfaceFileProcessorService> processorServices;
 
     public InterfaceFilesService(InterfaceFilesRepository repository,
         InterfaceFileSpecsFactory specsFactory,
         InterfaceFileMapper mapper,
         InterfaceFileBlobStoreService blobStoreService,
-        Map<String, BaisFileProcessorConfiguration> configs,
+        InterfaceFilesPdplLoggingService loggingService,
+        Map<String, FileProcessorConfiguration> configs,
         List<InterfaceFileProcessorService> processorServicesList) {
         this.repository = repository;
         this.specsFactory = specsFactory;
         this.mapper = mapper;
         this.blobStoreService = blobStoreService;
+        this.loggingService = loggingService;
         this.configs = configs;
 
         this.processorServices = processorServicesList.stream()
@@ -76,28 +84,27 @@ public class InterfaceFilesService {
     }
 
 
-    private BaisFileProcessorConfiguration getConfig(Interface source) {
-        return configs.get(source.getConfigComponentName());
+    private FileProcessorConfiguration getConfig(Interface interfaceType) {
+        return configs.get(interfaceType.getConfigComponentName());
     }
 
 
     @Transactional(readOnly = true)
     public List<InterfaceFileObjectInterfaceFile> searchInterfaceFiles(SearchInterfaceFilesDto request) {
-        // Permissions to be dealt with by: https://tools.hmcts.net/jira/browse/PO-8686
-        // PermissionUtil.checkPermissions(FileHandlerPermission.VIEW_INTERFACE_FILES);
+        PermissionUtil.checkPermissionDomainAgnostic(FileHandlerPermission.VIEW_INTERFACE_FILES);
 
-        Specification<InterfaceFileEntity> specs = specsFactory.createSearchSpecs(request);
+        Specification<InterfaceFileEntity> specs = specsFactory.createSearchSpecs(request, permittedDomains());
+
         Sort sort = Sort.by(Direction.ASC, TypedPropertyPath.of(InterfaceFileEntity::getCreatedDatetime));
         List<InterfaceFileEntity> interfacesFiles = repository.findAll(specs, sort);
+
         return mapper.toInterfaceFileObjects(interfacesFiles);
     }
 
 
     public InputStream getInterfaceFilesContent(Long id) {
-        // TODO: permission check is removed from this api, to be re-added in PO-8686
-        // PermissionUtil.checkPermission(FileHandlerPermission.ViewInterfacesFile);
-
         InterfaceFileEntity entity = getInterfaceFileEntity(id);
+        checkAccessPermission(entity);
 
         if (entity.getStatus() != Status.SUCCESS) {
             throw new InvalidInterfaceFileStatusException(
@@ -106,10 +113,17 @@ public class InterfaceFilesService {
                     id, entity.getStatus()));
         }
 
-        BaisFileProcessorConfiguration config = getConfig(entity.getSource());
+        FileProcessorConfiguration config = getConfig(getInterfaceType(
+            entity.getSource(), entity.getTarget()
+        ));
         String containerName = config.getContainerName();
 
         BinaryData file = blobStoreService.fetchInterfaceFile(id, entity.getFilestoreUuid(), containerName);
+
+        UserStateV2 userState = SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser().getUserState();
+        if (!userState.isSystemUser()) {
+            loggingService.logPdpl(id, userState);
+        }
 
         return file.toStream();
     }
@@ -117,11 +131,12 @@ public class InterfaceFilesService {
     public InterfaceFileObjectInterfaceFile getInterfaceFile(Long id) {
         InterfaceFileEntity entity = getInterfaceFileEntity(id);
         checkAccessPermission(entity);
+
         return mapper.toInterfaceFileObject(entity);
     }
 
     private void checkAccessPermission(InterfaceFileEntity entity) {
-        if (entity.getOpalDomain() != null && !entity.getOpalDomain().equals(Domain.FILE_HANDLER)) {
+        if (entity.getOpalDomain() != null) {
             PermissionUtil.checkPermissionInDomain(FileHandlerPermission.VIEW_INTERFACE_FILES,
                 entity.getOpalDomain().toCommonDomain());
         } else {
@@ -134,6 +149,21 @@ public class InterfaceFilesService {
             .orElseThrow(() -> new InterfaceFileNotFoundException(id));
     }
 
+    private Set<uk.gov.hmcts.opal.filehandler.entity.Domain> permittedDomains() {
+        return SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser()
+            .getUserState()
+            .getDomains()
+            .entrySet()
+            .stream()
+            .filter(entry -> entry.getValue().getBusinessUnitUsers().stream()
+                .flatMap(user -> user.getPermissions().stream())
+                .anyMatch(permission -> permission.getDescription()
+                    .equalsIgnoreCase(FileHandlerPermission.VIEW_INTERFACE_FILES.getDescription())))
+            .flatMap(entry -> Arrays.stream(uk.gov.hmcts.opal.filehandler.entity.Domain.values())
+                .filter(domain -> domain.toCommonDomain() == entry.getKey()))
+            .collect(Collectors.toSet());
+    }
+
     private InterfaceFileProcessorService getProcessorService(Interface sourceType) {
         return processorServices.get(sourceType.getProcessorServiceClass());
     }
@@ -141,16 +171,29 @@ public class InterfaceFilesService {
     @Transactional
     public InterfaceFileObjectInterfaceFile addInterfaceFile(MultipartFile file,
         AddInterfaceFileRequestMetadata metadata) {
+
+        DomainEnumTypes metadataDomain = metadata.getDomain();
+        Domain fromMetadata = Domain.valueOf(metadataDomain);
+
+        if (metadataDomain != null && fromMetadata != null) {
+            PermissionUtil.checkPermissionInDomain(
+                FileHandlerPermission.CREATE_INTERFACE_FILES, fromMetadata.toCommonDomain());
+        } else {
+            PermissionUtil.checkPermission(FileHandlerPermission.CREATE_INTERFACE_FILES);
+        }
+
         try {
             //Ensure the related interface file exists if provided
             InterfaceFileEntity relatedInterfaceFile = null;
             if (metadata.getRelatedInterfaceFileId() != null) {
                 relatedInterfaceFile = getInterfaceFileEntity(metadata.getRelatedInterfaceFileId());
             }
-            Interface source = Interface.valueOf(metadata.getSource());
-            InterfaceFileProcessorService processorService =
-                getProcessorService(source);
-            BaisFileProcessorConfiguration config = getConfig(source);
+            Interface interfaceType = getInterfaceType(
+                Interface.valueOf(metadata.getSource()),
+                Interface.valueOf(metadata.getTarget())
+            );
+            InterfaceFileProcessorService processorService = getProcessorService(interfaceType);
+            FileProcessorConfiguration config = getConfig(interfaceType);
 
             InterfaceFileEntity entity = processorService.ingestFile(
                 file.getOriginalFilename(),
@@ -164,13 +207,18 @@ public class InterfaceFilesService {
             );
             entity.setRelatedInterfaceFile(relatedInterfaceFile);
             entity.setPaymentType(PaymentType.valueOf(metadata.getPaymentType()));
-            entity.setBusinessUnitCode(new String[] {metadata.getBusinessUnitCode()});
+            entity.setBusinessUnitId(new Short[] {metadata.getBusinessUnitId()});
             entity = repository.save(entity);
-            return getInterfaceFile(entity.getInterfaceFileId());
+
+            return mapper.toInterfaceFileObject(getInterfaceFileEntity(entity.getInterfaceFileId()));
         } catch (IOException e) {
             throw new InternalServerErrorException(
                 "Internal Server Error",
                 "Failed to read file content for interface file creation ", e);
         }
+    }
+
+    private Interface getInterfaceType(Interface source, Interface target) {
+        return Interface.OPAL.equals(source) ? target : source;
     }
 }

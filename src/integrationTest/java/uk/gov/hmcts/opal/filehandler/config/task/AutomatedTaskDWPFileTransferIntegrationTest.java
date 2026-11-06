@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.config.task;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -13,8 +12,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.DispatcherServlet;
-import uk.gov.hmcts.opal.filehandler.config.DWPBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.service.DWPBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.DWPInterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
 @ActiveProfiles("integration")
@@ -29,7 +27,7 @@ public class AutomatedTaskDWPFileTransferIntegrationTest extends AbstractIntegra
 
     // placeholder mock until the actual service is implemented formally
     @MockitoBean(enforceOverride = true, reset = MockReset.NONE)
-    private DWPBaisFileProcessorService service;
+    private DWPInterfaceFileProcessorService service;
 
     @Test
     void shouldNotCreateWebLayer() {
@@ -39,7 +37,7 @@ public class AutomatedTaskDWPFileTransferIntegrationTest extends AbstractIntegra
 
     @Test
     void shouldCallAutomatedTaskRun() {
-        verify(service, times(1)).run(any(DWPBaisFileProcessorConfiguration.class));
+        verify(service, times(1)).run();
     }
 
 }

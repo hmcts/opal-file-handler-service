@@ -81,6 +81,24 @@ public class CommonResponseStepDef extends BaseStepDef {
         );
     }
 
+    /**
+     * Asserts the standard problem response returned when an authenticated user lacks permission.
+     */
+    @Then("the response is a forbidden problem detail")
+    public void responseIsForbiddenProblemDetail() {
+        assertAll(
+            () -> assertEquals(
+                "You do not have permission to access this resource",
+                lastResponse().jsonPath().getString("detail")),
+            () -> assertEquals(
+                "https://hmcts.gov.uk/problems/forbidden",
+                lastResponse().jsonPath().getString("type")),
+            () -> assertEquals("Forbidden", lastResponse().jsonPath().getString("title")),
+            () -> assertEquals(403, lastResponse().jsonPath().getInt("status")),
+            () -> assertEquals(false, lastResponse().jsonPath().getBoolean("retriable"))
+        );
+    }
+
     private static void assertRawJsonField(TestHttpResponse response, String field, String expectedValue) {
         String actualValue = response.jsonPath(field);
         if ("null".equals(expectedValue)) {

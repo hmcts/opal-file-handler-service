@@ -11,7 +11,7 @@ Feature: Get Interface File
     And the response is as expected:
       | interface_file_id | 9000000000000001                     |
       | checksum          | d553f8f289bd08e5c513de5c000c0374     |
-      | domain            | FILE_HANDLER                         |
+      | domain            | FINES                                |
       | errors            | null                                 |
       | file_name         | bteckoh-test-file.xlsx               |
       | filestore_uuid    | f0000000-0000-0000-0000-000000000001 |

@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.config.task;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -14,8 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.DispatcherServlet;
-import uk.gov.hmcts.opal.filehandler.config.CderBaisFileProcessorConfiguration;
-import uk.gov.hmcts.opal.filehandler.service.CderBaisFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.CderInterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
 @ActiveProfiles("integration")
@@ -29,7 +27,7 @@ public class AutomatedTaskCderIntegrationTest extends AbstractIntegrationTest {
     private ApplicationContext applicationContext;
 
     @MockitoBean(enforceOverride = true, reset = MockReset.NONE)
-    private CderBaisFileProcessorService service;
+    private CderInterfaceFileProcessorService service;
 
     @Test
     void shouldNotCreateWebLayer() {
@@ -39,7 +37,7 @@ public class AutomatedTaskCderIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldCallAutomatedTaskRun() throws IOException {
-        verify(service, times(1)).run(any(CderBaisFileProcessorConfiguration.class));
+        verify(service, times(1)).run();
     }
 
 }

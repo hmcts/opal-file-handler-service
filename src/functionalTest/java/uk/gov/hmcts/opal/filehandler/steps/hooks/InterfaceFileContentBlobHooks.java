@@ -10,6 +10,8 @@ import uk.gov.hmcts.opal.filehandler.blob.BlobStorageClient;
 public class InterfaceFileContentBlobHooks {
 
     private static final String AVAILABLE_BLOB_NAME = "f0000000-0000-0000-0000-000000000001";
+    private static final String FINES_BLOB_NAME = "f0000000-0000-0000-0000-000000000014";
+    private static final String UNASSIGNED_BLOB_NAME = "f0000000-0000-0000-0000-000000000016";
     private static final String MISSING_BLOB_NAME = "f0000000-0000-0000-0000-000000000002";
     private static final String BTECKOH_RESOURCE = "test-data/bteckoh-report/bteckoh-test-file.xlsx";
 
@@ -21,6 +23,8 @@ public class InterfaceFileContentBlobHooks {
     @Before("@InterfaceFileContentBlobFixture")
     public void setUpInterfaceFileContentBlobs() {
         blobStorageClient.uploadResource(AVAILABLE_BLOB_NAME, BTECKOH_RESOURCE);
+        blobStorageClient.uploadResource(FINES_BLOB_NAME, BTECKOH_RESOURCE);
+        blobStorageClient.uploadResource(UNASSIGNED_BLOB_NAME, BTECKOH_RESOURCE);
         blobStorageClient.deleteIfExists(MISSING_BLOB_NAME);
     }
 
@@ -30,6 +34,8 @@ public class InterfaceFileContentBlobHooks {
     @After("@InterfaceFileContentBlobFixture")
     public void cleanUpInterfaceFileContentBlobs() {
         blobStorageClient.deleteIfExists(AVAILABLE_BLOB_NAME);
+        blobStorageClient.deleteIfExists(FINES_BLOB_NAME);
+        blobStorageClient.deleteIfExists(UNASSIGNED_BLOB_NAME);
         blobStorageClient.deleteIfExists(MISSING_BLOB_NAME);
     }
 }

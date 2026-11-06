@@ -22,8 +22,7 @@ public class PermissionUtil {
             .flatMap(domain -> domain.getBusinessUnitUsers().stream())
             .flatMap(buUser -> buUser.getPermissions().stream())
             //TODO update to code checks once PO-10759 is played
-            .filter(perm -> perm.getDescription().equalsIgnoreCase(permission.getDescription()))
-            .findFirst().isPresent();
+            .anyMatch(perm -> perm.getDescription().equalsIgnoreCase(permission.getDescription()));
         if (!hasPermission) {
             throw new PermissionNotAllowedException(permission);
         }
@@ -38,8 +37,7 @@ public class PermissionUtil {
             .stream()
             .flatMap(buUser -> buUser.getPermissions().stream())
             //TODO update to code checks once PO-10759 is played
-            .filter(perm -> perm.getDescription().equalsIgnoreCase(permission.getDescription()))
-            .findFirst().isPresent();
+            .anyMatch(perm -> perm.getDescription().equalsIgnoreCase(permission.getDescription()));
         if (!hasPermission) {
             throw new PermissionNotAllowedException(permission);
         }
