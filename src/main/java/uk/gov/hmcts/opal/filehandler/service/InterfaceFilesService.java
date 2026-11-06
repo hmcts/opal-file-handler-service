@@ -1,7 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import com.azure.core.util.BinaryData;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -222,11 +221,9 @@ public class InterfaceFilesService {
             entity = repository.save(entity);
 
             if (shouldPreProcess) {
-                processorService.processFile(
-                    entity,
-                    new ByteArrayInputStream(file.getBytes()),
-                    SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser().getUserId()
-                );
+                try (InputStream stream = file.getInputStream()) {
+                    processorService.processFile(entity, stream);
+                }
             }
             processorService.completeIngestion(metadata.getFileName(), entity, false);
             return mapper.toInterfaceFileObject(getInterfaceFileEntity(entity.getInterfaceFileId()));
