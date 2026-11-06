@@ -181,3 +181,25 @@ Jenkins opens a loopback-only `kubectl port-forward` to that PR's PostgreSQL pod
 functional tests (including failures) and has a 45-minute maximum lifetime for aborted builds.
 Database persistence assertions and scenario cleanup remain enabled; pipeline-managed shared
 fixtures continue to use in-pod SQL. Staging and local connections are unchanged.
+
+### PO-7244 banking processing coverage
+
+The existing `integration` / `check` tasks include `BankingFileProcessingIntegrationTest` and
+`PreparedBankingPackIntegrationTest`. These reuse the existing SFTP, PostgreSQL, Redis and Azurite
+containers, with controlled feature flags and mocked queue publishers.
+
+Automatic-startup cases boot the configured `TaskRunner` for all eight banking file types, with
+testing-support endpoints disabled, and assert real processing through to the Fines queue publisher.
+They reuse the parent integration context's processors and infrastructure; they do not call the
+processor directly. External deployment scheduling and queue consumption are outside these checks.
+
+Fines-mapped cases cover all eight interfaces, including recovery from a queue failure without a
+second BAIS upload or duplicate queue publication. Existing Maintenance-mapped DWP, Allpay and
+BTEckoh fixtures are retained because routing is selected by the business-unit bank mapping.
+These additional Maintenance cases do not replace the ticket's Fines acceptance coverage.
+
+The eight PO-7244 functional happy paths express processing and extracted-payment outcomes.
+`BaisInterfaceFileClient` handles metadata polling/content retrieval and `BaisPaymentAssertions`
+retains the fixture-specific routing, checksum and payment assertions. Existing authentication,
+fixture hooks, tags and Serenity reporting remain in use. Readiness for an external interface means
+successful extraction here; APR resolution and final payment allocation require separate E2E evidence.
