@@ -25,8 +25,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -101,9 +101,17 @@ public class InterfaceFilesServiceTest {
     @Mock
     private List<InterfaceFileProcessorService> processorServicesList;
 
+    @Mock
+    private Map<String, BaisFileProcessorConfiguration> configMap;
+
     @InjectMocks
     private InterfaceFilesService service;
 
+    private void mockContainerConfig(Interface source, String containerName) {
+        BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
+        when(config.getContainerName()).thenReturn(containerName);
+        when(configMap.get(source.getConfigComponentName())).thenReturn(config);
+    }
 
     @Test
     public void getInterfaceFiles_shouldOrchestrateCallsCorrectly() {
@@ -513,6 +521,8 @@ public class InterfaceFilesServiceTest {
         final UUID sourceFilestoreUuid2 = UUID.fromString("a8027f50-6743-4ed9-bc16-4301a3db3a6f");
         final String natwestContainer = "natwest";
         final String barclaycardContainer = "barclaycard";
+        mockContainerConfig(Interface.NATWEST, natwestContainer);
+        mockContainerConfig(Interface.BARCLAYCARD, barclaycardContainer);
 
         InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
             .interfaceFileId(sourceId)
@@ -613,6 +623,7 @@ public class InterfaceFilesServiceTest {
         final String fileName = "test-file";
         final String checksum = "check";
         final String natwestContainer = "natwest";
+        mockContainerConfig(Interface.NATWEST, natwestContainer);
 
         InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
             .interfaceFileId(sourceId)
@@ -665,6 +676,7 @@ public class InterfaceFilesServiceTest {
         final UUID sourceFilestoreUuid = UUID.fromString("d095de29-ba2b-4421-8b00-2dc003f85f12");
         final UUID sourceJsonFilestoreUuid = UUID.fromString("c59a81b5-5f53-4dec-9366-283690875706");
         final String barclaycardContainer = "barclaycard";
+        mockContainerConfig(Interface.BARCLAYCARD, barclaycardContainer);
 
         InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
             .interfaceFileId(sourceId)

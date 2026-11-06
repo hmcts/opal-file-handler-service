@@ -338,7 +338,7 @@ public class InterfaceFilesService {
     private void deleteBlobIfNotShared(InterfaceFileEntity interfaceFile) {
         final Long id = interfaceFile.getInterfaceFileId();
         final UUID filestoreUUID = interfaceFile.getFilestoreUuid();
-        final String containerName =  interfaceFile.getSource().name().toLowerCase();
+        final String containerName = getConfig(interfaceFile.getSource()).getContainerName();
 
         if (repository.existsByFilestoreUuidAndInterfaceFileIdNot(filestoreUUID, id)) {
             log.info("Skipping deleting interface file id: {} type: {} status: {} from blob store as it is referenced "
