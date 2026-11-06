@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class FileHandlerDraftAccountPayloadDTO {
 
     @JsonProperty("account")
-    private Account account;
+    private AccountDto account;
 
     @JsonProperty("prosecutor_code")
     private String prosecutorCode;

@@ -1,21 +1,20 @@
 package uk.gov.hmcts.opal.filehandler.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.List;
+import lombok.NoArgsConstructor;
+import uk.gov.hmcts.opal.filehandler.types.Enums.OriginatorType;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class Account {
+@AllArgsConstructor
+@NoArgsConstructor
+public class AccountDto {
 
     @JsonProperty("account_type")
     private String accountType;
@@ -30,7 +29,7 @@ public class Account {
     private Integer originatorId;
 
     @JsonProperty("originator_type")
-    private String originatorType;
+    private OriginatorType originatorType;
 
     @JsonProperty("prosecutor_case_reference")
     private String prosecutorCaseReference;
@@ -57,17 +56,17 @@ public class Account {
     private LocalDate accountSentenceDate;
 
     @JsonProperty("defendant")
-    private Defendant defendant;
+    private DefendantDto defendant;
 
     @JsonProperty("offences")
-    private List<Offence> offences;
+    private List<OffenceDto> offences;
 
     @JsonProperty("fp_ticket_detail")
-    private FpTicketDetail fpTicketDetail;
+    private FpTicketDetailDto fpTicketDetail;
 
     @JsonProperty("payment_terms")
-    private PaymentTerms paymentTerms;
+    private PaymentTermsDto paymentTerms;
 
     @JsonProperty("account_notes")
-    private List<AccountNote> accountNotes;
+    private List<AccountNoteDto> accountNotes;
 }

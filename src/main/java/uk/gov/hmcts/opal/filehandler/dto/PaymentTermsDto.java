@@ -1,34 +1,24 @@
 package uk.gov.hmcts.opal.filehandler.dto;
 
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import uk.gov.hmcts.opal.filehandler.types.Enums.InstalmentPeriod;
+import uk.gov.hmcts.opal.filehandler.types.Enums.PaymentTermsTypeCode;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PaymentTerms {
+public class PaymentTermsDto {
 
-    @JsonProperty("days_in_default")
-    private Integer daysInDefault;
-
-    @JsonProperty("date_days_in_default_imposed")
-    private LocalDate dateDaysInDefaultImposed;
-
-    @JsonProperty("extension")
-    private boolean extension;
-
-    @JsonProperty("reason_for_extension")
-    private String reasonForExtension;
-
-    @JsonProperty("payment_terms_type")
-    private PaymentTermsType paymentTermsType;
+    @JsonProperty("payment_terms_type_code")
+    private PaymentTermsTypeCode paymentTermsTypeCode;
 
     @JsonProperty("effective_date")
     private LocalDate effectiveDate;
@@ -42,6 +32,9 @@ public class PaymentTerms {
     @JsonProperty("instalment_amount")
     private BigDecimal instalmentAmount;
 
-    @JsonProperty("posted_details")
-    private PostedDetails postedDetails;
+    @JsonProperty("default_days_in_jail")
+    private Integer defaultDaysInJail;
+
+    @JsonProperty("enforcements")
+    private List<EnforcementDto> enforcements;
 }

@@ -8,13 +8,13 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class InstalmentPeriod {
+@NoArgsConstructor
+public class EnforcementResultResponseDto {
 
-    @JsonProperty("payment_terms_type_code")
-    private String paymentTermsTypeCode;
+    @JsonProperty("parameter_name")
+    private String parameterName;
 
-    @JsonProperty("instalment_period")
-    private InstalmentPeriod instalmentPeriod;
+    @JsonProperty("response")
+    private String response;
 }

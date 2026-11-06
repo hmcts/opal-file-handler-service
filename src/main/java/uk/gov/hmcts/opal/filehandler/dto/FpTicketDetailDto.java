@@ -1,20 +1,18 @@
 package uk.gov.hmcts.opal.filehandler.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class FpTicketDetail {
+public class FpTicketDetailDto {
 
     @JsonProperty("notice_number")
     private String noticeNumber;
