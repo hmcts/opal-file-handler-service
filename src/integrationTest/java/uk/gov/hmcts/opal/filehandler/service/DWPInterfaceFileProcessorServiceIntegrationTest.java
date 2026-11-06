@@ -81,7 +81,7 @@ public class DWPInterfaceFileProcessorServiceIntegrationTest
         @JiraEpic("PO-3497")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(config));
+                service.run());
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -100,7 +100,7 @@ public class DWPInterfaceFileProcessorServiceIntegrationTest
         @JiraEpic("PO-3497")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(config));
+                service.run());
 
             assertThat(exception).hasMessage("dwp-file-transfer-job is not enabled");
         }
@@ -119,7 +119,7 @@ public class DWPInterfaceFileProcessorServiceIntegrationTest
         @JiraEpic("PO-3497")
         void bankingInterfacesIsDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(config));
+                service.run());
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
         }
@@ -138,7 +138,7 @@ public class DWPInterfaceFileProcessorServiceIntegrationTest
         @JiraEpic("PO-3497")
         void dwpInterfaceFileProcessorServiceShouldRunSuccesfully() {
             uploadResourceToSftp(RESOURCE, CONTAINER);
-            service.run(config);
+            service.run();
 
             InterfaceFileEntity parentEntity = assertSuccessfulInterfaceFile(FILE, CHECKSUM, Interface.DWP,
                 Type.SOURCE, Domain.MAINTENANCE);

@@ -74,7 +74,7 @@ public class CderInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Feature flag 'bailiffs-cder-file-transfer-job' is false")
         void cderFileTransferJobIsDisabled() {
             FeatureDisabledException exception = assertThrows(
-                FeatureDisabledException.class, () -> service.run(configuration)
+                FeatureDisabledException.class, () -> service.run()
             );
             assertThat(exception).hasMessage("bailiffs-cder-file-transfer-job is not enabled");
         }
@@ -91,7 +91,7 @@ public class CderInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Feature flag 'release-1c-banking-interfaces' is false")
         void bankingInterfacesDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(configuration)
+                service.run()
             );
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
@@ -109,7 +109,7 @@ public class CderInterfaceFileProcessorServiceIntegrationTest
         @DisplayName("AC1: Both feature flags are false")
         void bothFeatureFlagsAreDisabled() {
             FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, () ->
-                service.run(configuration)
+                service.run()
             );
 
             assertThat(exception).hasMessage(FeatureFlags.RELEASE_1C_BANKING_INTERFACES + " is not enabled");
@@ -121,7 +121,7 @@ public class CderInterfaceFileProcessorServiceIntegrationTest
     void cderFileProcessorServiceShouldRunSuccessfully() throws Exception {
         uploadResourceToSftp(CDER_FILE_RESOURCE, CDER_FILE_CONTAINER);
 
-        service.run(configuration);
+        service.run();
 
         InterfaceFileEntity sourceFile = assertSuccessfulInterfaceFile(
             CDER_FILE, CDER_FILE_CHECKSUM, Interface.CDER, Type.SOURCE, Domain.FINES);

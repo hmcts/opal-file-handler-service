@@ -7,11 +7,10 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -24,7 +23,6 @@ import uk.gov.hmcts.opal.filehandler.service.extraction.model.BankDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.DestinationDetails;
 import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommonDataExtract;
 import uk.gov.hmcts.opal.filehandler.service.queue.InterfaceFilePreprocessQueueService;
-import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.filehandler.util.FeatureFlagUtil;
 
 @Slf4j
@@ -32,7 +30,7 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
     extends InterfaceFileCommonDataExtract>
     extends AbstractInterfaceFileProcessorWithExtractionService<T> {
 
-    private static final short BUSINESS_UNIT_065 = (short)65;
+    private static final short BUSINESS_UNIT_065 = (short) 65;
 
     private final EnumMap<Domain, InterfaceFilePreprocessQueueService> queueServiceMap;
     private final BankingExtractionService<T> bankingExtractionService;
@@ -40,17 +38,18 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
     protected AbstractBankingInterfaceFileProcessorWithExtractionService(
         Clock clock,
         FeatureFlagUtil featureFlagUtil,
-        BaisSftpClient baisSftpClient,
         InterfaceFileBlobStoreService interfaceFileBlobStoreService,
         InterfaceFilesRepository interfaceFilesRepository,
         TransactionTemplate transactionTemplate,
         ObjectMapper objectMapper,
         BankingExtractionService<T> extractionService,
+        FileIngestionService<String> ingestionService,
+        FileProcessorConfiguration config,
         InterfaceFilePreprocessQueueService finesQueueService,
         InterfaceFilePreprocessQueueService maintenanceQueueService
     ) {
-        super(clock, featureFlagUtil, baisSftpClient, interfaceFileBlobStoreService, interfaceFilesRepository,
-            transactionTemplate, objectMapper, extractionService);
+        super(clock, featureFlagUtil, interfaceFileBlobStoreService, interfaceFilesRepository,
+            transactionTemplate, objectMapper, extractionService, ingestionService, config);
         this.bankingExtractionService = extractionService;
         this.queueServiceMap = new EnumMap<>(Domain.class);
         this.queueServiceMap.put(Domain.FINES, finesQueueService);
@@ -131,8 +130,7 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
     }
 
     @Override
-    public boolean preProcessExtract(BaisFileProcessorConfiguration config,
-        InterfaceFileEntity sourceInterfaceFile,
+    public boolean preProcessExtract(InterfaceFileEntity sourceInterfaceFile,
         T extract) {
 
         BusinessUnitBankAccountEntity businessUnitBankAccount =
@@ -151,7 +149,7 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
     }
 
     @Override
-    public void postProcessExtract(BaisFileProcessorConfiguration config, InterfaceFileEntity sourceJson, T extract) {
+    public void postProcessExtract(InterfaceFileEntity sourceJson, T extract) {
         if (sourceJson.getStatus() == Status.SUCCESS) {
             sendToQueue(sourceJson, sourceJson.getOpalDomain());
             if (sourceJson.getStatus() == Status.FAILED) {
@@ -161,12 +159,12 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
     }
 
     @Override
-    protected Short[] getBusinessUnitsFromExtract(BaisFileProcessorConfiguration config, T extract) {
+    protected Short[] getBusinessUnitsFromExtract(T extract) {
         return new Short[] {bankingExtractionService.getBusinessUnitBankAccount(extract).getId()};
     }
 
     @Override
-    protected Domain getDomainFromExtract(BaisFileProcessorConfiguration config, T extract) {
+    protected Domain getDomainFromExtract(T extract) {
         return bankingExtractionService.getBusinessUnitBankAccount(extract).getDomain();
     }
 }

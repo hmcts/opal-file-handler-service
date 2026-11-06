@@ -28,7 +28,7 @@ import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
-import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
@@ -58,7 +58,7 @@ public class InterfaceFilesService {
     private final InterfaceFileMapper mapper;
     private final InterfaceFileBlobStoreService blobStoreService;
     private final InterfaceFilesPdplLoggingService loggingService;
-    private final Map<String, BaisFileProcessorConfiguration> configs;
+    private final Map<String, FileProcessorConfiguration> configs;
     private final Map<Class<? extends InterfaceFileProcessorService>, InterfaceFileProcessorService> processorServices;
 
     public InterfaceFilesService(InterfaceFilesRepository repository,
@@ -66,7 +66,7 @@ public class InterfaceFilesService {
         InterfaceFileMapper mapper,
         InterfaceFileBlobStoreService blobStoreService,
         InterfaceFilesPdplLoggingService loggingService,
-        Map<String, BaisFileProcessorConfiguration> configs,
+        Map<String, FileProcessorConfiguration> configs,
         List<InterfaceFileProcessorService> processorServicesList) {
         this.repository = repository;
         this.specsFactory = specsFactory;
@@ -91,8 +91,8 @@ public class InterfaceFilesService {
     }
 
 
-    private BaisFileProcessorConfiguration getConfig(Interface source) {
-        return configs.get(source.getConfigComponentName());
+    private FileProcessorConfiguration getConfig(Interface interfaceType) {
+        return configs.get(interfaceType.getConfigComponentName());
     }
 
 
@@ -120,7 +120,9 @@ public class InterfaceFilesService {
                     id, entity.getStatus()));
         }
 
-        BaisFileProcessorConfiguration config = getConfig(entity.getSource());
+        FileProcessorConfiguration config = getConfig(getInterfaceType(
+            entity.getSource(), entity.getTarget()
+        ));
         String containerName = config.getContainerName();
 
         BinaryData file = blobStoreService.fetchInterfaceFile(id, entity.getFilestoreUuid(), containerName);
@@ -193,10 +195,12 @@ public class InterfaceFilesService {
             if (metadata.getRelatedInterfaceFileId() != null) {
                 relatedInterfaceFile = getInterfaceFileEntity(metadata.getRelatedInterfaceFileId());
             }
-            Interface source = Interface.valueOf(metadata.getSource());
-            InterfaceFileProcessorService processorService =
-                getProcessorService(source);
-            BaisFileProcessorConfiguration config = getConfig(source);
+            Interface interfaceType = getInterfaceType(
+                Interface.valueOf(metadata.getSource()),
+                Interface.valueOf(metadata.getTarget())
+            );
+            InterfaceFileProcessorService processorService = getProcessorService(interfaceType);
+            FileProcessorConfiguration config = getConfig(interfaceType);
 
             InterfaceFileEntity entity = processorService.ingestFile(
                 file.getOriginalFilename(),
@@ -361,5 +365,9 @@ public class InterfaceFilesService {
         boolean hadParentWithoutRemainingChildren() {
             return parent != null && !parent.hasChildren();
         }
+    }
+
+    private Interface getInterfaceType(Interface source, Interface target) {
+        return Interface.OPAL.equals(source) ? target : source;
     }
 }
