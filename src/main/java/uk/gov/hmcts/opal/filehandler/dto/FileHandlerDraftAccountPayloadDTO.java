@@ -1,5 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,7 +12,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class FileHandlerDraftAccountPayloadDTO {
 
-    private DraftAccountResponseDto account;
+    @JsonProperty("account")
+    private Account account;
+
+    @JsonProperty("prosecutor_code")
     private String prosecutorCode;
 
 }
