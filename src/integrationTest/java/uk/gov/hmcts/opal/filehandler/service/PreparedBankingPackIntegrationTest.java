@@ -73,7 +73,7 @@ public class PreparedBankingPackIntegrationTest extends AbstractInterfaceFilePro
     @JiraEpic("PO-3497")
     void processesPreparedInput(PackCase packCase) throws Exception {
         byte[] input = prepare(packCase);
-        processor().run(config);
+        processor().run();
         if (active.testCase().equals("missing-court-mapping") || active.testCase().equals("malformed-xml")) {
             assertFailedSource();
         } else {
@@ -163,7 +163,7 @@ public class PreparedBankingPackIntegrationTest extends AbstractInterfaceFilePro
         if (active.testCase().equals("duplicate-replay")) {
             final var before = storedBlobs(config.getContainerName());
             upload(input);
-            processor().run(config);
+            processor().run();
             assertThat(records()).hasSize(3);
             assertThat(records()).filteredOn(row -> row.getStatus() == Status.DUPLICATE).hasSize(1);
             assertThat(storedBlobs(config.getContainerName())).isEqualTo(before);

@@ -121,7 +121,7 @@ public class BankingFileProcessingIntegrationTest extends AbstractInterfaceFileP
         when(featureToggleApi.isFeatureEnabled(configuration.getFeatureFlag())).thenReturn(false);
 
         FeatureDisabledException exception = assertThrows(FeatureDisabledException.class,
-            () -> processor.run(configuration));
+            () -> processor.run());
 
         assertThat(exception).hasMessage(configuration.getFeatureFlag() + " is not enabled");
         assertThat(records()).hasSize(2);
@@ -143,7 +143,7 @@ public class BankingFileProcessingIntegrationTest extends AbstractInterfaceFileP
         doNothing().when(expectedQueue()).send(anyLong());
 
         // No SFTP file remains: recovery must read the persisted SOURCE blob.
-        processor.run(configuration);
+        processor.run();
 
         List<InterfaceFileEntity> successfulJson = records().stream()
             .filter(entity -> entity.getType() == Type.SOURCE_JSON && entity.getStatus() == Status.SUCCESS)
@@ -173,7 +173,7 @@ public class BankingFileProcessingIntegrationTest extends AbstractInterfaceFileP
         verifyNoInteractions(otherQueue());
         var beforeReplay = storedBlobs(configuration.getContainerName());
 
-        processor.run(configuration);
+        processor.run();
 
         assertThat(records()).hasSize(3);
         assertThat(storedBlobs(configuration.getContainerName())).isEqualTo(beforeReplay);
@@ -255,7 +255,7 @@ public class BankingFileProcessingIntegrationTest extends AbstractInterfaceFileP
         // Remove only this test's mapping, leaving other business units untouched.
         bankAccounts.deleteById(BUSINESS_UNIT_ID);
 
-        processor.run(configuration);
+        processor.run();
 
         assertThat(records()).singleElement().satisfies(source -> {
             assertThat(source.getType()).isEqualTo(Type.SOURCE);
@@ -279,7 +279,7 @@ public class BankingFileProcessingIntegrationTest extends AbstractInterfaceFileP
         clearInvocations(expectedQueue(), otherQueue());
 
         // The publisher still fails: a retry must not be recorded as successful processing.
-        processor.run(configuration);
+        processor.run();
 
         assertThat(records()).hasSize(3);
         assertThat(records()).filteredOn(entity -> entity.getType() == Type.SOURCE).hasSize(1);
@@ -334,7 +334,7 @@ public class BankingFileProcessingIntegrationTest extends AbstractInterfaceFileP
 
     private InterfaceFileEntity ingestWithUnavailableQueue(InterfaceFileProcessorService processor) {
         doThrow(new IllegalStateException("PO-7244 test queue unavailable")).when(expectedQueue()).send(anyLong());
-        processor.run(configuration);
+        processor.run();
         List<InterfaceFileEntity> failed = records().stream()
             .filter(entity -> entity.getType() == Type.SOURCE_JSON).toList();
         assertThat(failed).singleElement();
