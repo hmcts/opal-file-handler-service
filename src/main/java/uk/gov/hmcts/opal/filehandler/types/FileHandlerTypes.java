@@ -1,8 +1,8 @@
 package uk.gov.hmcts.opal.filehandler.types;
 
-public final class Enums {
+public final class FileHandlerTypes {
 
-    private Enums() {
+    private FileHandlerTypes() {
     }
 
     public enum OriginatorType {

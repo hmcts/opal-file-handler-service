@@ -7,7 +7,7 @@ import lombok.Data;
 
 import java.util.List;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.types.Enums.EnforcementResultId;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.EnforcementResultId;
 
 @Data
 @Builder

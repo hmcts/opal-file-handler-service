@@ -8,7 +8,7 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.types.Enums.OriginatorType;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.OriginatorType;
 
 @Data
 @Builder

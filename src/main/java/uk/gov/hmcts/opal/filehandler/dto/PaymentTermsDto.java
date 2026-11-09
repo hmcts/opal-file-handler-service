@@ -8,8 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.types.Enums.InstalmentPeriod;
-import uk.gov.hmcts.opal.filehandler.types.Enums.PaymentTermsTypeCode;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.InstalmentPeriod;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.PaymentTermsTypeCode;
 
 @Data
 @Builder

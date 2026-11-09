@@ -27,12 +27,12 @@ import uk.gov.hmcts.opal.filehandler.dto.MinorCreditorDto;
 import uk.gov.hmcts.opal.filehandler.dto.OffenceDto;
 import uk.gov.hmcts.opal.filehandler.dto.ParentGuardianDto;
 import uk.gov.hmcts.opal.filehandler.dto.PaymentTermsDto;
-import uk.gov.hmcts.opal.filehandler.types.Enums.EnforcementResultId;
-import uk.gov.hmcts.opal.filehandler.types.Enums.InstalmentPeriod;
-import uk.gov.hmcts.opal.filehandler.types.Enums.LanguageCode;
-import uk.gov.hmcts.opal.filehandler.types.Enums.NoteType;
-import uk.gov.hmcts.opal.filehandler.types.Enums.OriginatorType;
-import uk.gov.hmcts.opal.filehandler.types.Enums.PaymentTermsTypeCode;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.EnforcementResultId;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.InstalmentPeriod;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.LanguageCode;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.NoteType;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.OriginatorType;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.PaymentTermsTypeCode;
 
 @ExtendWith(MockitoExtension.class)
 class VpfpoInterfaceFilePreprocessQueueServiceTest {

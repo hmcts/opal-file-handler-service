@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.types.Enums.LanguageCode;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.LanguageCode;
 
 @Data
 @Builder
