@@ -22,9 +22,14 @@ public class BaisInterfaceFileClient {
     }
 
     public Response content(Map<String, Object> metadata) {
+        return content(metadata, 200);
+    }
+
+    /** Checks the content endpoint's status contract, including failed-file rejection. */
+    public Response content(Map<String, Object> metadata, int expectedStatus) {
         Response response = requests.get().accept("application/octet-stream").when()
             .get(baseUrl + "/interface-files/" + metadata.get("interface_file_id") + "/content");
-        assertEquals(200, response.statusCode(), "Extracted JSON could not be retrieved");
+        assertEquals(expectedStatus, response.statusCode(), "Unexpected interface-file content response");
         return response;
     }
 
@@ -36,17 +41,7 @@ public class BaisInterfaceFileClient {
         long deadline = System.nanoTime() + INGESTION_TIMEOUT.toNanos();
         List<Map<String, Object>> matchingRecords = List.of();
         do {
-            Response response = requests.get()
-                .queryParam("source", config.source())
-                .when()
-                .get(baseUrl + "/interface-files");
-            assertEquals(200, response.statusCode(), "Interface-file metadata could not be retrieved");
-
-            matchingRecords = response.jsonPath()
-                .<Map<String, Object>>getList("interface_files")
-                .stream()
-                .filter(record -> config.fileName().equals(record.get("file_name")))
-                .toList();
+            matchingRecords = records(config);
             List<Map<String, Object>> successfulRecords = matchingRecords.stream()
                 .filter(record -> type.equals(record.get("type")))
                 .filter(record -> status.equals(record.get("status")))
@@ -61,6 +56,15 @@ public class BaisInterfaceFileClient {
             "Expected a " + status + " " + config.displayName() + " interface-file record within "
                 + INGESTION_TIMEOUT.toSeconds() + " seconds; matching records: " + matchingRecords
         );
+    }
+
+    /** Returns all matching records so duplicates and related outputs can be counted. */
+    public List<Map<String, Object>> records(BaisFileTestConfig config) {
+        Response response = requests.get().queryParam("source", config.source()).when()
+            .get(baseUrl + "/interface-files");
+        assertEquals(200, response.statusCode(), "Interface-file metadata could not be retrieved");
+        return response.jsonPath().<Map<String, Object>>getList("interface_files").stream()
+            .filter(record -> config.fileName().equals(record.get("file_name"))).toList();
     }
 
     private static void pauseBeforeRetry() {

@@ -213,6 +213,9 @@ tasks.register('functional', Test) {
   def cucumberTags = requestedCucumberTags
       ? "(${requestedCucumberTags}) and not @Ignore"
       : 'not @Ignore'
+  if (!requestedCucumberTags?.contains('@ConnectedBanking')) {
+    cucumberTags += ' and not @ConnectedBanking'
+  }
   systemProperty 'cucumber.filter.tags', cucumberTags
   include '**/FunctionalTestRunner.class'
   dependsOn 'bootJar', 'clearReports'

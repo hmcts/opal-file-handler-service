@@ -98,6 +98,24 @@ public final class TestEnvironment {
             .orElse(DEFAULT_DATABASE_PASSWORD);
     }
 
+    /** Opens the Fines database using the same environment/fallback conventions as its suite. */
+    public static String getFinesDatabaseUrl() {
+        return get("FUNCTIONAL_TEST_FINES_DB_URL").orElseGet(() ->
+            "jdbc:postgresql://" + get("OPAL_FINES_DB_HOST").orElse("localhost")
+                + ":" + get("OPAL_FINES_DB_PORT").orElse("5432")
+                + "/" + get("OPAL_FINES_DB_NAME").orElse("opal-fines-db"));
+    }
+
+    public static String getFinesDatabaseUsername() {
+        return get("FUNCTIONAL_TEST_FINES_DB_USERNAME")
+            .or(() -> get("OPAL_FINES_DB_USERNAME")).orElse(DEFAULT_DATABASE_USERNAME);
+    }
+
+    public static String getFinesDatabasePassword() {
+        return get("FUNCTIONAL_TEST_FINES_DB_PASSWORD")
+            .or(() -> get("OPAL_FINES_DB_PASSWORD")).orElse(DEFAULT_DATABASE_PASSWORD);
+    }
+
     private static String getApplicationDatabaseUrl() {
         return get(OPAL_DATABASE_HOST)
             .map(host -> "jdbc:postgresql://" + host
