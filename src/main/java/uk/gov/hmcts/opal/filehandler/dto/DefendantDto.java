@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class DefendantDto extends PersonAddressDto {
+public class DefendantDto extends CommonPersonDto {
 
     @JsonProperty("pnc_id")
     private String pncId;

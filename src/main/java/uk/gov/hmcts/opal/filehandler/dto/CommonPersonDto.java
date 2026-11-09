@@ -11,7 +11,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public abstract class PersonAddressDto {
+public abstract class CommonPersonDto {
 
     @JsonProperty("company_flag")
     private Boolean companyFlag;

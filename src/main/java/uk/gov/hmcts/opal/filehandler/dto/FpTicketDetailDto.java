@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class FpTicketDetailDto extends PersonAddressDto {
+public class FpTicketDetailDto extends CommonPersonDto {
 
     @JsonProperty("notice_number")
     private String noticeNumber;

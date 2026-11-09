@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class ParentGuardianDto extends PersonAddressDto {
+public class ParentGuardianDto extends CommonPersonDto {
 
     @JsonProperty("telephone_number_mobile")
     private String telephoneNumberMobile;
