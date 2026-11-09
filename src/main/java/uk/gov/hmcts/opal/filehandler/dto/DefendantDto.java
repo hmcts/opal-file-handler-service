@@ -1,9 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.time.LocalDate;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
