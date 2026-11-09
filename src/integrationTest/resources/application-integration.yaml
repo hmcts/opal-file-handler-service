@@ -20,7 +20,7 @@ opal:
           sftp-username: CDER
   common:
     service-bus:
-      acknowledgements: VPFPO-acknowledgements-queue
+      acknowledgements: vpfpo-acknowledgements-queue
 
 user:
   service:

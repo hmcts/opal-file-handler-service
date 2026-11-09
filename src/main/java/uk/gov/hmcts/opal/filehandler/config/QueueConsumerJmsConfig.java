@@ -40,7 +40,7 @@ public class QueueConsumerJmsConfig {
     }
 
     @Bean
-    public DefaultJmsListenerContainerFactory acknowledgementsListenerContainerFactory(
+    public DefaultJmsListenerContainerFactory opalFileHandlerConsumerConnectionFactory(
         ConnectionFactory consumerConnectionFactory) {
         DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
         factory.setConnectionFactory(consumerConnectionFactory);

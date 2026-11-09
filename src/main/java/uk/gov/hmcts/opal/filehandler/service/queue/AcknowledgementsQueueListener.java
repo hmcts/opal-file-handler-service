@@ -22,7 +22,7 @@ public class AcknowledgementsQueueListener {
 
     @JmsListener(
         destination = "${opal.common.service-bus.acknowledgements}",
-        containerFactory = "acknowledgementsListenerContainerFactory"
+        containerFactory = "opalFileHandlerConsumerConnectionFactory"
     )
     public void onMessage(Message message) {
         if (message instanceof TextMessage textMessage) {

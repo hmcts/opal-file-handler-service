@@ -61,7 +61,7 @@ import uk.gov.hmcts.opal.generated.model.PaymentTypeEnumTypes;
     "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
     "opal.common.system-users.users.opal-system-user.client-id=test-system-client",
     "opal.common.system-users.users.opal-system-user.client-secret=test-secret",
-    "opal.common.service-bus.acknowledgements=VPFPO-acknowledgements-queue"
+    "opal.common.service-bus.acknowledgements=vpfpo-acknowledgements-queue"
 })
 class InterfaceFilesAuthenticationTest extends AbstractControllerIntegrationTest {
 

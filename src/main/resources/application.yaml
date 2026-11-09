@@ -221,7 +221,7 @@ opal:
 
   acknowledgements:
     service-bus:
-      queue-name: ${ACKNOWLEDGEMENTS_QUEUE_NAME:VPFPO-acknowledgements-queue}
+      queue-name: ${ACKNOWLEDGEMENTS_QUEUE_NAME:vpfpo-acknowledgements-queue}
 
 logging:
   level:
