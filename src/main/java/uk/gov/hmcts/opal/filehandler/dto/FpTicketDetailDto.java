@@ -2,17 +2,18 @@ package uk.gov.hmcts.opal.filehandler.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-
 import java.time.LocalDate;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FpTicketDetailDto {
+@EqualsAndHashCode(callSuper = true)
+public class FpTicketDetailDto extends PersonAddressDto {
 
     @JsonProperty("notice_number")
     private String noticeNumber;
@@ -34,4 +35,5 @@ public class FpTicketDetailDto {
 
     @JsonProperty("fp_driving_licence_number")
     private String fpDrivingLicenceNumber;
+
 }

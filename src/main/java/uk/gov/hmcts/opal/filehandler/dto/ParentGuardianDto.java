@@ -14,24 +14,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class ParentGuardianDto extends PersonAddressDto {
 
-    @JsonProperty("national_insurance_number")
-    private String nationalInsuranceNumber;
-
-    @JsonProperty("telephone_number_home")
-    private String telephoneNumberHome;
-
-    @JsonProperty("telephone_number_business")
-    private String telephoneNumberBusiness;
-
     @JsonProperty("telephone_number_mobile")
     private String telephoneNumberMobile;
 
-    @JsonProperty("email_address_1")
-    private String emailAddress1;
-
-    @JsonProperty("email_address_2")
-    private String emailAddress2;
-
-    @JsonProperty("debtor_detail")
-    private DebtorDetailDto debtorDetail;
 }

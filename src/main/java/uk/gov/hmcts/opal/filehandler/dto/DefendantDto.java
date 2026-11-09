@@ -14,30 +14,6 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class DefendantDto extends PersonAddressDto {
 
-    @JsonProperty("title")
-    private String title;
-
-    @JsonProperty("telephone_number_home")
-    private String telephoneNumberHome;
-
-    @JsonProperty("telephone_number_business")
-    private String telephoneNumberBusiness;
-
-    @JsonProperty("telephone_number_mobile")
-    private String telephoneNumberMobile;
-
-    @JsonProperty("email_address_1")
-    private String emailAddress1;
-
-    @JsonProperty("email_address_2")
-    private String emailAddress2;
-
-    @JsonProperty("national_insurance_number")
-    private String nationalInsuranceNumber;
-
-    @JsonProperty("driving_licence_number")
-    private String drivingLicenceNumber;
-
     @JsonProperty("pnc_id")
     private String pncId;
 
@@ -59,9 +35,6 @@ public class DefendantDto extends PersonAddressDto {
     @JsonProperty("occupation")
     private String occupation;
 
-    @JsonProperty("gender")
-    private String gender;
-
     @JsonProperty("custody_status")
     private String custodyStatus;
 
@@ -70,9 +43,6 @@ public class DefendantDto extends PersonAddressDto {
 
     @JsonProperty("interpreter_lang")
     private String interpreterLang;
-
-    @JsonProperty("debtor_detail")
-    private DebtorDetailDto debtorDetail;
 
     @JsonProperty("parent_guardian")
     private ParentGuardianDto parentGuardian;

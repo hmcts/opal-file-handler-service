@@ -20,9 +20,6 @@ public class MinorCreditorDto extends PersonAddressDto {
     @JsonProperty("email_address")
     private String emailAddress;
 
-    @JsonProperty("title")
-    private String title;
-
     @JsonProperty("payout_hold")
     private Boolean payoutHold;
 
