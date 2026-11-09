@@ -69,6 +69,7 @@ class VpfpoInterfaceFilePreprocessQueueServiceTest {
         verify(jmsTemplate).convertAndSend("vpfpo-queue", serialisedPayload);
 
     }
+
     private AccountDto createAccount() {
         return AccountDto.builder()
             .accountType("Fine")
