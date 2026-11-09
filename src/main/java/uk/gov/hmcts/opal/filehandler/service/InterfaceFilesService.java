@@ -340,7 +340,8 @@ public class InterfaceFilesService {
         final UUID filestoreUUID = interfaceFile.getFilestoreUuid();
         final String containerName = getConfig(interfaceFile.getSource()).getContainerName();
 
-        if (repository.existsByFilestoreUuidAndSourceAndInterfaceFileIdNot(filestoreUUID, interfaceFile.getSource(), id)) {
+        if (repository.existsByFilestoreUuidAndSourceAndInterfaceFileIdNot(filestoreUUID,
+            interfaceFile.getSource(), id)) {
             log.info("Skipping deleting interface file id: {} type: {} status: {} from blob store as it is referenced "
                     + "by other interface file rows", id, interfaceFile.getType(), interfaceFile.getStatus());
             return;
