@@ -5,55 +5,25 @@ import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
-@AllArgsConstructor
+@SuperBuilder
 @NoArgsConstructor
-public class MinorCreditorDto {
-
-    @JsonProperty("company_flag")
-    private Boolean companyFlag;
-
-    @JsonProperty("title")
-    private String title;
-
-    @JsonProperty("company_name")
-    private String companyName;
-
-    @JsonProperty("surname")
-    private String surname;
-
-    @JsonProperty("forenames")
-    private String forenames;
-
-    @JsonProperty("dob")
-    private LocalDate dob;
-
-    @JsonProperty("address_line_1")
-    private String addressLine1;
-
-    @JsonProperty("address_line_2")
-    private String addressLine2;
-
-    @JsonProperty("address_line_3")
-    private String addressLine3;
-
-    @JsonProperty("address_line_4")
-    private String addressLine4;
-
-    @JsonProperty("address_line_5")
-    private String addressLine5;
-
-    @JsonProperty("post_code")
-    private String postCode;
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+public class MinorCreditorDto extends PersonAddressDto {
 
     @JsonProperty("telephone")
     private String telephone;
 
     @JsonProperty("email_address")
     private String emailAddress;
+
+    @JsonProperty("title")
+    private String title;
 
     @JsonProperty("payout_hold")
     private Boolean payoutHold;
@@ -75,4 +45,5 @@ public class MinorCreditorDto {
 
     @JsonProperty("bank_account_ref")
     private String bankAccountRef;
+
 }
