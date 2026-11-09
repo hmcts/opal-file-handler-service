@@ -2,6 +2,7 @@ package uk.gov.hmcts.opal.filehandler.support;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import lombok.SneakyThrows;
@@ -26,7 +27,7 @@ import uk.hmcts.zephyr.automation.junit5.extension.ZephyrAutomationExtension;
 @AutoConfigureMockMvc(htmlUnit = @AutoConfigureMockMvc.HtmlUnit(webClient = false, webDriver = false))
 @ExtendWith(ZephyrAutomationExtension.class)
 @Slf4j
-@Import(TestAuthConfig.class)
+@Import({TestAuthConfig.class, ObjectMapper.class})
 public class AbstractIntegrationTest {
 
     private static final int WIREMOCK_PORT =

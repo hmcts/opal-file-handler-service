@@ -7,12 +7,14 @@ import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;
 
 @Component
 @RequiredArgsConstructor
+@ConditionalOnExpression("'${opal.automated-task:}' == ''")
 @Slf4j(topic = "opal.AcknowledgementsQueueListener")
 public class AcknowledgementsQueueListener {
     private final AcknowledgementsQueueConsumer consumerService;

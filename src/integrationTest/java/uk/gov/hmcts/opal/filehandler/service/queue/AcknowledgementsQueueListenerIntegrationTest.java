@@ -7,7 +7,6 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 import static uk.gov.hmcts.opal.common.dto.ToJsonString.toJsonString;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.jms.JMSException;
 import jakarta.jms.TextMessage;
 import java.util.Optional;
@@ -15,7 +14,6 @@ import org.apache.qpid.jms.provider.amqp.message.AmqpJmsTextMessageFacade;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import uk.gov.hmcts.opal.filehandler.entity.VpfpoRegistrationEntity;
@@ -30,7 +28,6 @@ import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
     executionPhase = BEFORE_TEST_METHOD)
 @Sql(scripts = "classpath:db/deleteData/delete_from_vpfpo_registrations.sql",
     executionPhase = AFTER_TEST_METHOD)
-@Import(ObjectMapper.class)
 @TestPropertySource(properties = {
     "opal.common.service-bus.acknowledgements=VPFPO-acknowledgements-queue"
 })
