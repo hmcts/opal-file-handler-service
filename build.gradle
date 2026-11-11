@@ -213,6 +213,9 @@ tasks.register('functional', Test) {
   def cucumberTags = requestedCucumberTags
       ? "(${requestedCucumberTags}) and not @Ignore"
       : 'not @Ignore'
+  if (!requestedCucumberTags?.contains('@ConnectedBanking')) {
+    cucumberTags += ' and not @ConnectedBanking'
+  }
   systemProperty 'cucumber.filter.tags', cucumberTags
   include '**/FunctionalTestRunner.class'
   dependsOn 'bootJar', 'clearReports'
@@ -418,7 +421,7 @@ dependencies {
   implementation 'uk.gov.hmcts:opal-logging-service-integration-lib:0.0.14'
 
   //Annotation
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.14.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.15.Final'
 
   compileOnly 'org.projectlombok:lombok:1.18.48'
   annotationProcessor 'org.projectlombok:lombok:1.18.48'
