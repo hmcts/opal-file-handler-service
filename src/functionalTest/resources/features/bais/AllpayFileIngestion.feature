@@ -1,15 +1,13 @@
 @Opal @PO-6426 @BaisFileFixture
 Feature: Allpay file ingestion
 
+  @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @JIRA-STORY:PO-7244
   Scenario: A valid Allpay file is ingested
     Given the configured "Allpay" file is available on bais
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
     And the "Allpay" file ingestion job is requested through testing support
-    Then the testing-support request is accepted
-    And a successful "ALLPAY" interface file is stored
-    And the stored "Allpay" file can be retrieved by interface file ID
-    And the stored "Allpay" file content matches the bais "file"
-    And the configured "Allpay" file no longer exists on bais
+    Then the "Allpay" file is processed successfully
+    And the extracted "Allpay" payments are ready for the external interface
 
   Scenario: A duplicate Allpay file is detected
     Given the configured "Allpay" file has already been processed

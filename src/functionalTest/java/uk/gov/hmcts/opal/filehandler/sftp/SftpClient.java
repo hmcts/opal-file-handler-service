@@ -2,6 +2,8 @@ package uk.gov.hmcts.opal.filehandler.sftp;
 
 import com.google.common.io.Resources;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -12,6 +14,7 @@ import net.schmizz.sshj.sftp.RemoteResourceInfo;
 import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.schmizz.sshj.xfer.InMemorySourceFile;
+import net.schmizz.sshj.xfer.InMemoryDestFile;
 import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 
 /**
@@ -120,6 +123,32 @@ public class SftpClient implements AutoCloseable {
             }
         } catch (IOException e) {
             throw new IllegalStateException("Failed to delete SFTP fixture: " + remoteFileName, e);
+        }
+    }
+
+    /** Downloads a baseline fixture so a connected test can verify ownership before replacing it. */
+    public byte[] download(String remoteFileName) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try {
+            sftpClient.get(remoteFileName, new InMemoryDestFile() {
+                @Override
+                public long getLength() {
+                    return bytes.size();
+                }
+
+                @Override
+                public OutputStream getOutputStream() {
+                    return bytes;
+                }
+
+                @Override
+                public OutputStream getOutputStream(boolean append) {
+                    return bytes;
+                }
+            });
+            return bytes.toByteArray();
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to download SFTP fixture: " + remoteFileName, exception);
         }
     }
 
