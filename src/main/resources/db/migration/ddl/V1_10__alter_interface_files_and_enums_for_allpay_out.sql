@@ -22,4 +22,4 @@ ALTER TYPE t_interface_enum
 ALTER TABLE interface_files
     ADD COLUMN domain_interface_job_id BIGINT;
 
-COMMENT ON COLUMN interface_files.domain_interface_job_id IS 'Primary key of the related Allpay Out interface job in the domains database';
+COMMENT ON COLUMN interface_files.domain_interface_job_id IS 'Primary key of the related interface job in the domains database';
