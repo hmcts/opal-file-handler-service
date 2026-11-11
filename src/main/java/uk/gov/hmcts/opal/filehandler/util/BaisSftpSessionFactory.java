@@ -21,7 +21,8 @@ public class BaisSftpSessionFactory {
     private final ConcurrentMap<String, DefaultSftpSessionFactory> sessionFactories = new ConcurrentHashMap<>();
 
     public SftpRemoteFileTemplate connect(String username) {
-        DefaultSftpSessionFactory sessionFactory = sessionFactories.computeIfAbsent(username, this::createSessionFactory);
+        DefaultSftpSessionFactory sessionFactory = sessionFactories.computeIfAbsent(
+            username, this::createSessionFactory);
 
         return new SftpRemoteFileTemplate(sessionFactory);
     }
