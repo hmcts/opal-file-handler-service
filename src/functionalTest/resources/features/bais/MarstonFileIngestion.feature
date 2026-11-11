@@ -1,15 +1,13 @@
 @Opal @PO-6439 @BaisFileFixture
 Feature: Marston file ingestion
 
+  @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @JIRA-STORY:PO-7244
   Scenario: A valid Marston file is ingested
     Given the configured "Marston" file is available on bais
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
     And the "Marston" file ingestion job is requested through testing support
-    Then the testing-support request is accepted
-    And a successful "MARSTON" interface file is stored
-    And the stored "Marston" file can be retrieved by interface file ID
-    And the stored "Marston" file content matches the bais "file"
-    And the configured "Marston" file no longer exists on bais
+    Then the "Marston" file is processed successfully
+    And the extracted "Marston" payments are ready for the external interface
 
   Scenario: A duplicate Marston file is detected
     Given the configured "Marston" file has already been processed

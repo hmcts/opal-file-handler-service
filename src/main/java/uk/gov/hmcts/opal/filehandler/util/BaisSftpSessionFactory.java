@@ -1,6 +1,9 @@
 package uk.gov.hmcts.opal.filehandler.util;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
@@ -15,8 +18,16 @@ import uk.gov.hmcts.opal.filehandler.config.BaisSftpConfiguration;
 public class BaisSftpSessionFactory {
 
     private final BaisSftpConfiguration configuration;
+    private final ConcurrentMap<String, DefaultSftpSessionFactory> sessionFactories = new ConcurrentHashMap<>();
 
     public SftpRemoteFileTemplate connect(String username) {
+        DefaultSftpSessionFactory sessionFactory = sessionFactories.computeIfAbsent(
+            username, this::createSessionFactory);
+
+        return new SftpRemoteFileTemplate(sessionFactory);
+    }
+
+    private DefaultSftpSessionFactory createSessionFactory(String username) {
         DefaultSftpSessionFactory sessionFactory = new DefaultSftpSessionFactory();
 
         sessionFactory.setHost(configuration.getHost());
@@ -26,7 +37,13 @@ public class BaisSftpSessionFactory {
         sessionFactory.setPrivateKey(new ByteArrayResource(
             configuration.getPrivateKey().getBytes(StandardCharsets.UTF_8), "BAIS SFTP private key"));
 
-        return new SftpRemoteFileTemplate(sessionFactory);
+        return sessionFactory;
+    }
+
+    @PreDestroy
+    public void close() {
+        sessionFactories.values().forEach(DefaultSftpSessionFactory::destroy);
+        sessionFactories.clear();
     }
 
 }

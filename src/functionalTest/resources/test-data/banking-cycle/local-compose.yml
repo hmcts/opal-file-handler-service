@@ -1,0 +1,23 @@
+# Test-only overlay for the existing Opal stack. No production deployment settings are changed.
+services:
+  opal-file-handler-service:
+    environment:
+      LAUNCH_DARKLY_ENABLED: "false"
+      RELEASE_1C_BANKING_INTERFACES_ENABLED: "true"
+      DWP_FILE_TRANSFER_JOB_ENABLED: "true"
+      JACOBS_FILE_TRANSFER_JOB_ENABLED: "true"
+      CDER_FILE_TRANSFER_JOB_ENABLED: "true"
+      MARSTON_FILE_TRANSFER_JOB_ENABLED: "true"
+      BAIS_SFTP_CONNECTION_HOST: sftp
+      BAIS_SFTP_CONNECTION_PORT: "22"
+      BAIS_SFTP_DWP_USERNAME: DWP
+      BAIS_SFTP_JACOBS_USERNAME: Jacobs
+      BAIS_SFTP_CDER_USERNAME: CDER
+      BAIS_SFTP_MARSTON_USERNAME: MARSTON
+      FILE_STORE_STORAGE_ACCOUNT_NAME: devstoreaccount1
+      FILE_STORE_STORAGE_URL: http://azurite:10000/devstoreaccount1
+      # Azurite's standard public development key, already used by the existing fixtures.
+      FILE_STORE_STORAGE_KEY: Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==
+  opal-fines-service:
+    environment:
+      INTERFACE_FILE_CONSUMER_ENABLED: "true"
