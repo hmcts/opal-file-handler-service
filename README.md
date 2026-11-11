@@ -181,3 +181,57 @@ Jenkins opens a loopback-only `kubectl port-forward` to that PR's PostgreSQL pod
 functional tests (including failures) and has a 45-minute maximum lifetime for aborted builds.
 Database persistence assertions and scenario cleanup remain enabled; pipeline-managed shared
 fixtures continue to use in-pod SQL. Staging and local connections are unchanged.
+
+### PO-7244 banking processing coverage
+
+The existing `integration` / `check` tasks include `BankingFileProcessingIntegrationTest` and
+`PreparedBankingPackIntegrationTest`. These reuse the existing SFTP, PostgreSQL, Redis and Azurite
+containers, with controlled feature flags and mocked queue publishers.
+
+Automatic-startup cases boot the configured `TaskRunner` for all eight banking file types, with
+testing-support endpoints disabled, and assert real processing through to the Fines queue publisher.
+They reuse the parent integration context's processors and infrastructure; they do not call the
+processor directly. External deployment scheduling and queue consumption are outside these checks.
+
+Fines-mapped cases cover all eight interfaces, including recovery from a queue failure without a
+second BAIS upload or duplicate queue publication. Existing Maintenance-mapped DWP, Allpay and
+BTEckoh fixtures are retained because routing is selected by the business-unit bank mapping.
+These additional Maintenance cases do not replace the ticket's Fines acceptance coverage.
+
+The eight PO-7244 functional happy paths express processing and extracted-payment outcomes.
+`BaisInterfaceFileClient` handles metadata polling/content retrieval and `BaisPaymentAssertions`
+retains the fixture-specific routing, checksum and payment assertions. Existing authentication,
+fixture hooks, tags and Serenity reporting remain in use. Readiness for an external interface means
+successful extraction here; APR resolution and final payment allocation require separate E2E evidence.
+
+
+### Local DWP and Bailiffs rejection checks
+
+Four additional `@ConnectedBanking` / `@ConnectedInvalid` examples cover malformed DWP, Jacobs,
+CDER and Marston input. They verify the failed source's full stored bytes/checksum, its retained
+BAIS input, the content API rejection, and absence of extracted/transformed output or a Fines job.
+They reuse the existing functional runner, authentication, reporting, clients and cleanup patterns.
+
+```shell
+./gradlew functional '-Dcucumber.filter.tags=@ConnectedBanking'
+```
+
+The normal functional selection excludes this local pack unless `@ConnectedBanking` is requested.
+It requires the existing local stack and isolated access to the file-handler/Fines databases,
+SFTP and Azurite. Append the test-only `local-compose.yml` under
+`src/functionalTest/resources/test-data/banking-cycle` to the existing stack compose files.
+Existing functional environment/authentication settings are retained; Fines database overrides are
+`FUNCTIONAL_TEST_FINES_DB_URL`, `FUNCTIONAL_TEST_FINES_DB_USERNAME` and
+`FUNCTIONAL_TEST_FINES_DB_PASSWORD`.
+
+Setup owns business units/mappings 7240–7243 and refuses collisions or unexpected SFTP files. A known
+baseline is temporarily removed only after its bytes are verified, then restored using `SftpRetry`.
+Cleanup still attempts settled data removal if SFTP restoration fails and retains unexpectedly pending
+consumer data for diagnosis; shared queues are not purged. The retained cases do not seed APRs or
+accounts and do not claim positive downstream consumption, ANT, replay, recovery or allocation coverage.
+
+The twelve local downstream happy/recovery/replay examples were removed from this implementation.
+Their observed transformed-business-unit and content-download failures are tracked separately in
+[PO-11480](https://hmcts.atlassian.net/browse/PO-11480), related to PO-7244 and existing migration work.
+Existing shared eight-interface processing coverage and persistent input-pack tests remain intact.
+See [the retained fixture checklist](src/functionalTest/resources/test-data/banking-cycle/README.md).
