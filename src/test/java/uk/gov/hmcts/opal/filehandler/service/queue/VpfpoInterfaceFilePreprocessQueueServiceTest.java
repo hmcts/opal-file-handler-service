@@ -27,12 +27,7 @@ import uk.gov.hmcts.opal.filehandler.dto.MinorCreditorDto;
 import uk.gov.hmcts.opal.filehandler.dto.OffenceDto;
 import uk.gov.hmcts.opal.filehandler.dto.ParentGuardianDto;
 import uk.gov.hmcts.opal.filehandler.dto.PaymentTermsDto;
-import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.EnforcementResultId;
-import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.InstalmentPeriod;
-import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.LanguageCode;
-import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.NoteType;
-import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.OriginatorType;
-import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.PaymentTermsTypeCode;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes;
 
 @ExtendWith(MockitoExtension.class)
 class VpfpoInterfaceFilePreprocessQueueServiceTest {
@@ -76,7 +71,7 @@ class VpfpoInterfaceFilePreprocessQueueServiceTest {
             .defendantType("Adult")
             .originatorName("LJS")
             .originatorId(1001)
-            .originatorType(OriginatorType.NEW)
+            .originatorType(FileHandlerTypes.NEW)
             .prosecutorCaseReference("PCR123456")
             .enforcementCourtId(2001)
             .collectionOrderMade(true)
@@ -95,7 +90,7 @@ class VpfpoInterfaceFilePreprocessQueueServiceTest {
 
     private static EnforcementDto getEnforcement() {
         EnforcementDto enforcement = EnforcementDto.builder()
-            .resultId(EnforcementResultId.PRIS)
+            .resultId(FileHandlerTypes.PRIS)
             .enforcementResultResponses(List.of(getEnforcementResponse()))
             .build();
         return enforcement;
@@ -133,8 +128,8 @@ class VpfpoInterfaceFilePreprocessQueueServiceTest {
         DebtorDetailDto debtorDetail = DebtorDetailDto.builder()
             .vehicleMake("Ford")
             .vehicleRegistrationMark("AB12CDE")
-            .documentLanguage(LanguageCode.EN)
-            .hearingLanguage(LanguageCode.EN)
+            .documentLanguage(FileHandlerTypes.EN)
+            .hearingLanguage(FileHandlerTypes.EN)
             .employeeReference("EMP001")
             .employerCompanyName("HMCTS")
             .employerAddressLine1("Employer Line 1")
@@ -252,9 +247,9 @@ class VpfpoInterfaceFilePreprocessQueueServiceTest {
 
     private static PaymentTermsDto getPaymentTerms(EnforcementDto enforcement) {
         PaymentTermsDto paymentTerms = PaymentTermsDto.builder()
-            .paymentTermsTypeCode(PaymentTermsTypeCode.I)
+            .paymentTermsTypeCode(FileHandlerTypes.I)
             .effectiveDate(LocalDate.now())
-            .instalmentPeriod(InstalmentPeriod.M)
+            .instalmentPeriod(FileHandlerTypes.M)
             .lumpSumAmount(BigDecimal.valueOf(50.00))
             .instalmentAmount(BigDecimal.valueOf(25.00))
             .defaultDaysInJail(30)
@@ -267,7 +262,7 @@ class VpfpoInterfaceFilePreprocessQueueServiceTest {
         AccountNoteDto accountNote = AccountNoteDto.builder()
             .accountNoteSerial(1)
             .accountNoteText("Test note")
-            .noteType(NoteType.AC)
+            .noteType(FileHandlerTypes.AC)
             .build();
         return accountNote;
     }

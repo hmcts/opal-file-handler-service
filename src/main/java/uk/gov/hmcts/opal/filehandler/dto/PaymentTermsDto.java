@@ -8,8 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.InstalmentPeriod;
-import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.PaymentTermsTypeCode;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes;
 
 @Data
 @Builder
@@ -18,13 +17,13 @@ import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.PaymentTermsTypeCode
 public class PaymentTermsDto {
 
     @JsonProperty("payment_terms_type_code")
-    private PaymentTermsTypeCode paymentTermsTypeCode;
+    private FileHandlerTypes paymentTermsTypeCode;
 
     @JsonProperty("effective_date")
     private LocalDate effectiveDate;
 
     @JsonProperty("instalment_period")
-    private InstalmentPeriod instalmentPeriod;
+    private FileHandlerTypes instalmentPeriod;
 
     @JsonProperty("lump_sum_amount")
     private BigDecimal lumpSumAmount;

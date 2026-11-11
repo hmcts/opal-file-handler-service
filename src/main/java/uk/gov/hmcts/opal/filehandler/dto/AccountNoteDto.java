@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.NoteType;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes;
 
 @Data
 @Builder
@@ -20,5 +20,5 @@ public class AccountNoteDto {
     private String accountNoteText;
 
     @JsonProperty("note_type")
-    private NoteType noteType;
+    private FileHandlerTypes noteType;
 }

@@ -8,7 +8,7 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.OriginatorType;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes;
 
 @Data
 @Builder
@@ -29,7 +29,7 @@ public class AccountDto {
     private Integer originatorId;
 
     @JsonProperty("originator_type")
-    private OriginatorType originatorType;
+    private FileHandlerTypes originatorType;
 
     @JsonProperty("prosecutor_case_reference")
     private String prosecutorCaseReference;

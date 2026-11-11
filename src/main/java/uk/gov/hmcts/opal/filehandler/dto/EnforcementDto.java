@@ -7,7 +7,7 @@ import lombok.Data;
 
 import java.util.List;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.EnforcementResultId;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes;
 
 @Data
 @Builder
@@ -16,7 +16,7 @@ import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.EnforcementResultId;
 public class EnforcementDto {
 
     @JsonProperty("result_id")
-    private EnforcementResultId resultId;
+    private FileHandlerTypes resultId;
 
     @JsonProperty("enforcement_result_responses")
     private List<EnforcementResultResponseDto> enforcementResultResponses;

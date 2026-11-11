@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes.LanguageCode;
+import uk.gov.hmcts.opal.filehandler.types.FileHandlerTypes;
 
 @Data
 @Builder
@@ -21,10 +21,10 @@ public class DebtorDetailDto {
     private String vehicleRegistrationMark;
 
     @JsonProperty("document_language")
-    private LanguageCode documentLanguage;
+    private FileHandlerTypes documentLanguage;
 
     @JsonProperty("hearing_language")
-    private LanguageCode hearingLanguage;
+    private FileHandlerTypes hearingLanguage;
 
     @JsonProperty("employee_reference")
     private String employeeReference;
