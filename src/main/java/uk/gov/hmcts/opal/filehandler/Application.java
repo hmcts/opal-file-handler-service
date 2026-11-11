@@ -15,7 +15,7 @@ import uk.gov.hmcts.opal.filehandler.util.TaskRunnerUtil;
 import uk.gov.hmcts.opal.logging.integration.config.PdpoAsyncProperties;
 import uk.gov.hmcts.opal.logging.integration.config.PdpoSyncProperties;
 
-@SpringBootApplication(scanBasePackages = "uk.gov.hmcts.opal")
+@SpringBootApplication(scanBasePackages = {"uk.gov.hmcts.opal", "uk.gov.hmcts.common"})
 @EnableJpaRepositories("uk.gov.hmcts.opal.*")
 @EntityScan("uk.gov.hmcts.opal.*")
 @EnableFeignClients(basePackages = "uk.gov.hmcts.opal.*", defaultConfiguration = FeignConfiguration.class)

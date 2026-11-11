@@ -1,37 +1,48 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.junit.jupiter.api.Test;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.multipart.MultipartFile;
-import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.web.multipart.MultipartFile;
+import uk.gov.hmcts.common.exceptions.standard.BadRequestException;
+import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
+import uk.gov.hmcts.common.exceptions.standard.ServiceUnavailableException;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.user.authorisation.exception.PermissionNotAllowedException;
 import uk.gov.hmcts.opal.common.user.authorisation.model.BusinessUnitUser;
@@ -45,15 +56,18 @@ import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
+import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.exception.InterfaceFileNotFoundException;
 import uk.gov.hmcts.opal.filehandler.mapper.InterfaceFileMapper;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.repository.specs.InterfaceFileSpecsFactory;
+import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.pdpl.InterfaceFilesPdplLoggingService;
 import uk.gov.hmcts.opal.filehandler.service.request.SearchInterfaceFilesDto;
 import uk.gov.hmcts.opal.filehandler.util.PermissionUtil;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
+import uk.gov.hmcts.opal.generated.model.DeleteInterfaceFilesResultTestSupport;
 import uk.gov.hmcts.opal.generated.model.DomainEnumTypes;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileEnumInterfaceFile;
 import uk.gov.hmcts.opal.generated.model.InterfaceFileObjectInterfaceFile;
@@ -73,6 +87,9 @@ public class InterfaceFilesServiceTest {
     private InterfaceFileSpecsFactory specsFactory;
 
     @Mock
+    private InterfaceFileBlobStoreService blobStoreService;
+
+    @Mock
     private InterfaceFilesPdplLoggingService loggingService;
 
     @Mock
@@ -84,9 +101,17 @@ public class InterfaceFilesServiceTest {
     @Mock
     private List<InterfaceFileProcessorService> processorServicesList;
 
+    @Mock
+    private Map<String, BaisFileProcessorConfiguration> configMap;
+
     @InjectMocks
     private InterfaceFilesService service;
 
+    private void mockContainerConfig(Interface source, String containerName) {
+        BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
+        when(config.getContainerName()).thenReturn(containerName);
+        when(configMap.get(source.getConfigComponentName())).thenReturn(config);
+    }
 
     @Test
     public void getInterfaceFiles_shouldOrchestrateCallsCorrectly() {
@@ -483,6 +508,254 @@ public class InterfaceFilesServiceTest {
             verifyNoInteractions(repository);
             verifyNoInteractions(mapper);
         }
+    }
+
+    @Test
+    void deleteInterfaceFiles_shouldRecursivelyDeleteRelatedFilesAndRemoveBlobs() {
+        // Arrange
+        final Long sourceId = 100L;
+        final Long sourceId2 = 101L;
+        final UUID sourceFilestoreUuid = UUID.fromString("aeda6410-a641-4b10-b422-d400bf7dd433");
+        final UUID sourceJsonFilestoreUuid = UUID.fromString("33bae435-f0d6-4870-a005-afc4fae162c4");
+        final UUID transformedJsonFilestoreUuid = UUID.fromString("515d3e37-ed95-4966-af98-e225412ef08c");
+        final UUID sourceFilestoreUuid2 = UUID.fromString("a8027f50-6743-4ed9-bc16-4301a3db3a6f");
+        final String natwestContainer = "natwest";
+        final String barclaycardContainer = "barclaycard";
+        mockContainerConfig(Interface.NATWEST, natwestContainer);
+        mockContainerConfig(Interface.BARCLAYCARD, barclaycardContainer);
+
+        InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
+            .interfaceFileId(sourceId)
+            .filestoreUuid(sourceFilestoreUuid)
+            .type(Type.SOURCE)
+            .source(Interface.NATWEST)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+        InterfaceFileEntity failedSourceJsonFile = InterfaceFileEntity.builder()
+            .interfaceFileId(200L)
+            .type(Type.SOURCE_JSON)
+            .source(Interface.NATWEST)
+            .status(Status.FAILED)
+            .relatedInterfaceFile(sourceFile)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+        InterfaceFileEntity sourceJsonFile = InterfaceFileEntity.builder()
+            .interfaceFileId(300L)
+            .filestoreUuid(sourceJsonFilestoreUuid)
+            .type(Type.SOURCE_JSON)
+            .source(Interface.NATWEST)
+            .relatedInterfaceFile(sourceFile)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+
+        InterfaceFileEntity transformedJsonFile = InterfaceFileEntity.builder()
+            .interfaceFileId(400L)
+            .filestoreUuid(transformedJsonFilestoreUuid)
+            .type(Type.TRANSFORMED_JSON)
+            .source(Interface.NATWEST)
+            .relatedInterfaceFile(sourceJsonFile)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+        InterfaceFileEntity sourceFile2 = InterfaceFileEntity.builder()
+            .interfaceFileId(sourceId2)
+            .filestoreUuid(sourceFilestoreUuid2)
+            .type(Type.SOURCE)
+            .source(Interface.BARCLAYCARD)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+        sourceFile.getChildRelatedInterfaceFiles().add(failedSourceJsonFile);
+        sourceFile.getChildRelatedInterfaceFiles().add(sourceJsonFile);
+        sourceJsonFile.getChildRelatedInterfaceFiles().add(transformedJsonFile);
+
+        when(repository.findById(sourceId)).thenReturn(Optional.of(sourceFile));
+        when(repository.findById(sourceId2)).thenReturn(Optional.of(sourceFile2));
+
+        // Act
+        List<Long> ids = List.of(sourceId, sourceId2);
+        DeleteInterfaceFilesResultTestSupport result = service.deleteInterfaceFiles(ids);
+
+        // Assert
+        assertThat(result.getSuccessfullyDeletedIds()).containsExactlyInAnyOrder(sourceId, sourceId2);
+        assertThat(result.getFailedIds()).isEmpty();
+
+        ArgumentCaptor<UUID> filestoreUuidCaptor = ArgumentCaptor.forClass(UUID.class);
+        ArgumentCaptor<String> containerCaptor = ArgumentCaptor.forClass(String.class);
+        // only 4 times as the failed json filestore id was left null
+        verify(blobStoreService, times(4)).deleteBlob(filestoreUuidCaptor.capture(), containerCaptor.capture());
+        List<UUID> filestoreArgs = filestoreUuidCaptor.getAllValues();
+        assertThat(filestoreArgs).containsExactlyInAnyOrder(
+            transformedJsonFilestoreUuid, sourceJsonFilestoreUuid, sourceFilestoreUuid, sourceFilestoreUuid2
+        );
+        assertThat(filestoreArgs.indexOf(transformedJsonFilestoreUuid))
+            .isLessThan(filestoreArgs.indexOf(sourceJsonFilestoreUuid));
+        assertThat(filestoreArgs.indexOf(sourceJsonFilestoreUuid))
+            .isLessThan(filestoreArgs.indexOf(sourceFilestoreUuid));
+
+        assertThat(containerCaptor.getAllValues()).containsExactlyInAnyOrder(
+            natwestContainer, natwestContainer, natwestContainer, barclaycardContainer
+        );
+        assertThat(containerCaptor.getAllValues().indexOf(barclaycardContainer))
+            .isEqualTo(filestoreArgs.indexOf(sourceFilestoreUuid2));
+
+        ArgumentCaptor<InterfaceFileEntity> interfaceFileCaptor = ArgumentCaptor.forClass(InterfaceFileEntity.class);
+        verify(repository, times(5)).delete(interfaceFileCaptor.capture());
+        List<InterfaceFileEntity> repositoryDeleteArgs = interfaceFileCaptor.getAllValues();
+        assertThat(repositoryDeleteArgs).containsExactlyInAnyOrder(
+            failedSourceJsonFile, transformedJsonFile, sourceJsonFile, sourceFile, sourceFile2
+        );
+        assertThat(repositoryDeleteArgs.indexOf(transformedJsonFile))
+            .isLessThan(repositoryDeleteArgs.indexOf(sourceJsonFile));
+        assertThat(repositoryDeleteArgs.indexOf(sourceJsonFile))
+            .isLessThan(repositoryDeleteArgs.indexOf(sourceFile));
+    }
+
+    @Test
+    void deleteInterfaceFiles_shouldDeleteFilesWithSameNameAndChecksumAndRemoveBlobs() {
+        // Arrange
+        final Long sourceId = 100L;
+        final Long supersededSourceId = 101L;
+        final UUID filestoreUuid = UUID.fromString("92383ff4-14b7-4174-a0c3-b8165fcd687b");
+        final String fileName = "test-file";
+        final String checksum = "check";
+        final String natwestContainer = "natwest";
+        mockContainerConfig(Interface.NATWEST, natwestContainer);
+
+        InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
+            .interfaceFileId(sourceId)
+            .filestoreUuid(filestoreUuid)
+            .type(Type.SOURCE)
+            .fileName(fileName)
+            .checksum(checksum)
+            .source(Interface.NATWEST)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+        InterfaceFileEntity supersededSourceFile = InterfaceFileEntity.builder()
+            .interfaceFileId(supersededSourceId)
+            .filestoreUuid(filestoreUuid)
+            .type(Type.SOURCE)
+            .source(Interface.NATWEST)
+            .status(Status.FAILED_SUPERSEDED)
+            .build();
+
+        when(repository.findById(sourceId)).thenReturn(Optional.of(sourceFile));
+        when(repository.findByTypeAndChecksumAndFileName(Type.SOURCE, checksum, fileName)).thenReturn(
+            new ArrayList<>(List.of(sourceFile, supersededSourceFile)));
+        when(repository.existsByFilestoreUuidAndSourceAndInterfaceFileIdNot(
+            eq(filestoreUuid), eq(Interface.NATWEST), anyLong())).thenReturn(true, false);
+
+        // Act
+        List<Long> ids = List.of(sourceId);
+        DeleteInterfaceFilesResultTestSupport result = service.deleteInterfaceFiles(ids);
+
+        // Assert
+        assertThat(result.getSuccessfullyDeletedIds()).containsExactly(sourceId);
+        assertThat(result.getFailedIds()).isEmpty();
+
+        verify(blobStoreService, times(1)).deleteBlob(filestoreUuid, natwestContainer);
+
+        ArgumentCaptor<InterfaceFileEntity> interfaceFileCaptor = ArgumentCaptor.forClass(InterfaceFileEntity.class);
+        verify(repository, times(2)).delete(interfaceFileCaptor.capture());
+        List<InterfaceFileEntity> repositoryDeleteArgs = interfaceFileCaptor.getAllValues();
+        assertThat(interfaceFileCaptor.getAllValues()).containsExactly(supersededSourceFile, sourceFile);
+
+        ArgumentCaptor<Long> findByIdCaptor = ArgumentCaptor.forClass(Long.class);
+        verify(repository, times(1)).findById(findByIdCaptor.capture());
+        assertThat(findByIdCaptor.getValue()).isNotEqualTo(supersededSourceId);
+    }
+
+    @Test
+    void deleteInterfaceFiles_shouldCorrectlyHandleFailedDeletions() {
+        // Arrange
+        final Long sourceId = 100L;
+        final UUID sourceFilestoreUuid = UUID.fromString("d095de29-ba2b-4421-8b00-2dc003f85f12");
+        final UUID sourceJsonFilestoreUuid = UUID.fromString("c59a81b5-5f53-4dec-9366-283690875706");
+        final String barclaycardContainer = "barclaycard";
+        mockContainerConfig(Interface.BARCLAYCARD, barclaycardContainer);
+
+        InterfaceFileEntity sourceFile = InterfaceFileEntity.builder()
+            .interfaceFileId(sourceId)
+            .filestoreUuid(sourceFilestoreUuid)
+            .type(Type.SOURCE)
+            .source(Interface.BARCLAYCARD)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+        InterfaceFileEntity sourceJsonFile = InterfaceFileEntity.builder()
+            .interfaceFileId(200L)
+            .filestoreUuid(sourceJsonFilestoreUuid)
+            .type(Type.SOURCE_JSON)
+            .source(Interface.BARCLAYCARD)
+            .status(Status.SUCCESS)
+            .relatedInterfaceFile(sourceFile)
+            .childRelatedInterfaceFiles(new HashSet<>())
+            .build();
+
+        sourceFile.getChildRelatedInterfaceFiles().add(sourceJsonFile);
+        when(repository.findById(sourceId)).thenReturn(Optional.of(sourceFile));
+        when(blobStoreService.deleteBlob(sourceJsonFilestoreUuid, barclaycardContainer))
+            .thenThrow(new ServiceUnavailableException("Error", "Blob deletion failed"));
+
+        // Act
+        List<Long> ids = List.of(sourceId);
+        DeleteInterfaceFilesResultTestSupport result = service.deleteInterfaceFiles(ids);
+
+        // Assert
+        assertThat(result.getFailedIds()).containsExactly(sourceId);
+        assertThat(result.getSuccessfullyDeletedIds()).isEmpty();
+        verify(repository, never()).delete(sourceFile);
+        verify(repository, never()).delete(sourceJsonFile);
+        verify(blobStoreService, never()).deleteBlob(sourceFilestoreUuid, barclaycardContainer);
+
+    }
+
+    @Test
+    void deleteInterfaceFiles_notFoundIds_shouldThrowBadRequestException() {
+        // Arrange
+        Long validId = 10L;
+        Long invalidId1 = 20L;
+        Long invalidId2 = 30L;
+        List<Long> ids = List.of(validId, invalidId1, invalidId2);
+        when(repository.findById(validId)).thenReturn(Optional.of(mock(InterfaceFileEntity.class)));
+        when(repository.findById(invalidId1)).thenReturn(Optional.empty());
+        when(repository.findById(invalidId2)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> service.deleteInterfaceFiles(ids));
+        assertThat(ex.getTitle()).isEqualTo("Request to delete interface files failed validation");
+        assertThat(ex.getDetail()).contains("The following interface files do not exist: [20, 30]");
+    }
+
+    @Test
+    void deleteInterfaceFiles_sourceJson_transformedJson_shouldThrowBadRequestException() {
+        // Arrange
+        Long sourceId = 10L;
+        Long sourceJsonId = 20L;
+        Long transformedJsonId = 30L;
+        List<Long> ids = List.of(sourceId, sourceJsonId, transformedJsonId);
+
+        InterfaceFileEntity source = mock(InterfaceFileEntity.class);
+        when(source.getType()).thenReturn(Type.SOURCE);
+        InterfaceFileEntity sourceJson = mock(InterfaceFileEntity.class);
+        when(sourceJson.getInterfaceFileId()).thenReturn(sourceJsonId);
+        when(sourceJson.getType()).thenReturn(Type.SOURCE_JSON);
+        InterfaceFileEntity transformedJson = mock(InterfaceFileEntity.class);
+        when(transformedJson.getInterfaceFileId()).thenReturn(transformedJsonId);
+        when(transformedJson.getType()).thenReturn(Type.TRANSFORMED_JSON);
+
+        when(repository.findById(sourceId)).thenReturn(Optional.of(source));
+        when(repository.findById(sourceJsonId)).thenReturn(Optional.of(sourceJson));
+        when(repository.findById(transformedJsonId)).thenReturn(Optional.of(transformedJson));
+
+        // Act + Assert
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> service.deleteInterfaceFiles(ids));
+        assertThat(ex.getTitle()).isEqualTo("Request to delete interface files failed validation");
+        assertThat(ex.getDetail()).contains("The following interface files are not of type SOURCE: [20, 30]");
     }
 
 }

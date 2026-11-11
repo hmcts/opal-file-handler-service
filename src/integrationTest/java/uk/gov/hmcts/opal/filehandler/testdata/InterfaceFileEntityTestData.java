@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.TimeZone;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -24,16 +25,36 @@ public class InterfaceFileEntityTestData {
     private final Clock clock;
 
     public InterfaceFileEntity getTypicalInterfaceFile(String fileName) {
+        return getTypicalInterfaceFile(fileName, null, null);
+    }
+
+    public InterfaceFileEntity getTypicalInterfaceFile(String fileName, UUID filestoreUuid, String checksum) {
         return repository.save(InterfaceFileEntity.builder()
             .source(Interface.NATWEST)
             .target(Interface.OPAL)
             .type(Type.SOURCE_JSON)
             .opalDomain(Domain.FINES)
             .fileName(fileName)
+            .filestoreUuid(filestoreUuid)
+            .checksum(checksum)
             .status(Status.INGESTED)
             .createdDatetime(LocalDateTime.now(clock).truncatedTo(ChronoUnit.MICROS))
+            .childRelatedInterfaceFiles(new HashSet<>())
             .createdBy(-1L)
             .build());
+    }
+
+    public InterfaceFileEntity saveTypicalRelatedChildInterfaceFile(
+        String fileName,
+        UUID filestoreUuid,
+        String checksum,
+        InterfaceFileEntity parent
+    ) {
+        InterfaceFileEntity child = getTypicalRelatedChildInterfaceFile(fileName, parent);
+        child.setFilestoreUuid(filestoreUuid);
+        child.setChecksum(checksum);
+        saveAndFlushInterfaceFile(child);
+        return child;
     }
 
     public InterfaceFileEntity getTypicalRelatedChildInterfaceFile(
@@ -42,10 +63,15 @@ public class InterfaceFileEntityTestData {
     ) {
         InterfaceFileEntity child = getTypicalInterfaceFile(fileName);
 
+        if (parent.getType() == Type.SOURCE) {
+            child.setType(Type.SOURCE_JSON);
+        } else {
+            child.setType(Type.TRANSFORMED_JSON);
+        }
         child.setPaymentType(PaymentType.CASH);
         child.setBusinessUnitId(new Short[] {1, 2});
         child.setRelatedInterfaceFile(parent);
-
+        parent.getChildRelatedInterfaceFiles().add(child);
         return child;
     }
 
