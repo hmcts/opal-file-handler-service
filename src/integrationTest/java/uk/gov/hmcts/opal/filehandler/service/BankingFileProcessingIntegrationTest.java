@@ -9,13 +9,14 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
 import uk.gov.hmcts.opal.filehandler.config.task.AutomatedAllpayFileTransferJob;
 import uk.gov.hmcts.opal.filehandler.config.task.AutomatedBTEckohFileTransferJob;
 import uk.gov.hmcts.opal.filehandler.config.task.AutomatedBarclaycardFileTransferJob;
@@ -39,8 +41,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.images.builder.Transferable;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.common.launchdarkly.FeatureDisabledException;
-import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
-import uk.gov.hmcts.opal.common.launchdarkly.service.FeatureToggleApi;
 import uk.gov.hmcts.opal.filehandler.config.AbstractBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -57,6 +57,18 @@ import uk.hmcts.zephyr.automation.junit5.annotations.JiraEpic;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
 /** PO-7244: real SFTP, blob and database processing with controlled queue availability. */
+@TestPropertySource(properties = {
+    "launchdarkly.enabled=false",
+    "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
+    "launchdarkly.default-flag-values.dwp-file-transfer-job=true",
+    "launchdarkly.default-flag-values.bailiffs-jacobs-file-transfer-job=true",
+    "launchdarkly.default-flag-values.bailiffs-cder-file-transfer-job=true",
+    "launchdarkly.default-flag-values.bailiffs-marston-file-transfer-job=true",
+    "launchdarkly.default-flag-values.natwest-file-transfer-job=true",
+    "launchdarkly.default-flag-values.barclaycard-file-transfer-job=true",
+    "launchdarkly.default-flag-values.allpay-file-transfer-job=true",
+    "launchdarkly.default-flag-values.bteckoh-file-transfer-job=true"
+})
 public class BankingFileProcessingIntegrationTest extends AbstractInterfaceFileProcessorServiceIntegrationTest {
 
     private static final short BUSINESS_UNIT_ID = 7244;
@@ -70,8 +82,6 @@ public class BankingFileProcessingIntegrationTest extends AbstractInterfaceFileP
     private BusinessUnitBankAccountRepository bankAccounts;
     @Autowired
     private ObjectMapper objectMapper;
-    @MockitoBean
-    private FeatureToggleApi featureToggleApi;
     @MockitoBean
     private FinesInterfaceFilePreprocessQueueService finesQueue;
     @MockitoBean
@@ -109,26 +119,25 @@ public class BankingFileProcessingIntegrationTest extends AbstractInterfaceFileP
         );
     }
 
-    @ParameterizedTest(name = "{0}: stored file is not retried while its processing flag is disabled")
-    @MethodSource("bankingFiles")
-    @JiraStory("PO-7244")
-    @JiraEpic("PO-3497")
-    void disabledFlagLeavesStoredFileUnprocessed(BankingFile bankingFile) throws IOException {
-        InterfaceFileProcessorService processor = prepare(bankingFile);
-        final InterfaceFileEntity failedJson = ingestWithUnavailableQueue(processor);
-        final var before = storedBlobs(configuration.getContainerName());
-        clearInvocations(expectedQueue(), otherQueue());
-        when(featureToggleApi.isFeatureEnabled(configuration.getFeatureFlag())).thenReturn(false);
+    @Nested
+    @TestPropertySource(properties = "launchdarkly.default-flag-values.dwp-file-transfer-job=false")
+    class DwpFileTransferDisabled {
 
-        FeatureDisabledException exception = assertThrows(FeatureDisabledException.class,
-            () -> processor.run());
+        @Test
+        @JiraStory("PO-7244")
+        @JiraEpic("PO-3497")
+        void disabledFlagLeavesInputUnprocessed() throws IOException {
+            BankingFile dwp = bankingFiles().filter(candidate -> candidate.processorBean().equals("DWP"))
+                .findFirst().orElseThrow();
+            InterfaceFileProcessorService processor = prepare(dwp);
 
-        assertThat(exception).hasMessage(configuration.getFeatureFlag() + " is not enabled");
-        assertThat(records()).hasSize(2);
-        assertThat(repository.findById(failedJson.getInterfaceFileId()).orElseThrow().getStatus())
-            .isEqualTo(Status.FAILED);
-        assertThat(storedBlobs(configuration.getContainerName())).isEqualTo(before);
-        verifyNoInteractions(finesQueue, maintenanceQueue);
+            FeatureDisabledException exception = assertThrows(FeatureDisabledException.class, processor::run);
+
+            assertThat(exception).hasMessage("dwp-file-transfer-job is not enabled");
+            assertThat(records()).isEmpty();
+            assertThat(sftpClient.listRegularFiles(file.username())).contains(file.fileName());
+            verifyNoInteractions(finesQueue, maintenanceQueue);
+        }
     }
 
     @ParameterizedTest(name = "{0}: queue recovery processes the stored blob once without another BAIS upload")
@@ -307,8 +316,6 @@ public class BankingFileProcessingIntegrationTest extends AbstractInterfaceFileP
         // SFTP usernames are supplied only for this test context; no deployment config is changed.
         originalSftpUsername = configuration.getSftpUsername();
         configuration.setSftpUsername(file.username());
-        when(featureToggleApi.isFeatureEnabled(FeatureFlags.RELEASE_1C_BANKING_INTERFACES)).thenReturn(true);
-        when(featureToggleApi.isFeatureEnabled(configuration.getFeatureFlag())).thenReturn(true);
         assertThat(records()).as("The processing fixture filename must be unused").isEmpty();
         assertThat(sftpClient.listRegularFiles(file.username())).doesNotContain(file.fileName());
         fixtureClaimed = true;

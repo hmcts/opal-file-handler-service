@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,11 +14,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.images.builder.Transferable;
 import tools.jackson.databind.ObjectMapper;
-import uk.gov.hmcts.opal.common.launchdarkly.FeatureFlags;
-import uk.gov.hmcts.opal.common.launchdarkly.service.FeatureToggleApi;
 import uk.gov.hmcts.opal.filehandler.config.AbstractBaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
@@ -36,6 +34,14 @@ import uk.hmcts.zephyr.automation.junit5.annotations.JiraEpic;
 import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 
 /** Processes the persistent DWP/Bailiff fixtures; APR references are asserted before downstream resolution. */
+@TestPropertySource(properties = {
+    "launchdarkly.enabled=false",
+    "launchdarkly.default-flag-values.release-1c-banking-interfaces=true",
+    "launchdarkly.default-flag-values.dwp-file-transfer-job=true",
+    "launchdarkly.default-flag-values.bailiffs-jacobs-file-transfer-job=true",
+    "launchdarkly.default-flag-values.bailiffs-cder-file-transfer-job=true",
+    "launchdarkly.default-flag-values.bailiffs-marston-file-transfer-job=true"
+})
 public class PreparedBankingPackIntegrationTest extends AbstractInterfaceFileProcessorServiceIntegrationTest {
     @Autowired
     private ApplicationContext applicationContext;
@@ -43,8 +49,6 @@ public class PreparedBankingPackIntegrationTest extends AbstractInterfaceFilePro
     private BusinessUnitBankAccountRepository bankAccounts;
     @Autowired
     private ObjectMapper objectMapper;
-    @MockitoBean
-    private FeatureToggleApi featureToggleApi;
     @MockitoBean
     private FinesInterfaceFilePreprocessQueueService finesQueue;
     @MockitoBean
@@ -87,8 +91,6 @@ public class PreparedBankingPackIntegrationTest extends AbstractInterfaceFilePro
         config = applicationContext.getBean(supplier.configBean(), AbstractBaisFileProcessorConfiguration.class);
         previousUser = config.getSftpUsername();
         config.setSftpUsername(supplier.user());
-        when(featureToggleApi.isFeatureEnabled(FeatureFlags.RELEASE_1C_BANKING_INTERFACES)).thenReturn(true);
-        when(featureToggleApi.isFeatureEnabled(config.getFeatureFlag())).thenReturn(true);
         name = active.fileName();
         final byte[] input = new ClassPathResource("bais-emulator/po7244/" + supplier.folder()
             + "/" + active.testCase() + "/" + name).getContentAsByteArray();
