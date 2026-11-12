@@ -249,15 +249,12 @@ public class BacsStandard18BaisExtractionService implements BankingExtractionSer
         ParsedTransaction expected
     ) {
         BankDetails expectedDestination = expected.destinationBankDetails();
-        String expectedTransactionCode = expected.transaction().getTransactionCode();
         boolean allMatch = transactions.stream()
-            .allMatch(transaction -> hasExpectedDestinationDetails(transaction, expectedDestination)
-                && expectedTransactionCode.equals(transaction.transaction().getTransactionCode()));
+            .allMatch(transaction -> hasExpectedDestinationDetails(transaction, expectedDestination));
 
         if (!allMatch) {
             throw new IllegalArgumentException(
-                "BACS Standard 18 transaction rows contained mixed destination bank details or mixed transaction codes"
-            );
+                "BACS Standard 18 transaction rows contained mixed destination bank details");
         }
     }
 

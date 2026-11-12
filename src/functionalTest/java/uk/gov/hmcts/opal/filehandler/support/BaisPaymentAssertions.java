@@ -58,7 +58,9 @@ public class BaisPaymentAssertions {
                 Map.entry("destination_details.bank_details.account_number", "27048529"),
                 Map.entry("transactions.size()", "2"),
                 Map.entry("transactions[0].amount", "1500"),
-                Map.entry("transactions[0].transaction_code", "99")
+                Map.entry("transactions[0].transaction_code", "99"),
+                Map.entry("transactions[1].amount", "500"),
+                Map.entry("transactions[1].transaction_code", "93")
             );
             case "Cder" -> Map.ofEntries(
                 Map.entry("payment_type", "CASH"),
@@ -81,7 +83,9 @@ public class BaisPaymentAssertions {
                 Map.entry("destination_details.bank_details.account_number", "12341234"),
                 Map.entry("transactions.size()", "2"),
                 Map.entry("transactions[0].amount", "1500"),
-                Map.entry("transactions[0].transaction_code", "99")
+                Map.entry("transactions[0].transaction_code", "99"),
+                Map.entry("transactions[1].amount", "500"),
+                Map.entry("transactions[1].transaction_code", "93")
             );
             case "BTEckoh transfer" -> Map.ofEntries(
                 Map.entry("payment_type", "CASH"),
@@ -89,7 +93,9 @@ public class BaisPaymentAssertions {
                 Map.entry("destination_details.bank_details.account_number", "12341235"),
                 Map.entry("transactions.size()", "2"),
                 Map.entry("transactions[0].amount", "1500"),
-                Map.entry("transactions[0].transaction_code", "99")
+                Map.entry("transactions[0].transaction_code", "99"),
+                Map.entry("transactions[1].amount", "500"),
+                Map.entry("transactions[1].transaction_code", "93")
             );
             case "DWP" -> Map.ofEntries(
                 Map.entry("transactions[0].date_entry_applied", "07/04/2026"),
@@ -104,7 +110,9 @@ public class BaisPaymentAssertions {
                 Map.entry("destination_details.bank_details.account_number", "27048528"),
                 Map.entry("transactions.size()", "2"),
                 Map.entry("transactions[0].amount", "1500"),
-                Map.entry("transactions[0].transaction_code", "99")
+                Map.entry("transactions[0].transaction_code", "99"),
+                Map.entry("transactions[1].amount", "500"),
+                Map.entry("transactions[1].transaction_code", "93")
             );
             case "Jacobs" -> Map.ofEntries(
                 Map.entry("payment_type", "CASH"),

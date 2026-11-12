@@ -63,7 +63,7 @@ public final class BaisFileTestData {
         "ALLPAY_FILE_TRANSFER_JOB_ENABLED",
         "a121_00350005_300000.dat",
         "a121_00350005_300000.csv",
-        "f3f29c87cf2058c337fa6f130dd66b28",
+        "188cb3326a8168a2c54e086e18f4774c",
         "test-data/bacs/a121_00350005_300000.dat"
     );
 
@@ -78,7 +78,7 @@ public final class BaisFileTestData {
         "NATWEST_FILE_TRANSFER_JOB_ENABLED",
         "Y01A.CARS.#D.SBURZ38.D080426",
         "Y01A.CARS.#D.SBURZ38.D080426.txt",
-        "1e92f31abf52cc7310036f0d8bd094cc",
+        "20a3c953aff32e0017aa15ee89f10184",
         "test-data/bacs/natwest-unique.dat"
     );
 
@@ -93,7 +93,7 @@ public final class BaisFileTestData {
         "BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED",
         "a121_00010065_317608.dat",
         "a121_00010065_317608.err",
-        "88fd8d02bab170ff28058fe7e006e2f8",
+        "054a5f946f89dc18c776a12e7ad0b5dc",
         "test-data/bacs/barclaycard-unique.dat"
     );
 
@@ -108,7 +108,7 @@ public final class BaisFileTestData {
         "BTECKOH_FILE_TRANSFER_JOB_ENABLED",
         "a121_00350005_300000.dat",
         "a121_00350005_300000.err",
-        "f20903378187bea34d27a65b7728ac75",
+        "0b37ec09e1e2122f934c00e1e59026b3",
         "test-data/bacs/bteckoh-unique.dat"
     );
 

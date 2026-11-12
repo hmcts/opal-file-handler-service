@@ -50,7 +50,7 @@ class BacsStandard18BaisExtractionServiceTest {
 
     private static final String FILE_NAME = "a121_00350005_300000.dat";
     private static final String MIXED_DESTINATION_OR_TRANSACTION_CODES_MESSAGE =
-        "BACS Standard 18 transaction rows contained mixed destination bank details or mixed transaction codes";
+        "BACS Standard 18 transaction rows contained mixed destination bank details";
 
     private final InterfaceFilesRepository repository = mock(InterfaceFilesRepository.class);
     private final BusinessUnitBankAccountRepository bubaRepository = mock(BusinessUnitBankAccountRepository.class);
@@ -619,14 +619,13 @@ class BacsStandard18BaisExtractionServiceTest {
         }
 
         @Test
-        void shouldRejectMixedTransactionCodes() {
+        void shouldAcceptMixedTransactionCodes() {
             BacsStandard18BaisExtractionService.ParsedTransaction expected = parsedTransaction("99", DESTINATION);
 
-            assertThatThrownBy(() -> service.validateConsistentDestinationDetails(
+            assertThatCode(() -> service.validateConsistentDestinationDetails(
                 List.of(expected, parsedTransaction("11", DESTINATION)),
                 expected
-            )).isInstanceOf(IllegalArgumentException.class)
-                .hasMessage(MIXED_DESTINATION_OR_TRANSACTION_CODES_MESSAGE);
+            )).doesNotThrowAnyException();
         }
     }
 
