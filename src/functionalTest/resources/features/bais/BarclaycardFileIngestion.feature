@@ -2,7 +2,7 @@
 Feature: Barclaycard file ingestion
 
   @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @JIRA-STORY:PO-7244
-  Scenario: A valid Barclaycard file is ingested
+  Scenario: A valid Barclaycard file with mixed transaction codes is ingested
     Given the configured "Barclaycard" file is available on bais
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
     And the "Barclaycard" file ingestion job is requested through testing support
