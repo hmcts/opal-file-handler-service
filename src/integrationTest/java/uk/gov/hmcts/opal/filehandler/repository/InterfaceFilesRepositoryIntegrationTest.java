@@ -104,8 +104,9 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
         entityManager.clear();
 
         Optional<InterfaceFileEntity> result = repository
-            .findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
-                parent.getInterfaceFileId(), Type.SOURCE_JSON, "extract.json", "json-checksum", Status.SUCCESS);
+            .findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatusIn(
+                parent.getInterfaceFileId(), Type.SOURCE_JSON, "extract.json", "json-checksum",
+                List.of(Status.SUCCESS,Status.SUCCESS_NO_TRANSACTIONS));
 
         assertThat(result).isPresent();
         assertThat(result.get().getInterfaceFileId()).isEqualTo(child.getInterfaceFileId());
