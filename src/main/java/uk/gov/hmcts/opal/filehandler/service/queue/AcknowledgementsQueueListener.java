@@ -21,7 +21,7 @@ public class AcknowledgementsQueueListener {
     private final ObjectMapper objectMapper;
 
     @JmsListener(
-        destination = "${opal.common.service-bus.acknowledgements}",
+        destination = "${opal.common.service-bus.queues.acknowledgements}",
         containerFactory = "opalFileHandlerConsumerConnectionFactory"
     )
     public void onMessage(Message message) {

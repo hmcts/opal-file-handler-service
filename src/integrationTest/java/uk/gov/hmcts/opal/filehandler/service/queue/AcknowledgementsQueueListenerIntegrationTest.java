@@ -29,7 +29,7 @@ import uk.hmcts.zephyr.automation.junit5.annotations.JiraStory;
 @Sql(scripts = "classpath:db/deleteData/delete_from_vpfpo_registrations.sql",
     executionPhase = AFTER_TEST_METHOD)
 @TestPropertySource(properties = {
-    "opal.common.service-bus.acknowledgements=VPFPO-acknowledgements-queue"
+    "opal.common.service-bus.queues.acknowledgements=VPFPO-acknowledgements-queue"
 })
 public class AcknowledgementsQueueListenerIntegrationTest extends AbstractIntegrationTest {
 
