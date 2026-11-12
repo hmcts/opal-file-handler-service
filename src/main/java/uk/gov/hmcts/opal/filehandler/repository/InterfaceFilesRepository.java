@@ -2,9 +2,11 @@ package uk.gov.hmcts.opal.filehandler.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
+import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
@@ -42,5 +44,8 @@ public interface InterfaceFilesRepository extends JpaRepository<InterfaceFileEnt
         String fileName,
         String checksum,
         Status status);
+
+    boolean existsByFilestoreUuidAndSourceAndInterfaceFileIdNot(UUID filestoreUuid, Interface source,
+        long interfaceFileId);
 
 }

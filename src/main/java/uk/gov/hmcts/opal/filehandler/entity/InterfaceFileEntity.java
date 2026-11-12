@@ -10,9 +10,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -92,12 +94,24 @@ public class InterfaceFileEntity {
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private PaymentType paymentType;
 
+    // NOTE - this is the parent (and there are other related interface files which are the children)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "related_interface_file_id")
     private InterfaceFileEntity relatedInterfaceFile;
 
+    @OneToMany(mappedBy = "relatedInterfaceFile")
+    private Set<InterfaceFileEntity> childRelatedInterfaceFiles;
+
     @Column(nullable = false)
     @NotNull
     private Long createdBy;
+
+    public boolean hasParent() {
+        return relatedInterfaceFile != null;
+    }
+
+    public boolean hasChildren() {
+        return !childRelatedInterfaceFiles.isEmpty();
+    }
 
 }
