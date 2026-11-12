@@ -15,6 +15,8 @@ import uk.gov.hmcts.opal.filehandler.entity.Type;
 public interface InterfaceFilesRepository extends JpaRepository<InterfaceFileEntity, Long>,
     JpaSpecificationExecutor<InterfaceFileEntity> {
 
+    List<InterfaceFileEntity> findByTypeAndChecksumAndFileName(Type type, String checksum, String fileName);
+
     Optional<InterfaceFileEntity> findByFileNameAndChecksumAndStatus(String fileName, String checksum, Status status);
 
     Optional<InterfaceFileEntity> findByTypeAndFileNameAndChecksumAndStatusIn(Type type, String fileName,
