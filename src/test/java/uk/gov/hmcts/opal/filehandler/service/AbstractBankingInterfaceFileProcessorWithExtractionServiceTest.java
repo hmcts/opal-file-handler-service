@@ -375,8 +375,9 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
         @Test
         void shouldReturnTrueWhenSuccessfulDuplicateExists() {
             InterfaceFileCommonDataExtract extract = extract();
-            when(repository.findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
-                100L, Type.SOURCE_JSON, SOURCE_JSON_NAME, "checksum", Status.SUCCESS))
+            when(repository.findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatusIn(
+                100L, Type.SOURCE_JSON, SOURCE_JSON_NAME, "checksum",
+                List.of(Status.SUCCESS, Status.SUCCESS_NO_TRANSACTIONS)))
                 .thenReturn(Optional.of(sourceJsonFile(200L, Status.SUCCESS)));
 
             assertThat(service.alreadyProcessedSuccessfully(sourceFile, extract, "checksum")).isTrue();

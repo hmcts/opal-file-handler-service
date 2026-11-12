@@ -15,28 +15,33 @@ import uk.gov.hmcts.opal.filehandler.entity.Type;
 public interface InterfaceFilesRepository extends JpaRepository<InterfaceFileEntity, Long>,
     JpaSpecificationExecutor<InterfaceFileEntity> {
 
+    List<InterfaceFileEntity> findByTypeAndChecksumAndFileName(Type type, String checksum, String fileName);
+
     Optional<InterfaceFileEntity> findByFileNameAndChecksumAndStatus(String fileName, String checksum, Status status);
 
-    Optional<InterfaceFileEntity> findByTypeAndFileNameAndChecksumAndStatus(Type type, String fileName,
-        String checksum, Status status);
+    Optional<InterfaceFileEntity> findByTypeAndFileNameAndChecksumAndStatusIn(Type type, String fileName,
+        String checksum, List<Status> status);
+
+    Optional<InterfaceFileEntity> findByTypeAndFileNameAndStatusIn(Type type, String fileName, List<Status> status);
 
     List<InterfaceFileEntity> findAllByFileNameAndChecksumAndStatus(
         String fileName,
         String checksum,
         Status status);
 
-    List<InterfaceFileEntity> findByTypeAndChecksumAndFileName(
-        Type type,
-        String checksum,
-        String fileName
-    );
 
-    Optional<InterfaceFileEntity> findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
+    Optional<InterfaceFileEntity> findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatusIn(
         Long relatedInterfaceFileId,
         Type type,
         String fileName,
         String checksum,
-        Status status);
+        List<Status> status);
+
+    Optional<InterfaceFileEntity> findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndStatusIn(
+        Long relatedInterfaceFileId,
+        Type type,
+        String fileName,
+        List<Status> status);
 
     List<InterfaceFileEntity> findAllByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
         Long relatedInterfaceFileId,
