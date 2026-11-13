@@ -367,7 +367,7 @@ dependencies {
   implementation 'uk.gov.hmcts:opal-common-lib:0.3.40'
   implementation 'uk.gov.hmcts:spring-exception-handler:1.0.3'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
-  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.17.5'
+  testImplementation 'com.launchdarkly:launchdarkly-java-server-sdk:7.18.0'
 
   //Spring Boot
   implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0'
