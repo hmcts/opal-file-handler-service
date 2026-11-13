@@ -96,6 +96,12 @@ public class FinesPreprocessingStepDef extends BaseStepDef {
         assertEquals(expectedCodes.asList(String.class), transformedJson.getList("transactions.transaction_code"));
     }
 
+    @Then("the transformed {string} file contains transaction amounts in pence in order")
+    public void transformedFileContainsAmounts(String displayName, DataTable expectedAmounts) {
+        assertTransformationAvailable(displayName);
+        assertEquals(expectedAmounts.asList(Long.class), transformedJson.getList("transactions.amount", Long.class));
+    }
+
     @Then("Fines preprocessing reuses the original result for the stored {string} file")
     public void finesPreprocessingReusesOriginalResult(String displayName) {
         assertTransformationAvailable(displayName);
@@ -105,6 +111,7 @@ public class FinesPreprocessingStepDef extends BaseStepDef {
              InterfaceFileTestDatabaseClient fileHandler = new InterfaceFileTestDatabaseClient()) {
             do {
                 List<InterfaceFileRecord> jsonFiles = fileHandler.findByFileName(config.fileName()).stream()
+                    .filter(record -> config.source().equals(record.source()))
                     .filter(record -> "SOURCE_JSON".equals(record.type())).toList();
                 assertEquals(List.of(sourceJson.id()), jsonFiles.stream().map(InterfaceFileRecord::id).toList(),
                     "Duplicate ingestion created another source JSON");
@@ -147,9 +154,13 @@ public class FinesPreprocessingStepDef extends BaseStepDef {
     }
 
     private BaisFileTestConfig config(String displayName) {
-        assertEquals("Allpay", displayName, "Fines fixture assertions currently cover Allpay");
+        BaisFileTestConfig config = BaisFileTestData.forDisplayName(displayName);
+        assertTrue(config.verifiesFinesPreprocessing(), "Fines fixture assertions do not cover " + displayName);
+        if (!"ALLPAY".equals(config.source())) {
+            return config;
+        }
         String selectedFile = scenarioContext().recall(BaisFileTestData.SELECTED_ALLPAY_FILE);
-        return selectedFile == null ? BaisFileTestData.ALLPAY : BaisFileTestData.allpayFile(selectedFile);
+        return selectedFile == null ? config : BaisFileTestData.allpayFile(selectedFile);
     }
 
     private static JsonPath downloadJson(BaisFileTestConfig config, InterfaceFileRecord record) {

@@ -31,6 +31,11 @@ public record BaisFileTestConfig(
     String resourcePath
 ) {
 
+    /** Identifies fixtures that wait for and clean up their exact Fines preprocessing result. */
+    public boolean verifiesFinesPreprocessing() {
+        return "ALLPAY".equals(source) || "BARCLAYCARD".equals(source) || "BTECKOH".equals(source);
+    }
+
     /**
      * Returns the domain expected for the source interface-file record.
      * Banking and bailiff interfaces are routed to Fines using their configured business-unit
@@ -40,7 +45,7 @@ public record BaisFileTestConfig(
      */
     public String expectedDomain() {
         return switch (source) {
-            case "ALLPAY", "BARCLAYCARD", "NATWEST", "JACOBS", "CDER", "MARSTON" -> "FINES";
+            case "ALLPAY", "BARCLAYCARD", "BTECKOH", "NATWEST", "JACOBS", "CDER", "MARSTON" -> "FINES";
             default -> "MAINTENANCE";
         };
     }

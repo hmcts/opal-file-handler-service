@@ -56,7 +56,7 @@ public final class FinesPreprocessingFixture {
         if (sourceJsonFiles.isEmpty()) {
             if (records.stream().anyMatch(record -> "SOURCE".equals(record.type())
                 && "SUCCESS".equals(record.status()))) {
-                throw new IllegalStateException("Preserving successful Allpay source data without SOURCE_JSON; "
+                throw new IllegalStateException("Preserving successful banking source data without SOURCE_JSON; "
                     + "extraction may still be running. Records: " + records);
             }
             return;

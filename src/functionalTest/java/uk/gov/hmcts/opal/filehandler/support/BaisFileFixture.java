@@ -45,7 +45,7 @@ public class BaisFileFixture {
         try {
             cleanDatabaseAndBlobs();
         } catch (RuntimeException exception) {
-            if ("ALLPAY".equals(config.source())) {
+            if (config.verifiesFinesPreprocessing()) {
                 // Preserve pending Fines input rather than restoring/removing its SFTP fixture.
                 throw exception;
             }
@@ -80,19 +80,20 @@ public class BaisFileFixture {
         BlobStorageClient blobStorageClient = new BlobStorageClient(config.blobContainerName());
         blobStorageClient.createContainerIfNotExists();
         try (InterfaceFileTestDatabaseClient databaseClient = new InterfaceFileTestDatabaseClient()) {
-            List<InterfaceFileRecord> records = databaseClient.findByFileName(config.fileName());
-            if ("ALLPAY".equals(config.source())) {
+            List<InterfaceFileRecord> records = databaseClient.findByFileNameAndSource(
+                config.fileName(), config.source());
+            if (config.verifiesFinesPreprocessing()) {
                 FinesPreprocessingFixture.cleanUp(records);
                 // Fines may have uploaded transformed JSON while the cleanup wait was running.
-                records = databaseClient.findByFileName(config.fileName());
+                records = databaseClient.findByFileNameAndSource(config.fileName(), config.source());
             }
             records.stream()
                 .map(InterfaceFileRecord::filestoreUuid)
                 .filter(uuid -> uuid != null)
                 .map(UUID::toString)
                 .forEach(blobStorageClient::deleteIfExists);
-            databaseClient.deleteByFileName(config.fileName());
-            databaseClient.deleteByFileName(config.unsupportedFileName());
+            databaseClient.deleteByFileNameAndSource(config.fileName(), config.source());
+            databaseClient.deleteByFileNameAndSource(config.unsupportedFileName(), config.source());
         }
     }
 

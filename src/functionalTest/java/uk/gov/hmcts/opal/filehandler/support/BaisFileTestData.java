@@ -135,7 +135,7 @@ public final class BaisFileTestData {
         "BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED",
         "a121_00010065_317608.dat",
         "a121_00010065_317608.err",
-        "054a5f946f89dc18c776a12e7ad0b5dc",
+        "3ae0214debbd1d03e665b582c7b667bc",
         "test-data/bacs/barclaycard-unique.dat"
     );
 
@@ -150,7 +150,7 @@ public final class BaisFileTestData {
         "BTECKOH_FILE_TRANSFER_JOB_ENABLED",
         "a121_00350005_300000.dat",
         "a121_00350005_300000.err",
-        "0b37ec09e1e2122f934c00e1e59026b3",
+        "51927f7fa760041fa931e503b89245cf",
         "test-data/bacs/bteckoh-unique.dat"
     );
 

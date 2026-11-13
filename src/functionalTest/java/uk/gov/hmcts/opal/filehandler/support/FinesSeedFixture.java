@@ -3,7 +3,7 @@ package uk.gov.hmcts.opal.filehandler.support;
 import lombok.extern.slf4j.Slf4j;
 import uk.gov.hmcts.opal.filehandler.db.FinesInterfaceFileTestDatabaseClient;
 
-/** Prepares the shared Fines Allpay seed once, when the first Allpay scenario starts. */
+/** Prepares the Fines Allpay seed once, when the first Allpay scenario starts. */
 @Slf4j
 public final class FinesSeedFixture {
 

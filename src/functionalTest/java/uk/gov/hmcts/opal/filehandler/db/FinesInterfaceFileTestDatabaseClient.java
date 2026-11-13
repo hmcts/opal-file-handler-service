@@ -44,6 +44,16 @@ public class FinesInterfaceFileTestDatabaseClient implements AutoCloseable {
         }
     }
 
+    /** Prepares only Barclaycard-owned accounts, APR and bank mapping. */
+    public void prepareBarclaycardSeed() {
+        database.executePostgresScript("db/barclaycard/fines/setup.sql");
+    }
+
+    /** Prepares only BTEckoh transfer's accounts, APR and bank mapping. */
+    public void prepareBteckohSeed() {
+        database.executePostgresScript("db/bteckoh-transfer/fines/setup.sql");
+    }
+
     /** Returns only results linked to the precise source JSON created by a scenario. */
     public List<PreprocessingResult> findBySourceJsonId(long sourceJsonId) {
         return findResults(sourceJsonId, false);

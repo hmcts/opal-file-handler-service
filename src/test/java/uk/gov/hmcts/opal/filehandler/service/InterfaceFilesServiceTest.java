@@ -29,7 +29,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -327,14 +327,18 @@ public class InterfaceFilesServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
+    @CsvSource({"DWP, false", "DWP, true", "BTECKOH, false", "BTECKOH, true"})
     @DisplayName("Uses the external processor and container for inbound and outbound uploads")
-    void addInterfaceFile_savesEntityWithoutRelatedFileWhenNoRelatedIdProvided(boolean outbound) throws IOException {
-        Interface source = outbound ? Interface.OPAL : Interface.DWP;
-        Interface target = outbound ? Interface.DWP : Interface.OPAL;
-        DWPInterfaceFileProcessorService processorService = mock(DWPInterfaceFileProcessorService.class);
+    void addInterfaceFile_routesUploadsToExternalProcessor(Interface externalInterface, boolean outbound)
+        throws IOException {
+        Interface source = outbound ? Interface.OPAL : externalInterface;
+        Interface target = outbound ? externalInterface : Interface.OPAL;
+        Class<? extends InterfaceFileProcessorService> processorClass = externalInterface == Interface.BTECKOH
+            ? BTEckohInterfaceFileProcessorService.class : DWPInterfaceFileProcessorService.class;
+        InterfaceFileProcessorService processorService = mock(processorClass);
+        String containerName = externalInterface == Interface.BTECKOH ? "bteckoh-container" : "dwp-container";
         BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
-        InterfaceFilesService uploadService = serviceWithProcessor(processorService, config);
+        InterfaceFilesService uploadService = serviceWithProcessor(processorService, config, externalInterface);
         MultipartFile file = mock(MultipartFile.class);
         byte[] fileBytes = "source-file".getBytes();
         InterfaceFileEntity ingestedEntity = InterfaceFileEntity.builder()
@@ -347,7 +351,7 @@ public class InterfaceFilesServiceTest {
             .paymentType(PaymentTypeEnumTypes.CASH)
             .businessUnitId((short)9876);
 
-        when(config.getContainerName()).thenReturn("dwp-container");
+        when(config.getContainerName()).thenReturn(containerName);
         when(file.getOriginalFilename()).thenReturn("source.dat");
         when(file.getBytes()).thenReturn(fileBytes);
 
@@ -359,7 +363,7 @@ public class InterfaceFilesServiceTest {
             target,
             Type.TRANSFORMED_JSON,
             Domain.FINES,
-            "dwp-container",
+            containerName,
             1L
         )).thenReturn(ingestedEntity);
         when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
@@ -377,7 +381,7 @@ public class InterfaceFilesServiceTest {
             assertArrayEquals(new Short[] {(short) 9876}, ingestedEntity.getBusinessUnitId());
 
             verify(processorService).ingestFile("source.dat", fileBytes, source, target,
-                Type.TRANSFORMED_JSON, Domain.FINES, "dwp-container", 1L);
+                Type.TRANSFORMED_JSON, Domain.FINES, containerName, 1L);
             verify(repository).save(ingestedEntity);
             verify(repository).findById(25L);
             verify(mapper).toInterfaceFileObject(ingestedEntity);
@@ -472,13 +476,21 @@ public class InterfaceFilesServiceTest {
         InterfaceFileProcessorService processorService,
         BaisFileProcessorConfiguration config
     ) {
+        return serviceWithProcessor(processorService, config, Interface.DWP);
+    }
+
+    private InterfaceFilesService serviceWithProcessor(
+        InterfaceFileProcessorService processorService,
+        BaisFileProcessorConfiguration config,
+        Interface externalInterface
+    ) {
         return new InterfaceFilesService(
             repository,
             specsFactory,
             mapper,
             null,
             loggingService,
-            Map.of("dwpBaisFileProcessorConfig", config),
+            Map.of(externalInterface.getConfigComponentName(), config),
             List.of(processorService));
     }
 

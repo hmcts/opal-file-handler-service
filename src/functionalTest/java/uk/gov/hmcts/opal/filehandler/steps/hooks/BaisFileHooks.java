@@ -10,6 +10,8 @@ import uk.gov.hmcts.opal.filehandler.db.DatabaseClient;
 import uk.gov.hmcts.opal.filehandler.support.BaisFileFixture;
 import uk.gov.hmcts.opal.filehandler.support.BaisFileTestConfig;
 import uk.gov.hmcts.opal.filehandler.support.BaisFileTestData;
+import uk.gov.hmcts.opal.filehandler.support.BarclaycardFinesSeedFixture;
+import uk.gov.hmcts.opal.filehandler.support.BTEckohFinesSeedFixture;
 import uk.gov.hmcts.opal.filehandler.support.FinesSeedFixture;
 
 /** Applies the common BAIS fixture lifecycle to every BAIS ingestion scenario. */
@@ -41,6 +43,10 @@ public class BaisFileHooks {
         BaisFileFixtureDefinition fixture = fixtureFor(scenario);
         if ("ALLPAY".equals(fixture.config().source())) {
             FinesSeedFixture.ensurePrepared();
+        } else if ("BARCLAYCARD".equals(fixture.config().source())) {
+            BarclaycardFinesSeedFixture.ensurePrepared();
+        } else if ("BTECKOH".equals(fixture.config().source())) {
+            BTEckohFinesSeedFixture.ensurePrepared();
         }
         fixtureStarted = true;
         executeScript(fixture.setupScript());
