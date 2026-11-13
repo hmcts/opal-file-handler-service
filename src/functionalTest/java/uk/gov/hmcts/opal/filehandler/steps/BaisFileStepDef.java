@@ -6,22 +6,25 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static uk.gov.hmcts.opal.filehandler.support.BaisFileTestData.forDisplayName;
-import static uk.gov.hmcts.opal.filehandler.support.BaisFileTestData.forSource;
 import static uk.gov.hmcts.opal.filehandler.support.SftpRetry.withRetry;
 
 import com.google.common.io.Resources;
+import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.codec.digest.DigestUtils;
 import uk.gov.hmcts.opal.filehandler.sftp.SftpClient;
+import uk.gov.hmcts.opal.filehandler.support.BaisFileFixture;
 import uk.gov.hmcts.opal.filehandler.support.BaisFileTestConfig;
+import uk.gov.hmcts.opal.filehandler.support.BaisFileTestData;
 import uk.gov.hmcts.opal.filehandler.support.BaisInterfaceFileClient;
 import uk.gov.hmcts.opal.filehandler.support.BaisPaymentAssertions;
 import uk.gov.hmcts.opal.filehandler.support.TestHttpClient.TestHttpResponse;
@@ -40,6 +43,56 @@ public class BaisFileStepDef extends BaseStepDef {
     private TestHttpResponse taskResponse;
     private Map<String, Object> successfulInterfaceFile;
     private Map<String, Object> duplicateInterfaceFile;
+    private BaisFileTestConfig selectedConfig;
+
+    @Given("the configured {string} file {string} is available on bais")
+    public void configuredNamedFileIsAvailable(String displayName, String fileName) {
+        assertEquals("Allpay", displayName, "Named file fixtures are supported for Allpay");
+        selectedConfig = BaisFileTestData.allpayFile(fileName);
+        placeSelectedFile(displayName);
+    }
+
+    @Given("the configured {string} file {string} with transaction codes in order is available on bais")
+    public void configuredFileWithTransactionCodesIsAvailable(
+        String displayName, String fileName, DataTable expectedCodes
+    ) throws IOException {
+        assertEquals("Allpay", displayName, "Named file fixtures are supported for Allpay");
+        selectedConfig = BaisFileTestData.allpayFile(fileName);
+        List<String> transactionRows = readTransactionRows(selectedConfig);
+        assertEquals(expectedCodes.asList(String.class),
+            transactionRows.stream().map(line -> line.substring(15, 17)).toList(),
+            "Transaction codes in " + fileName + " differ from the scenario");
+        assertEquals(1L, transactionRows.stream().map(line -> line.substring(0, 14)).distinct().count(),
+            "Destination bank details must match so the scenario isolates mixed transaction codes");
+        placeSelectedFile(displayName);
+    }
+
+    private static List<String> readTransactionRows(BaisFileTestConfig config) throws IOException {
+        List<String> rows = Resources.readLines(
+            Resources.getResource(config.resourcePath()), StandardCharsets.UTF_8
+        ).stream()
+            .filter(line -> line.length() == 100 || line.length() == 106)
+            .toList();
+        assertFalse(rows.isEmpty(), "Expected transaction rows in " + config.fileName());
+        return rows;
+    }
+
+    private void placeSelectedFile(String displayName) {
+        scenarioContext().remember(BaisFileTestData.SELECTED_ALLPAY_FILE, selectedConfig.fileName());
+        new BaisFileFixture(BaisFileTestData.ALLPAY).remove();
+        new BaisFileFixture(selectedConfig).setUp();
+        configuredFileIsAvailable(displayName);
+    }
+
+    private BaisFileTestConfig forDisplayName(String displayName) {
+        return selectedConfig != null && selectedConfig.displayName().equals(displayName)
+            ? selectedConfig : BaisFileTestData.forDisplayName(displayName);
+    }
+
+    private BaisFileTestConfig forSource(String source) {
+        return selectedConfig != null && selectedConfig.source().equals(source)
+            ? selectedConfig : BaisFileTestData.forSource(source);
+    }
 
     @Given("the configured {string} report/file is available on bais")
     public void configuredFileIsAvailable(String displayName) {
@@ -114,6 +167,8 @@ public class BaisFileStepDef extends BaseStepDef {
         assertEquals(config.fileName(), successfulInterfaceFile.get("file_name"));
         assertEquals(config.checksum(), successfulInterfaceFile.get("checksum"));
         assertNotNull(successfulInterfaceFile.get("filestore_uuid"));
+        scenarioContext().remember(BaisFileTestData.SOURCE_INTERFACE_FILE_ID,
+            successfulInterfaceFile.get("interface_file_id").toString());
     }
 
     @Then("a failed {string} interface file is recorded with its source blob")
@@ -138,6 +193,59 @@ public class BaisFileStepDef extends BaseStepDef {
         assertEquals(config.fileName(), failedInterfaceFile.get("file_name"));
         assertNull(failedInterfaceFile.get("filestore_uuid"));
         assertNotNull(failedInterfaceFile.get("errors"));
+    }
+
+    @Then("the {string} file failure reports a nonnumeric transaction code")
+    public void fileFailureReportsNonnumericTransactionCode(String displayName) {
+        Map<String, Object> failedInterfaceFile = awaitInterfaceFile(forDisplayName(displayName), "SOURCE", "FAILED");
+        assertNotNull(failedInterfaceFile.get("errors"));
+        String errors = failedInterfaceFile.get("errors").toString();
+        assertTrue(errors.contains("BACS Standard 18 transaction code at index 15 to 17 must be numeric"),
+            "Expected a nonnumeric transaction-code validation error, but got: " + errors);
+    }
+
+    @Then("the {string} file failure reports a missing originator account reference")
+    public void fileFailureReportsMissingOriginatorAccountReference(String displayName) {
+        Map<String, Object> failedInterfaceFile = awaitInterfaceFile(forDisplayName(displayName), "SOURCE", "FAILED");
+        assertNotNull(failedInterfaceFile.get("errors"));
+        String errors = failedInterfaceFile.get("errors").toString();
+        assertTrue(errors.contains("BACS Standard 18 originator account reference is required at index 64 to 82"),
+            "Expected a missing originator account reference validation error, but got: " + errors);
+    }
+
+    @Then("the {string} file failure reports no destination bank mapping for sort code {string} "
+        + "and account number {string}")
+    public void fileFailureReportsMissingDestinationBankMapping(
+        String displayName, String sortCode, String accountNumber
+    ) {
+        BaisFileTestConfig config = forDisplayName(displayName);
+        Map<String, Object> failedInterfaceFile = awaitInterfaceFile(config, "SOURCE", "FAILED");
+        assertNotNull(failedInterfaceFile.get("errors"));
+        String errors = failedInterfaceFile.get("errors").toString();
+        String expectedError = "Business unit bank account with sort code '%s' and account number '%s' "
+            + "could not be located for file_name '%s'";
+        assertTrue(errors.contains(expectedError.formatted(sortCode, accountNumber, config.fileName())),
+            "Expected a missing destination bank mapping error, but got: " + errors);
+    }
+
+    @Then("the stored {string} JSON file has payment type {string} and transaction codes in order")
+    public void storedJsonFileHasPaymentTypeAndTransactionCodes(
+        String displayName, String paymentType, DataTable expectedCodes
+    ) {
+        BaisFileTestConfig config = forDisplayName(displayName);
+        Map<String, Object> jsonFile = awaitSuccessfulInterfaceFile(config, "SOURCE_JSON");
+        assertEquals("OPAL", jsonFile.get("target"));
+        assertEquals(config.expectedDomain(), jsonFile.get("domain"));
+        assertNotNull(jsonFile.get("filestore_uuid"));
+
+        Response response = authorisedJsonRequest().accept("application/octet-stream").when()
+            .get(getTestUrl() + "/interface-files/" + jsonFile.get("interface_file_id") + "/content");
+        assertEquals(200, response.statusCode());
+        assertEquals(jsonFile.get("checksum"), DigestUtils.md5Hex(response.asByteArray()));
+        assertEquals(config.fileName(), response.jsonPath().getString("file_name"));
+        assertEquals(paymentType, response.jsonPath().getString("payment_type"));
+        assertEquals(expectedCodes.asList(String.class),
+            response.jsonPath().getList("transactions.transaction_code"));
     }
 
     @Then("no {string} interface file is stored for the unsupported report/file")
@@ -225,6 +333,44 @@ public class BaisFileStepDef extends BaseStepDef {
     @Then("the extracted {string} payments are ready for the external interface")
     public void extractedPaymentsAreReady(String displayName) {
         new BaisPaymentAssertions(interfaceFiles()).assertPaymentsReady(forDisplayName(displayName));
+    }
+
+    @Then("the stored {string} JSON file contains the account references in order")
+    public void storedJsonFileContainsAccountReferences(String displayName, DataTable expectedReferences) {
+        BaisFileTestConfig config = forDisplayName(displayName);
+        Map<String, Object> jsonFile = awaitSuccessfulInterfaceFile(config, "SOURCE_JSON");
+        assertEquals(config.expectedDomain(), jsonFile.get("domain"));
+        assertNotNull(jsonFile.get("filestore_uuid"));
+
+        Response response = authorisedJsonRequest().accept("application/octet-stream").when()
+            .get(getTestUrl() + "/interface-files/" + jsonFile.get("interface_file_id") + "/content");
+        assertEquals(200, response.statusCode());
+        assertEquals(jsonFile.get("checksum"), DigestUtils.md5Hex(response.asByteArray()));
+        assertEquals(config.fileName(), response.jsonPath().getString("file_name"));
+        assertEquals(expectedReferences.asList(String.class),
+            response.jsonPath().getList("transactions.originator_details.account_reference"));
+    }
+
+    @Then("the DWP JSON file contains the extracted payments and bank details")
+    public void dwpJsonContainsExtractedPayments() {
+        assertNotNull(successfulInterfaceFile, "Source metadata was not retrieved");
+        Map<String, Object> jsonFile = awaitSuccessfulInterfaceFile(forSource("DWP"), "SOURCE_JSON");
+        assertEquals("OPAL", jsonFile.get("target"));
+        assertEquals("MAINTENANCE", jsonFile.get("domain"));
+        assertNotNull(jsonFile.get("filestore_uuid"));
+        Response response = authorisedJsonRequest().accept("application/octet-stream").when()
+            .get(getTestUrl() + "/interface-files/" + jsonFile.get("interface_file_id") + "/content");
+        assertEquals(200, response.statusCode());
+        assertEquals(jsonFile.get("checksum"), DigestUtils.md5Hex(response.asByteArray()));
+        assertEquals(forSource("DWP").fileName(), response.jsonPath().getString("file_name"));
+        assertEquals("DWP1234567", response.jsonPath().getString("dwp_court_code"));
+        assertEquals("CASH", response.jsonPath().getString("payment_type"));
+        assertEquals("010101", response.jsonPath().getString("destination_details.bank_details.sort_code"));
+        assertEquals("12341234", response.jsonPath().getString("destination_details.bank_details.account_number"));
+        assertEquals(List.of(2125, 2125, 2125, 2125, 2001),
+            response.jsonPath().getList("transactions.amount"));
+        assertEquals(List.of("99", "99", "99", "99", "99"),
+            response.jsonPath().getList("transactions.transaction_code"));
     }
 
     @Then("the configured {string} report/file no longer exists on bais")

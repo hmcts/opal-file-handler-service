@@ -21,3 +21,5 @@ services:
   opal-fines-service:
     environment:
       INTERFACE_FILE_CONSUMER_ENABLED: "true"
+      # The preprocessing listener uses the shared report JMS connection factory.
+      REPORT_CONSUMER_ENABLED: "true"

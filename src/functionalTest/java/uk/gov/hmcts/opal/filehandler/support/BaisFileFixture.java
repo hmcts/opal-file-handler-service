@@ -30,15 +30,39 @@ public class BaisFileFixture {
      * Removes scenario output and restores the file consumed by successful ingestion.
      */
     public void tearDown() {
+        cleanUp(true);
+    }
+
+    /**
+     * Removes an outline example's database, blob and SFTP fixtures without restoring its file.
+     */
+    public void remove() {
+        cleanUp(false);
+    }
+
+    private void cleanUp(boolean restoreBaseline) {
         RuntimeException cleanupFailure = null;
         try {
             cleanDatabaseAndBlobs();
         } catch (RuntimeException exception) {
+            if ("ALLPAY".equals(config.source())) {
+                // Preserve pending Fines input rather than restoring/removing its SFTP fixture.
+                throw exception;
+            }
             cleanupFailure = exception;
         }
 
         try {
-            restoreBaselineSftpFile();
+            if (restoreBaseline) {
+                restoreBaselineSftpFile();
+            } else {
+                SftpRetry.withRetry("remove " + config.fileName(), () -> {
+                    try (SftpClient sftpClient = new SftpClient(config.sftpUsername())) {
+                        sftpClient.deleteIfExists(config.fileName());
+                        sftpClient.deleteIfExists(config.unsupportedFileName());
+                    }
+                });
+            }
         } catch (RuntimeException exception) {
             if (cleanupFailure == null) {
                 cleanupFailure = exception;
@@ -57,6 +81,11 @@ public class BaisFileFixture {
         blobStorageClient.createContainerIfNotExists();
         try (InterfaceFileTestDatabaseClient databaseClient = new InterfaceFileTestDatabaseClient()) {
             List<InterfaceFileRecord> records = databaseClient.findByFileName(config.fileName());
+            if ("ALLPAY".equals(config.source())) {
+                FinesPreprocessingFixture.cleanUp(records);
+                // Fines may have uploaded transformed JSON while the cleanup wait was running.
+                records = databaseClient.findByFileName(config.fileName());
+            }
             records.stream()
                 .map(InterfaceFileRecord::filestoreUuid)
                 .filter(uuid -> uuid != null)

@@ -78,7 +78,7 @@ public class BlobStorageClient {
         blobClient.deleteIfExists();
     }
 
-    /** Downloads an owned blob for complete JSON-content assertions. */
+    /** Downloads stored JSON for assertions, including newly uploaded INGESTED transformed files. */
     public byte[] download(String blobName) {
         return containerClient.getBlobClient(blobName).downloadContent().toBytes();
     }

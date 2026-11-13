@@ -298,6 +298,11 @@ public final class TestEnvironment {
         return value == null || value.isBlank() ? Optional.empty() : Optional.of(value);
     }
 
+    /** Returns the maximum time to wait for asynchronous Fines preprocessing. */
+    public static long getFinesPreprocessingTimeoutSeconds() {
+        return Long.parseLong(get("FUNCTIONAL_TEST_FINES_PREPROCESSING_TIMEOUT_SECONDS").orElse("60"));
+    }
+
     /**
      * Returns a required environment-variable value.
      *

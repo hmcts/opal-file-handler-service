@@ -1,11 +1,15 @@
 package uk.gov.hmcts.opal.filehandler.support;
 
+import java.util.Map;
 import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 
 /**
  * Stable local report definitions used by BAIS ingestion functional scenarios.
  */
 public final class BaisFileTestData {
+
+    public static final String SELECTED_ALLPAY_FILE = "selectedAllpayFile";
+    public static final String SOURCE_INTERFACE_FILE_ID = "baisSourceInterfaceFileId";
 
     public static final BaisFileTestConfig BTECKOH = new BaisFileTestConfig(
         "BTEckoh",
@@ -63,9 +67,47 @@ public final class BaisFileTestData {
         "ALLPAY_FILE_TRANSFER_JOB_ENABLED",
         "a121_00350005_300000.dat",
         "a121_00350005_300000.csv",
-        "188cb3326a8168a2c54e086e18f4774c",
-        "test-data/bacs/a121_00350005_300000.dat"
+        "598a1f625810b1517b6764f10d11ee68",
+        "test-data/bacs/a121_00000001_000001.dat"
     );
+
+    private static final Map<String, String> ALLPAY_CHECKSUMS = Map.ofEntries(
+        Map.entry("a121_00000001_000001.dat", "598a1f625810b1517b6764f10d11ee68"),
+        Map.entry("a121_00000001_000002.dat", "ef5f44e8f3e7ee525e3440efbc5ccd22"),
+        Map.entry("a121_00000001_000003.dat", "9d7f18e77328d4805474132127f6f2c7"),
+        Map.entry("a121_00000001_000004.dat", "5a798e0b8e9ade2ccdc6e763e2cd37e2"),
+        Map.entry("a121_00000001_000005.dat", "17bcdc6a3b9535945d283fbe7a799c38"),
+        Map.entry("a121_00000001_000006.dat", "56e931f6122b646f0d8adac051f016ec"),
+        Map.entry("a121_00000001_000007.dat", "f9201056a9c2355d71c4c267912b1efc"),
+        Map.entry("a121_00000001_000008.dat", "dd0cd8debb1ddc930ce8b37b7340a086"),
+        Map.entry("a121_00000001_000009.dat", "574503b7ed014216e51fed5417d0054c"),
+        Map.entry("a121_00000001_000010.dat", "d5f0948858fbe0d4151811b3268c0e05"),
+        Map.entry("a121_00000001_000011.dat", "b85eadc6d9214b55834153109eb17bb9"),
+        Map.entry("a121_00000001_000012.dat", "349816dd89fdddfce3f0779131e60912"),
+        Map.entry("a121_00000001_000013.dat", "dd6f42077a59e0deff4bd9e98ace792e"),
+        Map.entry("a121_00000001_000014.dat", "e97557b30e446b352d7f7481b511c376"),
+        Map.entry("a121_00000001_000015.dat", "4748b31d80825f52db0e8c3cba93dd10"),
+        Map.entry("a121_00000001_000016.dat", "74fe9eeec9b01a0cf750b3fdfd7e9fca")
+    );
+
+    /**
+     * Returns the fixture selected by an Allpay scenario-outline example.
+     *
+     * @param fileName local resource name and filename to upload to BAIS.
+     * @return Allpay configuration with the example's filename and expected checksum.
+     */
+    public static BaisFileTestConfig allpayFile(String fileName) {
+        String checksum = ALLPAY_CHECKSUMS.get(fileName);
+        if (checksum == null) {
+            throw new IllegalArgumentException("Unsupported Allpay test file: " + fileName);
+        }
+        return new BaisFileTestConfig(
+            ALLPAY.displayName(), ALLPAY.source(), ALLPAY.automatedTaskName(), ALLPAY.sftpUsername(),
+            ALLPAY.sftpUsernameEnvironmentVariable(), ALLPAY.blobContainerName(),
+            ALLPAY.blobContainerEnvironmentVariable(), ALLPAY.jobFlagEnvironmentVariable(),
+            fileName, fileName.replace(".dat", ".csv"), checksum, "test-data/bacs/" + fileName
+        );
+    }
 
     public static final BaisFileTestConfig NATWEST = new BaisFileTestConfig(
         "NatWest",

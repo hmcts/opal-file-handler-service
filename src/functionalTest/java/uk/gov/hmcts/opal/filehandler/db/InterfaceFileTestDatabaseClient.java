@@ -10,7 +10,7 @@ public class InterfaceFileTestDatabaseClient implements AutoCloseable {
 
     private static final String FIND_BY_FILE_NAME = """
         SELECT interface_file_id, source::text, target::text, type::text, opal_domain::text,
-               file_name, filestore_uuid, checksum, status::text, created_by
+               file_name, filestore_uuid, checksum, status::text, created_by, related_interface_file_id
         FROM public.interface_files
         WHERE file_name = ?
         ORDER BY created_datetime, interface_file_id
@@ -40,7 +40,8 @@ public class InterfaceFileTestDatabaseClient implements AutoCloseable {
             resultSet.getObject("filestore_uuid", UUID.class),
             resultSet.getString("checksum"),
             resultSet.getString("status"),
-            resultSet.getLong("created_by")
+            resultSet.getLong("created_by"),
+            resultSet.getObject("related_interface_file_id", Long.class)
         ), fileName);
     }
 
@@ -71,7 +72,8 @@ public class InterfaceFileTestDatabaseClient implements AutoCloseable {
         UUID filestoreUuid,
         String checksum,
         String status,
-        long createdBy
+        long createdBy,
+        Long relatedInterfaceFileId
     ) {
     }
 }

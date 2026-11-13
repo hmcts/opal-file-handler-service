@@ -5,13 +5,17 @@ import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
 import java.util.Locale;
 import java.util.Map;
+import uk.gov.hmcts.opal.filehandler.context.ScenarioContextHolder;
 import uk.gov.hmcts.opal.filehandler.db.DatabaseClient;
 import uk.gov.hmcts.opal.filehandler.support.BaisFileFixture;
 import uk.gov.hmcts.opal.filehandler.support.BaisFileTestConfig;
 import uk.gov.hmcts.opal.filehandler.support.BaisFileTestData;
+import uk.gov.hmcts.opal.filehandler.support.FinesSeedFixture;
 
 /** Applies the common BAIS fixture lifecycle to every BAIS ingestion scenario. */
 public class BaisFileHooks {
+
+    private boolean fixtureStarted;
 
     private static final Map<String, BaisFileFixtureDefinition> FIXTURES = Map.of(
         "bteckoh report", definition(BaisFileTestData.BTECKOH),
@@ -35,18 +39,29 @@ public class BaisFileHooks {
     @Before("@BaisFileFixture")
     public void setUpBaisFile(Scenario scenario) {
         BaisFileFixtureDefinition fixture = fixtureFor(scenario);
+        if ("ALLPAY".equals(fixture.config().source())) {
+            FinesSeedFixture.ensurePrepared();
+        }
+        fixtureStarted = true;
         executeScript(fixture.setupScript());
         new BaisFileFixture(fixture.config()).setUp();
     }
 
     @After("@BaisFileFixture")
     public void tearDownBaisFile(Scenario scenario) {
-        BaisFileFixtureDefinition fixture = fixtureFor(scenario);
-        try {
-            new BaisFileFixture(fixture.config()).tearDown();
-        } finally {
-            executeScript(fixture.cleanupScript());
+        if (!fixtureStarted) {
+            return;
         }
+        BaisFileFixtureDefinition fixture = fixtureFor(scenario);
+        String selectedFile = ScenarioContextHolder.current().recall(BaisFileTestData.SELECTED_ALLPAY_FILE);
+        if (selectedFile != null) {
+            new BaisFileFixture(BaisFileTestData.allpayFile(selectedFile)).remove();
+            new BaisFileFixture(BaisFileTestData.ALLPAY).setUp();
+        } else {
+            new BaisFileFixture(fixture.config()).tearDown();
+        }
+        // Keep bank mappings available if downstream cleanup preserved pending input.
+        executeScript(fixture.cleanupScript());
     }
 
     private static BaisFileFixtureDefinition definition(BaisFileTestConfig config) {

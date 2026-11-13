@@ -40,7 +40,7 @@ public record BaisFileTestConfig(
      */
     public String expectedDomain() {
         return switch (source) {
-            case "BARCLAYCARD", "NATWEST", "JACOBS", "CDER", "MARSTON" -> "FINES";
+            case "ALLPAY", "BARCLAYCARD", "NATWEST", "JACOBS", "CDER", "MARSTON" -> "FINES";
             default -> "MAINTENANCE";
         };
     }

@@ -5,6 +5,9 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.core.io.ClassPathResource;
@@ -33,6 +36,28 @@ public class DatabaseClient implements AutoCloseable {
             this.connection = DriverManager.getConnection(url, username, password);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to connect to functional test database", e);
+        }
+    }
+
+    /** Runs related fixture mutations atomically, rolling back when any assertion or update fails. */
+    public void inTransaction(Runnable action) {
+        try {
+            connection.setAutoCommit(false);
+            try {
+                action.run();
+                connection.commit();
+            } catch (RuntimeException | Error | SQLException exception) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackFailure) {
+                    exception.addSuppressed(rollbackFailure);
+                }
+                throw exception;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to complete fixture database transaction", exception);
         }
     }
 
@@ -110,6 +135,28 @@ public class DatabaseClient implements AutoCloseable {
             ScriptUtils.executeSqlScript(connection, new ClassPathResource(resourcePath));
         } catch (ScriptException e) {
             throw new IllegalStateException("Failed to execute database script: " + resourcePath, e);
+        }
+    }
+
+    /** Executes a complete PostgreSQL script, preserving dollar-quoted DO blocks and its transaction boundaries. */
+    public void executePostgresScript(String resourcePath) {
+        try {
+            if (!connection.getAutoCommit()) {
+                throw new IllegalStateException("PostgreSQL seed scripts must run outside an existing transaction");
+            }
+            String script = new ClassPathResource(resourcePath).getContentAsString(StandardCharsets.UTF_8);
+            try (Statement statement = connection.createStatement()) {
+                statement.execute(script);
+            } catch (SQLException exception) {
+                try (Statement rollback = connection.createStatement()) {
+                    rollback.execute("ROLLBACK");
+                } catch (SQLException rollbackFailure) {
+                    exception.addSuppressed(rollbackFailure);
+                }
+                throw exception;
+            }
+        } catch (IOException | SQLException exception) {
+            throw new IllegalStateException("Failed to execute PostgreSQL fixture script: " + resourcePath, exception);
         }
     }
 
