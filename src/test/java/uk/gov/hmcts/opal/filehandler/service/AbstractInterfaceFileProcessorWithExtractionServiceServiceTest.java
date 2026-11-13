@@ -262,7 +262,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
-            Short[] businessUnits = new Short[] {(short)12};
+            Short[] businessUnits = new Short[] {(short) 12};
 
             doReturn("checksum").when(processor).calculateExtractChecksum(any());
             doReturn(false).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
@@ -288,7 +288,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
-            Short[] businessUnits = new Short[] {(short)12};
+            Short[] businessUnits = new Short[] {(short) 12};
 
             doReturn("checksum").when(processor).calculateExtractChecksum(any());
             doReturn(false).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
@@ -319,8 +319,9 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
         void returnsTrueWhenSuccessfulDuplicateExists() {
             InterfaceFileCommonDataExtract extract = extract();
 
-            when(repository.findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
-                100L, Type.SOURCE_JSON, SOURCE_JSON_NAME, "checksum", Status.SUCCESS))
+            when(repository.findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatusIn(
+                100L, Type.SOURCE_JSON, SOURCE_JSON_NAME, "checksum",
+                List.of(Status.SUCCESS, Status.SUCCESS_NO_TRANSACTIONS)))
                 .thenReturn(Optional.of(sourceJsonFile(200L, Status.SUCCESS)));
 
             assertThat(service.alreadyProcessedSuccessfully(sourceFile, extract, "checksum")).isTrue();

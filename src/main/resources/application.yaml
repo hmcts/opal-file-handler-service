@@ -140,6 +140,12 @@ opal:
       endpoint: ${FILE_STORE_STORAGE_URL:}
       account-key: ${FILE_STORE_STORAGE_KEY:}
     file-types:
+      variant-banking:
+        container-name: ${VARIANT_BANKING_AZURE_STORAGE_CONTAINER:variant-banking}
+        feature-flag: variant-banking
+        file-name-regex: ^a121_\d{6}_VB_\d{3}_\d{2}\.dat$
+        source: VARIANT_BANKING
+        target: OPAL
       caps-report:
         container-name: ${CAPS_REPORT_AZURE_STORAGE_CONTAINER:caps-report}
         feature-flag: caps-report-file-transfer-job

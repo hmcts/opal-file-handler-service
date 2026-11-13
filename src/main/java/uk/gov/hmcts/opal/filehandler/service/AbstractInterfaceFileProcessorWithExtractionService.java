@@ -117,18 +117,19 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
     }
 
 
-    boolean alreadyProcessedSuccessfully(
+    protected boolean alreadyProcessedSuccessfully(
         InterfaceFileEntity sourceInterfaceFile,
         T extract,
         String checksum
     ) {
         boolean duplicateExists = interfaceFilesRepository
-            .findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
+            .findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatusIn(
                 sourceInterfaceFile.getInterfaceFileId(),
                 Type.SOURCE_JSON,
                 extract.getFileName(),
                 checksum,
-                Status.SUCCESS)
+                List.of(Status.SUCCESS, Status.SUCCESS_NO_TRANSACTIONS)
+            )
             .isPresent();
 
         if (duplicateExists) {

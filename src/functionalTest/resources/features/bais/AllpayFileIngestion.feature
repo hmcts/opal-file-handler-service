@@ -2,7 +2,7 @@
 Feature: Allpay file ingestion
 
   @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @JIRA-STORY:PO-7244
-  Scenario: A valid Allpay file is ingested
+  Scenario: A valid Allpay file with mixed transaction codes is ingested
     Given the configured "Allpay" file is available on bais
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
     And the "Allpay" file ingestion job is requested through testing support

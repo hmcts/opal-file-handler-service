@@ -2,9 +2,11 @@ package uk.gov.hmcts.opal.filehandler.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
+import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
@@ -13,28 +15,33 @@ import uk.gov.hmcts.opal.filehandler.entity.Type;
 public interface InterfaceFilesRepository extends JpaRepository<InterfaceFileEntity, Long>,
     JpaSpecificationExecutor<InterfaceFileEntity> {
 
+    List<InterfaceFileEntity> findByTypeAndChecksumAndFileName(Type type, String checksum, String fileName);
+
     Optional<InterfaceFileEntity> findByFileNameAndChecksumAndStatus(String fileName, String checksum, Status status);
 
-    Optional<InterfaceFileEntity> findByTypeAndFileNameAndChecksumAndStatus(Type type, String fileName,
-        String checksum, Status status);
+    Optional<InterfaceFileEntity> findByTypeAndFileNameAndChecksumAndStatusIn(Type type, String fileName,
+        String checksum, List<Status> status);
+
+    Optional<InterfaceFileEntity> findByTypeAndFileNameAndStatusIn(Type type, String fileName, List<Status> status);
 
     List<InterfaceFileEntity> findAllByFileNameAndChecksumAndStatus(
         String fileName,
         String checksum,
         Status status);
 
-    List<InterfaceFileEntity> findByTypeAndChecksumAndFileName(
-        Type type,
-        String checksum,
-        String fileName
-    );
 
-    Optional<InterfaceFileEntity> findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
+    Optional<InterfaceFileEntity> findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatusIn(
         Long relatedInterfaceFileId,
         Type type,
         String fileName,
         String checksum,
-        Status status);
+        List<Status> status);
+
+    Optional<InterfaceFileEntity> findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndStatusIn(
+        Long relatedInterfaceFileId,
+        Type type,
+        String fileName,
+        List<Status> status);
 
     List<InterfaceFileEntity> findAllByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
         Long relatedInterfaceFileId,
@@ -42,5 +49,8 @@ public interface InterfaceFilesRepository extends JpaRepository<InterfaceFileEnt
         String fileName,
         String checksum,
         Status status);
+
+    boolean existsByFilestoreUuidAndSourceAndInterfaceFileIdNot(UUID filestoreUuid, Interface source,
+        long interfaceFileId);
 
 }

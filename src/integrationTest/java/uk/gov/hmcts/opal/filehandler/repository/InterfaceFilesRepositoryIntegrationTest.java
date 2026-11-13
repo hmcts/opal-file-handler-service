@@ -58,6 +58,14 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
         assertThat(loadedChild.getRelatedInterfaceFile()).isNotNull();
         assertThat(loadedChild.getRelatedInterfaceFile().getInterfaceFileId()).isEqualTo(parentId);
         assertThat(loadedChild.getRelatedInterfaceFile().getFileName()).isEqualTo("parent-source-file.dat");
+
+        // Check the bidirectional relationship is correctly saved
+        assertThat(loadedChild.getRelatedInterfaceFile().getChildRelatedInterfaceFiles()).hasSize(1);
+        InterfaceFileEntity loadedChild2 = loadedChild.getRelatedInterfaceFile()
+            .getChildRelatedInterfaceFiles()
+            .iterator()
+            .next();
+        assertThat(loadedChild2).isSameAs(loadedChild);
     }
 
     @Test
@@ -96,8 +104,9 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
         entityManager.clear();
 
         Optional<InterfaceFileEntity> result = repository
-            .findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
-                parent.getInterfaceFileId(), Type.SOURCE_JSON, "extract.json", "json-checksum", Status.SUCCESS);
+            .findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatusIn(
+                parent.getInterfaceFileId(), Type.SOURCE_JSON, "extract.json", "json-checksum",
+                List.of(Status.SUCCESS,Status.SUCCESS_NO_TRANSACTIONS));
 
         assertThat(result).isPresent();
         assertThat(result.get().getInterfaceFileId()).isEqualTo(child.getInterfaceFileId());
