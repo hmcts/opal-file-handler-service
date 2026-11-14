@@ -18,6 +18,9 @@ opal:
           sftp-username: Jacobs
         cder:
           sftp-username: CDER
+  common:
+    service-bus:
+      acknowledgements: vpfpo-acknowledgements-queue
 
 user:
   service:

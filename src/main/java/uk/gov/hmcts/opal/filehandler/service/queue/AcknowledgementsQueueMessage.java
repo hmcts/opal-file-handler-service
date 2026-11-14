@@ -1,0 +1,22 @@
+package uk.gov.hmcts.opal.filehandler.service.queue;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonInclude(Include.NON_NULL)
+public record AcknowledgementsQueueMessage(
+    @JsonProperty("vpfpo_registration_id") Long registrationId,
+    @JsonProperty("defendant_id") Long defendant_id,
+    @JsonProperty("status") Status status) {
+
+    public enum Status {
+        PUBLISHED, PUBLISHING_FAILED
+    }
+
+    @JsonIgnore
+    public boolean isSuccessful() {
+        return status == Status.PUBLISHED;
+    }
+}
