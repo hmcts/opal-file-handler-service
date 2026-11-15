@@ -221,8 +221,15 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
 
         assertEquals(scenarioFileName, sourceFile.get("file_name"));
         assertEquals(SOURCE, sourceFile.get("source"));
+        assertEquals("SUCCESS", sourceFile.get("status"));
+        assertEquals("OPAL", sourceFile.get("target"));
         assertEquals("SOURCE", sourceFile.get("type"));
         assertEquals("FINES", sourceFile.get("domain"));
+        assertEquals(SOURCE, sourceJson.get("source"));
+        assertEquals("SUCCESS", sourceJson.get("status"));
+        assertEquals("OPAL", sourceJson.get("target"));
+        assertEquals("SOURCE_JSON", sourceJson.get("type"));
+        assertEquals("FINES", sourceJson.get("domain"));
         assertEquals(List.of(businessUnitId.intValue()), sourceFile.get("business_unit_ids"));
         assertEquals(List.of(businessUnitId.intValue()), sourceJson.get("business_unit_ids"));
         assertNotNull(sourceFile.get("filestore_uuid"));
@@ -246,12 +253,14 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
 
     @Then("the NatWest ingestion result matches:")
     public void natWestIngestionResultMatches(DataTable table) {
-        assertNotNull(sourceFileContent, "Write the CARS file before starting ingestion");
+        assertNotNull(sourceFileContent, "Write the NatWest file before starting ingestion");
         List<Map<String, String>> expectations = table.asMaps(String.class, String.class);
         assertEquals(1, expectations.size(), "Provide one expected NatWest ingestion result");
         Map<String, String> expected = expectations.getFirst();
         String expectedStatus = expected.get("sourceStatus");
         assertNotNull(expectedStatus, "Expected sourceStatus is required");
+        String expectedDomain = expected.get("sourceDomain");
+        assertNotNull(expectedDomain, "Expected sourceDomain is required");
         String expectedError = expected.get("errorContains");
         boolean expectBlob = expectedBoolean(expected.get("sourceBlobPreserved"));
         boolean expectSourceJson = expectedBoolean(expected.get("sourceJsonCreated"));
@@ -268,6 +277,11 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
             if (actualSource != null) {
                 assertEquals(scenarioFileName, actualSource.get("file_name"));
                 assertEquals(SOURCE, actualSource.get("source"));
+                assertEquals(expectedStatus, actualSource.get("status"));
+                assertEquals("OPAL", actualSource.get("target"));
+                assertEquals("SOURCE", actualSource.get("type"));
+                assertEquals(expectedDomain, actualSource.get("domain"),
+                    "SOURCE domain differs from the feature table");
                 if (expectedError == null || expectedError.isBlank()) {
                     assertEquals(null, actualSource.get("errors"), "SOURCE has an unexpected error");
                 } else {

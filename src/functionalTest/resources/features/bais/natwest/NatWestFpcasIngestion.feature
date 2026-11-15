@@ -52,8 +52,8 @@ Feature: NatWest FPCAS ingestion and Fines preprocessing
     And the "NatWest" file ingestion job is requested through testing support
     Then the testing-support request is accepted
     And the NatWest ingestion result matches:
-      | sourceStatus            | errorContains | sourceBlobPreserved | sourceJsonCreated | inputFileRemainsOnBais |
-      | SUCCESS_NO_TRANSACTIONS |               | true                | false             | false                  |
+      | sourceStatus            | sourceDomain | errorContains | sourceBlobPreserved | sourceJsonCreated | inputFileRemainsOnBais |
+      | SUCCESS_NO_TRANSACTIONS | MAINTENANCE  |               | true                | false             | false                  |
 
   @NatWestFpcasUnmappedBank
   Scenario: 04 - An FPCAS file with an unmapped destination bank account is rejected
@@ -67,8 +67,8 @@ Feature: NatWest FPCAS ingestion and Fines preprocessing
     And the "NatWest" file ingestion job is requested through testing support
     Then the testing-support request is accepted
     And the NatWest ingestion result matches:
-      | sourceStatus | errorContains                                                                                         | sourceBlobPreserved | sourceJsonCreated | inputFileRemainsOnBais |
-      | FAILED       | Business unit bank account with sort code '111112' and account number '22222223' could not be located | true                | false             | true                   |
+      | sourceStatus | sourceDomain | errorContains                                                                                         | sourceBlobPreserved | sourceJsonCreated | inputFileRemainsOnBais |
+      | FAILED       | MAINTENANCE  | Business unit bank account with sort code '111112' and account number '22222223' could not be located | true                | false             | true                   |
 
   @NatWestFpcasDuplicate
   Scenario: 05 - Duplicate FPCAS ingestion reuses the original Fines preprocessing result
