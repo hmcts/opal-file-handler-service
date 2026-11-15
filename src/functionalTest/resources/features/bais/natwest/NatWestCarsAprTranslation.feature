@@ -5,8 +5,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @JIRA-STORY:PO-6392 @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario: 01 - NatWest cash payments with mixed transaction codes resolve known APRs
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following APRs are linked to defendant accounts:
       | aprReference | businessUnitId | defendantAccountId | defendantAccountNumber |
       | 99141114A    | 77             | 3027001            | 77000991A              |
@@ -33,8 +33,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestValidAccounts @JIRA-STORY:PO-6392 @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario: 02 - NatWest cash payments with mixed transaction codes retain valid account numbers
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following defendant accounts exist:
       | businessUnitId | defendantAccountId | defendantAccountNumber |
       | 77             | 3027011            | 77000981A              |
@@ -67,8 +67,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestNonexistentAccount @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario: 03 - NatWest cash payment for a nonexistent account retains its original reference
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following Fines records do not exist, removing any existing matches:
       | businessUnitId | recordType       | reference     |
       | 77             | defendantAccount | 98743162Q     |
@@ -90,8 +90,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestValidAPR @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario: 04 - NatWest cash payment with a valid APR resolves to its linked defendant account
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following APRs are linked to defendant accounts:
       | aprReference | businessUnitId | defendantAccountId | defendantAccountNumber |
       | NW-APR-QA-03 | 77             | 3027003            | 77000993A              |
@@ -111,8 +111,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestAPRBusinessUnit @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario: 05 - NatWest cash payment resolves a shared APR using its destination business unit
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName | destinationAccountType |
-      | 78             | 0047             | 78                  | 560078              | 27048578                 | HMCTS Fines     | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName | destinationAccountType |
+      | 78             | 0047             | 560078              | 27048578                 | HMCTS Fines     | 0                      |
     And the following APRs are linked to defendant accounts:
       | aprReference | businessUnitId | defendantAccountId | defendantAccountNumber |
       | NW-APR-QA-03 | 77             | 3027003            | 77000993A              |
@@ -133,8 +133,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestOriginatorNameAPR @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario: 06 - NatWest cash payment resolves an APR from the originator name when its reference has no match
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following Fines records do not exist, removing any existing matches:
       | businessUnitId | recordType       | reference |
       | 77             | defendantAccount | 98743163R |
@@ -158,8 +158,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestConsolidatedAccounts @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario: 07 - NatWest payments to consolidated master and child accounts retain their references during preprocessing
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following defendant accounts exist:
       | businessUnitId | defendantAccountId | defendantAccountNumber |
       | 77             | 3027021            | 77000971A              |
@@ -191,8 +191,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestZeroPayment @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario: 08 - NatWest zero-value payment is retained and its APR resolves during preprocessing
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following APRs are linked to defendant accounts:
       | aprReference  | businessUnitId | defendantAccountId | defendantAccountNumber |
       | NW-ZERO-QA-08 | 77             | 3027008            | 77000998A              |
@@ -212,8 +212,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestLargePayment @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario Outline: 09 - NatWest maximum-width payment for an account with a <balanceSize> balance is preserved during preprocessing
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following APRs are linked to defendant accounts:
       | aprReference   | businessUnitId | defendantAccountId   | defendantAccountNumber |
       | <aprReference> | 77             | <defendantAccountId> | <accountNumber>        |
@@ -241,8 +241,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestReferenceFormatting @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario: 10 - NatWest extracts valid account numbers from prefixes and suffixes and trims surrounding spaces
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following defendant accounts exist:
       | businessUnitId | defendantAccountId | defendantAccountNumber |
       | 77             | 3027041            | 77000951A              |
@@ -275,8 +275,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestChequeOnly @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario: 11 - NatWest cheque-only payments retain code 11 and bypass APR translation
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following APRs are linked to defendant accounts:
       | aprReference | businessUnitId | defendantAccountId | defendantAccountNumber |
       | NW-CHEQUE-11 | 77             | 3027051            | 77000941A              |
@@ -298,8 +298,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestMixedCheque @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario: 12 - NatWest file beginning with code 11 remains CHEQUE while its code 99 payment resolves an APR
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following APRs are linked to defendant accounts:
       | aprReference | businessUnitId | defendantAccountId | defendantAccountNumber |
       | NW-MIXED-12  | 77             | 3027052            | 77000942A              |
@@ -321,8 +321,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestChequeTotals @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario: 13 - NatWest cheque extraction excludes code 44 totals rows from JSON and payment totals
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following cheque payments are written to a unique NatWest CARS file:
       | code | amountPence | originSort | originAccount | originatorName  | accountReference | dateEntryApplied | expectedInSourceJson |
       | 11   | 1500        | 123456     | 99887766      | Mr Arthur Hayes | CHQ-13-REF       | 18/08/2026       | true                 |
@@ -340,8 +340,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestInvalidCode @JIRA-STORY:PO-7244
   Scenario: 14 - A NatWest CARS file with a nonnumeric transaction code is rejected
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following cash payments are written to a unique NatWest CARS file:
       | code | amountPence | originSort | originAccount | originatorName | accountReference | dateEntryApplied |
       | AB   | 1500        | 123456     | 99887766      | Mr David Price | BAD-CODE-14      | 25/09/2026       |
@@ -355,8 +355,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestMissingReference @JIRA-STORY:PO-7244
   Scenario: 15 - A NatWest CARS file with no originator account reference is rejected
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following cash payments are written to a unique NatWest CARS file:
       | code | amountPence | originSort | originAccount | originatorName | accountReference | dateEntryApplied |
       | 99   | 1500        | 123456     | 99887766      | Ms Sarah Khan  |                  | 14/10/2026       |
@@ -385,8 +385,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestDuplicatePreprocessing @JIRA-STORY:PO-7244
   Scenario: 17 - Duplicate NatWest ingestion reuses the original Fines preprocessing result
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following cash payments are written to a unique NatWest CARS file:
       | code | amountPence | originSort | originAccount | originatorName  | accountReference | dateEntryApplied |
       | 99   | 1500        | 123456     | 99887766      | Mrs Aisha Patel | 77000991A        | 21/11/2026       |
@@ -405,8 +405,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestUnsupportedName @JIRA-STORY:PO-7244
   Scenario: 18 - NatWest ignores a CARS file with an unsupported filename
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following cash payments are written to a unique NatWest CARS file:
       | code | amountPence | originSort | originAccount | originatorName | accountReference | dateEntryApplied |
       | 99   | 1500        | 123456     | 99887766      | Mr Adam Clarke | 77000991A        | 02/12/2026       |
@@ -421,8 +421,8 @@ Feature: NatWest CARS ingestion and account reference translation
   @NatWestMalformedContent @JIRA-STORY:PO-7244
   Scenario: 19 - A NatWest CARS file missing a required BACS header is rejected
     Given the following destination bank account is configured:
-      | businessUnitId | businessUnitCode | finesBusinessUnitId | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
-      | 77             | 0046             | 77                  | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following cash payments are written to a unique NatWest CARS file:
       | code | amountPence | originSort | originAccount | originatorName | accountReference | dateEntryApplied |
       | 99   | 1500        | 123456     | 99887766      | Ms Helen Brown | 77000991A        | 17/12/2026       |

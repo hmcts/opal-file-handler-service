@@ -58,7 +58,6 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
     private static final Duration POLL_INTERVAL = Duration.ofMillis(500);
 
     private Short businessUnitId;
-    private Short finesBusinessUnitId;
     private String businessUnitCode;
     private String destinationSortCode;
     private String destinationAccountNumber;
@@ -92,7 +91,6 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
         Map<String, String> row = table.asMaps(String.class, String.class).getFirst();
         businessUnitId = Short.parseShort(row.get("businessUnitId"));
         businessUnitCode = row.get("businessUnitCode");
-        finesBusinessUnitId = Short.parseShort(row.get("finesBusinessUnitId"));
         destinationSortCode = row.get("destinationSortCode");
         destinationAccountNumber = row.get("destinationAccountNumber");
         destinationName = row.get("destinationName");
@@ -422,13 +420,13 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
     public void finesPreprocessingCreatesTransformedJson() {
         assertNotNull(sourceJson, "Verify the successful SOURCE_JSON before waiting for Fines");
         preprocessingResult = FinesPreprocessingFixture.awaitResult(asLong(sourceJson.get("interface_file_id")));
-        assertEquals(finesBusinessUnitId.shortValue(), preprocessingResult.businessUnitId());
+        assertEquals(businessUnitId.shortValue(), preprocessingResult.businessUnitId());
         transformedFile = interfaceFiles().records(SOURCE, scenarioFileName).stream()
             .filter(record -> "TRANSFORMED_JSON".equals(record.get("type")))
             .filter(record -> preprocessingResult.transformedJsonId().equals(asLong(record.get("interface_file_id"))))
             .findFirst().orElseThrow(() -> new AssertionError("Fines TRANSFORMED_JSON record was not found"));
         assertTrue(List.of("INGESTED", "SUCCESS").contains(transformedFile.get("status")));
-        assertEquals(List.of(finesBusinessUnitId.intValue()), transformedFile.get("business_unit_ids"),
+        assertEquals(List.of(businessUnitId.intValue()), transformedFile.get("business_unit_ids"),
             "TRANSFORMED_JSON metadata must identify the resolved Fines business unit");
         transformedContent = jsonContentFromBlob(transformedFile);
     }
@@ -450,11 +448,11 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
             transformedAssertions.assertThat(row.get("inputAccountReference"))
                 .as("Expected row %s inputAccountReference matches the input payment", index + 1)
                 .isEqualTo(input.accountReference());
-            AprKey destinationApr = new AprKey(finesBusinessUnitId, input.accountReference());
+            AprKey destinationApr = new AprKey(businessUnitId, input.accountReference());
             if (!"11".equals(input.transactionCode()) && aprDefendantAccounts.containsKey(destinationApr)) {
                 transformedAssertions.assertThat(expectedReference)
                     .as("Expected row %s reference matches the APR mapping in destination business unit %s",
-                        index + 1, finesBusinessUnitId)
+                        index + 1, businessUnitId)
                     .isEqualTo(aprDefendantAccounts.get(destinationApr).toString());
             }
             expectedTransformedTransactions.add(Map.of(
@@ -554,8 +552,8 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
         try (DatabaseClient fines = finesDatabase()) {
             assertFalse(fines.queryFirstColumn(
                 "SELECT business_unit_id FROM public.business_units WHERE business_unit_id = ?",
-                finesBusinessUnitId).isEmpty(),
-                "The feature Fines business unit must exist: " + finesBusinessUnitId);
+                businessUnitId).isEmpty(),
+                "The feature Fines business unit must exist: " + businessUnitId);
             List<String> mappedUnits = fines.queryFirstColumn("""
                 SELECT DISTINCT c.business_unit_id
                 FROM public.configuration_items c
@@ -574,9 +572,9 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
                     VALUES (nextval('public.configuration_item_id_seq'), ?, 'BANK_ACCOUNTS',
                         'NATWEST_APR_FEATURE_BANK', json_build_array(json_build_object(
                             'sort_code', ?::text, 'account_number', ?::text, 'name', 'NatWest APR test bank')))
-                    """, finesBusinessUnitId, destinationSortCode, destinationAccountNumber);
+                    """, businessUnitId, destinationSortCode, destinationAccountNumber);
             } else {
-                assertEquals(List.of(finesBusinessUnitId.toString()), mappedUnits,
+                assertEquals(List.of(businessUnitId.toString()), mappedUnits,
                     "Destination bank must resolve only to the feature Fines business unit");
             }
         }
