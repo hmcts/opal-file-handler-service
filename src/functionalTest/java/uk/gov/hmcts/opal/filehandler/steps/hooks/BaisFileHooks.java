@@ -27,7 +27,6 @@ public class BaisFileHooks {
             BaisFileTestData.BTECKOH_TRANSFER,
             "db/bteckoh-transfer/setup.sql",
             "db/bteckoh-transfer/cleanup.sql"),
-        "natwest", definition(BaisFileTestData.NATWEST, "db/natwest/setup.sql", "db/natwest/cleanup.sql"),
         "barclaycard", definition(
             BaisFileTestData.BARCLAYCARD,
             "db/barclaycard/setup.sql",
