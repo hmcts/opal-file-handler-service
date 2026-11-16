@@ -435,3 +435,41 @@ Feature: NatWest CARS ingestion and account reference translation
     And the NatWest ingestion result matches:
       | sourceStatus | sourceDomain | errorContains                                              | sourceBlobPreserved | sourceJsonCreated | inputFileRemainsOnBais |
       | FAILED       | MAINTENANCE  | BACS Standard 18 file did not contain the expected headers | true                | false             | true                   |
+
+  @NatWestMixedValidInvalidCodes @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
+  Scenario: 20 - A NatWest CARS file with eight valid and two unsupported numeric codes retains eight payments
+    Given the following destination bank account is configured:
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+    And the following Fines records do not exist, removing any existing matches:
+      | businessUnitId | recordType | reference      |
+      | 77             | APR        | NW-CODE-MIX-20 |
+      | 77             | APR        | Ms Jane Mercer |
+    And the following cash payments are written to a unique NatWest CARS file:
+      | code | amountPence | originSort | originAccount | originatorName | accountReference | dateEntryApplied | expectedInTransformedJson |
+      | 99   | 100         | 123456     | 99887766      | Ms Jane Mercer | NW-CODE-MIX-20   | 06/01/2026       | true                      |
+      | 93   | 200         | 123456     | 99887766      | Ms Jane Mercer | NW-CODE-MIX-20   | 17/02/2026       | true                      |
+      | 68   | 300         | 123456     | 99887766      | Ms Jane Mercer | NW-CODE-MIX-20   | 28/03/2026       | true                      |
+      | 00   | 400         | 123456     | 99887766      | Ms Jane Mercer | NW-CODE-MIX-20   | 09/04/2026       | true                      |
+      | 15   | 500         | 123456     | 99887766      | Ms Jane Mercer | NW-CODE-MIX-20   | 20/05/2026       | true                      |
+      | 99   | 600         | 123456     | 99887766      | Ms Jane Mercer | NW-CODE-MIX-20   | 01/06/2026       | true                      |
+      | 00   | 700         | 123456     | 99887766      | Ms Jane Mercer | NW-CODE-MIX-20   | 12/07/2026       | true                      |
+      | 68   | 800         | 123456     | 99887766      | Ms Jane Mercer | NW-CODE-MIX-20   | 23/08/2026       | true                      |
+      | 33   | 900         | 123456     | 99887766      | Ms Jane Mercer | NW-CODE-MIX-20   | 04/09/2026       | false                     |
+      | 55   | 1000        | 123456     | 99887766      | Ms Jane Mercer | NW-CODE-MIX-20   | 15/10/2026       | false                     |
+    When I am testing as the "opal-test@dev.platform.hmcts.net" user
+    And the "NatWest" file ingestion job is requested through testing support
+    Then the testing-support request is accepted
+    And the stored NatWest SOURCE and SOURCE_JSON match the payments above
+    And Fines preprocessing creates a TRANSFORMED_JSON for the SOURCE_JSON
+    And the expected transformed NatWest payments are:
+      | transactionCode | amountInPence | inputAccountReference | expectedAccountReference | dateEntryApplied | cheque | validTransaction |
+      | 99              | 100           | NW-CODE-MIX-20        | NW-CODE-MIX-20           | 06/01/2026       | false  | true             |
+      | 99              | 200           | NW-CODE-MIX-20        | NW-CODE-MIX-20           | 17/02/2026       | false  | true             |
+      | 68              | 300           | NW-CODE-MIX-20        | NW-CODE-MIX-20           | 28/03/2026       | false  | true             |
+      | 00              | 400           | NW-CODE-MIX-20        | NW-CODE-MIX-20           | 09/04/2026       | false  | true             |
+      | 99              | 500           | NW-CODE-MIX-20        | NW-CODE-MIX-20           | 20/05/2026       | false  | true             |
+      | 99              | 600           | NW-CODE-MIX-20        | NW-CODE-MIX-20           | 01/06/2026       | false  | true             |
+      | 00              | 700           | NW-CODE-MIX-20        | NW-CODE-MIX-20           | 12/07/2026       | false  | true             |
+      | 68              | 800           | NW-CODE-MIX-20        | NW-CODE-MIX-20           | 23/08/2026       | false  | true             |
+    And the complete transformed NatWest JSON has payment type "CASH", record count 8 and total amount 3600
