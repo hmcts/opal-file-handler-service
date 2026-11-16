@@ -138,7 +138,7 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
                     String apr = row.get("aprReference");
                     short rowBusinessUnitId = Short.parseShort(row.get("businessUnitId"));
                     long defendantAccountId = Long.parseLong(row.get("defendantAccountId"));
-                    String accountNumber = row.get("defendantAccountNumber");
+                    final String accountNumber = row.get("defendantAccountNumber");
                     AprKey aprKey = new AprKey(rowBusinessUnitId, apr);
                     assertFalse(aprDefendantAccounts.containsKey(aprKey),
                         "Duplicate APR in feature data for business unit " + rowBusinessUnitId + ": " + apr);
@@ -486,7 +486,8 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
     }
 
     @And("the complete transformed NatWest JSON has payment type {string}, record count {int} and total amount {long}")
-    public void transformedNatWestTotals(String paymentType, int count, long totalAmount) throws JsonProcessingException {
+    public void transformedNatWestTotals(String paymentType, int count, long totalAmount)
+        throws JsonProcessingException {
         assertNotNull(transformedContent, "Wait for Fines preprocessing before asserting totals");
         assertNotNull(expectedTransformedTransactions, "Declare the expected transformed payments first");
         Map<String, Object> expected = Map.of(
@@ -635,7 +636,8 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
                 }
             }
         }
-        throw new IllegalStateException("Could not find an unused NatWest " + fileType + " filename after 100 attempts");
+        throw new IllegalStateException(
+            "Could not find an unused NatWest " + fileType + " filename after 100 attempts");
     }
 
     /** Clears prior NatWest processing data before setup; keeps the current run for inspection. */

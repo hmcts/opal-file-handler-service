@@ -113,7 +113,8 @@ public class FinesReferenceDataStepDef {
                     fines.update("UPDATE public.defendant_accounts SET consolidated_account_type = 'C', "
                         + "account_status = 'CS' WHERE defendant_account_id = ?", childId);
                     addConsolidationTransaction(fines, childId, masterId, "WRTOFF", "CONSOLIDATED BANKING TEST CHILD");
-                    addConsolidationTransaction(fines, masterId, childId, "CONSOL", "BANKING TEST MASTER CONSOLIDATION");
+                    addConsolidationTransaction(
+                        fines, masterId, childId, "CONSOL", "BANKING TEST MASTER CONSOLIDATION");
                     assertEquals(List.of(Long.toString(masterId)), fines.queryFirstColumn(
                         "SELECT public.f_get_master_account_id(?)", childId), "Master lookup must resolve the child");
                     assertEquals(List.of(Long.toString(childId)), fines.queryFirstColumn(
