@@ -235,3 +235,21 @@ Their observed transformed-business-unit and content-download failures are track
 [PO-11480](https://hmcts.atlassian.net/browse/PO-11480), related to PO-7244 and existing migration work.
 Existing shared eight-interface processing coverage and persistent input-pack tests remain intact.
 See [the retained fixture checklist](src/functionalTest/resources/test-data/banking-cycle/README.md).
+
+### Fines preprocessing in dev PR tests
+
+Each file-handler PR deploys a dedicated Fines consumer using
+`hmctsprod.azurecr.io/opal/fines-service:latest` with `imagePullPolicy: Always`.
+Jenkins records the running image ID so a test run can be traced to its exact Fines image.
+No separate Fines PR is required.
+
+The consumer reads the file-handler PR's preprocessing queue and calls back to that PR's API.
+It runs its existing migrations against a separate `opal-fines-db` database in the PR's PostgreSQL
+instance. Jenkins uses the existing PostgreSQL tunnel and PR credentials to seed and inspect that
+database, and waits for the Fines deployment before running functional tests. Both consumer flags
+are enabled; payment allocation and its job consumer are disabled.
+
+The Fines deployment is disabled in the base chart, so this addition applies only to dev PRs.
+It belongs to the same Helm release and follows the existing PR cleanup lifecycle.
+The deployment requires the startup secrets already used by Fines dev deployments and the
+`opal-system-user` credentials used to call the file-handler API.

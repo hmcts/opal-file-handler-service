@@ -468,6 +468,20 @@ withPipeline(type, product, component) {
                 ).trim()
                 env.FUNCTIONAL_TEST_DB_URL = "jdbc:postgresql://127.0.0.1:${port}/" +
                         env.OPAL_FILE_HANDLER_DB_NAME + (env.OPAL_FILE_HANDLER_DB_OPTIONS ?: '')
+                // Fines uses a separate database in the same PR PostgreSQL instance.
+                env.FUNCTIONAL_TEST_FINES_DB_URL = "jdbc:postgresql://127.0.0.1:${port}/opal-fines-db" +
+                        (env.OPAL_FILE_HANDLER_DB_OPTIONS ?: '')
+                env.FUNCTIONAL_TEST_FINES_DB_USERNAME = env.OPAL_FILE_HANDLER_DB_USERNAME
+                env.FUNCTIONAL_TEST_FINES_DB_PASSWORD = env.OPAL_FILE_HANDLER_DB_PASSWORD
+
+                String finesDeployment = "opal-${component}-pr-${env.CHANGE_ID}-fines"
+                steps.sh "kubectl --namespace '${product}' rollout status " +
+                        "deployment/${finesDeployment} --timeout=300s"
+                // Record the actual image pulled for this run without pinning future runs.
+                steps.sh "kubectl --namespace '${product}' get pods " +
+                        "-l 'app.kubernetes.io/name=${finesDeployment}' " +
+                        "-o 'custom-columns=POD:.metadata.name,IMAGE:.spec.containers[*].image," +
+                        "IMAGE_ID:.status.containerStatuses[*].imageID'"
             }
         }
     }
@@ -477,6 +491,9 @@ withPipeline(type, product, component) {
             onPR {
                 steps.sh 'bash src/functionalTest/resources/db/port-forward.sh stop'
                 env.FUNCTIONAL_TEST_DB_URL = ''
+                env.FUNCTIONAL_TEST_FINES_DB_URL = ''
+                env.FUNCTIONAL_TEST_FINES_DB_USERNAME = ''
+                env.FUNCTIONAL_TEST_FINES_DB_PASSWORD = ''
             }
         } finally {
             publishFunctionalResults()

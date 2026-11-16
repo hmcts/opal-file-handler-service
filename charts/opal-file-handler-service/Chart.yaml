@@ -3,7 +3,7 @@ appVersion: "1.0"
 description: A Helm chart for opal-file-handler-service App
 name: opal-file-handler-service
 home: https://github.com/hmcts/opal-file-handler-service
-version: 0.0.38
+version: 0.0.39
 maintainers:
   - name: HMCTS opal team
 dependencies:
@@ -78,3 +78,8 @@ dependencies:
     version: 2.2.2
     repository: 'oci://hmctsprod.azurecr.io/helm'
     condition: marston-transfer.enabled
+  - name: java
+    alias: fines-preprocessing
+    version: 6.1.1
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: fines-preprocessing.enabled
