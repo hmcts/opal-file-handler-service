@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.apache.commons.codec.digest.DigestUtils;
 import uk.gov.hmcts.opal.filehandler.blob.BlobStorageClient;
@@ -19,6 +20,7 @@ import uk.gov.hmcts.opal.filehandler.db.FinesInterfaceFileTestDatabaseClient;
 import uk.gov.hmcts.opal.filehandler.db.FinesInterfaceFileTestDatabaseClient.PreprocessingResult;
 import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
 import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient.InterfaceFileRecord;
+import uk.gov.hmcts.opal.filehandler.support.BaisInterfaceFileClient;
 import uk.gov.hmcts.opal.filehandler.support.BaisFileTestConfig;
 import uk.gov.hmcts.opal.filehandler.support.BaisFileTestData;
 import uk.gov.hmcts.opal.filehandler.support.FinesPreprocessingFixture;
@@ -78,6 +80,17 @@ public class FinesPreprocessingStepDef extends BaseStepDef {
         assertNotNull(preprocessingResult.totalAmount());
         assertEquals(0, BigDecimal.valueOf(total).compareTo(preprocessingResult.totalAmount()),
             "Fines stored total differs from transformed transaction amounts");
+
+        // PO-11601: Re-enable this assertion when the Fines business-unit metadata fix is deployed.
+        // Map<String, Object> transformedMetadata =
+        //     new BaisInterfaceFileClient(this::authorisedJsonRequest, getTestUrl()).records(config).stream()
+        //         .filter(record -> ((Number) record.get("interface_file_id")).longValue() == transformedFile.id())
+        //         .findFirst()
+        //         .orElseThrow(() -> new AssertionError("Transformed file " + transformedFile.id()
+        //             + " is missing from the interface-files API response"));
+        // assertEquals(List.of((int) expectedBusinessUnit), transformedMetadata.get("business_unit_ids"),
+        //     "TRANSFORMED_JSON business_unit_ids must contain exactly the business unit resolved by Fines"
+        //         + " for interface file " + transformedFile.id());
     }
 
     @Then("the transformed {string} file contains the account references in order")
