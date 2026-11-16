@@ -10,7 +10,7 @@ import uk.gov.hmcts.opal.filehandler.config.VpfpoConfiguration;
 
 @Service
 @RequiredArgsConstructor
-public class VpfpoingestionService implements FileIngestionService<String> {
+public class VpfpoIngestionService implements FileIngestionService<String> {
 
     private final BlobServiceClient blobServiceClient;
     private final VpfpoConfiguration config;

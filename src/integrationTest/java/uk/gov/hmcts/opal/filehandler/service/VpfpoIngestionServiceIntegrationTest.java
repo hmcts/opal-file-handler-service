@@ -17,10 +17,10 @@ import uk.gov.hmcts.opal.filehandler.config.VpfpoConfiguration;
 import uk.gov.hmcts.opal.filehandler.support.AbstractIntegrationTest;
 
 @ActiveProfiles("integration")
-class VpfpoingestionServiceIntegrationTest extends AbstractIntegrationTest {
+class VpfpoIngestionServiceIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
-    private VpfpoingestionService service;
+    private VpfpoIngestionService service;
 
     @Autowired
     private BlobServiceClient blobServiceClient;
