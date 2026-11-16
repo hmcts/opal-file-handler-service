@@ -24,7 +24,6 @@ Feature: BTEckoh file ingestion
 
   Scenario: A duplicate BTEckoh transfer file is detected
     Given the configured "BTEckoh transfer" file has already been processed
-    And Fines preprocessing completes for the stored "BTEckoh transfer" file
     When the configured "BTEckoh transfer" file is placed on bais
     And the "BTEckoh transfer" file ingestion job is requested through testing support
     Then the testing-support request is accepted

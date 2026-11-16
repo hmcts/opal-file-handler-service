@@ -54,6 +54,11 @@ public class FinesInterfaceFileTestDatabaseClient implements AutoCloseable {
         database.executePostgresScript("db/bteckoh-transfer/fines/setup.sql");
     }
 
+    /** Prepares the Fines bank mapping shared by the CDER, Jacobs and Marston fixtures. */
+    public void prepareBailiffSeed() {
+        database.executePostgresScript("db/bailiffs/fines/setup.sql");
+    }
+
     /** Returns only results linked to the precise source JSON created by a scenario. */
     public List<PreprocessingResult> findBySourceJsonId(long sourceJsonId) {
         return findResults(sourceJsonId, false);

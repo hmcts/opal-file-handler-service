@@ -220,7 +220,6 @@ Feature: Allpay file ingestion
 
   Scenario: A duplicate Allpay file is detected
     Given the configured "Allpay" file has already been processed
-    And Fines preprocessing completes for the stored "Allpay" file
     When the configured "Allpay" file is placed on bais
     And the "Allpay" file ingestion job is requested through testing support
     Then the testing-support request is accepted

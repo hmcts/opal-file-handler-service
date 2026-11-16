@@ -115,6 +115,9 @@ public class FinesPreprocessingStepDef extends BaseStepDef {
 
     @Then("Fines preprocessing reuses the original result for the stored {string} file")
     public void finesPreprocessingReusesOriginalResult(String displayName) {
+        if (preprocessingResult == null) {
+            finesPreprocessingCompletes(displayName);
+        }
         assertTransformationAvailable(displayName);
         BaisFileTestConfig config = config(displayName);
         long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();

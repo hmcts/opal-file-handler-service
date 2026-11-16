@@ -24,7 +24,6 @@ Feature: Barclaycard file ingestion
 
   Scenario: A duplicate Barclaycard file is detected
     Given the configured "Barclaycard" file has already been processed
-    And Fines preprocessing completes for the stored "Barclaycard" file
     When the configured "Barclaycard" file is placed on bais
     And the "Barclaycard" file ingestion job is requested through testing support
     Then the testing-support request is accepted

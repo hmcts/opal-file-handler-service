@@ -8,6 +8,7 @@ Feature: Jacobs file ingestion
     And the "Jacobs" file ingestion job is requested through testing support
     Then the "Jacobs" file is processed successfully
     And the extracted "Jacobs" payments are ready for the external interface
+    And Fines preprocessing completes for the stored "Jacobs" file
 
   Scenario: A duplicate Jacobs file is detected
     Given the configured "Jacobs" file has already been processed
@@ -17,6 +18,7 @@ Feature: Jacobs file ingestion
     And a duplicate "JACOBS" interface file is recorded
     And the duplicate "JACOBS" interface file reuses the original blob
     And the configured "Jacobs" file no longer exists on bais
+    And Fines preprocessing reuses the original result for the stored "Jacobs" file
 
   Scenario: An unsupported Jacobs file is ignored
     Given the configured "Jacobs" file has an unsupported file on bais

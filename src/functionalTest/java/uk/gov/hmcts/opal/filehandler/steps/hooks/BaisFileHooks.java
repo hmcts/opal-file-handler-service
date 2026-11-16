@@ -12,6 +12,7 @@ import uk.gov.hmcts.opal.filehandler.support.BaisFileTestConfig;
 import uk.gov.hmcts.opal.filehandler.support.BaisFileTestData;
 import uk.gov.hmcts.opal.filehandler.support.BarclaycardFinesSeedFixture;
 import uk.gov.hmcts.opal.filehandler.support.BTEckohFinesSeedFixture;
+import uk.gov.hmcts.opal.filehandler.support.BailiffFinesSeedFixture;
 import uk.gov.hmcts.opal.filehandler.support.FinesSeedFixture;
 
 /** Applies the common BAIS fixture lifecycle to every BAIS ingestion scenario. */
@@ -46,6 +47,8 @@ public class BaisFileHooks {
             BarclaycardFinesSeedFixture.ensurePrepared();
         } else if ("BTECKOH".equals(fixture.config().source())) {
             BTEckohFinesSeedFixture.ensurePrepared();
+        } else if (fixture.config().verifiesBailiffFinesPreprocessing()) {
+            BailiffFinesSeedFixture.ensurePrepared();
         }
         fixtureStarted = true;
         executeScript(fixture.setupScript());

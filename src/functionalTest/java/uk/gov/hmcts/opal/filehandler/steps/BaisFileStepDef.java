@@ -130,13 +130,17 @@ public class BaisFileStepDef extends BaseStepDef {
 
     @Given("the configured {string} report/file has already been processed")
     public void configuredFileHasAlreadyBeenProcessed(String displayName) {
+        BaisFileTestConfig config = forDisplayName(displayName);
         // Initialise the default test user so this composite step can be used independently.
         BearerTokenStepDef.getToken();
         configuredFileIsAvailable(displayName);
         fileIngestionJobIsRequested(displayName);
         testingSupportRequestIsAccepted();
-        successfulInterfaceFileIsStored(forDisplayName(displayName).source());
+        successfulInterfaceFileIsStored(config.source());
         configuredFileNoLongerExists(displayName);
+        if (config.verifiesFinesPreprocessing()) {
+            new FinesPreprocessingStepDef().finesPreprocessingCompletes(displayName);
+        }
     }
 
     @When("the {string} report/file ingestion job is requested through testing support")

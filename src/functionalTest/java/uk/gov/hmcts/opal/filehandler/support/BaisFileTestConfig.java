@@ -33,7 +33,15 @@ public record BaisFileTestConfig(
 
     /** Identifies fixtures that wait for and clean up their exact Fines preprocessing result. */
     public boolean verifiesFinesPreprocessing() {
-        return "ALLPAY".equals(source) || "BARCLAYCARD".equals(source) || "BTECKOH".equals(source);
+        return switch (source) {
+            case "ALLPAY", "BARCLAYCARD", "BTECKOH", "CDER", "JACOBS", "MARSTON" -> true;
+            default -> false;
+        };
+    }
+
+    /** Identifies bailiff fixtures that share a Fines destination-bank mapping. */
+    public boolean verifiesBailiffFinesPreprocessing() {
+        return "CDER".equals(source) || "JACOBS".equals(source) || "MARSTON".equals(source);
     }
 
     /**
