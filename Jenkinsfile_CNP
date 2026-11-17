@@ -1,11 +1,14 @@
 #!groovy
 import uk.gov.hmcts.contino.Kubectl
+import uk.gov.hmcts.contino.GradleBuilder
 
 @Library("Infrastructure@2.13.6")
 
 def type = "java"
 def product = "opal"
 def component = "file-handler-service"
+
+GradleBuilder builder = new GradleBuilder(this, product)
 
 def failBuildOnUnstableResults() {
     if (currentBuild.result == 'UNSTABLE') {
@@ -305,6 +308,12 @@ def configureStagingFunctionalTestEnvironment(String valuesFile) {
     if (!env.OPAL_FILE_HANDLER_DB_PASSWORD?.trim()) {
         missingVariables.add('OPAL_FILE_HANDLER_DB_PASSWORD')
     }
+    ['HOST', 'PORT', 'NAME', 'USERNAME', 'PASSWORD'].each { suffix ->
+        String variable = "OPAL_FINES_DB_${suffix}"
+        if (!env[variable]?.trim()) {
+            missingVariables.add(variable)
+        }
+    }
     if (!env.FILE_STORE_STORAGE_ACCOUNT_NAME?.trim()) {
         missingVariables.add('FILE_STORE_STORAGE_ACCOUNT_NAME')
     }
@@ -322,6 +331,7 @@ def configureStagingFunctionalTestEnvironment(String valuesFile) {
     }
 
     configureFunctionalTestUserService(valuesFile)
+    env.OPAL_FINES_DB_OPTIONS = functionalTestValues.finesDatabaseOptions?.toString() ?: ''
     env.FUNCTIONAL_TEST_BLOB_CONTAINER_NAME = containerName
     steps.echo "Configured staging functional-test database and blob container ${containerName}"
 }
@@ -373,6 +383,11 @@ def stagingFunctionalTestSecrets = [
                 secret('file-handler-service-POSTGRES-DATABASE', 'OPAL_FILE_HANDLER_DB_NAME'),
                 secret('file-handler-service-POSTGRES-USER', 'OPAL_FILE_HANDLER_DB_USERNAME'),
                 secret('file-handler-service-POSTGRES-PASS', 'OPAL_FILE_HANDLER_DB_PASSWORD'),
+                secret('fines-service-POSTGRES-HOST', 'OPAL_FINES_DB_HOST'),
+                secret('fines-service-POSTGRES-PORT', 'OPAL_FINES_DB_PORT'),
+                secret('fines-service-POSTGRES-DATABASE', 'OPAL_FINES_DB_NAME'),
+                secret('fines-service-POSTGRES-USER', 'OPAL_FINES_DB_USERNAME'),
+                secret('fines-service-POSTGRES-PASS', 'OPAL_FINES_DB_PASSWORD'),
                 secret(
                         'opal-file-handler-service-file-store-account-name',
                         'FILE_STORE_STORAGE_ACCOUNT_NAME'
@@ -514,6 +529,7 @@ withPipeline(type, product, component) {
     before('functionalTest:stg') {
         onMaster {
             configureStagingFunctionalTestEnvironment(stgValuesFile)
+            builder.gradle('verifyFunctionalTestDatabases')
         }
     }
 

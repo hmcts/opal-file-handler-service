@@ -79,7 +79,7 @@ Feature: Allpay file ingestion
     And the transformed "Allpay" file contains the account references in order
       | 88007700000001 |
 
-  Scenario: An Allpay file with a master and child account is ingested
+  Scenario: An Allpay file with a payment using a former child account reference resolves to its master
     Given the configured "Allpay" file "a121_00000001_000006.dat" is available on bais
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
     And the "Allpay" file ingestion job is requested through testing support
@@ -90,8 +90,8 @@ Feature: Allpay file ingestion
     And the configured "Allpay" file no longer exists on bais
     And Fines preprocessing completes for the stored "Allpay" file
     And the transformed "Allpay" file contains the account references in order
-      | 77000002A |
-      | 77000003A |
+      | 77000002A      |
+      | 88007700000002 |
 
   Scenario: An Allpay file with a zero value payment is ingested
     Given the configured "Allpay" file "a121_00000001_000007.dat" is available on bais
@@ -174,7 +174,7 @@ Feature: Allpay file ingestion
       | 11 |
       | 99 |
 
-  Scenario: An Allpay cheque file ignores transaction code 44 totals rows
+  Scenario: An Allpay cheque file with an unsupported transaction code is ingested
     Given the configured "Allpay" file "a121_00000001_000015.dat" with transaction codes in order is available on bais
       | 11 |
       | 44 |

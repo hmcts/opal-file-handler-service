@@ -14,7 +14,7 @@ file-handler/SFTP setup. Other BAIS features do not trigger this seed.
   associated reserved IDs before inserting anything.
 - Setup always applies the repeatable supplemental script to ensure the three
   bank mappings, canonical references, APRs (including the BU78 duplicate-name fixture),
-  the master/child relationship and
+  the former-child CONSOLIDATED APR and
   the large-account balance exist. A database advisory lock
   serializes preparation across test JVMs and the manual setup/cleanup scripts.
 
@@ -24,17 +24,18 @@ No SQL from Downloads needs to be run manually. Scenario cleanup retains the
 shared seed so later scenarios and subsequent test runs can reuse it.
 
 For deliberate manual removal, `03_cleanup_preprocessing.sql` removes only the
-supplemental bank/APR fixtures and consolidation links, restores both accounts
-to live/unconsolidated status, restores account 4 to its original £400 debt,
+supplemental bank/APR fixtures (and any owned consolidation links from the old fixture),
+restores account 4 to its original £400 debt,
 and restores original defendant account numbers;
 it keeps the ten-account base seed. The next Allpay run reapplies the supplement.
 Run that cleanup only after dependent tests/jobs have finished. The scripts are
 also usable directly against Fines for investigation.
 
 The supplemental setup gives the ten synthetic defendant accounts references
-`77000001A` through `77000010A`, matching the translation service's eight-digits
-plus letter pattern. It does not change shared numbering sequences or populate
-`account_number_index`.
+`77000001A` through `77000010A`, except account 3 retains `ZB77D0003` so
+`77000003A` exists only as an APR. The canonical numbers match the translation
+service's eight-digits plus letter pattern. It does not change shared numbering
+sequences or populate `account_number_index`.
 
 Synthetic `ZB77C0001` through `ZB77C0010` values are explicitly configured as APR
 aliases to the corresponding seeded defendant accounts. They are creditor
@@ -68,18 +69,19 @@ The originator-name APR fixture has `ABCXYZ` in the 18-character name field and
 `77000001A`, so its cases exercise pattern extraction and direct defendant
 lookup instead of requiring separate APRs for every decorated string.
 
-The master/child fixture (`a121_00000001_000006.dat`) uses account `77000002A`
-(ID `88007700000002`) as the live master and `77000003A` (ID `88007700000003`)
-as its consolidated child (status `CS`). Their `consolidated_account_type` values
-are `M` and `C`. Two owned defendant transactions (`88007700000901`/`902`), marked
-`ALLPAYSEED`, link the child's `WRTOFF` to the master and the master's `CONSOL` to
-the child. Setup checks both `f_get_master_account_id(child)` and
-`v_consolidated_accounts`, and refuses conflicting links or occupied transaction IDs.
+The former-child APR fixture (`a121_00000001_000006.dat`) contains a direct
+payment reference for master account `77000002A` (ID `88007700000002`) and the
+former child reference `77000003A`. No defendant account or account-number-index
+entry may match `77000003A`. Seed account 3 keeps its original `ZB77D0003` number.
+The APR (`88007700000813`, relationship `CONSOLIDATED`, category `ACC`) maps
+`77000003A` to the master. Preprocessing retains the directly matched master
+number and translates the former child reference to master ID `88007700000002`.
 
-This is a relationship fixture for ingestion/preprocessing only. The master/child
-balances and impositions remain those of the base seed; setup does not perform a financial
-consolidation or allocate payments. Preprocessing retains both account references,
-which the scenario asserts. Payment redirection/allocation is outside this suite.
+This fixture proves APR translation only; it does not execute consolidation,
+create consolidation transactions, change consolidation statuses, or allocate payments.
+When upgrading an existing fixture, run `03_cleanup_preprocessing.sql` first,
+after dependent test jobs finish. Its guarded compatibility cleanup removes only
+the old fixture's owned consolidation links before the new setup is applied.
 
 The large-payment fixtures both contain `99,999,999,999` pence (£999,999,999.99):
 

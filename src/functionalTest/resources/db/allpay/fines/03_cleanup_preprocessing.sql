@@ -1,11 +1,11 @@
 -- Run against opal-fines-db after any dependent test jobs have been cleaned up.
--- Restores the base seed account numbers and removes its consolidation; keeps the original ten accounts.
+-- Restores base seed numbers and removes supplemental APRs; keeps the original ten accounts.
 BEGIN;
 SET LOCAL search_path = pg_catalog, public, pg_temp;
 SET LOCAL lock_timeout = '10s';
 SELECT pg_advisory_xact_lock(770077, 10);
 
--- Only remove the exact relationship installed by the supplemental setup.
+-- Compatibility cleanup for the previous synthetic consolidation fixture only.
 -- Refuse partial/changed ownership so cleanup cannot reset unrelated account state.
 DO $consolidation$
 DECLARE
@@ -82,6 +82,11 @@ DELETE FROM public.alternate_payment_references a USING fixtures f
 WHERE a.alternate_payment_reference_id=f.apr_id AND a.defendant_account_id=f.defendant_account_id
   AND a.apr_text=f.apr_text AND a.business_unit_id=77
   AND a.category::text='APR' AND a.relationship::text='APR';
+
+DELETE FROM public.alternate_payment_references
+WHERE alternate_payment_reference_id=88007700000813 AND business_unit_id=77
+  AND defendant_account_id=88007700000002 AND apr_text='77000003A'
+  AND category::text='ACC' AND relationship::text='CONSOLIDATED';
 
 DELETE FROM public.configuration_items
 WHERE configuration_item_id=88007700000700 AND business_unit_id=77

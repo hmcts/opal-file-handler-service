@@ -1,8 +1,8 @@
 -- Run against opal-fines-db after 01_seed_bu77_10_accounts.sql.
--- Owns two BANK_ACCOUNTS configuration rows, thirteen APRs, and the account-number
+-- Owns two BANK_ACCOUNTS configuration rows, fourteen APRs, and the account-number
 -- changes on the ten synthetic CODEX_BU77_10_V1 defendant accounts only.
--- Also owns the consolidation between accounts 2 (master) and 3 (child),
--- and account 4 outstanding debt of 100,000,000,000 pence (stored in pounds).
+-- Maps the former child reference to account 2 through a CONSOLIDATED APR.
+-- Also owns account 4 outstanding debt of 100,000,000,000 pence (stored in pounds).
 -- Adds one account in BU78 to prove identical APR text resolves within each BU.
 BEGIN;
 SET LOCAL search_path = pg_catalog, public, pg_temp;
@@ -12,25 +12,19 @@ SELECT pg_advisory_xact_lock(770077, 10);
 CREATE TEMP TABLE _allpay_accounts ON COMMIT DROP AS
 SELECT n, 88007700000000::bigint + n AS defendant_account_id,
        'ZB77D' || lpad(n::text, 4, '0') AS original_number,
-       (77000000 + n)::text || 'A' AS account_number,
+       CASE WHEN n=3 THEN 'ZB77D0003' ELSE (77000000 + n)::text || 'A' END AS account_number,
        'CODEX_BU77_10_V1:' || lpad(n::text, 4, '0') AS marker
 FROM generate_series(1, 10) AS g(n);
 
 CREATE TEMP TABLE _allpay_aprs ON COMMIT DROP AS
 SELECT 88007700000800::bigint + n AS apr_id, defendant_account_id,
-       'ZB77C' || lpad(n::text, 4, '0') AS apr_text, 77::smallint AS business_unit_id
+       'ZB77C' || lpad(n::text, 4, '0') AS apr_text, 77::smallint AS business_unit_id,
+       'APR'::text AS relationship, 'APR'::text AS category
 FROM _allpay_accounts
-UNION ALL SELECT 88007700000811, 88007700000001, 'TEST-APR-01', 77
-UNION ALL SELECT 88007700000812, 88007700000001, 'ABCXYZ', 77
-UNION ALL SELECT 88007800000801, 88007800000001, 'TEST-APR-01', 78;
-
--- Fixed IDs and posted_by identify only this test-owned consolidation.
-CREATE TEMP TABLE _allpay_consolidation ON COMMIT DROP AS
-SELECT 88007700000901::bigint AS transaction_id, 88007700000003::bigint AS account_id,
-       'WRTOFF'::text AS transaction_type, 'CONSOLIDATED ALLPAY BU77 CHILD'::text AS text,
-       '88007700000002'::text AS associated_id
-UNION ALL SELECT 88007700000902, 88007700000002, 'CONSOL',
-                 'ALLPAY BU77 MASTER CONSOLIDATION', '88007700000003';
+UNION ALL SELECT 88007700000811, 88007700000001, 'TEST-APR-01', 77, 'APR', 'APR'
+UNION ALL SELECT 88007700000812, 88007700000001, 'ABCXYZ', 77, 'APR', 'APR'
+UNION ALL SELECT 88007800000801, 88007800000001, 'TEST-APR-01', 78, 'APR', 'APR'
+UNION ALL SELECT 88007700000813, 88007700000002, '77000003A', 77, 'CONSOLIDATED', 'ACC';
 
 DO $check$
 BEGIN
@@ -68,33 +62,14 @@ BEGIN
                ON a.alternate_payment_reference_id=f.apr_id OR (a.business_unit_id=f.business_unit_id AND a.apr_text=f.apr_text)
                WHERE a.alternate_payment_reference_id<>f.apr_id OR a.business_unit_id<>f.business_unit_id
                   OR a.defendant_account_id<>f.defendant_account_id OR a.apr_text<>f.apr_text
-                  OR a.category::text<>'APR' OR a.relationship::text<>'APR') THEN
+                  OR a.category::text<>f.category OR a.relationship::text<>f.relationship) THEN
         RAISE EXCEPTION 'An Allpay APR fixture ID or value is already occupied.';
     END IF;
     IF EXISTS (SELECT 1 FROM public.defendant_accounts
-               WHERE defendant_account_id=88007700000002
-                 AND (account_status::text<>'L' OR
-                      (consolidated_account_type IS NOT NULL AND consolidated_account_type::text<>'M')))
-       OR EXISTS (SELECT 1 FROM public.defendant_accounts
-                  WHERE defendant_account_id=88007700000003
-                    AND (account_status::text NOT IN ('L','CS') OR
-                         (consolidated_account_type IS NOT NULL AND consolidated_account_type::text<>'C'))) THEN
-        RAISE EXCEPTION 'Unexpected Allpay master/child account state; refusing to overwrite it.';
-    END IF;
-    IF EXISTS (SELECT 1 FROM public.defendant_transactions t JOIN _allpay_consolidation f
-               ON t.defendant_transaction_id=f.transaction_id
-               WHERE t.defendant_account_id<>f.account_id OR t.transaction_type::text IS DISTINCT FROM f.transaction_type
-                  OR t.text IS DISTINCT FROM f.text OR t.posted_by IS DISTINCT FROM 'ALLPAYSEED'
-                  OR t.associated_record_type::text IS DISTINCT FROM 'defendant_accounts'
-                  OR t.associated_record_id IS DISTINCT FROM f.associated_id)
-       OR EXISTS (SELECT 1 FROM public.defendant_transactions t
-                  WHERE (t.defendant_account_id IN (88007700000002,88007700000003)
-                         OR (t.associated_record_type::text='defendant_accounts'
-                             AND t.associated_record_id IN ('88007700000002','88007700000003')))
-                    AND (t.transaction_type::text='CONSOL'
-                         OR (t.transaction_type::text='WRTOFF' AND t.text LIKE 'CONSOLIDATED%'))
-                    AND t.defendant_transaction_id NOT IN (88007700000901,88007700000902)) THEN
-        RAISE EXCEPTION 'An Allpay consolidation ID or account relationship is already occupied.';
+               WHERE business_unit_id=77 AND account_number='77000003A')
+       OR EXISTS (SELECT 1 FROM public.account_number_index
+                  WHERE business_unit_id=77 AND account_number='77000003A') THEN
+        RAISE EXCEPTION 'Former Allpay child reference must exist only as an APR; run old fixture cleanup first.';
     END IF;
     -- Only accept the original or already-enlarged, unpaid account-4 fixture.
     IF (SELECT count(*) FROM public.defendant_accounts
@@ -161,25 +136,10 @@ ON CONFLICT (configuration_item_id) DO NOTHING;
 INSERT INTO public.alternate_payment_references
     (alternate_payment_reference_id, defendant_account_id, relationship, category,
      business_unit_id, apr_text, created_datetime, updated_datetime, version_number)
-SELECT apr_id, defendant_account_id, 'APR'::public.t_apr_relationship_enum,
-       'APR'::public.t_apr_category_enum, business_unit_id, apr_text, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0
+SELECT apr_id, defendant_account_id, relationship::public.t_apr_relationship_enum,
+       category::public.t_apr_category_enum, business_unit_id, apr_text, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0
 FROM _allpay_aprs
 ON CONFLICT (alternate_payment_reference_id) DO NOTHING;
-UPDATE public.defendant_accounts
-SET consolidated_account_type='M'
-WHERE defendant_account_id=88007700000002;
-UPDATE public.defendant_accounts
-SET account_status='CS', consolidated_account_type='C'
-WHERE defendant_account_id=88007700000003;
-
-INSERT INTO public.defendant_transactions
-    (defendant_transaction_id, defendant_account_id, posted_date, posted_by,
-     transaction_type, text, associated_record_type, associated_record_id)
-SELECT transaction_id, account_id, CURRENT_TIMESTAMP, 'ALLPAYSEED',
-       transaction_type::public.t_defendant_transaction_type_enum, text,
-       'defendant_accounts'::public.t_associated_record_type_enum, associated_id
-FROM _allpay_consolidation
-ON CONFLICT (defendant_transaction_id) DO NOTHING;
 
 -- 000008 pays 99,999,999,999 pence; give account 4 one penny more debt.
 -- Keep the account summary, original imposition and payment-terms balance aligned.
@@ -191,15 +151,17 @@ WHERE imposition_id=88007700000604 AND defendant_account_id=88007700000004;
 UPDATE public.payment_terms SET account_balance=-1000000000.00
 WHERE payment_terms_id=88007700000504 AND defendant_account_id=88007700000004;
 
--- Prove both the payment-processing lookup and account-details view see the link.
--- This does not invoke payment allocation.
+-- Prove the former child reference can resolve only through its APR to the master.
 DO $verify$
 BEGIN
-    IF public.f_get_master_account_id(88007700000003) IS DISTINCT FROM 88007700000002::bigint
-       OR NOT EXISTS (SELECT 1 FROM public.v_consolidated_accounts
-                      WHERE master_account_id=88007700000002
-                        AND child_account_id::bigint=88007700000003) THEN
-        RAISE EXCEPTION 'Allpay master/child relationship was not established.';
+    IF EXISTS (SELECT 1 FROM public.defendant_accounts
+               WHERE business_unit_id=77 AND account_number='77000003A')
+       OR NOT EXISTS (SELECT 1 FROM public.alternate_payment_references
+                      WHERE alternate_payment_reference_id=88007700000813
+                        AND business_unit_id=77 AND apr_text='77000003A'
+                        AND defendant_account_id=88007700000002
+                        AND relationship::text='CONSOLIDATED' AND category::text='ACC') THEN
+        RAISE EXCEPTION 'Allpay former-child APR fixture was not established.';
     END IF;
     IF (SELECT count(*) FROM public.alternate_payment_references
         WHERE apr_text='TEST-APR-01' AND

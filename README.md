@@ -266,3 +266,20 @@ tunnel recovers. Authentication errors and SQL statements/transactions are not r
 Local runs retain immediate connection failure unless
 `FUNCTIONAL_TEST_DB_CONNECTION_RETRY_SECONDS` is explicitly set. Tunnel output and pod restart
 diagnostics are archived under `.functional-test-db-tunnel` even when the functional run fails.
+
+### Master and nightly functional tests on staging
+
+Master and nightly runs use the shared staging Fines service and its existing Azure PostgreSQL
+server. Both pipelines load `fines-service-POSTGRES-HOST`, `PORT`, `DATABASE`, `USER` and `PASS`
+from the staging vault into the corresponding `OPAL_FINES_DB_*` variables. Missing configuration
+fails before the scenarios start. `functionalTest.finesDatabaseOptions` in the staging values adds
+`?sslmode=require`; `FUNCTIONAL_TEST_FINES_DB_URL` still takes precedence when explicitly set.
+
+The `verifyFunctionalTestDatabases` Gradle task opens and validates both database connections
+before staging fixtures run. It does not seed data or run migrations. Master retains the temporary
+`-staging` release URL supplied by the Jenkins deployment/test environment. Nightly uses the shared
+`https://opal-file-handler-service.staging.platform.hmcts.net` API hostname.
+The shared Fines deployment must enable both preprocessing consumer flags, consume
+`banking-interfaces-preprocess-interface-file-fines`, and call back to that same file-handler API.
+The Fines chart change enabling these settings for `stg` must be deployed before the new staging
+preprocessing scenarios can pass. The dedicated Fines instance and supervised tunnel remain dev-only.
