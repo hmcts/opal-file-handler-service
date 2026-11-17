@@ -148,7 +148,8 @@ public class BankingFileProcessingIntegrationTest extends AbstractInterfaceFileP
         InterfaceFileProcessorService processor = prepare(bankingFile);
         final InterfaceFileEntity failedJson = ingestWithUnavailableQueue(processor);
         final long sourceId = failedJson.getRelatedInterfaceFile().getInterfaceFileId();
-        clearInvocations(expectedQueue(), otherQueue());
+        clearInvocations(finesQueue);
+        clearInvocations(maintenanceQueue);
         doNothing().when(expectedQueue()).send(anyLong());
 
         // No SFTP file remains: recovery must read the persisted SOURCE blob.
@@ -285,7 +286,8 @@ public class BankingFileProcessingIntegrationTest extends AbstractInterfaceFileP
     void continuingQueueOutageRemainsFailed(BankingFile bankingFile) throws IOException {
         InterfaceFileProcessorService processor = prepare(bankingFile);
         final InterfaceFileEntity firstFailure = ingestWithUnavailableQueue(processor);
-        clearInvocations(expectedQueue(), otherQueue());
+        clearInvocations(finesQueue);
+        clearInvocations(maintenanceQueue);
 
         // The publisher still fails: a retry must not be recorded as successful processing.
         processor.run();
@@ -363,11 +365,11 @@ public class BankingFileProcessingIntegrationTest extends AbstractInterfaceFileP
             .filter(entity -> file.fileName().equals(entity.getFileName())).toList();
     }
 
-    private InterfaceFilePreprocessQueueService expectedQueue() {
+    private InterfaceFilePreprocessQueueService<Long> expectedQueue() {
         return file.domain() == Domain.FINES ? finesQueue : maintenanceQueue;
     }
 
-    private InterfaceFilePreprocessQueueService otherQueue() {
+    private InterfaceFilePreprocessQueueService<Long> otherQueue() {
         return file.domain() == Domain.FINES ? maintenanceQueue : finesQueue;
     }
 

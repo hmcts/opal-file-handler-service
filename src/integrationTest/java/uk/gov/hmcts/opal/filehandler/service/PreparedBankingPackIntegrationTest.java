@@ -157,7 +157,7 @@ public class PreparedBankingPackIntegrationTest extends AbstractInterfaceFilePro
         };
         assertThat(tree.at("/transactions/0/originator_details/account_reference").asString())
             .isEqualTo(expectedReference);
-        InterfaceFilePreprocessQueueService expectedQueue = supplier.domain() == Domain.FINES
+        InterfaceFilePreprocessQueueService<Long> expectedQueue = supplier.domain() == Domain.FINES
             ? finesQueue : maintenanceQueue;
         verify(expectedQueue).send(json.getInterfaceFileId());
         verifyNoMoreInteractions(finesQueue, maintenanceQueue);
