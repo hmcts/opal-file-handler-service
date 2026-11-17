@@ -54,6 +54,30 @@ public class FinesReferenceDataStepDef {
         }
     }
 
+    @Given("the following prosecutor case reference is stored for a defendant account:")
+    public void storeProsecutorCaseReference(DataTable table) {
+        List<Map<String, String>> rows = table.asMaps(String.class, String.class);
+        assertFalse(rows.isEmpty(), "Specify at least one account and case reference");
+        try (DatabaseClient fines = new DatabaseClient(TestEnvironment.getFinesDatabaseUrl(),
+            TestEnvironment.getFinesDatabaseUsername(), TestEnvironment.getFinesDatabasePassword())) {
+            fines.inTransaction(() -> {
+                for (Map<String, String> row : rows) {
+                    short unitId = Short.parseShort(row.get("businessUnitId"));
+                    long accountId = Long.parseLong(row.get("defendantAccountId"));
+                    String caseReference = row.get("caseReference");
+                    assertTrue(caseReference != null && !caseReference.isBlank()
+                        && caseReference.length() <= 40, "Case reference must contain 1 to 40 characters");
+                    assertEquals(1, fines.update("UPDATE public.defendant_accounts "
+                            + "SET prosecutor_case_reference = ? "
+                            + "WHERE business_unit_id = ? AND defendant_account_id = ? "
+                            + "AND (prosecutor_case_reference IS NULL OR prosecutor_case_reference = ?)",
+                        caseReference, unitId, accountId, caseReference),
+                        "Account is missing or has another prosecutor case reference");
+                }
+            });
+        }
+    }
+
     @Given("the following defendant accounts have these outstanding balances:")
     public void configureOutstandingBalances(DataTable table) {
         List<Map<String, String>> rows = table.asMaps(String.class, String.class);
@@ -121,6 +145,55 @@ public class FinesReferenceDataStepDef {
                         "SELECT child_account_id FROM public.v_consolidated_accounts "
                             + "WHERE master_account_id = ? AND child_account_id::bigint = ?", masterId, childId),
                         "Consolidated account view must expose the relationship");
+                }
+            });
+        }
+    }
+
+    @Given("the following consolidated payment references map to master accounts through APRs:")
+    public void ensureConsolidatedPaymentReferences(DataTable table) {
+        List<Map<String, String>> rows = table.asMaps(String.class, String.class);
+        assertFalse(rows.isEmpty(), "Specify at least one consolidated payment reference and master account");
+        try (DatabaseClient fines = new DatabaseClient(TestEnvironment.getFinesDatabaseUrl(),
+            TestEnvironment.getFinesDatabaseUsername(), TestEnvironment.getFinesDatabasePassword())) {
+            fines.inTransaction(() -> {
+                for (Map<String, String> row : rows) {
+                    short unitId = Short.parseShort(row.get("businessUnitId"));
+                    long masterId = Long.parseLong(row.get("masterAccountId"));
+                    String childReference = row.get("paymentReference");
+                    String masterAccountNumber = row.get("masterAccountNumber");
+                    assertTrue(childReference != null && !childReference.isBlank(),
+                        "Consolidated payment reference must not be blank");
+                    assertEquals(List.of(masterAccountNumber), fines.queryFirstColumn(
+                        "SELECT account_number FROM public.defendant_accounts "
+                            + "WHERE business_unit_id = ? AND defendant_account_id = ? "
+                            + "AND account_status::text = 'L'",
+                        unitId, masterId), "Master account must exist and be live");
+                    assertTrue(fines.queryFirstColumn(
+                        "SELECT defendant_account_id FROM public.defendant_accounts "
+                            + "WHERE business_unit_id = ? AND account_number = ?",
+                        unitId, childReference).isEmpty(),
+                        "Consolidated payment reference must not be a defendant account number");
+                    List<String> existing = fines.queryFirstColumn(
+                        "SELECT defendant_account_id FROM public.alternate_payment_references "
+                            + "WHERE business_unit_id = ? AND apr_text = ?", unitId, childReference);
+                    if (existing.isEmpty()) {
+                        fines.update("INSERT INTO public.alternate_payment_references "
+                                + "(defendant_account_id,relationship,category,business_unit_id,apr_text,"
+                                + "created_datetime,updated_datetime,version_number) "
+                                + "VALUES (?, 'CONSOLIDATED', 'ACC', ?, ?, "
+                                + "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0)",
+                            masterId, unitId, childReference);
+                    } else {
+                        assertEquals(List.of(Long.toString(masterId)), existing,
+                            "Child reference is already mapped to another account");
+                    }
+                    assertEquals(List.of("CONSOLIDATED:ACC"), fines.queryFirstColumn(
+                        "SELECT relationship::text || ':' || category::text "
+                            + "FROM public.alternate_payment_references "
+                            + "WHERE business_unit_id = ? AND apr_text = ? AND defendant_account_id = ?",
+                        unitId, childReference, masterId),
+                        "Child reference must use a consolidated account APR");
                 }
             });
         }

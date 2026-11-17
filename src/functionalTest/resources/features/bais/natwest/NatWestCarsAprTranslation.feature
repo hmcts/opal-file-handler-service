@@ -155,28 +155,20 @@ Feature: NatWest CARS ingestion and account reference translation
       | 99              | 1500          | 98743163R             | 3027006                  | 12/12/2026       | false  | true             |
     And the complete transformed NatWest JSON has payment type "CASH", record count 1 and total amount 1500
 
-  @NatWestConsolidatedAccounts @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
-  Scenario: 07 - NatWest payments to consolidated master and child accounts retain their references during preprocessing
+  @NatWestConsolidatedAccounts @NatWestConsolidatedApr @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
+  Scenario: 07 - A former child account number resolves to the consolidated master
     Given the following destination bank account is configured:
       | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
       | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
     And the following defendant accounts exist:
       | businessUnitId | defendantAccountId | defendantAccountNumber |
-      | 77             | 3027021            | 77000971A              |
-      | 77             | 3027022            | 77000972A              |
-    And the following defendant account consolidations exist:
-      | businessUnitId | masterAccountId | childAccountId |
-      | 77             | 3027021         | 3027022        |
-    And the following Fines records do not exist, removing any existing matches:
-      | businessUnitId | recordType | reference      |
-      | 77             | APR        | 77000971A      |
-      | 77             | APR        | 77000972A      |
-      | 77             | APR        | Mr Alan Clarke |
-      | 77             | APR        | Ms Emma Clarke |
+      | 77             | 3027141            | 77001941A              |
+    And the following consolidated payment references map to master accounts through APRs:
+      | businessUnitId | paymentReference | masterAccountId | masterAccountNumber |
+      | 77             | 77001942A        | 3027141         | 77001941A           |
     And the following cash payments are written to a unique NatWest CARS file:
       | code | amountPence | originSort | originAccount | originatorName | accountReference | dateEntryApplied |
-      | 99   | 1500        | 123456     | 99887766      | Mr Alan Clarke | 77000971A        | 29/02/2024       |
-      | 99   | 500         | 654321     | 55443322      | Ms Emma Clarke | 77000972A        | 31/12/2026       |
+      | 99   | 1500        | 123456     | 99887766      | Ms Aisha Patel | 77001942A        | 16/11/2026       |
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
     And the "NatWest" file ingestion job is requested through testing support
     Then the testing-support request is accepted
@@ -184,9 +176,32 @@ Feature: NatWest CARS ingestion and account reference translation
     And Fines preprocessing creates a TRANSFORMED_JSON for the SOURCE_JSON
     And the expected transformed NatWest payments are:
       | transactionCode | amountInPence | inputAccountReference | expectedAccountReference | dateEntryApplied | cheque | validTransaction |
-      | 99              | 1500          | 77000971A             | 77000971A                | 29/02/2024       | false  | true             |
-      | 99              | 500           | 77000972A             | 77000972A                | 31/12/2026       | false  | true             |
-    And the complete transformed NatWest JSON has payment type "CASH", record count 2 and total amount 2000
+      | 99              | 1500          | 77001942A             | 3027141                  | 16/11/2026       | false  | true             |
+    And the complete transformed NatWest JSON has payment type "CASH", record count 1 and total amount 1500
+
+  @NatWestConsolidatedAprAlias @NatWestConsolidatedAccounts @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
+  Scenario: 07b - An alternate consolidated payment reference resolves to the master
+    Given the following destination bank account is configured:
+      | businessUnitId | businessUnitCode | destinationSortCode | destinationAccountNumber | destinationName  | destinationAccountType |
+      | 77             | 0046             | 560077              | 27048577                 | HMCTS Camberwell | 0                      |
+    And the following defendant accounts exist:
+      | businessUnitId | defendantAccountId | defendantAccountNumber |
+      | 77             | 3027141            | 77001941A              |
+    And the following consolidated payment references map to master accounts through APRs:
+      | businessUnitId | paymentReference | masterAccountId | masterAccountNumber |
+      | 77             | NW-CHILD-41      | 3027141         | 77001941A           |
+    And the following cash payments are written to a unique NatWest CARS file:
+      | code | amountPence | originSort | originAccount | originatorName | accountReference | dateEntryApplied |
+      | 99   | 1500        | 123456     | 99887766      | Ms Aisha Patel | NW-CHILD-41      | 17/11/2026       |
+    When I am testing as the "opal-test@dev.platform.hmcts.net" user
+    And the "NatWest" file ingestion job is requested through testing support
+    Then the testing-support request is accepted
+    And the stored NatWest SOURCE and SOURCE_JSON match the payments above
+    And Fines preprocessing creates a TRANSFORMED_JSON for the SOURCE_JSON
+    And the expected transformed NatWest payments are:
+      | transactionCode | amountInPence | inputAccountReference | expectedAccountReference | dateEntryApplied | cheque | validTransaction |
+      | 99              | 1500          | NW-CHILD-41           | 3027141                  | 17/11/2026       | false  | true             |
+    And the complete transformed NatWest JSON has payment type "CASH", record count 1 and total amount 1500
 
   @NatWestZeroPayment @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario: 08 - NatWest zero-value payment is retained and its APR resolves during preprocessing

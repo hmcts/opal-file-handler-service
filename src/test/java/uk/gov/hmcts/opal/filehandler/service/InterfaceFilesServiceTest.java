@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -333,10 +334,8 @@ public class InterfaceFilesServiceTest {
         throws IOException {
         Interface source = outbound ? Interface.OPAL : externalInterface;
         Interface target = outbound ? externalInterface : Interface.OPAL;
-        Class<? extends InterfaceFileProcessorService> processorClass = externalInterface == Interface.BTECKOH
-            ? BTEckohInterfaceFileProcessorService.class : DWPInterfaceFileProcessorService.class;
-        InterfaceFileProcessorService processorService = mock(processorClass);
-        String containerName = externalInterface == Interface.BTECKOH ? "bteckoh-container" : "dwp-container";
+        InterfaceFileProcessorService processorService = mock(externalInterface.getProcessorServiceClass());
+        String containerName = externalInterface.name().toLowerCase(Locale.ROOT) + "-container";
         BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
         InterfaceFilesService uploadService = serviceWithProcessor(processorService, config, externalInterface);
         MultipartFile file = mock(MultipartFile.class);
