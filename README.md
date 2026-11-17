@@ -258,3 +258,11 @@ The dedicated Fines resources reuse the existing Java chart's HMCTS library temp
 than adding a second Java chart dependency. This keeps the release to one PostgreSQL instance,
 with separate file-handler and Fines databases. The Fines process receives only its own environment
 and secrets, while sharing Java health-probe and resource defaults.
+
+The Jenkins database tunnel is supervised for up to 45 minutes. If `kubectl port-forward`
+exits, it restarts on the same loopback port so both JDBC URLs remain valid. During dev PR
+runs, new JDBC connections retry connection-class SQL errors for up to 30 seconds while the
+tunnel recovers. Authentication errors and SQL statements/transactions are not retried.
+Local runs retain immediate connection failure unless
+`FUNCTIONAL_TEST_DB_CONNECTION_RETRY_SECONDS` is explicitly set. Tunnel output and pod restart
+diagnostics are archived under `.functional-test-db-tunnel` even when the functional run fails.

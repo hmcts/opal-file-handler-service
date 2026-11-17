@@ -473,6 +473,7 @@ withPipeline(type, product, component) {
                         (env.OPAL_FILE_HANDLER_DB_OPTIONS ?: '')
                 env.FUNCTIONAL_TEST_FINES_DB_USERNAME = env.OPAL_FILE_HANDLER_DB_USERNAME
                 env.FUNCTIONAL_TEST_FINES_DB_PASSWORD = env.OPAL_FILE_HANDLER_DB_PASSWORD
+                env.FUNCTIONAL_TEST_DB_CONNECTION_RETRY_SECONDS = '30'
 
                 String finesDeployment = "opal-${component}-pr-${env.CHANGE_ID}-fines"
                 steps.sh "kubectl --namespace '${product}' rollout status " +
@@ -489,11 +490,17 @@ withPipeline(type, product, component) {
     afterAlways('functionalTest:dev') {
         try {
             onPR {
-                steps.sh 'bash src/functionalTest/resources/db/port-forward.sh stop'
-                env.FUNCTIONAL_TEST_DB_URL = ''
-                env.FUNCTIONAL_TEST_FINES_DB_URL = ''
-                env.FUNCTIONAL_TEST_FINES_DB_USERNAME = ''
-                env.FUNCTIONAL_TEST_FINES_DB_PASSWORD = ''
+                try {
+                    steps.sh 'bash src/functionalTest/resources/db/port-forward.sh stop'
+                } finally {
+                    env.FUNCTIONAL_TEST_DB_URL = ''
+                    env.FUNCTIONAL_TEST_FINES_DB_URL = ''
+                    env.FUNCTIONAL_TEST_FINES_DB_USERNAME = ''
+                    env.FUNCTIONAL_TEST_FINES_DB_PASSWORD = ''
+                    env.FUNCTIONAL_TEST_DB_CONNECTION_RETRY_SECONDS = ''
+                    steps.archiveArtifacts allowEmptyArchive: true,
+                            artifacts: '.functional-test-db-tunnel/**'
+                }
             }
         } finally {
             publishFunctionalResults()

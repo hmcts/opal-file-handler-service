@@ -8,8 +8,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ScriptException;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
@@ -32,10 +34,37 @@ public class DatabaseClient implements AutoCloseable {
 
     /** Opens a configured service database for connected functional fixtures. */
     public DatabaseClient(String url, String username, String password) {
-        try {
-            this.connection = DriverManager.getConnection(url, username, password);
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to connect to functional test database", e);
+        this.connection = openConnection(url, username, password);
+    }
+
+    private static Connection openConnection(String url, String username, String password) {
+        long retrySeconds = Long.parseLong(
+            TestEnvironment.get("FUNCTIONAL_TEST_DB_CONNECTION_RETRY_SECONDS").orElse("0"));
+        final long deadline = System.nanoTime() + Duration.ofSeconds(retrySeconds).toNanos();
+        Properties properties = new Properties();
+        properties.setProperty("user", username);
+        properties.setProperty("password", password);
+        if (retrySeconds > 0) {
+            properties.setProperty("connectTimeout", "5");
+        }
+        while (true) {
+            try {
+                return DriverManager.getConnection(url, properties);
+            } catch (SQLException exception) {
+                String state = exception.getSQLState();
+                // Only retry connection establishment during a transient tunnel outage.
+                // Authentication errors, SQL statements and transactions are never retried.
+                if (state == null || !state.startsWith("08") || System.nanoTime() >= deadline) {
+                    throw new IllegalStateException("Failed to connect to functional test database", exception);
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(
+                        "Interrupted reconnecting to functional test database", interrupted);
+                }
+            }
         }
     }
 
