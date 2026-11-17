@@ -130,7 +130,7 @@ public class BaisFileStepDef extends BaseStepDef {
 
     @Given("the configured {string} report/file has already been processed")
     public void configuredFileHasAlreadyBeenProcessed(String displayName) {
-        BaisFileTestConfig config = forDisplayName(displayName);
+        final BaisFileTestConfig config = forDisplayName(displayName);
         // Initialise the default test user so this composite step can be used independently.
         BearerTokenStepDef.getToken();
         configuredFileIsAvailable(displayName);
