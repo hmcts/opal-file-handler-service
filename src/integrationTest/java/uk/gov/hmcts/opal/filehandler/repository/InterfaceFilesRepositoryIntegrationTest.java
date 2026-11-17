@@ -58,6 +58,14 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
         assertThat(loadedChild.getRelatedInterfaceFile()).isNotNull();
         assertThat(loadedChild.getRelatedInterfaceFile().getInterfaceFileId()).isEqualTo(parentId);
         assertThat(loadedChild.getRelatedInterfaceFile().getFileName()).isEqualTo("parent-source-file.dat");
+
+        // Check the bidirectional relationship is correctly saved
+        assertThat(loadedChild.getRelatedInterfaceFile().getChildRelatedInterfaceFiles()).hasSize(1);
+        InterfaceFileEntity loadedChild2 = loadedChild.getRelatedInterfaceFile()
+            .getChildRelatedInterfaceFiles()
+            .iterator()
+            .next();
+        assertThat(loadedChild2).isSameAs(loadedChild);
     }
 
     @Test
@@ -81,7 +89,7 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
         assertThat(loaded.getStatus()).isEqualTo(interfaceFile.getStatus());
         assertThat(loaded.getCreatedDatetime()).isEqualTo(interfaceFile.getCreatedDatetime());
         assertThat(loaded.getErrors()).isEqualTo(interfaceFile.getErrors());
-        assertThat(loaded.getBusinessUnitCode()).containsExactly(interfaceFile.getBusinessUnitCode());
+        assertThat(loaded.getBusinessUnitId()).containsExactly(interfaceFile.getBusinessUnitId());
         assertThat(loaded.getPaymentType()).isEqualTo(interfaceFile.getPaymentType());
         assertThat(loaded.getRelatedInterfaceFile()).isNull();
     }
@@ -96,8 +104,9 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
         entityManager.clear();
 
         Optional<InterfaceFileEntity> result = repository
-            .findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatus(
-                parent.getInterfaceFileId(), Type.SOURCE_JSON, "extract.json", "json-checksum", Status.SUCCESS);
+            .findByRelatedInterfaceFileInterfaceFileIdAndTypeAndFileNameAndChecksumAndStatusIn(
+                parent.getInterfaceFileId(), Type.SOURCE_JSON, "extract.json", "json-checksum",
+                List.of(Status.SUCCESS,Status.SUCCESS_NO_TRANSACTIONS));
 
         assertThat(result).isPresent();
         assertThat(result.get().getInterfaceFileId()).isEqualTo(child.getInterfaceFileId());
@@ -259,7 +268,7 @@ class InterfaceFilesRepositoryIntegrationTest extends AbstractIntegrationTest {
             .checksum(checksum)
             .status(status)
             .createdDatetime(LocalDateTime.now())
-            .businessUnitCode(new String[] {"BC12"})
+            .businessUnitId(new Short[] {12})
             .relatedInterfaceFile(sourceFile)
             .createdBy(-1L)
             .build();

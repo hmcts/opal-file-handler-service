@@ -78,6 +78,11 @@ public class BlobStorageClient {
         blobClient.deleteIfExists();
     }
 
+    /** Downloads an owned blob for complete JSON-content assertions. */
+    public byte[] download(String blobName) {
+        return containerClient.getBlobClient(blobName).downloadContent().toBytes();
+    }
+
     /**
      * Compares stored blob content with a classpath resource.
      *

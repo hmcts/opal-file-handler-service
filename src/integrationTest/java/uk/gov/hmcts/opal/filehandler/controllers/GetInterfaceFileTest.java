@@ -24,7 +24,6 @@ public class GetInterfaceFileTest extends AbstractControllerIntegrationTest {
 
     private static final String URI = "/interface-files/{id}";
 
-
     @TestPropertySource(properties = {
         "launchdarkly.enabled=false",
         "launchdarkly.default-flag-values.release-1c-banking-interfaces=true"

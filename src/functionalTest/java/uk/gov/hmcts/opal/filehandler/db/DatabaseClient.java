@@ -23,12 +23,14 @@ public class DatabaseClient implements AutoCloseable {
      * Opens a database connection using the configured functional-test environment settings.
      */
     public DatabaseClient() {
+        this(TestEnvironment.getDatabaseUrl(), TestEnvironment.getDatabaseUsername(),
+            TestEnvironment.getDatabasePassword());
+    }
+
+    /** Opens a configured service database for connected functional fixtures. */
+    public DatabaseClient(String url, String username, String password) {
         try {
-            this.connection = DriverManager.getConnection(
-                TestEnvironment.getDatabaseUrl(),
-                TestEnvironment.getDatabaseUsername(),
-                TestEnvironment.getDatabasePassword()
-            );
+            this.connection = DriverManager.getConnection(url, username, password);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to connect to functional test database", e);
         }

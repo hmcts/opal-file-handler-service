@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<PacsTppSchedule xmlns="http://www.dwp.gsi.gov.uk/pacs">
+  <DocumentHeader>
+    <CreditorID>7244999002</CreditorID>
+    <BatchNumber>07242</BatchNumber>
+    <PacsDocumentCreationDate>2026-11-05</PacsDocumentCreationDate>
+    <PacsDocumentCreationTime>12:02:03</PacsDocumentCreationTime>
+    <NotificationReference>7242000003</NotificationReference>
+  </DocumentHeader>
+  <DocumentDetail>
+    <CustomerRef>23000106E</CustomerRef>
+    <RecordType>02</RecordType>
+    <LocationCode>7242</LocationCode>
+    <NationalInsuranceNumberType>AA000001</NationalInsuranceNumberType>
+    <DateFrom>2026-11-04</DateFrom>
+    <DateTo>2026-11-04</DateTo>
+    <DetailAmountType>1</DetailAmountType>
+    <DetailAmountSign>+</DetailAmountSign>
+  </DocumentDetail>
+  <DocumentDetail>
+    <CustomerRef>23000113P</CustomerRef>
+    <RecordType>03</RecordType>
+    <LocationCode>7242</LocationCode>
+    <NationalInsuranceNumberType>AA000002</NationalInsuranceNumberType>
+    <DateFrom>2026-11-03</DateFrom>
+    <DateTo>2026-11-03</DateTo>
+    <DetailAmountType>1</DetailAmountType>
+    <DetailAmountSign>+</DetailAmountSign>
+  </DocumentDetail>
+  <DocumentSummary>
+    <SummaryAmountType>2</SummaryAmountType>
+    <SummaryAmountSign>+</SummaryAmountSign>
+    <Total02Records>1</Total02Records>
+    <Total03Records>1</Total03Records>
+  </DocumentSummary>
+</PacsTppSchedule>

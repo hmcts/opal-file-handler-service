@@ -26,7 +26,7 @@ import uk.gov.hmcts.opal.filehandler.util.StreamUtil;
 @Service
 @Primary
 @RequiredArgsConstructor
-public class BacsStandard18BaisExtractionService implements ExtractionService<InterfaceFileCommonDataExtract> {
+public class BacsStandard18BaisExtractionService implements BankingExtractionService<InterfaceFileCommonDataExtract> {
 
     private static final Set<String> REQUIRED_HEADER_PREFIXES = Set.of("VOL1", "HDR1", "UHL1");
     private static final Set<String> CONTROL_ROW_PREFIXES = Set.of(
@@ -249,15 +249,12 @@ public class BacsStandard18BaisExtractionService implements ExtractionService<In
         ParsedTransaction expected
     ) {
         BankDetails expectedDestination = expected.destinationBankDetails();
-        String expectedTransactionCode = expected.transaction().getTransactionCode();
         boolean allMatch = transactions.stream()
-            .allMatch(transaction -> hasExpectedDestinationDetails(transaction, expectedDestination)
-                && expectedTransactionCode.equals(transaction.transaction().getTransactionCode()));
+            .allMatch(transaction -> hasExpectedDestinationDetails(transaction, expectedDestination));
 
         if (!allMatch) {
             throw new IllegalArgumentException(
-                "BACS Standard 18 transaction rows contained mixed destination bank details or mixed transaction codes"
-            );
+                "BACS Standard 18 transaction rows contained mixed destination bank details");
         }
     }
 

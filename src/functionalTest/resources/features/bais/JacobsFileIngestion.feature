@@ -1,15 +1,13 @@
 @Opal @PO-6437 @BaisFileFixture
 Feature: Jacobs file ingestion
 
+  @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @JIRA-STORY:PO-7244
   Scenario: A valid Jacobs file is ingested
     Given the configured "Jacobs" file is available on bais
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
     And the "Jacobs" file ingestion job is requested through testing support
-    Then the testing-support request is accepted
-    And a successful "JACOBS" interface file is stored
-    And the stored "Jacobs" file can be retrieved by interface file ID
-    And the stored "Jacobs" file content matches the bais "file"
-    And the configured "Jacobs" file no longer exists on bais
+    Then the "Jacobs" file is processed successfully
+    And the extracted "Jacobs" payments are ready for the external interface
 
   Scenario: A duplicate Jacobs file is detected
     Given the configured "Jacobs" file has already been processed

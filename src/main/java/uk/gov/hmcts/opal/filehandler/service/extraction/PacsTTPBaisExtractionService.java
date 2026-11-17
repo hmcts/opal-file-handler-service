@@ -23,7 +23,7 @@ import uk.gov.hmcts.opal.filehandler.util.XmlSchemaUnmarshalService;
 
 @Service
 @RequiredArgsConstructor
-public class PacsTTPBaisExtractionService implements ExtractionService<InterfaceFileCommonDataExtract> {
+public class PacsTTPBaisExtractionService implements BankingExtractionService<InterfaceFileCommonDataExtract> {
 
     static final String PACS_SCHEMA = "xsd/pacs-tpp-schedule-v0.0d.xsd";
     static final String PACS_SOURCE_DESCRIPTION = "PACS TTP file";

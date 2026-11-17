@@ -10,6 +10,7 @@ import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import uk.gov.hmcts.common.exceptions.standard.ServiceUnavailableException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobStorageContainerNotFoundException;
@@ -92,5 +93,18 @@ public class InterfaceFileBlobStoreService {
         }
 
         return getFileContents(blob);
+    }
+
+    public boolean deleteBlob(UUID filestoreUuid, String containerName) {
+        try {
+            return blobServiceClient.getBlobContainerClient(containerName)
+                .getBlobClient(filestoreUuid.toString())
+                .deleteIfExists();
+        } catch (Exception e) {
+            String msg = String.format("Failed to delete filestoreUuid: %s from container: %s",
+                filestoreUuid, containerName);
+            log.error(msg, e);
+            throw new ServiceUnavailableException("Azure blob storage error", msg, e);
+        }
     }
 }
