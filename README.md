@@ -253,3 +253,8 @@ The Fines deployment is disabled in the base chart, so this addition applies onl
 It belongs to the same Helm release and follows the existing PR cleanup lifecycle.
 The deployment requires the startup secrets already used by Fines dev deployments and the
 `opal-system-user` credentials used to call the file-handler API.
+
+The dedicated Fines resources reuse the existing Java chart's HMCTS library templates rather
+than adding a second Java chart dependency. This keeps the release to one PostgreSQL instance,
+with separate file-handler and Fines databases. The Fines process receives only its own environment
+and secrets, while sharing Java health-probe and resource defaults.

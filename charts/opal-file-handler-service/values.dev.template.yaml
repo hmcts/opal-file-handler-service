@@ -100,7 +100,7 @@ java:
 hmcts-redis:
   enabled: true
 servicebus:
-  enabled: ${DEV_ENABLE_OPAL_SERVICE_BUS}
+  enabled: true
   releaseNameOverride: ${SERVICE_NAME}-servicebus
   resourceGroup: "opal-aso-dev-rg"
   sbNamespace: "opal-servicebus-dev"
@@ -347,8 +347,6 @@ fines-preprocessing:
   autoscaling:
     enabled: false
   replicas: 1
-  postgresql:
-    enabled: false
   secrets:
     SERVICEBUS_SHARED_ACCESS_KEY:
       secretRef: opal-sb-dev
