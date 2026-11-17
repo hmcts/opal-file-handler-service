@@ -78,3 +78,8 @@ dependencies:
     version: 2.2.2
     repository: 'oci://hmctsprod.azurecr.io/helm'
     condition: marston-transfer.enabled
+  - name: job
+    alias: allpay-file-generation
+    version: 2.2.2
+    repository: 'oci://hmctsprod.azurecr.io/helm'
+    condition: allpay-file-generation.enabled
