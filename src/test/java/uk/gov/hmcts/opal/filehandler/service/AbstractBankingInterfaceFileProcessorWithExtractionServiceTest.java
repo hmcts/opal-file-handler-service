@@ -104,10 +104,10 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
     private BankingExtractionService<InterfaceFileCommonDataExtract> extractionService;
 
     @Mock
-    private InterfaceFilePreprocessQueueService finesQueueService;
+    private InterfaceFilePreprocessQueueService<Long> finesQueueService;
 
     @Mock
-    private InterfaceFilePreprocessQueueService maintenanceQueueService;
+    private InterfaceFilePreprocessQueueService<Long> maintenanceQueueService;
 
     MockedStatic<SecurityUtil> mockedSecurityUtil;
     OpalJwtAuthenticationToken mockedToken = mock(OpalJwtAuthenticationToken.class);
@@ -805,8 +805,8 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
             TransactionTemplate transactionTemplate,
             ObjectMapper objectMapper,
             BankingExtractionService<InterfaceFileCommonDataExtract> extractionService,
-            InterfaceFilePreprocessQueueService finesQueueService,
-            InterfaceFilePreprocessQueueService maintenanceQueueService,
+            InterfaceFilePreprocessQueueService<Long> finesQueueService,
+            InterfaceFilePreprocessQueueService<Long> maintenanceQueueService,
             BaisFileProcessorConfiguration config
         ) {
             super(CLOCK, featureFlagUtil, blobStoreService, repository, transactionTemplate,
