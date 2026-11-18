@@ -36,6 +36,10 @@ public class BaisPaymentAssertions {
                 response.jsonPath().getList("transactions.amount"));
             assertEquals(List.of("99", "99", "99", "99", "99"),
                 response.jsonPath().getList("transactions.transaction_code"));
+            String reference = "%-18s".formatted("NNNNNNNNK");
+            String suffixedReference = "%-18s".formatted("NNNNNNNNK SW");
+            assertEquals(List.of(reference, suffixedReference, suffixedReference, suffixedReference, reference),
+                response.jsonPath().getList("transactions.originator_details.account_reference"));
         }
     }
 

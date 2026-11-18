@@ -201,8 +201,19 @@ These additional Maintenance cases do not replace the ticket's Fines acceptance 
 The eight PO-7244 functional happy paths express processing and extracted-payment outcomes.
 `BaisInterfaceFileClient` handles metadata polling/content retrieval and `BaisPaymentAssertions`
 retains the fixture-specific routing, checksum and payment assertions. Existing authentication,
-fixture hooks, tags and Serenity reporting remain in use. Readiness for an external interface means
-successful extraction here; APR resolution and final payment allocation require separate E2E evidence.
+fixture hooks, tags and Serenity reporting remain in use. Fines-routed payment scenarios also verify
+the transformed JSON and its linked Fines interface-file/job records at the end of preprocessing.
+Payment/till processing and final allocation remain outside these ingestion scenarios.
+
+The DWP functional fixture routes `DWP1234567` to Fines. Its guarded
+`db/dwp/fines/setup.sql` seed maps destination bank `010101 / 12341234` to Fines BU77.
+The happy path verifies five cash payments totalling 10,501 pence and unchanged unmatched
+account references, including their original fixed-width padding. A separate APR scenario verifies
+that `DWP-APR-01` resolves to owned Fines account `77400001A` (ID `88007740000001`)
+in the transformed JSON for a 2,125-pence payment. The duplicate case verifies
+reuse of the original Fines job and transformed file. Shared preprocessing cleanup removes
+only the scenario's unprocessed Fines records before deleting its File Handler artifacts;
+the owned Fines bank mapping, account and APR are retained for subsequent runs.
 
 
 ### Local DWP and Bailiffs rejection checks

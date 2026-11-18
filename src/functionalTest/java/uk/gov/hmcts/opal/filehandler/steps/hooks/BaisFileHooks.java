@@ -14,6 +14,7 @@ import uk.gov.hmcts.opal.filehandler.support.BarclaycardFinesSeedFixture;
 import uk.gov.hmcts.opal.filehandler.support.BTEckohFinesSeedFixture;
 import uk.gov.hmcts.opal.filehandler.support.BailiffFinesSeedFixture;
 import uk.gov.hmcts.opal.filehandler.support.FinesSeedFixture;
+import uk.gov.hmcts.opal.filehandler.support.DwpFinesSeedFixture;
 
 /** Applies the common BAIS fixture lifecycle to every BAIS ingestion scenario. */
 public class BaisFileHooks {
@@ -47,6 +48,8 @@ public class BaisFileHooks {
             BarclaycardFinesSeedFixture.ensurePrepared();
         } else if ("BTECKOH".equals(fixture.config().source())) {
             BTEckohFinesSeedFixture.ensurePrepared();
+        } else if ("DWP".equals(fixture.config().source())) {
+            DwpFinesSeedFixture.ensurePrepared();
         } else if (fixture.config().verifiesBailiffFinesPreprocessing()) {
             BailiffFinesSeedFixture.ensurePrepared();
         }
@@ -61,10 +64,10 @@ public class BaisFileHooks {
             return;
         }
         BaisFileFixtureDefinition fixture = fixtureFor(scenario);
-        String selectedFile = ScenarioContextHolder.current().recall(BaisFileTestData.SELECTED_ALLPAY_FILE);
+        String selectedFile = ScenarioContextHolder.current().recall(BaisFileTestData.SELECTED_BAIS_FILE);
         if (selectedFile != null) {
-            new BaisFileFixture(BaisFileTestData.allpayFile(selectedFile)).remove();
-            new BaisFileFixture(BaisFileTestData.ALLPAY).setUp();
+            new BaisFileFixture(BaisFileTestData.namedFile(fixture.config().displayName(), selectedFile)).remove();
+            new BaisFileFixture(fixture.config()).setUp();
         } else {
             new BaisFileFixture(fixture.config()).tearDown();
         }

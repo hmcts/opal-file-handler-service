@@ -8,7 +8,7 @@ import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
  */
 public final class BaisFileTestData {
 
-    public static final String SELECTED_ALLPAY_FILE = "selectedAllpayFile";
+    public static final String SELECTED_BAIS_FILE = "selectedBaisFile";
     public static final String SOURCE_INTERFACE_FILE_ID = "baisSourceInterfaceFileId";
 
     public static final BaisFileTestConfig BTECKOH = new BaisFileTestConfig(
@@ -54,6 +54,16 @@ public final class BaisFileTestData {
         "0000015232_dat_0000000612_08011008_111355.csv",
         "bdbbd6c4e0daba273d9387f466acb6b9",
         "test-data/dwp/0000015232_dat_0000000612_08011008_111355.txt"
+    );
+
+    public static final BaisFileTestConfig DWP_APR = new BaisFileTestConfig(
+        "DWP", DWP.source(), DWP.automatedTaskName(), DWP.sftpUsername(),
+        DWP.sftpUsernameEnvironmentVariable(), DWP.blobContainerName(),
+        DWP.blobContainerEnvironmentVariable(), DWP.jobFlagEnvironmentVariable(),
+        "0000015232_dat_0000000612_08011008_111356.txt",
+        "0000015232_dat_0000000612_08011008_111356.csv",
+        "41102b9042c29e45a911db0d1f0ae9d1",
+        "test-data/dwp/0000015232_dat_0000000612_08011008_111356.txt"
     );
 
     public static final BaisFileTestConfig ALLPAY = new BaisFileTestConfig(
@@ -107,6 +117,20 @@ public final class BaisFileTestData {
             ALLPAY.blobContainerEnvironmentVariable(), ALLPAY.jobFlagEnvironmentVariable(),
             fileName, fileName.replace(".dat", ".csv"), checksum, "test-data/bacs/" + fileName
         );
+    }
+
+    /** Returns a supported named fixture for the requested interface. */
+    public static BaisFileTestConfig namedFile(String displayName, String fileName) {
+        if ("Allpay".equals(displayName)) {
+            return allpayFile(fileName);
+        }
+        if ("DWP".equals(displayName) && DWP.fileName().equals(fileName)) {
+            return DWP;
+        }
+        if ("DWP".equals(displayName) && DWP_APR.fileName().equals(fileName)) {
+            return DWP_APR;
+        }
+        throw new IllegalArgumentException("Unsupported " + displayName + " test file: " + fileName);
     }
 
     public static final BaisFileTestConfig NATWEST = new BaisFileTestConfig(

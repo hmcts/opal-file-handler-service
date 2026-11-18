@@ -54,6 +54,11 @@ public class FinesInterfaceFileTestDatabaseClient implements AutoCloseable {
         database.executePostgresScript("db/bteckoh-transfer/fines/setup.sql");
     }
 
+    /** Prepares the Fines bank mapping for the DWP fixture. */
+    public void prepareDwpSeed() {
+        database.executePostgresScript("db/dwp/fines/setup.sql");
+    }
+
     /** Prepares the Fines bank mapping shared by the CDER, Jacobs and Marston fixtures. */
     public void prepareBailiffSeed() {
         database.executePostgresScript("db/bailiffs/fines/setup.sql");

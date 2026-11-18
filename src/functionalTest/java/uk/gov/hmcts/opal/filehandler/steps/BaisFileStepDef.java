@@ -47,8 +47,7 @@ public class BaisFileStepDef extends BaseStepDef {
 
     @Given("the configured {string} file {string} is available on bais")
     public void configuredNamedFileIsAvailable(String displayName, String fileName) {
-        assertEquals("Allpay", displayName, "Named file fixtures are supported for Allpay");
-        selectedConfig = BaisFileTestData.allpayFile(fileName);
+        selectedConfig = BaisFileTestData.namedFile(displayName, fileName);
         placeSelectedFile(displayName);
     }
 
@@ -78,8 +77,8 @@ public class BaisFileStepDef extends BaseStepDef {
     }
 
     private void placeSelectedFile(String displayName) {
-        scenarioContext().remember(BaisFileTestData.SELECTED_ALLPAY_FILE, selectedConfig.fileName());
-        new BaisFileFixture(BaisFileTestData.ALLPAY).remove();
+        scenarioContext().remember(BaisFileTestData.SELECTED_BAIS_FILE, selectedConfig.fileName());
+        new BaisFileFixture(BaisFileTestData.forSource(selectedConfig.source())).remove();
         new BaisFileFixture(selectedConfig).setUp();
         configuredFileIsAvailable(displayName);
     }
@@ -97,6 +96,7 @@ public class BaisFileStepDef extends BaseStepDef {
     @Given("the configured {string} report/file is available on bais")
     public void configuredFileIsAvailable(String displayName) {
         BaisFileTestConfig config = forDisplayName(displayName);
+        selectedConfig = config;
         assertSftpFilePresence(config, config.fileName(), true);
     }
 

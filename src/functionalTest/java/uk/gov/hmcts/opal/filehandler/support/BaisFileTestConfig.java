@@ -34,7 +34,7 @@ public record BaisFileTestConfig(
     /** Identifies fixtures that wait for and clean up their exact Fines preprocessing result. */
     public boolean verifiesFinesPreprocessing() {
         return switch (source) {
-            case "ALLPAY", "BARCLAYCARD", "BTECKOH", "CDER", "JACOBS", "MARSTON" -> true;
+            case "ALLPAY", "BARCLAYCARD", "BTECKOH", "DWP", "CDER", "JACOBS", "MARSTON" -> true;
             default -> false;
         };
     }
@@ -53,7 +53,7 @@ public record BaisFileTestConfig(
      */
     public String expectedDomain() {
         return switch (source) {
-            case "ALLPAY", "BARCLAYCARD", "BTECKOH", "NATWEST", "JACOBS", "CDER", "MARSTON" -> "FINES";
+            case "ALLPAY", "BARCLAYCARD", "BTECKOH", "DWP", "NATWEST", "JACOBS", "CDER", "MARSTON" -> "FINES";
             default -> "MAINTENANCE";
         };
     }

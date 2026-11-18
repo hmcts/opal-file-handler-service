@@ -70,6 +70,12 @@ public class FinesPreprocessingStepDef extends BaseStepDef {
         JsonPath sourceContent = downloadJson(config, sourceJson);
         assertEquals(config.fileName(), transformedJson.getString("file_name"));
         assertEquals(sourceContent.getString("payment_type"), transformedJson.getString("payment_type"));
+        if ("DWP".equals(config.source()) && config.fileName().equals(BaisFileTestData.DWP.fileName())) {
+            // The DWP fixture uses unmatched, fixed-width references; preprocessing must preserve them exactly.
+            assertEquals(sourceContent.getList("transactions.originator_details.account_reference"),
+                transformedJson.getList("transactions.originator_details.account_reference"),
+                "Unmatched DWP account references must remain unchanged during Fines preprocessing");
+        }
 
         List<Long> amounts = transformedJson.getList("transactions.amount", Long.class);
         assertNotNull(amounts, "Transformed JSON has no transaction list");
@@ -171,11 +177,8 @@ public class FinesPreprocessingStepDef extends BaseStepDef {
     private BaisFileTestConfig config(String displayName) {
         BaisFileTestConfig config = BaisFileTestData.forDisplayName(displayName);
         assertTrue(config.verifiesFinesPreprocessing(), "Fines fixture assertions do not cover " + displayName);
-        if (!"ALLPAY".equals(config.source())) {
-            return config;
-        }
-        String selectedFile = scenarioContext().recall(BaisFileTestData.SELECTED_ALLPAY_FILE);
-        return selectedFile == null ? config : BaisFileTestData.allpayFile(selectedFile);
+        String selectedFile = scenarioContext().recall(BaisFileTestData.SELECTED_BAIS_FILE);
+        return selectedFile == null ? config : BaisFileTestData.namedFile(displayName, selectedFile);
     }
 
     private static JsonPath downloadJson(BaisFileTestConfig config, InterfaceFileRecord record) {
