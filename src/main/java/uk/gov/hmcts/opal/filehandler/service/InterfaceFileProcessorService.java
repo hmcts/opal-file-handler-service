@@ -42,14 +42,16 @@ public class InterfaceFileProcessorService {
     protected final FileIngestionService<String> fileIngestionService;
     protected final FileProcessorConfiguration config;
 
-    protected void processFile(InterfaceFileEntity fileEntity, InputStream inputStream) {
-        processFile(fileEntity, inputStream, getCurrentUserId());
+    protected void processFile(InterfaceFileEntity fileEntity, InputStream inputStream,
+        ProcessingFailurePolicy failurePolicy) {
+        processFile(fileEntity, inputStream, getCurrentUserId(), failurePolicy);
     }
 
     protected void processFile(
         InterfaceFileEntity fileEntity,
         InputStream inputStream,
-        long creatorId
+        long creatorId,
+        ProcessingFailurePolicy failurePolicy
     ) {
         // Processors may implement their own processing logic for ingested files.
         // This method is called after the file has been successfully ingested and stored in the blob store.
@@ -92,7 +94,8 @@ public class InterfaceFileProcessorService {
             Type.SOURCE,
             Domain.MAINTENANCE,//TODO check
             config.getContainerName(),
-            creatorId
+            creatorId,
+            ProcessingFailurePolicy.RECORD_FAILURE
         );
         if (entity.getStatus().equals(Status.INGESTED)) {
             processIngestedFile(entity, new ByteArrayInputStream(downloadedBytes), creatorId);
@@ -108,7 +111,8 @@ public class InterfaceFileProcessorService {
         Type type,
         Domain domain,
         String containerName,
-        Long creatorId
+        Long creatorId,
+        ProcessingFailurePolicy failurePolicy
     ) throws IOException {
         String fileChecksum = StreamUtil.calculateChecksum(new ByteArrayInputStream(sourceFileData));
         InterfaceFileEntity entity = InterfaceFileEntity.builder()
@@ -139,11 +143,12 @@ public class InterfaceFileProcessorService {
                 UUID fileStoreUuid = UUID.randomUUID();
                 interfaceFileBlobStoreService.uploadBaisFile(
                     fileStoreUuid, containerName,
-                    new ByteArrayInputStream(sourceFileData), fileChecksum);
+                    new ByteArrayInputStream(sourceFileData), fileChecksum,
+                    failurePolicy);
                 entity.setFilestoreUuid(fileStoreUuid);
                 entity.setStatus(Status.INGESTED);
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             String errorMessage;
             if (e instanceof BlobUploadException) {
                 errorMessage = "Blob upload failed for file '%s': %s".formatted(fileName, e.getMessage());
@@ -151,6 +156,12 @@ public class InterfaceFileProcessorService {
                 errorMessage = e.getMessage();
             }
             log.error(errorMessage, fileChecksum, e);
+            if (failurePolicy == ProcessingFailurePolicy.PROPAGATE) {
+                if (e instanceof BlobUploadException) {
+                    throw new DownstreamServiceUnavailableException(errorMessage, e);
+                }
+                throw e;
+            }
             entity.setErrors(errorJson(errorMessage));
             entity.setStatus(Status.FAILED);
 
@@ -185,7 +196,7 @@ public class InterfaceFileProcessorService {
     ) {
         try {
             transactionTemplate.executeWithoutResult(transactionStatus -> {
-                processFile(entity, inputStream, creatorId);
+                processFile(entity, inputStream, creatorId, ProcessingFailurePolicy.RECORD_FAILURE);
             });
         } catch (RuntimeException e) {
             transactionTemplate.executeWithoutResult(transactionStatus -> {

@@ -14,12 +14,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
+import uk.gov.hmcts.opal.common.exception.DownstreamServiceUnavailableException;
 import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
+import uk.gov.hmcts.opal.filehandler.exception.BlobUploadException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
 import uk.gov.hmcts.opal.filehandler.service.extraction.ExtractionService;
@@ -63,7 +65,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
                 sourceFile.getFilestoreUuid(),
                 config.getContainerName()).toStream()) {
 
-                processFile(sourceFile, sourceStream, getCurrentUserId());
+                processFile(sourceFile, sourceStream, getCurrentUserId(), ProcessingFailurePolicy.RECORD_FAILURE);
             } catch (IOException e) {
                 log.error("Failed to process source file {} with interfaceFileId {}",
                     sourceFile.getFileName(), sourceFile.getInterfaceFileId(), e);
@@ -81,7 +83,8 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
     protected void processFile(
         InterfaceFileEntity sourceInterfaceFile,
         InputStream inputStream,
-        long creatorId
+        long creatorId,
+        ProcessingFailurePolicy failurePolicy
     ) {
         List<T> extracts = extractionService.extractStandardData(sourceInterfaceFile, inputStream);
 
@@ -94,9 +97,10 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
         for (T extract : extracts) {
             if (preProcessExtract(sourceInterfaceFile, extract)) {
                 InterfaceFileEntity sourceJson = createAndUploadSourceJson(
-                    sourceInterfaceFile, extract, creatorId);
+                    sourceInterfaceFile, extract, creatorId,
+                    failurePolicy);
                 if (sourceJson != null) {
-                    postProcessExtract(sourceJson, extract);
+                    postProcessExtract(sourceJson, extract, failurePolicy);
                 }
             }
         }
@@ -106,7 +110,8 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
 
 
     InterfaceFileEntity createAndUploadSourceJson(
-        InterfaceFileEntity sourceInterfaceFile, T extract, long creatorId) {
+        InterfaceFileEntity sourceInterfaceFile, T extract, long creatorId,
+        ProcessingFailurePolicy failurePolicy) {
         byte[] jsonBytes = objectMapper.writeValueAsBytes(extract);
         String checksum = calculateExtractChecksum(jsonBytes);
 
@@ -121,7 +126,7 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
             getDomainFromExtract(extract),
             checksum, creatorId);
 
-        uploadSourceJson(sourceJson, jsonBytes);
+        uploadSourceJson(sourceJson, jsonBytes, failurePolicy);
         return interfaceFilesRepository.save(sourceJson);
     }
 
@@ -205,7 +210,8 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
 
     void uploadSourceJson(
         InterfaceFileEntity sourceJson,
-        byte[] jsonBytes
+        byte[] jsonBytes,
+        ProcessingFailurePolicy failurePolicy
     ) {
         UUID filestoreUuid = UUID.randomUUID();
 
@@ -214,12 +220,23 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
                 filestoreUuid,
                 config.getContainerName(),
                 new ByteArrayInputStream(jsonBytes),
-                sourceJson.getChecksum()
+                sourceJson.getChecksum(),
+                failurePolicy
             );
             sourceJson.setFilestoreUuid(filestoreUuid);
         } catch (BlobChecksumValidationException e) {
+            if (failurePolicy == ProcessingFailurePolicy.PROPAGATE) {
+                throw e;
+            }
             markSourceJsonFailed(sourceJson, "Blob checksum validation failed: %s".formatted(e.getMessage()), e);
         } catch (RuntimeException e) {
+            if (failurePolicy == ProcessingFailurePolicy.PROPAGATE) {
+                if (e instanceof BlobUploadException) {
+                    throw new DownstreamServiceUnavailableException(
+                        "Blob upload failed for file '%s': %s".formatted(sourceJson.getFileName(), e.getMessage()), e);
+                }
+                throw e;
+            }
             markSourceJsonFailed(sourceJson, "Blob upload failed: %s".formatted(e.getMessage()), e);
         }
     }
@@ -237,7 +254,8 @@ public abstract class AbstractInterfaceFileProcessorWithExtractionService<T exte
 
     protected abstract void postProcessExtract(
         InterfaceFileEntity sourceInterfaceFile,
-        T extract
+        T extract,
+        ProcessingFailurePolicy failurePolicy
     );
 
     /**

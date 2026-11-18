@@ -2,19 +2,33 @@ package uk.gov.hmcts.opal.filehandler.controllers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import com.azure.core.util.BinaryData;
 import com.azure.storage.blob.BlobServiceClient;
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,13 +38,16 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.invocation.InvocationOnMock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.util.DigestUtils;
+import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import uk.gov.hmcts.opal.filehandler.IntegrationSecurityConfiguration;
 import uk.gov.hmcts.opal.filehandler.authorisation.FileHandlerPermission;
 import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
@@ -40,11 +57,15 @@ import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
+import uk.gov.hmcts.opal.filehandler.exception.BlobUploadException;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
+import uk.gov.hmcts.opal.filehandler.service.ProcessingFailurePolicy;
 import uk.gov.hmcts.opal.filehandler.service.blobstore.InterfaceFileBlobStoreService;
+import uk.gov.hmcts.opal.filehandler.service.extraction.VariantBacsStandard18BaisExtractionService;
 import uk.gov.hmcts.opal.filehandler.service.queue.FinesInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.service.queue.MaintenanceInterfaceFilePreprocessQueueService;
 import uk.gov.hmcts.opal.filehandler.support.AbstractControllerIntegrationTest;
+import uk.gov.hmcts.opal.filehandler.support.ApiTest;
 import uk.gov.hmcts.opal.filehandler.testdata.BusinessUnitBankAccountEntityTestData;
 import uk.gov.hmcts.opal.filehandler.util.BaisSftpClient;
 import uk.gov.hmcts.opal.generated.model.AddInterfaceFileRequestMetadata;
@@ -188,8 +209,10 @@ class AddInterfaceFilePreprocessingTest extends AbstractControllerIntegrationTes
     void duplicatesWontReprocessWhenPreprocessing() throws IOException {
         assertBankingPreprocessing(Interface.VARIANT_BANKING, Domain.FINES, (short) 123);
 
+        Map<String, Set<String>> blobsBefore = blobNamesByContainer();
         InterfaceFileObjectInterfaceFile response = upload(Interface.VARIANT_BANKING, true);
         assertThat(response.getStatus()).isEqualTo(StatusEnumInterfaceFile.DUPLICATE);
+        assertThat(blobNamesByContainer()).isEqualTo(blobsBefore);
 
         assertThat(repository.findAll())
             .extracting(InterfaceFileEntity::getType, InterfaceFileEntity::getStatus)
@@ -199,6 +222,152 @@ class AddInterfaceFilePreprocessingTest extends AbstractControllerIntegrationTes
                 tuple(Type.SOURCE, Status.DUPLICATE));
         verifyNoMoreInteractions(finesQueue);
         verifyNoInteractions(maintenanceQueue, sftpClient);
+    }
+
+    @Nested
+    @DisplayName("AC8 preprocessing rollback")
+    class RollbackOnPreprocessingFailure {
+
+        @MockitoSpyBean
+        private InterfaceFileBlobStoreService rollbackBlobStore;
+
+        @MockitoSpyBean
+        private VariantBacsStandard18BaisExtractionService extractionService;
+
+        @MockitoSpyBean
+        private InterfaceFilesRepository rollbackRepository;
+
+        private Map<String, Set<String>> originalBlobs;
+        private UUID existingBlob;
+
+        @BeforeEach
+        void retainExistingFailure() throws IOException {
+            originalBlobs = blobNamesByContainer();
+            byte[] bytes = content(Interface.VARIANT_BANKING);
+            existingBlob = UUID.randomUUID();
+            blobServiceClient.getBlobContainerClient(container(Interface.VARIANT_BANKING))
+                .getBlobClient(existingBlob.toString()).upload(BinaryData.fromBytes(bytes));
+            repository.saveAndFlush(InterfaceFileEntity.builder()
+                .source(Interface.VARIANT_BANKING).target(Interface.OPAL).type(Type.SOURCE)
+                .opalDomain(Domain.FINES).fileName(filename(Interface.VARIANT_BANKING))
+                .filestoreUuid(existingBlob).checksum(DigestUtils.md5DigestAsHex(bytes))
+                .status(Status.FAILED).errors("{\"message\":\"previous failure\"}")
+                .createdDatetime(LocalDateTime.of(2026, 1, 1, 0, 0)).createdBy(500000000L)
+                .build());
+        }
+
+        @AfterEach
+        void cleanOwnedBlobs() {
+            blobNamesByContainer().forEach((name, blobs) -> {
+                blobs.removeAll(originalBlobs.get(name));
+                blobs.forEach(blob -> blobServiceClient.getBlobContainerClient(name)
+                    .getBlobClient(blob).deleteIfExists());
+            });
+        }
+
+        @Test
+        @DisplayName("SOURCE upload failure leaves existing records and blobs unchanged")
+        void rollsBackWhenSourceUploadFails() throws IOException {
+            doAnswer(this::uploadThenFail).when(rollbackBlobStore)
+                .uploadBaisFile(any(UUID.class), anyString(), any(InputStream.class), anyString(),
+                    eq(ProcessingFailurePolicy.PROPAGATE));
+
+            assertRollbackAfterUpload(HttpStatus.SERVICE_UNAVAILABLE);
+
+            verifyNoInteractions(finesQueue, maintenanceQueue, sftpClient);
+        }
+
+        @Test
+        @DisplayName("Extraction failure removes the new SOURCE blob and restores superseded records")
+        void rollsBackWhenExtractionFails() throws IOException {
+            doThrow(internalFailure("Extraction failed")).when(extractionService)
+                .extractStandardData(any(InterfaceFileEntity.class), any(InputStream.class));
+
+            assertRollbackAfterUpload(HttpStatus.INTERNAL_SERVER_ERROR);
+
+            verify(extractionService).extractStandardData(any(InterfaceFileEntity.class), any(InputStream.class));
+            verifyNoInteractions(finesQueue, maintenanceQueue, sftpClient);
+        }
+
+        @Test
+        @DisplayName("SOURCE_JSON upload failure removes both new blobs and all new records")
+        void rollsBackWhenSourceJsonUploadFails() throws IOException {
+            doCallRealMethod().doAnswer(this::uploadThenFail).when(rollbackBlobStore)
+                .uploadBaisFile(any(UUID.class), anyString(), any(InputStream.class), anyString(),
+                    eq(ProcessingFailurePolicy.PROPAGATE));
+
+            assertRollbackAfterUpload(HttpStatus.SERVICE_UNAVAILABLE);
+
+            verify(rollbackBlobStore, times(2))
+                .uploadBaisFile(any(UUID.class), anyString(), any(InputStream.class), anyString(),
+                    eq(ProcessingFailurePolicy.PROPAGATE));
+            verifyNoInteractions(finesQueue, maintenanceQueue, sftpClient);
+        }
+
+        @Test
+        @DisplayName("Queue failure rolls back SOURCE and SOURCE_JSON while preserving existing data")
+        void rollsBackWhenQueuePublicationFails() throws IOException {
+            doThrow(internalFailure("Queue publication failed")).when(finesQueue).send(anyLong());
+
+            assertRollbackAfterUpload(HttpStatus.INTERNAL_SERVER_ERROR);
+
+            verify(finesQueue).send(anyLong());
+            verifyNoMoreInteractions(finesQueue);
+            verifyNoInteractions(maintenanceQueue, sftpClient);
+        }
+
+        @Test
+        @DisplayName("Persistence failure before queue publication removes both new blobs")
+        void rollsBackWhenPersistenceFails() throws IOException {
+            doThrow(internalFailure("Persistence failed")).when(rollbackRepository).flush();
+
+            assertRollbackAfterUpload(HttpStatus.INTERNAL_SERVER_ERROR);
+
+            verifyNoInteractions(finesQueue, maintenanceQueue, sftpClient);
+        }
+
+        private InternalServerErrorException internalFailure(String detail) {
+            return new InternalServerErrorException("Internal Server Error", detail, new IllegalStateException(detail));
+        }
+
+        private Void uploadThenFail(InvocationOnMock invocation) throws Throwable {
+            // The blob exists even though the caller receives a failed upload result.
+            invocation.callRealMethod();
+            throw new BlobUploadException(invocation.getArgument(0), invocation.getArgument(1),
+                new IllegalStateException("AC8 upload failed after writing the blob"));
+        }
+
+        private List<Tuple> records() {
+            return repository.findAll().stream()
+                .map(entity -> tuple(entity.getInterfaceFileId(), entity.getStatus(), entity.getType(),
+                    entity.getFilestoreUuid(), entity.getChecksum(), entity.getErrors(), entity.getCreatedDatetime()))
+                .toList();
+        }
+
+        private void assertRollbackAfterUpload(HttpStatus expectedStatus) throws IOException {
+            List<Tuple> recordsBefore = records();
+            Map<String, Set<String>> blobsBefore = blobNamesByContainer();
+            String name = filename(Interface.VARIANT_BANKING);
+            AddInterfaceFileRequestMetadata metadata = AddInterfaceFileRequestMetadata.builder()
+                .source(InterfaceFileEnumInterfaceFile.VARIANT_BANKING).target(InterfaceFileEnumInterfaceFile.OPAL)
+                .type(InterfaceFileTypeEnumInterfaceFile.SOURCE).domain(DomainEnumTypes.FINES)
+                .paymentType(PaymentTypeEnumTypes.CASH).fileName(name).shouldPreProcessFile(true).build();
+
+            ApiTest.Response response = setupFileUploadApiTest(HttpMethod.POST, "/interface-files")
+                .includeMultipartBody("file", name, "application/octet-stream", content(Interface.VARIANT_BANKING))
+                .includeMultipartBody("metadata", "metadata.json", "application/json",
+                    objectMapper.writeValueAsString(metadata).getBytes(StandardCharsets.UTF_8))
+                .includeContentDigest().clearPermissions()
+                .addPermission((short) 2, FileHandlerPermission.CREATE_INTERFACE_FILES).execute();
+
+            assertAll("AC8 rollback before teardown",
+                () -> response.assertError(expectedStatus),
+                () -> assertThat(records()).containsExactlyInAnyOrderElementsOf(recordsBefore),
+                () -> assertThat(blobNamesByContainer()).isEqualTo(blobsBefore),
+                () -> assertThat(blobServiceClient.getBlobContainerClient(container(Interface.VARIANT_BANKING))
+                    .getBlobClient(existingBlob.toString()).downloadContent().toBytes())
+                    .containsExactly(content(Interface.VARIANT_BANKING)));
+        }
     }
 
     private void assertBankingPreprocessing(Interface sourceType, Domain domain, short businessUnitId)

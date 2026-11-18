@@ -38,7 +38,8 @@ public class BTEckohReportInterfaceFileProcessorService extends InterfaceFilePro
 
     @Override
     protected void processFile(InterfaceFileEntity fileEntity,
-        InputStream inputStream, long creatorId) {
+        InputStream inputStream, long creatorId,
+        ProcessingFailurePolicy failurePolicy) {
 
     }
 }

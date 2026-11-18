@@ -17,7 +17,7 @@ import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommo
 
 class VariantBacsStandard18BaisExtractionServiceTest {
 
-    private static final String FILE_NAME = "a121_003500VB123_13.dat";
+    private static final String FILE_NAME = "a121_003500_VB_123_13.dat";
     private static final String INVALID_FILE_NAME = "invalid.dat";
 
     private final InterfaceFilesRepository repository = mock(InterfaceFilesRepository.class);
@@ -65,6 +65,6 @@ class VariantBacsStandard18BaisExtractionServiceTest {
         );
 
         assertThat(exception).hasMessage("Business unit bank account with business unit id '123' could not be "
-            + "located for file_name 'a121_003500VB123_13.dat'");
+            + "located for file_name 'a121_003500_VB_123_13.dat'");
     }
 }

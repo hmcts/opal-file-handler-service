@@ -186,6 +186,8 @@ public class InterfaceFilesService {
                 "Invalid type",
                 "Type must be SOURCE when should_pre_process_file is true");
         }
+        ProcessingFailurePolicy failurePolicy = shouldPreProcess
+            ? ProcessingFailurePolicy.PROPAGATE : ProcessingFailurePolicy.RECORD_FAILURE;
         DomainEnumTypes metadataDomain = metadata.getDomain();
         Domain fromMetadata = Domain.valueOf(metadataDomain);
 
@@ -217,7 +219,8 @@ public class InterfaceFilesService {
                 Type.valueOf(metadata.getType()),
                 Domain.valueOf(metadata.getDomain()),
                 config.getContainerName(),
-                SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser().getUserId()
+                SecurityUtil.getOpalJwtAuthenticationTokenForCurrentUser().getUserId(),
+                failurePolicy
             );
             entity.setRelatedInterfaceFile(relatedInterfaceFile);
             entity.setPaymentType(PaymentType.valueOf(metadata.getPaymentType()));
@@ -229,7 +232,7 @@ public class InterfaceFilesService {
 
             if (shouldPreProcess && entity.getStatus().equals(Status.INGESTED)) {
                 try (InputStream stream = file.getInputStream()) {
-                    processorService.processFile(entity, stream);
+                    processorService.processFile(entity, stream, failurePolicy);
                 }
             }
             processorService.completeIngestion(metadata.getFileName(), entity, false);

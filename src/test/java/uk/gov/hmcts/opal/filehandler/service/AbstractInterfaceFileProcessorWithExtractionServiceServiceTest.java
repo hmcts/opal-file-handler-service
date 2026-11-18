@@ -140,11 +140,12 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of());
 
-            service.processFile(sourceFile, inputStream, CREATOR_ID);
+            service.processFile(sourceFile, inputStream, CREATOR_ID, ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(sourceFile.getStatus()).isEqualTo(Status.SUCCESS_NO_TRANSACTIONS);
             verify(repository).save(sourceFile);
-            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any(),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
             assertThat(service.postProcessedFiles).isEmpty();
         }
 
@@ -160,12 +161,14 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             when(mockedToken.getUserId()).thenReturn(-1L);
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
-            doReturn(sourceJson).when(processor).createAndUploadSourceJson(sourceFile, extract, CREATOR_ID);
+            doReturn(sourceJson).when(processor).createAndUploadSourceJson(sourceFile, extract, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
 
-            processor.processFile(sourceFile, inputStream, CREATOR_ID);
+            processor.processFile(sourceFile, inputStream, CREATOR_ID, ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(processor.postProcessedFiles).containsExactly(sourceJson);
-            verify(processor).createAndUploadSourceJson(sourceFile, extract, CREATOR_ID);
+            verify(processor).createAndUploadSourceJson(sourceFile, extract, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
             verify(repository).save(sourceFile);
         }
 
@@ -178,11 +181,13 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
 
-            processor.processFile(sourceFile, inputStream, CREATOR_ID);
+            processor.processFile(sourceFile, inputStream, CREATOR_ID, ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(processor.postProcessedFiles).isEmpty();
-            verify(processor, never()).createAndUploadSourceJson(any(), any(), anyLong());
-            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+            verify(processor, never()).createAndUploadSourceJson(any(), any(), anyLong(),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any(),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
             verify(repository).save(sourceFile);
         }
 
@@ -197,13 +202,16 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             when(mockedToken.getUserId()).thenReturn(-1L);
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
-            doReturn(null).when(processor).createAndUploadSourceJson(sourceFile, extract, CREATOR_ID);
+            doReturn(null).when(processor).createAndUploadSourceJson(sourceFile, extract, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
 
-            processor.processFile(sourceFile, inputStream, CREATOR_ID);
+            processor.processFile(sourceFile, inputStream, CREATOR_ID, ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(processor.postProcessedFiles).isEmpty();
-            verify(processor).createAndUploadSourceJson(sourceFile, extract, CREATOR_ID);
-            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+            verify(processor).createAndUploadSourceJson(sourceFile, extract, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any(),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
             verify(repository).save(sourceFile);
         }
 
@@ -224,15 +232,18 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             when(mockedToken.getUserId()).thenReturn(-1L);
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(first, second));
-            doReturn(firstSourceJson).when(processor).createAndUploadSourceJson(sourceFile, first, CREATOR_ID);
+            doReturn(firstSourceJson).when(processor).createAndUploadSourceJson(sourceFile, first, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
             doReturn(secondSourceJson).when(processor)
-                .createAndUploadSourceJson(sourceFile, second, CREATOR_ID);
+                .createAndUploadSourceJson(sourceFile, second, CREATOR_ID, ProcessingFailurePolicy.RECORD_FAILURE);
 
-            processor.processFile(sourceFile, inputStream, CREATOR_ID);
+            processor.processFile(sourceFile, inputStream, CREATOR_ID, ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(processor.postProcessedFiles).containsExactly(firstSourceJson, secondSourceJson);
-            verify(processor).createAndUploadSourceJson(sourceFile, first, CREATOR_ID);
-            verify(processor).createAndUploadSourceJson(sourceFile, second, CREATOR_ID);
+            verify(processor).createAndUploadSourceJson(sourceFile, first, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
+            verify(processor).createAndUploadSourceJson(sourceFile, second, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
             verify(repository).save(sourceFile);
         }
     }
@@ -249,12 +260,13 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             doReturn(true).when(processor).alreadyProcessedSuccessfully(sourceFile, extract, "checksum");
 
             InterfaceFileEntity sourceJson = processor.createAndUploadSourceJson(
-                sourceFile, extract, CREATOR_ID);
+                sourceFile, extract, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(sourceJson).isNull();
             verify(processor, never()).supersedeFailedSourceJson(any(), any(), any());
             verify(processor, never()).createSourceJson(any(), any(), any(), any(), any(), anyLong());
-            verify(processor, never()).uploadSourceJson(any(), any());
+            verify(processor, never()).uploadSourceJson(any(), any(), eq(ProcessingFailurePolicy.RECORD_FAILURE));
             verify(repository, never()).save(any());
         }
 
@@ -272,7 +284,8 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             doReturn(sourceJson).when(processor)
                 .createSourceJson(sourceFile, extract, businessUnits, Domain.FINES, "checksum", CREATOR_ID);
 
-            InterfaceFileEntity result = processor.createAndUploadSourceJson(sourceFile, extract, CREATOR_ID);
+            InterfaceFileEntity result = processor.createAndUploadSourceJson(sourceFile, extract, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(result).isSameAs(sourceJson);
             verify(processor).calculateExtractChecksum(any());
@@ -280,7 +293,7 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             verify(processor).supersedeFailedSourceJson(sourceFile, extract, "checksum");
             verify(processor)
                 .createSourceJson(sourceFile, extract, businessUnits, Domain.FINES, "checksum", CREATOR_ID);
-            verify(processor).uploadSourceJson(eq(sourceJson), any());
+            verify(processor).uploadSourceJson(eq(sourceJson), any(), eq(ProcessingFailurePolicy.RECORD_FAILURE));
             verify(repository).save(sourceJson);
         }
 
@@ -301,14 +314,15 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
                 sourceJson.setStatus(Status.FAILED);
                 sourceJson.setErrors("{\"message\":\"upload failed\"}");
                 return null;
-            }).when(processor).uploadSourceJson(eq(sourceJson), any());
+            }).when(processor).uploadSourceJson(eq(sourceJson), any(), eq(ProcessingFailurePolicy.RECORD_FAILURE));
 
-            InterfaceFileEntity result = processor.createAndUploadSourceJson(sourceFile, extract, CREATOR_ID);
+            InterfaceFileEntity result = processor.createAndUploadSourceJson(sourceFile, extract, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(result).isSameAs(sourceJson);
             assertThat(result.getStatus()).isEqualTo(Status.FAILED);
             assertThat(result.getErrors()).isEqualTo("{\"message\":\"upload failed\"}");
-            verify(processor).uploadSourceJson(eq(sourceJson), any());
+            verify(processor).uploadSourceJson(eq(sourceJson), any(), eq(ProcessingFailurePolicy.RECORD_FAILURE));
             verify(repository).save(sourceJson);
         }
     }
@@ -423,11 +437,12 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             byte[] jsonBytes = "{}".getBytes(StandardCharsets.UTF_8);
             ArgumentCaptor<InputStream> inputStreamCaptor = ArgumentCaptor.forClass(InputStream.class);
 
-            service.uploadSourceJson(sourceJson, jsonBytes);
+            service.uploadSourceJson(sourceJson, jsonBytes, ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(sourceJson.getFilestoreUuid()).isNotNull();
             verify(blobStoreService).uploadBaisFile(any(UUID.class), eq(CONTAINER), inputStreamCaptor.capture(),
-                eq(sourceJson.getChecksum()));
+                eq(sourceJson.getChecksum()),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
             assertThat(inputStreamCaptor.getValue().readAllBytes()).isEqualTo(jsonBytes);
         }
 
@@ -438,9 +453,11 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
                 UUID.fromString("11111111-1111-1111-1111-111111111111"), "expected", "actual");
 
             doThrow(exception).when(blobStoreService)
-                .uploadBaisFile(any(UUID.class), eq(CONTAINER), any(InputStream.class), eq(sourceJson.getChecksum()));
+                .uploadBaisFile(any(UUID.class), eq(CONTAINER), any(InputStream.class), eq(sourceJson.getChecksum()),
+                    eq(ProcessingFailurePolicy.RECORD_FAILURE));
 
-            service.uploadSourceJson(sourceJson, "{}".getBytes(StandardCharsets.UTF_8));
+            service.uploadSourceJson(sourceJson, "{}".getBytes(StandardCharsets.UTF_8),
+                ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(sourceJson.getStatus()).isEqualTo(Status.FAILED);
             assertThat(sourceJson.getErrors())
@@ -459,9 +476,11 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
             when(mockedToken.getUserId()).thenReturn(-1L);
 
             doThrow(new RuntimeException("blob unavailable")).when(blobStoreService)
-                .uploadBaisFile(any(UUID.class), eq(CONTAINER), any(InputStream.class), eq(sourceJson.getChecksum()));
+                .uploadBaisFile(any(UUID.class), eq(CONTAINER), any(InputStream.class), eq(sourceJson.getChecksum()),
+                    eq(ProcessingFailurePolicy.RECORD_FAILURE));
 
-            service.uploadSourceJson(sourceJson, "{}".getBytes(StandardCharsets.UTF_8));
+            service.uploadSourceJson(sourceJson, "{}".getBytes(StandardCharsets.UTF_8),
+                ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(sourceJson.getStatus()).isEqualTo(Status.FAILED);
             assertThat(sourceJson.getErrors()).isEqualTo("{\"message\":\"Blob upload failed: blob unavailable\"}");
@@ -612,7 +631,8 @@ class AbstractInterfaceFileProcessorWithExtractionServiceServiceTest {
         @Override
         protected void postProcessExtract(
             InterfaceFileEntity sourceFile,
-            InterfaceFileCommonDataExtract extract
+            InterfaceFileCommonDataExtract extract,
+            ProcessingFailurePolicy failurePolicy
         ) {
             postProcessedFiles.add(sourceFile);
         }

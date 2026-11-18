@@ -1,6 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -18,8 +19,8 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Clock;
 import java.time.Instant;
@@ -142,6 +143,32 @@ class InterfaceFileProcessorServiceTest {
         ingestionLogger.detachAppender(logAppender);
         logAppender.stop();
         mockedSecurityUtil.close();
+    }
+
+    @Test
+    void propagatesValidationFailureWithoutSavingFailedRecord() {
+        InvalidReportFileException failure = new InvalidReportFileException("Invalid file", null);
+        service.validationFailure = failure;
+
+        assertThatThrownBy(() -> service.ingestFile(MATCHING_FILE, FILE_CONTENT, Interface.CAPS_REPORT,
+            Interface.OPAL, Type.SOURCE, Domain.FINES, CONTAINER, 1L, ProcessingFailurePolicy.PROPAGATE))
+            .isSameAs(failure);
+
+        verify(repository, never()).save(any());
+        verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void propagatesChecksumFailureWithoutSavingFailedRecord() {
+        BlobChecksumValidationException failure = new BlobChecksumValidationException(FILE_UUID, CHECKSUM, "actual");
+        doThrow(failure).when(blobStoreService).uploadBaisFile(any(UUID.class), eq(CONTAINER),
+            any(InputStream.class), eq(CHECKSUM), eq(ProcessingFailurePolicy.PROPAGATE));
+
+        assertThatThrownBy(() -> service.ingestFile(MATCHING_FILE, FILE_CONTENT, Interface.CAPS_REPORT,
+            Interface.OPAL, Type.SOURCE, Domain.FINES, CONTAINER, 1L, ProcessingFailurePolicy.PROPAGATE))
+            .isSameAs(failure);
+
+        verify(repository, never()).save(any());
     }
 
     @Nested
@@ -327,7 +354,8 @@ class InterfaceFileProcessorServiceTest {
             assertThat(service.processCount).isZero();
             assertThat(savedStatuses).containsExactly(Status.DUPLICATE);
             assertThat(service.lastSavedEntity.getFilestoreUuid()).isEqualTo(FILE_UUID);
-            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any(),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
             String errorMessage = "File with name 'matching-file.dat' "
                 + "and checksum '3685d7f2b30e9b34b8d3e5496fb45506' for source "
                 + "'CAPS_REPORT' is a duplicate of 123";
@@ -352,7 +380,8 @@ class InterfaceFileProcessorServiceTest {
             doThrow(new BlobUploadException(
                 UUID.randomUUID(), "test-container", new RuntimeException("storage said \"no\"\nretry later")))
                 .when(blobStoreService)
-                .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
+                .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM),
+                    eq(ProcessingFailurePolicy.RECORD_FAILURE));
 
             service.run();
 
@@ -385,7 +414,8 @@ class InterfaceFileProcessorServiceTest {
             assertThat(service.lastSavedEntity.getErrors()).contains("Invalid report");
             assertThat(previousFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
             assertThat(service.processCount).isZero();
-            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any(),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
             verify(baisSftpClient, never()).deleteFile(any(), any());
         }
 
@@ -459,7 +489,8 @@ class InterfaceFileProcessorServiceTest {
             doThrow(new BlobChecksumValidationException(
                 FILE_UUID, CHECKSUM, "00000000000000000000000000000000"))
                 .when(blobStoreService)
-                .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
+                .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM),
+                    eq(ProcessingFailurePolicy.RECORD_FAILURE));
 
             service.run();
 
@@ -576,7 +607,8 @@ class InterfaceFileProcessorServiceTest {
         protected void processFile(
             InterfaceFileEntity fileEntity,
             InputStream inputStream,
-            long creatorId
+            long creatorId,
+            ProcessingFailurePolicy failurePolicy
         ) {
             processCount++;
             lastProcessConfig = (BaisFileProcessorConfiguration) config;
