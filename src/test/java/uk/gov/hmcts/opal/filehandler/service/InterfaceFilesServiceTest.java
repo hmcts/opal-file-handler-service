@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -31,6 +32,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -493,13 +497,17 @@ public class InterfaceFilesServiceTest {
             List.of(processorService));
     }
 
-    private AddInterfaceFileRequestMetadata addInterfaceFileMetadata() {
+    private AddInterfaceFileRequestMetadata addInterfaceFileMetadata(InterfaceFileTypeEnumInterfaceFile type) {
         return new AddInterfaceFileRequestMetadata()
             .source(InterfaceFileEnumInterfaceFile.DWP)
             .target(InterfaceFileEnumInterfaceFile.OPAL)
-            .type(InterfaceFileTypeEnumInterfaceFile.TRANSFORMED_JSON)
+            .type(type)
             .domain(DomainEnumTypes.FINES)
             .fileName("metadata-file-name.dat");
+    }
+
+    private AddInterfaceFileRequestMetadata addInterfaceFileMetadata() {
+        return addInterfaceFileMetadata(InterfaceFileTypeEnumInterfaceFile.TRANSFORMED_JSON);
     }
 
     @Test
@@ -767,6 +775,131 @@ public class InterfaceFilesServiceTest {
         BadRequestException ex = assertThrows(BadRequestException.class, () -> service.deleteInterfaceFiles(ids));
         assertThat(ex.getTitle()).isEqualTo("Request to delete interface files failed validation");
         assertThat(ex.getDetail()).contains("The following interface files are not of type SOURCE: [20, 30]");
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = InterfaceFileTypeEnumInterfaceFile.class, mode = Mode.EXCLUDE, names = {"SOURCE"})
+    void addInterfaceFile_preProcessNonSourceFilesSkipsProcessingButIsStillSuccessful(
+        InterfaceFileTypeEnumInterfaceFile type) throws IOException {
+        DWPInterfaceFileProcessorService processorService = mock(DWPInterfaceFileProcessorService.class);
+        BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
+        InterfaceFilesService uploadService = serviceWithProcessor(processorService, config);
+        MultipartFile file = mock(MultipartFile.class);
+        byte[] fileBytes = "file-content".getBytes();
+        InterfaceFileEntity relatedInterfaceFile = InterfaceFileEntity.builder()
+            .interfaceFileId(15L)
+            .build();
+        InterfaceFileEntity ingestedEntity = InterfaceFileEntity.builder()
+            .interfaceFileId(24L)
+            .build();
+        InterfaceFileObjectInterfaceFile mapped = mock(InterfaceFileObjectInterfaceFile.class);
+        AddInterfaceFileRequestMetadata metadata = addInterfaceFileMetadata(type)
+            .relatedInterfaceFileId(15L)
+            .paymentType(PaymentTypeEnumTypes.CHEQUE)
+            .shouldPreProcessFile(true)
+            .businessUnitId((short) 1234);
+
+        when(repository.findById(15L)).thenReturn(Optional.of(relatedInterfaceFile));
+        when(config.getContainerName()).thenReturn("dwp-container");
+        when(file.getOriginalFilename()).thenReturn("payments.dat");
+        when(file.getBytes()).thenReturn(fileBytes);
+
+        when(authToken.getUserId()).thenReturn(1L);
+        when(processorService.ingestFile(
+            "payments.dat",
+            fileBytes,
+            Interface.DWP,
+            Interface.OPAL,
+            Type.valueOf(type),
+            Domain.FINES,
+            "dwp-container",
+            1L
+        )).thenReturn(ingestedEntity);
+        when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
+        when(repository.findById(24L)).thenReturn(Optional.of(ingestedEntity));
+        when(mapper.toInterfaceFileObject(ingestedEntity)).thenReturn(mapped);
+
+        try (MockedStatic<SecurityUtil> ignored = authenticateWithPermission(
+            uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FINES,
+            FileHandlerPermission.CREATE_INTERFACE_FILES)) {
+            InterfaceFileObjectInterfaceFile result = uploadService.addInterfaceFile(file, metadata);
+
+            verify(processorService, never()).processFile(any(), any());
+
+            assertEquals(mapped, result);
+            assertEquals(relatedInterfaceFile, ingestedEntity.getRelatedInterfaceFile());
+            assertEquals(PaymentType.CHEQUE, ingestedEntity.getPaymentType());
+            assertArrayEquals(new Short[] {(short) 1234}, ingestedEntity.getBusinessUnitId());
+
+            verify(repository).findById(15L);
+            verify(repository).save(ingestedEntity);
+            verify(repository).findById(24L);
+            verify(mapper).toInterfaceFileObject(ingestedEntity);
+
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void addInterfaceFile_preProcessFlagProvidedAndSourceType(
+        boolean shouldPreProcess) throws IOException {
+        DWPInterfaceFileProcessorService processorService = mock(DWPInterfaceFileProcessorService.class);
+        BaisFileProcessorConfiguration config = mock(BaisFileProcessorConfiguration.class);
+        InterfaceFilesService uploadService = serviceWithProcessor(processorService, config);
+        MultipartFile file = mock(MultipartFile.class);
+        byte[] fileBytes = "file-content".getBytes();
+        InterfaceFileEntity relatedInterfaceFile = InterfaceFileEntity.builder()
+            .interfaceFileId(15L)
+            .build();
+        InterfaceFileEntity ingestedEntity = InterfaceFileEntity.builder()
+            .status(Status.INGESTED)
+            .interfaceFileId(24L)
+            .build();
+        InterfaceFileObjectInterfaceFile mapped = mock(InterfaceFileObjectInterfaceFile.class);
+        AddInterfaceFileRequestMetadata metadata = addInterfaceFileMetadata(InterfaceFileTypeEnumInterfaceFile.SOURCE)
+            .relatedInterfaceFileId(15L)
+            .paymentType(PaymentTypeEnumTypes.CHEQUE)
+            .shouldPreProcessFile(shouldPreProcess)
+            .businessUnitId((short) 1234);
+
+        when(repository.findById(15L)).thenReturn(Optional.of(relatedInterfaceFile));
+        when(config.getContainerName()).thenReturn("dwp-container");
+        when(file.getOriginalFilename()).thenReturn("payments.dat");
+        when(file.getBytes()).thenReturn(fileBytes);
+
+        when(authToken.getUserId()).thenReturn(1L);
+        when(processorService.ingestFile(
+            "payments.dat",
+            fileBytes,
+            Interface.DWP,
+            Interface.OPAL,
+            Type.SOURCE,
+            Domain.FINES,
+            "dwp-container",
+            1L
+        )).thenReturn(ingestedEntity);
+        when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
+        when(repository.findById(24L)).thenReturn(Optional.of(ingestedEntity));
+        when(mapper.toInterfaceFileObject(ingestedEntity)).thenReturn(mapped);
+
+        try (MockedStatic<SecurityUtil> ignored = authenticateWithPermission(
+            uk.gov.hmcts.opal.common.user.authorisation.model.Domain.FINES,
+            FileHandlerPermission.CREATE_INTERFACE_FILES)) {
+            InterfaceFileObjectInterfaceFile result = uploadService.addInterfaceFile(file, metadata);
+
+            verify(processorService, shouldPreProcess ? times(1) : never()).processFile(any(), any());
+
+            assertEquals(mapped, result);
+            assertEquals(relatedInterfaceFile, ingestedEntity.getRelatedInterfaceFile());
+            assertEquals(PaymentType.CHEQUE, ingestedEntity.getPaymentType());
+            assertArrayEquals(new Short[] {(short) 1234}, ingestedEntity.getBusinessUnitId());
+
+            verify(repository).findById(15L);
+            verify(repository).save(ingestedEntity);
+            verify(repository).findById(24L);
+            verify(mapper).toInterfaceFileObject(ingestedEntity);
+
+        }
     }
 
 }
