@@ -665,8 +665,8 @@ allpay-file-generation:
           alias: BAIS_SFTP_CONNECTION_HOST
         - name: bais-sftp-connection-port
           alias: BAIS_SFTP_CONNECTION_PORT
-        - name: bais-sftp-bteckoh-report-username
-          alias: BAIS_SFTP_BTECKOH_REPORT_USERNAME
+        - name: bais-sftp-allpay-file-generation-username
+          alias: BAIS_SFTP_ALLPAY_FILE_GENERATION_USERNAME
         - name: AzureADTenantId
           alias: AAD_TENANT_ID
         - name: opal-system-user-client-id
