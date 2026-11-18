@@ -301,7 +301,7 @@ class AddInterfaceFilePreprocessingTest extends AbstractControllerIntegrationTes
         return switch (source) {
             case CAPS_REPORT -> "CapFa.GB.20260701.173024.xml";
             case DWP -> "0000015232_dat_0000000612_08011008_111355.txt";
-            case VARIANT_BANKING -> "a121_003500VB123_13.dat";
+            case VARIANT_BANKING -> "a121_003500_VB_123_13.dat";
             default -> throw new IllegalArgumentException("Unsupported test source " + source);
         };
     }
