@@ -9,6 +9,12 @@ Feature: Marston file ingestion
     Then the "Marston" file is processed successfully
     And the extracted "Marston" payments are ready for the external interface
     And Fines preprocessing completes for the stored "Marston" file
+    And the transformed "Marston" file has payment type "CASH" and transaction codes in order
+      | 99 |
+    And the transformed "Marston" file contains the account references in order
+      | 23000106E |
+    And the transformed "Marston" file contains transaction amounts in pence in order
+      | 1000 |
 
   Scenario: A duplicate Marston file is detected
     Given the configured "Marston" file has already been processed

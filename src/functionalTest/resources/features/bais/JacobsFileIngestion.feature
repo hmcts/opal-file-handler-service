@@ -9,6 +9,15 @@ Feature: Jacobs file ingestion
     Then the "Jacobs" file is processed successfully
     And the extracted "Jacobs" payments are ready for the external interface
     And Fines preprocessing completes for the stored "Jacobs" file
+    And the transformed "Jacobs" file has payment type "CASH" and transaction codes in order
+      | 99 |
+      | 99 |
+    And the transformed "Jacobs" file contains the account references in order
+      | 23000106E |
+      | 23000113P |
+    And the transformed "Jacobs" file contains transaction amounts in pence in order
+      | 1000 |
+      | 5000 |
 
   Scenario: A duplicate Jacobs file is detected
     Given the configured "Jacobs" file has already been processed

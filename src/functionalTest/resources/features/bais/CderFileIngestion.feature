@@ -9,6 +9,15 @@ Feature: CDER file ingestion
     Then the "Cder" file is processed successfully
     And the extracted "Cder" payments are ready for the external interface
     And Fines preprocessing completes for the stored "Cder" file
+    And the transformed "Cder" file has payment type "CASH" and transaction codes in order
+      | 99 |
+      | 99 |
+    And the transformed "Cder" file contains the account references in order
+      | 23000106E |
+      | 23000113P |
+    And the transformed "Cder" file contains transaction amounts in pence in order
+      | 1000 |
+      | 5000 |
 
   Scenario: A duplicate CDER file is detected
     Given the configured "Cder" file has already been processed
