@@ -1,26 +1,39 @@
 package uk.gov.hmcts.opal.filehandler.types;
 
-public enum FileHandlerTypes {
-    NEW,
-    TFO,
-    FP,
+public class FileHandlerTypes {
 
-    B,
-    P,
-    I,
+    public enum OriginatorType {
+        NEW,
+        TFO,
+        FP
+    }
 
-    W,
-    M,
-    F,
+    public enum EnforcementType {
+        B,
+        P,
+        I
+    }
 
-    AC,
-    AA,
-    AN,
+    public enum ResultType {
+        W,
+        M,
+        F
+    }
 
-    CY,
-    EN,
+    public enum AccountType {
+        AC,
+        AA,
+        AN
+    }
 
-    PRIS,
-    NOENF,
-    COLLO
+    public enum LanguageType {
+        CY,
+        EN
+    }
+
+    public enum RecipientType {
+        PRIS,
+        NOENF,
+        COLLO
+    }
 }

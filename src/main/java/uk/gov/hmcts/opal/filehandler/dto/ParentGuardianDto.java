@@ -1,6 +1,5 @@
 package uk.gov.hmcts.opal.filehandler.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,7 +13,6 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class ParentGuardianDto extends CommonPersonDto {
 
-    @JsonProperty("telephone_number_mobile")
     private String telephoneNumberMobile;
 
 }
