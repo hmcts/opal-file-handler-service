@@ -1,4 +1,4 @@
-package uk.gov.hmcts.opal.filehandler.types;
+package uk.gov.hmcts.opal.filehandler.dto;
 
 public class FileHandlerTypes {
 
