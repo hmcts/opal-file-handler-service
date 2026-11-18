@@ -41,6 +41,16 @@ paths:
                   allOf:
                     - if:
                         required:
+                          - should_pre_process_file
+                        properties:
+                          should_pre_process_file:
+                            const: true
+                      then:
+                        properties:
+                          type:
+                            const: SOURCE
+                    - if:
+                        required:
                           - type
                         properties:
                           type:
@@ -59,9 +69,8 @@ paths:
                       type: boolean
                       default: false
                       description: >-
-                        Preprocesses the uploaded file only when true and the type is SOURCE.
-                        When false, or omitted, or when type is not SOURCE, the supplied file
-                        is stored without preprocessing, retaining it's supplied type.
+                        May be true only when type is SOURCE. When true, creates the
+                        SOURCE_JSON and TRANSFORMED_JSON files for this source file.
                     source:
                       $ref: '#/components/schemas/interfaceFileEnum'
                     target:

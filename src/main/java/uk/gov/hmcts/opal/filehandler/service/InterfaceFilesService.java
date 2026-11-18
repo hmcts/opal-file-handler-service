@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.multipart.MultipartFile;
+import uk.gov.hmcts.common.exceptions.bespoke.BusinessRuleViolationException;
 import uk.gov.hmcts.common.exceptions.standard.BadRequestException;
 import uk.gov.hmcts.common.exceptions.standard.InternalServerErrorException;
 import uk.gov.hmcts.opal.common.user.authorisation.model.UserStateV2;
@@ -179,8 +180,12 @@ public class InterfaceFilesService {
     @Transactional
     public InterfaceFileObjectInterfaceFile addInterfaceFile(MultipartFile file,
         AddInterfaceFileRequestMetadata metadata) {
-        boolean shouldPreProcess = Boolean.TRUE.equals(metadata.getShouldPreProcessFile())
-            && InterfaceFileTypeEnumInterfaceFile.SOURCE.equals(metadata.getType());
+        boolean shouldPreProcess = Boolean.TRUE.equals(metadata.getShouldPreProcessFile());
+        if (shouldPreProcess && !InterfaceFileTypeEnumInterfaceFile.SOURCE.equals(metadata.getType())) {
+            throw new BusinessRuleViolationException(
+                "Invalid type",
+                "Type must be SOURCE when should_pre_process_file is true");
+        }
         DomainEnumTypes metadataDomain = metadata.getDomain();
         Domain fromMetadata = Domain.valueOf(metadataDomain);
 
@@ -227,7 +232,6 @@ public class InterfaceFilesService {
                     processorService.processFile(entity, stream);
                 }
             }
-
             processorService.completeIngestion(metadata.getFileName(), entity, false);
             return mapper.toInterfaceFileObject(getInterfaceFileEntity(entity.getInterfaceFileId()));
         } catch (IOException e) {

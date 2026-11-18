@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +38,6 @@ import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
-import uk.gov.hmcts.opal.filehandler.entity.PaymentType;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.entity.Type;
 import uk.gov.hmcts.opal.filehandler.repository.InterfaceFilesRepository;
@@ -201,78 +199,6 @@ class AddInterfaceFilePreprocessingTest extends AbstractControllerIntegrationTes
                 tuple(Type.SOURCE, Status.DUPLICATE));
         verifyNoMoreInteractions(finesQueue);
         verifyNoInteractions(maintenanceQueue, sftpClient);
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = InterfaceFileTypeEnumInterfaceFile.class, mode = Mode.EXCLUDE, names = {"SOURCE"})
-    @DisplayName("Preprocessing true stores non-SOURCE files unchanged without queueing")
-    void storesNonSourceWithoutPreprocessing(InterfaceFileTypeEnumInterfaceFile type) throws IOException {
-        Interface sourceType = Interface.VARIANT_BANKING;
-        String name = filename(sourceType);
-        byte[] uploaded = content(sourceType);
-        Short businessUnitId = type == InterfaceFileTypeEnumInterfaceFile.TRANSFORMED_JSON
-            ? SUPPLIED_BUSINESS_UNIT_ID : null;
-        Map<String, Set<String>> blobsBefore = blobNamesByContainer();
-        AddInterfaceFileRequestMetadata metadata = AddInterfaceFileRequestMetadata.builder()
-            .source(InterfaceFileEnumInterfaceFile.VARIANT_BANKING)
-            .target(InterfaceFileEnumInterfaceFile.OPAL)
-            .type(type)
-            .domain(DomainEnumTypes.FINES)
-            .paymentType(PaymentTypeEnumTypes.CASH)
-            .businessUnitId(businessUnitId)
-            .fileName(name)
-            .shouldPreProcessFile(true)
-            .build();
-
-        InterfaceFileObjectInterfaceFile response = setupFileUploadApiTest(HttpMethod.POST, "/interface-files")
-            .includeMultipartBody("file", name, "application/octet-stream", uploaded)
-            .includeMultipartBody("metadata", "metadata.json", "application/json",
-                objectMapper.writeValueAsString(metadata).getBytes(StandardCharsets.UTF_8))
-            .includeContentDigest()
-            .clearPermissions()
-            .addPermission((short) 2, FileHandlerPermission.CREATE_INTERFACE_FILES)
-            .execute()
-            .assertSuccess(HttpStatus.CREATED)
-            .getResponseBodyAsObject(InterfaceFileObjectInterfaceFile.class);
-
-        assertThat(response.getType()).isEqualTo(type);
-        assertThat(response.getStatus()).isEqualTo(StatusEnumInterfaceFile.SUCCESS);
-        assertThat(repository.findAll()).singleElement().satisfies(stored -> {
-            assertThat(stored.getInterfaceFileId()).isEqualTo(response.getInterfaceFileId());
-            assertThat(stored.getType()).isEqualTo(Type.valueOf(type));
-            assertThat(stored.getSource()).isEqualTo(sourceType);
-            assertThat(stored.getTarget()).isEqualTo(Interface.OPAL);
-            assertThat(stored.getFileName()).isEqualTo(name);
-            assertThat(stored.getStatus()).isEqualTo(Status.SUCCESS);
-            assertThat(stored.getOpalDomain()).isEqualTo(Domain.FINES);
-            assertThat(stored.getPaymentType()).isEqualTo(PaymentType.CASH);
-            assertThat(stored.getCreatedBy()).isEqualTo(500000000L);
-            assertThat(stored.getErrors()).isNull();
-            assertThat(stored.getRelatedInterfaceFile()).isNull();
-            if (businessUnitId == null) {
-                assertThat(stored.getBusinessUnitId()).isNull();
-            } else {
-                assertThat(stored.getBusinessUnitId()).containsExactly(businessUnitId);
-            }
-
-            byte[] storedBytes = blobStoreService.fetchInterfaceFile(stored.getInterfaceFileId(),
-                stored.getFilestoreUuid(), container(sourceType)).toBytes();
-            assertThat(storedBytes).containsExactly(uploaded);
-            assertThat(stored.getChecksum()).isEqualTo(DigestUtils.md5DigestAsHex(uploaded));
-
-            Map<String, Set<String>> blobsAfter = blobNamesByContainer();
-            blobsBefore.forEach((containerName, previousBlobs) -> {
-                Set<String> expectedBlobs = new TreeSet<>(previousBlobs);
-                if (containerName.equals(container(sourceType))) {
-                    assertThat(previousBlobs).doesNotContain(stored.getFilestoreUuid().toString());
-                    expectedBlobs.add(stored.getFilestoreUuid().toString());
-                }
-                assertThat(blobsAfter.get(containerName)).as("Blobs in container %s", containerName)
-                    .containsExactlyInAnyOrderElementsOf(expectedBlobs);
-            });
-        });
-
-        verifyNoInteractions(finesQueue, maintenanceQueue, sftpClient);
     }
 
     private void assertBankingPreprocessing(Interface sourceType, Domain domain, short businessUnitId)
