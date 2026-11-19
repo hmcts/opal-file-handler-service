@@ -1,6 +1,5 @@
 package uk.gov.hmcts.opal.filehandler.dto;
 
-import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

@@ -3,7 +3,6 @@ package uk.gov.hmcts.opal.filehandler.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import java.time.LocalDate;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
