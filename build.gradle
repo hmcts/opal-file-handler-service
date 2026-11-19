@@ -311,13 +311,11 @@ jacocoTestReport {
 tasks.sonarqube.dependsOn(jacocoTestReport)
 tasks.check.dependsOn(integration)
 
-sonarqube {
+onarqube {
   properties {
     property "sonar.projectName", "Opal :: file-handler"
     property "sonar.projectKey", "uk.gov.hmcts.opal:file-handler"
-    property 'sonar.coverage.exclusions', "**/config/**",
-            "**/config/**,**/types/FileHandlerTypes.java"
-
+    property 'sonar.coverage.exclusions', "**/config/**"
   }
 }
 

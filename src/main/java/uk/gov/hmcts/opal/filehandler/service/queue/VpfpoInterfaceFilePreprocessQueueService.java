@@ -10,7 +10,7 @@ import uk.gov.hmcts.opal.common.queue.AbstractQueueService;
 import uk.gov.hmcts.opal.filehandler.dto.FileHandlerDraftAccountPayloadDTO;
 
 @Service
-@Slf4j
+@Slf4j(topic = "opal.VpfpoInterfaceFilePreprocessQueueService")
 public class VpfpoInterfaceFilePreprocessQueueService
     extends AbstractQueueService<FileHandlerDraftAccountPayloadDTO>
     implements InterfaceFilePreprocessQueueService<FileHandlerDraftAccountPayloadDTO> {
