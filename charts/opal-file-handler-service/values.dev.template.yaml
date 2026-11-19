@@ -109,6 +109,7 @@ servicebus:
       - name: "banking-interfaces-preprocess-interface-file-fines"
       - name: "banking-interfaces-preprocess-interface-file-maintenance"
       - name: "create-draft-account-queue"
+      - name: "defendant-account-payment-card-request-queue"
 blobstorage:
   enabled: true
   azureName: "opalfilesapr${CHANGE_ID}"

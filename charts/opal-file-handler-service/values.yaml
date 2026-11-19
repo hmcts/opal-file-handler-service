@@ -47,6 +47,8 @@ java:
           alias: SERVICEBUS_INTERFACE_FILE_PREPROCESS_MAINTENANCE_QUEUE_NAME
         - name: servicebus-banking-interfaces-preprocess-interface-file-fines-queue-name
           alias: SERVICEBUS_INTERFACE_FILE_PREPROCESS_FINES_QUEUE_NAME
+        - name: servicebus-defendant-account-payment-card-request-queue-name
+          alias: SERVICEBUS_DEFENDANT_ACCOUNT_PAYMENT_CARD_REQUEST_QUEUE_NAME
   environment:
     RUN_DB_MIGRATION_ON_STARTUP: true
     TESTING_SUPPORT_ENDPOINTS_ENABLED: true
