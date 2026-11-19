@@ -6,7 +6,7 @@ import lombok.Data;
 
 import java.util.List;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.dto.types.RecipientType;
+import uk.gov.hmcts.opal.filehandler.dto.types.FileHandlerTypes.RecipientType;
 
 @Data
 @Builder

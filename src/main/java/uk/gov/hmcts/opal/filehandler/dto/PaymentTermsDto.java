@@ -7,8 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.dto.types.EnforcementType;
-import uk.gov.hmcts.opal.filehandler.dto.types.ResultType;
+import uk.gov.hmcts.opal.filehandler.dto.types.FileHandlerTypes.EnforcementType;
+import uk.gov.hmcts.opal.filehandler.dto.types.FileHandlerTypes.ResultType;
 
 @Data
 @Builder
