@@ -38,10 +38,20 @@ public class BaisInterfaceFileClient {
         String type,
         String status
     ) {
+        return awaitInterfaceFile(config.source(), config.fileName(), config.displayName(), type, status);
+    }
+
+    public Map<String, Object> awaitInterfaceFile(
+        String source,
+        String fileName,
+        String displayName,
+        String type,
+        String status
+    ) {
         long deadline = System.nanoTime() + INGESTION_TIMEOUT.toNanos();
         List<Map<String, Object>> matchingRecords = List.of();
         do {
-            matchingRecords = records(config);
+            matchingRecords = records(source, fileName);
             List<Map<String, Object>> successfulRecords = matchingRecords.stream()
                 .filter(record -> type.equals(record.get("type")))
                 .filter(record -> status.equals(record.get("status")))
@@ -53,18 +63,23 @@ public class BaisInterfaceFileClient {
         } while (System.nanoTime() < deadline);
 
         throw new AssertionError(
-            "Expected a " + status + " " + config.displayName() + " interface-file record within "
+            "Expected a " + status + " " + displayName + " interface-file record within "
                 + INGESTION_TIMEOUT.toSeconds() + " seconds; matching records: " + matchingRecords
         );
     }
 
     /** Returns all matching records so duplicates and related outputs can be counted. */
     public List<Map<String, Object>> records(BaisFileTestConfig config) {
-        Response response = requests.get().queryParam("source", config.source()).when()
+        return records(config.source(), config.fileName());
+    }
+
+    /** Retrieves interface-file metadata using the source and filename selected by a scenario. */
+    public List<Map<String, Object>> records(String source, String fileName) {
+        Response response = requests.get().queryParam("source", source).when()
             .get(baseUrl + "/interface-files");
         assertEquals(200, response.statusCode(), "Interface-file metadata could not be retrieved");
         return response.jsonPath().<Map<String, Object>>getList("interface_files").stream()
-            .filter(record -> config.fileName().equals(record.get("file_name"))).toList();
+            .filter(record -> fileName.equals(record.get("file_name"))).toList();
     }
 
     private static void pauseBeforeRetry() {

@@ -2,6 +2,7 @@ package uk.gov.hmcts.opal.filehandler.entity;
 
 import lombok.Getter;
 import uk.gov.hmcts.opal.filehandler.service.AllpayInterfaceFileProcessorService;
+import uk.gov.hmcts.opal.filehandler.service.BTEckohInterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.service.BTEckohReportInterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.service.BarclaycardInterfaceFileProcessorService;
 import uk.gov.hmcts.opal.filehandler.service.CapsReportInterfaceFileProcessorService;
@@ -20,7 +21,7 @@ public enum Interface {
     ALLPAY("AllpayBaisFileBaisFileProcessorConfig", AllpayInterfaceFileProcessorService.class),
     ALLPAY_DD(null, AllpayInterfaceFileProcessorService.class),
     BARCLAYCARD("BarclaycardBaisFileProcessorConfig", BarclaycardInterfaceFileProcessorService.class),
-    BTECKOH("BTEckohBaisFileProcessorConfig", BTEckohReportInterfaceFileProcessorService.class),
+    BTECKOH("BTEckohBaisFileProcessorConfig", BTEckohInterfaceFileProcessorService.class),
     DWP("dwpBaisFileProcessorConfig", DWPInterfaceFileProcessorService.class),
     CDER("cderBaisFileProcessorConfig", CderInterfaceFileProcessorService.class),
     JACOBS("JacobsBaisFileProcessorConfig", JacobsInterfaceFileProcessorService.class),

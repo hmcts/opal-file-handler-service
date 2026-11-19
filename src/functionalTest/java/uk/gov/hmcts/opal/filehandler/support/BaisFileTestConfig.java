@@ -31,6 +31,19 @@ public record BaisFileTestConfig(
     String resourcePath
 ) {
 
+    /** Identifies fixtures that wait for and clean up their exact Fines preprocessing result. */
+    public boolean verifiesFinesPreprocessing() {
+        return switch (source) {
+            case "ALLPAY", "BARCLAYCARD", "BTECKOH", "DWP", "CDER", "JACOBS", "MARSTON" -> true;
+            default -> false;
+        };
+    }
+
+    /** Identifies bailiff fixtures that share a Fines destination-bank mapping. */
+    public boolean verifiesBailiffFinesPreprocessing() {
+        return "CDER".equals(source) || "JACOBS".equals(source) || "MARSTON".equals(source);
+    }
+
     /**
      * Returns the domain expected for the source interface-file record.
      * Banking and bailiff interfaces are routed to Fines using their configured business-unit
@@ -40,7 +53,7 @@ public record BaisFileTestConfig(
      */
     public String expectedDomain() {
         return switch (source) {
-            case "BARCLAYCARD", "NATWEST", "JACOBS", "CDER", "MARSTON" -> "FINES";
+            case "ALLPAY", "BARCLAYCARD", "BTECKOH", "DWP", "NATWEST", "JACOBS", "CDER", "MARSTON" -> "FINES";
             default -> "MAINTENANCE";
         };
     }

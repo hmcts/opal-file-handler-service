@@ -622,3 +622,7 @@ marston-transfer:
     OPAL_FRONTEND_URL: https://opal-frontend.{{ .Values.global.environment }}.apps.hmcts.net
     TESTING_SUPPORT_ENDPOINTS_ENABLED: false
     FLYWAY_LOCATIONS: classpath:db/migration/ddl,classpath:db/migration/data/allEnvs
+
+# A dedicated downstream consumer is enabled only for file-handler PR tests.
+fines-preprocessing:
+  enabled: false

@@ -103,7 +103,8 @@ public final class TestEnvironment {
         return get("FUNCTIONAL_TEST_FINES_DB_URL").orElseGet(() ->
             "jdbc:postgresql://" + get("OPAL_FINES_DB_HOST").orElse("localhost")
                 + ":" + get("OPAL_FINES_DB_PORT").orElse("5432")
-                + "/" + get("OPAL_FINES_DB_NAME").orElse("opal-fines-db"));
+                + "/" + get("OPAL_FINES_DB_NAME").orElse("opal-fines-db")
+                + get("OPAL_FINES_DB_OPTIONS").orElse(""));
     }
 
     public static String getFinesDatabaseUsername() {
@@ -296,6 +297,11 @@ public final class TestEnvironment {
     public static Optional<String> get(String key) {
         String value = System.getenv(key);
         return value == null || value.isBlank() ? Optional.empty() : Optional.of(value);
+    }
+
+    /** Returns the maximum time to wait for asynchronous Fines preprocessing. */
+    public static long getFinesPreprocessingTimeoutSeconds() {
+        return Long.parseLong(get("FUNCTIONAL_TEST_FINES_PREPROCESSING_TIMEOUT_SECONDS").orElse("60"));
     }
 
     /**

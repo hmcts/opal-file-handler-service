@@ -201,6 +201,14 @@ tasks.withType(Test).configureEach {
   maxHeapSize = "2g"
 }
 
+tasks.register('verifyFunctionalTestDatabases', JavaExec) {
+  description = "Checks file-handler and Fines database connectivity without changing fixture data"
+  group = "Verification"
+  dependsOn 'functionalTestClasses'
+  classpath = sourceSets.functionalTest.runtimeClasspath
+  mainClass = 'uk.gov.hmcts.opal.filehandler.support.FunctionalTestDatabaseCheck'
+}
+
 tasks.register('functional', Test) {
   description = "Runs functional tests"
   group = "Verification"
