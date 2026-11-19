@@ -35,7 +35,7 @@ public class FinesPreprocessingStepDef extends BaseStepDef {
     @Then("Fines preprocessing completes for the stored {string} file")
     public void finesPreprocessingCompletes(String displayName) {
         short expectedBusinessUnit = Short.parseShort(
-            TestEnvironment.get("FUNCTIONAL_TEST_FINES_BUSINESS_UNIT_ID").orElse("77"));
+            TestEnvironment.get("FUNCTIONAL_TEST_FINES_BUSINESS_UNIT_ID").orElse("80"));
         verifyPreprocessing(displayName, expectedBusinessUnit);
     }
 

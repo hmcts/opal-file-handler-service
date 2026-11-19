@@ -77,26 +77,26 @@ public final class BaisFileTestData {
         "ALLPAY_FILE_TRANSFER_JOB_ENABLED",
         "a121_00350005_300000.dat",
         "a121_00350005_300000.csv",
-        "598a1f625810b1517b6764f10d11ee68",
+        "f5b277b252676554397193a58e976187",
         "test-data/bacs/a121_00000001_000001.dat"
     );
 
     private static final Map<String, String> ALLPAY_CHECKSUMS = Map.ofEntries(
-        Map.entry("a121_00000001_000001.dat", "598a1f625810b1517b6764f10d11ee68"),
-        Map.entry("a121_00000001_000002.dat", "ef5f44e8f3e7ee525e3440efbc5ccd22"),
-        Map.entry("a121_00000001_000003.dat", "9d7f18e77328d4805474132127f6f2c7"),
-        Map.entry("a121_00000001_000004.dat", "5a798e0b8e9ade2ccdc6e763e2cd37e2"),
-        Map.entry("a121_00000001_000005.dat", "17bcdc6a3b9535945d283fbe7a799c38"),
-        Map.entry("a121_00000001_000006.dat", "56e931f6122b646f0d8adac051f016ec"),
-        Map.entry("a121_00000001_000007.dat", "f9201056a9c2355d71c4c267912b1efc"),
-        Map.entry("a121_00000001_000008.dat", "dd0cd8debb1ddc930ce8b37b7340a086"),
-        Map.entry("a121_00000001_000009.dat", "574503b7ed014216e51fed5417d0054c"),
-        Map.entry("a121_00000001_000010.dat", "d5f0948858fbe0d4151811b3268c0e05"),
-        Map.entry("a121_00000001_000011.dat", "b85eadc6d9214b55834153109eb17bb9"),
-        Map.entry("a121_00000001_000012.dat", "349816dd89fdddfce3f0779131e60912"),
-        Map.entry("a121_00000001_000013.dat", "dd6f42077a59e0deff4bd9e98ace792e"),
-        Map.entry("a121_00000001_000014.dat", "e97557b30e446b352d7f7481b511c376"),
-        Map.entry("a121_00000001_000015.dat", "4748b31d80825f52db0e8c3cba93dd10"),
+        Map.entry("a121_00000001_000001.dat", "f5b277b252676554397193a58e976187"),
+        Map.entry("a121_00000001_000002.dat", "c4e24c4a6774da6472481969455705c6"),
+        Map.entry("a121_00000001_000003.dat", "aaccf5735f4acb8cd2a8ee5d93ba6a51"),
+        Map.entry("a121_00000001_000004.dat", "c821a553cf85d41e37922e504d3acb59"),
+        Map.entry("a121_00000001_000005.dat", "90f3a541406cd322fad69dd836c7462f"),
+        Map.entry("a121_00000001_000006.dat", "6b6d7d33138c4109dad9666bfcc9908f"),
+        Map.entry("a121_00000001_000007.dat", "5c7cf5af8627a5367269c0bf710f7ea1"),
+        Map.entry("a121_00000001_000008.dat", "d8a84fc0516a634f6c6a04a92b7b4f57"),
+        Map.entry("a121_00000001_000009.dat", "697bfe92ce979228622df71215ce932d"),
+        Map.entry("a121_00000001_000010.dat", "ba7c857c55b56c7c3b01dd6f79986370"),
+        Map.entry("a121_00000001_000011.dat", "0229a706d8c2425af69425f2ebc3f886"),
+        Map.entry("a121_00000001_000012.dat", "8c61b6714c63e7f459312a07221992bc"),
+        Map.entry("a121_00000001_000013.dat", "7520adce395964fb5bcdd1bec0e1a7e4"),
+        Map.entry("a121_00000001_000014.dat", "a12db8feec4da7ce523a276b0a15f734"),
+        Map.entry("a121_00000001_000015.dat", "2f5620c1451a54bad4bf446d5ebe7430"),
         Map.entry("a121_00000001_000016.dat", "74fe9eeec9b01a0cf750b3fdfd7e9fca")
     );
 
@@ -159,7 +159,7 @@ public final class BaisFileTestData {
         "BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED",
         "a121_00010065_317608.dat",
         "a121_00010065_317608.err",
-        "3ae0214debbd1d03e665b582c7b667bc",
+        "a1b994a631b8b4d4b480b6b309905f65",
         "test-data/bacs/barclaycard-unique.dat"
     );
 
@@ -174,7 +174,7 @@ public final class BaisFileTestData {
         "BTECKOH_FILE_TRANSFER_JOB_ENABLED",
         "a121_00350005_300000.dat",
         "a121_00350005_300000.err",
-        "51927f7fa760041fa931e503b89245cf",
+        "317090629247b298f0f175de074de949",
         "test-data/bacs/bteckoh-unique.dat"
     );
 
@@ -217,8 +217,8 @@ public final class BaisFileTestData {
         "marston",
         "MARSTON_AZURE_STORAGE_CONTAINER",
         "MARSTON_FILE_TRANSFER_JOB_ENABLED",
-        "1234567890_dat_0987654321_20260910_143015.txt",
-        "1234567890_dat_0987654321_20260910_143015.csv",
+        "8034567890_dat_0987654321_20260910_143015.txt",
+        "8034567890_dat_0987654321_20260910_143015.csv",
         "917c82d4d3144b3dfcdb08d7eb25e3f0",
         "test-data/bailiffs/marston-unique.txt"
     );

@@ -22,11 +22,11 @@ public class FinesInterfaceFileTestDatabaseClient implements AutoCloseable {
     /** Prepares the fixture under the same database lock used by its setup and cleanup scripts. */
     public boolean prepareAllpaySeed() {
         database.update("SET lock_timeout = '10s'");
-        database.queryFirstColumn("SELECT pg_advisory_lock(770077, 10)");
+        database.queryFirstColumn("SELECT pg_advisory_lock(800080, 10)");
         try {
             int accountCount = Integer.parseInt(database.queryFirstColumn("""
                 SELECT count(*) FROM public.defendant_accounts
-                WHERE defendant_account_id BETWEEN 88007700000001 AND 88007700000010
+                WHERE defendant_account_id BETWEEN 88008000000001 AND 88008000000010
                 """).getFirst());
             if (accountCount != 0 && accountCount != 10) {
                 throw new IllegalStateException("Partial Allpay Fines base seed: expected zero or ten reserved "
@@ -34,13 +34,13 @@ public class FinesInterfaceFileTestDatabaseClient implements AutoCloseable {
             }
             boolean createdBase = accountCount == 0;
             if (createdBase) {
-                database.executePostgresScript("db/allpay/fines/01_seed_bu77_10_accounts.sql");
+                database.executePostgresScript("db/allpay/fines/01_seed_bu80_10_accounts.sql");
             }
             // This script validates ownership of existing accounts and refuses conflicting mappings.
             database.executePostgresScript("db/allpay/fines/02_setup_preprocessing.sql");
             return createdBase;
         } finally {
-            database.queryFirstColumn("SELECT pg_advisory_unlock(770077, 10)");
+            database.queryFirstColumn("SELECT pg_advisory_unlock(800080, 10)");
         }
     }
 

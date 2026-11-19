@@ -33,7 +33,7 @@ Feature: DWP file ingestion
     And the transformed "DWP" file has payment type "CASH" and transaction codes in order
       | 99 |
     And the transformed "DWP" file contains the account references in order
-      | 88007740000001 |
+      | 88008040000001 |
     And the transformed "DWP" file contains transaction amounts in pence in order
       | 2125 |
 

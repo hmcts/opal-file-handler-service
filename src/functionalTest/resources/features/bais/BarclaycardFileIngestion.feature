@@ -9,15 +9,15 @@ Feature: Barclaycard file ingestion
     Then the "Barclaycard" file is processed successfully
     And the extracted "Barclaycard" payments are ready for the external interface
     And the stored "Barclaycard" JSON file contains the account references in order
-      | 77100001A |
+      | 80100001A |
       | BC-APR-01 |
     And Fines preprocessing completes for the stored "Barclaycard" file
     And the transformed "Barclaycard" file has payment type "CASH" and transaction codes in order
       | 99 |
       | 99 |
     And the transformed "Barclaycard" file contains the account references in order
-      | 77100001A |
-      | 88007710000002 |
+      | 80100001A |
+      | 88008010000002 |
     And the transformed "Barclaycard" file contains transaction amounts in pence in order
       | 1500 |
       | 500 |

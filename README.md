@@ -205,11 +205,16 @@ fixture hooks, tags and Serenity reporting remain in use. Fines-routed payment s
 the transformed JSON and its linked Fines interface-file/job records at the end of preprocessing.
 Payment/till processing and final allocation remain outside these ingestion scenarios.
 
+The primary Fines preprocessing fixtures use BU80 (Westminster); cross-business-unit
+scenarios continue to use BU78. BU80 seeds use their own IDs, ownership markers and
+destination bank details so retained BU77 fixtures can coexist without being altered.
+The Allpay base seed references BU80 court `800000000001`.
+
 The DWP functional fixture routes `DWP1234567` to Fines. Its guarded
-`db/dwp/fines/setup.sql` seed maps destination bank `010101 / 12341234` to Fines BU77.
+`db/dwp/fines/setup.sql` seed maps destination bank `800101 / 80341234` to Fines BU80.
 The happy path verifies five cash payments totalling 10,501 pence and unchanged unmatched
 account references, including their original fixed-width padding. A separate APR scenario verifies
-that `DWP-APR-01` resolves to owned Fines account `77400001A` (ID `88007740000001`)
+that `DWP-APR-01` resolves to owned Fines account `80400001A` (ID `88008040000001`)
 in the transformed JSON for a 2,125-pence payment. The duplicate case verifies
 reuse of the original Fines job and transformed file. Shared preprocessing cleanup removes
 only the scenario's unprocessed Fines records before deleting its File Handler artifacts;

@@ -369,8 +369,8 @@ public class BaisFileStepDef extends BaseStepDef {
         assertEquals(forSource("DWP").fileName(), response.jsonPath().getString("file_name"));
         assertEquals("DWP1234567", response.jsonPath().getString("dwp_court_code"));
         assertEquals("CASH", response.jsonPath().getString("payment_type"));
-        assertEquals("010101", response.jsonPath().getString("destination_details.bank_details.sort_code"));
-        assertEquals("12341234", response.jsonPath().getString("destination_details.bank_details.account_number"));
+        assertEquals("800101", response.jsonPath().getString("destination_details.bank_details.sort_code"));
+        assertEquals("80341234", response.jsonPath().getString("destination_details.bank_details.account_number"));
         assertEquals(List.of(2125, 2125, 2125, 2125, 2001),
             response.jsonPath().getList("transactions.amount"));
         assertEquals(List.of("99", "99", "99", "99", "99"),

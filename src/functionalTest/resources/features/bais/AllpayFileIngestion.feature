@@ -22,10 +22,10 @@ Feature: Allpay file ingestion
       | 68 |
       | 00 |
     And the transformed "Allpay" file contains the account references in order
-      | 88007700000001 |
-      | 88007700000001 |
-      | 88007700000001 |
-      | 88007700000001 |
+      | 88008000000001 |
+      | 88008000000001 |
+      | 88008000000001 |
+      | 88008000000001 |
 
   Scenario: An Allpay file for a nonexistent account is ingested
     Given the configured "Allpay" file "a121_00000001_000003.dat" is available on bais
@@ -38,7 +38,7 @@ Feature: Allpay file ingestion
     And the configured "Allpay" file no longer exists on bais
     And Fines preprocessing completes for the stored "Allpay" file
     And the transformed "Allpay" file contains the account references in order
-      | 12345678A |
+      | 80345678A |
 
   Scenario: An Allpay file with a valid APR is ingested
     Given the configured "Allpay" file "a121_00000001_000004.dat" is available on bais
@@ -51,7 +51,7 @@ Feature: Allpay file ingestion
     And the configured "Allpay" file no longer exists on bais
     And Fines preprocessing completes for the stored "Allpay" file
     And the transformed "Allpay" file contains the account references in order
-      | 88007700000001 |
+      | 88008000000001 |
 
   Scenario: An Allpay file with the same valid APR for a different business unit is ingested
     Given the configured "Allpay" file "a121_00000001_000016.dat" is available on bais
@@ -77,7 +77,7 @@ Feature: Allpay file ingestion
     And the configured "Allpay" file no longer exists on bais
     And Fines preprocessing completes for the stored "Allpay" file
     And the transformed "Allpay" file contains the account references in order
-      | 88007700000001 |
+      | 88008000000001 |
 
   Scenario: An Allpay file with a payment using a former child account reference resolves to its master
     Given the configured "Allpay" file "a121_00000001_000006.dat" is available on bais
@@ -90,8 +90,8 @@ Feature: Allpay file ingestion
     And the configured "Allpay" file no longer exists on bais
     And Fines preprocessing completes for the stored "Allpay" file
     And the transformed "Allpay" file contains the account references in order
-      | 77000002A      |
-      | 88007700000002 |
+      | 80000002A      |
+      | 88008000000002 |
 
   Scenario: An Allpay file with a zero value payment is ingested
     Given the configured "Allpay" file "a121_00000001_000007.dat" is available on bais
@@ -129,17 +129,17 @@ Feature: Allpay file ingestion
     And the stored "Allpay" file can be retrieved by interface file ID
     And the stored "Allpay" file content matches the bais "file"
     And the stored "Allpay" JSON file contains the account references in order
-      | ABC77000001A    |
-      | 77000001AABC    |
-      | ABC77000001AABC |
-      | 77000001A       |
+      | ABC80000001A    |
+      | 80000001AABC    |
+      | ABC80000001AABC |
+      | 80000001A       |
     And the configured "Allpay" file no longer exists on bais
     And Fines preprocessing completes for the stored "Allpay" file
     And the transformed "Allpay" file contains the account references in order
-      | 77000001A |
-      | 77000001A |
-      | 77000001A |
-      | 77000001A |
+      | 80000001A |
+      | 80000001A |
+      | 80000001A |
+      | 80000001A |
 
   Scenario: An Allpay file with a cheque only payment is ingested
     Given the configured "Allpay" file "a121_00000001_000013.dat" is available on bais

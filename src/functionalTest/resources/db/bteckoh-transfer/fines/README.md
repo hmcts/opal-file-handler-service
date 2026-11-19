@@ -2,7 +2,7 @@
 
 The first BTEckoh transfer scenario in each test JVM runs this directory's `setup.sql`
 through `BTEckohFinesSeedFixture`. It does not invoke Allpay or Barclaycard
-setup/cleanup or reuse their accounts/APRs. The only Fines reference-data prerequisite is migrated BU77 and the normal application schema.
+setup/cleanup or reuse their accounts/APRs. The only Fines reference-data prerequisite is migrated BU80 and the normal application schema.
 No manual SQL execution or prior run of another interface is required.
 
 The `test-data/bacs/bteckoh-unique.dat` resource is uploaded under
@@ -10,25 +10,25 @@ BTEckoh transfer's configured filename `a121_00350005_300000.dat`. It contains:
 
 | Code | Payment | Source reference | Expected transformed reference | Seeded account / debt |
 | --- | --- | --- | --- | --- |
-| `99` | 1,500 pence (£15) | `77200001A` | `77200001A` | `88007720000001` / £500 |
-| `93` | 500 pence (£5) | APR `BT-APR-01` | Account ID `88007720000002` | `77200002A` / £600 |
+| `99` | 1,500 pence (£15) | `80200001A` | `80200001A` | `88008020000001` / £500 |
+| `93` | 500 pence (£5) | APR `BT-APR-01` | Account ID `88008020000002` | `80200002A` / £600 |
 
-Both dedicated accounts belong to BU77. The second code normalizes to `99`;
+Both dedicated accounts belong to BU80. The second code normalizes to `99`;
 the direct reference is retained while the APR resolves to an internal account ID.
 Fines stores the debts as `-500.00` and `-600.00` pounds, with £0 paid. These are
 preprocessing lookup fixtures: no parties, impositions or payment-allocation data
 are created. Payment allocation remains outside this test suite's scope.
 
-The APR ID is `88007720000801`. Account ownership markers are
-`BTECKOH_BU77_PREPROCESSING_V1:01` and `:02`. The dedicated Fines
-`BANK_ACCOUNTS` mapping resolves destination `010102/12341235` to BU77, using ID
-`88007720000701` and marker `BTECKOH_BU77_PREPROCESSING_V1`.
-Setup is transactional and repeatable, using its own advisory lock `(770077,6428)`.
+The APR ID is `88008020000801`. Account ownership markers are
+`BTECKOH_BU80_PREPROCESSING_V1:01` and `:02`. The dedicated Fines
+`BANK_ACCOUNTS` mapping resolves destination `800102/80341235` to BU80, using ID
+`88008020000701` and marker `BTECKOH_BU80_PREPROCESSING_V1`.
+Setup is transactional and repeatable, using its own advisory lock `(800080,6428)`.
 It refuses occupied IDs, account references/APRs, changed amounts or ambiguous bank
 mappings. It does not reset sequences or alter `account_number_index`.
 
 The valid-file scenario checks source JSON, waits for its exact Fines CREATED job
-and transformed JSON, then asserts BU77, account references, normalized codes,
+and transformed JSON, then asserts BU80, account references, normalized codes,
 individual amounts, record count 2 and total 2,000 pence. Generic assertion and
 job-cleanup helpers are shared with Allpay; every cleanup targets only the exact
 source JSON IDs produced by the current interface's scenario.

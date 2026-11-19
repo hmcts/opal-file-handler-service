@@ -9,15 +9,15 @@ Feature: BTEckoh file ingestion
     Then the "BTEckoh transfer" file is processed successfully
     And the extracted "BTEckoh transfer" payments are ready for the external interface
     And the stored "BTEckoh transfer" JSON file contains the account references in order
-      | 77200001A |
+      | 80200001A |
       | BT-APR-01 |
     And Fines preprocessing completes for the stored "BTEckoh transfer" file
     And the transformed "BTEckoh transfer" file has payment type "CASH" and transaction codes in order
       | 99 |
       | 99 |
     And the transformed "BTEckoh transfer" file contains the account references in order
-      | 77200001A |
-      | 88007720000002 |
+      | 80200001A |
+      | 88008020000002 |
     And the transformed "BTEckoh transfer" file contains transaction amounts in pence in order
       | 1500 |
       | 500 |
