@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.dto.types.FileHandlerTypes.LanguageType;
+import uk.gov.hmcts.opal.filehandler.dto.types.LanguageType;
 
 @Data
 @Builder

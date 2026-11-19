@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.dto.types.FileHandlerTypes.AccountType;
+import uk.gov.hmcts.opal.filehandler.dto.types.AccountType;
 
 @Data
 @Builder

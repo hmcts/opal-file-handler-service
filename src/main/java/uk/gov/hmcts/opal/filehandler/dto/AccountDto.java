@@ -7,7 +7,7 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.dto.types.FileHandlerTypes.OriginatorType;
+import uk.gov.hmcts.opal.filehandler.dto.types.OriginatorType;
 
 @Data
 @Builder
