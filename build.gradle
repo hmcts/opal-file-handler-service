@@ -311,7 +311,7 @@ jacocoTestReport {
 tasks.sonarqube.dependsOn(jacocoTestReport)
 tasks.check.dependsOn(integration)
 
-onarqube {
+sonarqube {
   properties {
     property "sonar.projectName", "Opal :: file-handler"
     property "sonar.projectKey", "uk.gov.hmcts.opal:file-handler"
