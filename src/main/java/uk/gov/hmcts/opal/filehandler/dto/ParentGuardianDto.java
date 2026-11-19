@@ -1,5 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.dto;
 
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +13,5 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class ParentGuardianDto extends CommonPersonDto {
-
-    private String telephoneNumberMobile;
 
 }

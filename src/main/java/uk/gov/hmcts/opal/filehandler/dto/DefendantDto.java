@@ -13,7 +13,8 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class DefendantDto extends CommonPersonDto {
 
-
+    private String title;
+    private String drivingLicenceNumber;
     private String pncId;
     private String nationality1;
     private String nationality2;
@@ -21,8 +22,10 @@ public class DefendantDto extends CommonPersonDto {
     private String ethnicityObserved;
     private String croNumber;
     private String occupation;
+    private String gender;
     private String custodyStatus;
     private String prisonNumber;
     private String interpreterLang;
     private ParentGuardianDto parentGuardian;
+
 }

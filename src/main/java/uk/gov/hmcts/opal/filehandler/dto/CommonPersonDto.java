@@ -24,13 +24,11 @@ public abstract class CommonPersonDto {
     private String addressLine5;
     private String postCode;
     private String telephoneNumberHome;
-    private String title;
-    private String gender;
     private String telephoneNumberBusiness;
     private String telephoneNumberMobile;
     private String emailAddress1;
     private String emailAddress2;
     private DebtorDetailDto debtorDetail;
     private String nationalInsuranceNumber;
-    private String drivingLicenceNumber;
+
 }

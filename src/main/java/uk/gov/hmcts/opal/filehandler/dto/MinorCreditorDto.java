@@ -1,5 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.dto;
 
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,8 +16,8 @@ public class MinorCreditorDto extends CommonPersonDto {
 
     private String telephone;
     private String emailAddress;
-    private Boolean payoutHold;
-    private Boolean payByBacs;
+    private boolean payoutHold;
+    private boolean payByBacs;
     private String bankAccountType;
     private String bankSortCode;
     private String bankAccountNumber;

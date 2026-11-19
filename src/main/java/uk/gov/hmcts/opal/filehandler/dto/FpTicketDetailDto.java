@@ -11,8 +11,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-public class FpTicketDetailDto extends CommonPersonDto {
+public class FpTicketDetailDto {
 
     private String noticeNumber;
     private LocalDate dateOfIssue;
