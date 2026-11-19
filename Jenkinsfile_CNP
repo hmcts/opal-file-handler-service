@@ -308,11 +308,20 @@ def configureStagingFunctionalTestEnvironment(String valuesFile) {
     if (!env.OPAL_FILE_HANDLER_DB_PASSWORD?.trim()) {
         missingVariables.add('OPAL_FILE_HANDLER_DB_PASSWORD')
     }
-    ['HOST', 'PORT', 'NAME', 'USERNAME', 'PASSWORD'].each { suffix ->
-        String variable = "OPAL_FINES_DB_${suffix}"
-        if (!env[variable]?.trim()) {
-            missingVariables.add(variable)
-        }
+    if (!env.OPAL_FINES_DB_HOST?.trim()) {
+        missingVariables.add('OPAL_FINES_DB_HOST')
+    }
+    if (!env.OPAL_FINES_DB_PORT?.trim()) {
+        missingVariables.add('OPAL_FINES_DB_PORT')
+    }
+    if (!env.OPAL_FINES_DB_NAME?.trim()) {
+        missingVariables.add('OPAL_FINES_DB_NAME')
+    }
+    if (!env.OPAL_FINES_DB_USERNAME?.trim()) {
+        missingVariables.add('OPAL_FINES_DB_USERNAME')
+    }
+    if (!env.OPAL_FINES_DB_PASSWORD?.trim()) {
+        missingVariables.add('OPAL_FINES_DB_PASSWORD')
     }
     if (!env.FILE_STORE_STORAGE_ACCOUNT_NAME?.trim()) {
         missingVariables.add('FILE_STORE_STORAGE_ACCOUNT_NAME')
