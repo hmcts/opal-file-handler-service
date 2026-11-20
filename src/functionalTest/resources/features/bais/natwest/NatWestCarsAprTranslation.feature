@@ -365,7 +365,7 @@ Feature: NatWest CARS ingestion and account reference translation
     Then the testing-support request is accepted
     And the NatWest ingestion result matches:
       | sourceStatus | sourceDomain | errorContains                                                       | sourceBlobPreserved | sourceJsonCreated | inputFileRemainsOnBais |
-      | FAILED       | MAINTENANCE  | BACS Standard 18 transaction code at index 15 to 17 must be numeric | true                | false             | true                   |
+      | FAILED       | null         | BACS Standard 18 transaction code at index 15 to 17 must be numeric | true                | false             | true                   |
 
   @NatWestMissingReference @JIRA-STORY:PO-7244
   Scenario: 15 - A NatWest CARS file with no originator account reference is rejected
@@ -380,7 +380,7 @@ Feature: NatWest CARS ingestion and account reference translation
     Then the testing-support request is accepted
     And the NatWest ingestion result matches:
       | sourceStatus | sourceDomain | errorContains                                                               | sourceBlobPreserved | sourceJsonCreated | inputFileRemainsOnBais |
-      | FAILED       | MAINTENANCE  | BACS Standard 18 originator account reference is required at index 64 to 82 | true                | false             | true                   |
+      | FAILED       | null         | BACS Standard 18 originator account reference is required at index 64 to 82 | true                | false             | true                   |
 
   @NatWestUnmappedBank @JIRA-STORY:PO-7244
   Scenario: 16 - A NatWest CARS file with an unmapped destination bank account is rejected
@@ -395,7 +395,7 @@ Feature: NatWest CARS ingestion and account reference translation
     Then the testing-support request is accepted
     And the NatWest ingestion result matches:
       | sourceStatus | sourceDomain | errorContains                                                                                         | sourceBlobPreserved | sourceJsonCreated | inputFileRemainsOnBais |
-      | FAILED       | MAINTENANCE  | Business unit bank account with sort code '111111' and account number '22222222' could not be located | true                | false             | true                   |
+      | FAILED       | null         | Business unit bank account with sort code '111111' and account number '22222222' could not be located | true                | false             | true                   |
 
   @NatWestDuplicatePreprocessing @JIRA-STORY:PO-7244
   Scenario: 17 - Duplicate NatWest ingestion reuses the original Fines preprocessing result
@@ -449,7 +449,7 @@ Feature: NatWest CARS ingestion and account reference translation
     Then the testing-support request is accepted
     And the NatWest ingestion result matches:
       | sourceStatus | sourceDomain | errorContains                                              | sourceBlobPreserved | sourceJsonCreated | inputFileRemainsOnBais |
-      | FAILED       | MAINTENANCE  | BACS Standard 18 file did not contain the expected headers | true                | false             | true                   |
+      | FAILED       | null         | BACS Standard 18 file did not contain the expected headers | true                | false             | true                   |
 
   @NatWestMixedValidInvalidCodes @JIRA-STORY:PO-6460 @JIRA-STORY:PO-6461
   Scenario: 20 - A NatWest CARS file with eight valid and two unsupported numeric codes retains eight payments

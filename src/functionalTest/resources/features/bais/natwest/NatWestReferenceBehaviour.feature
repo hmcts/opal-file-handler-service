@@ -144,7 +144,7 @@ Feature: Observe NatWest account and APR reference behaviour before business-rul
     Then the testing-support request is accepted
     And the NatWest ingestion result matches:
       | sourceStatus            | sourceDomain | errorContains | sourceBlobPreserved | sourceJsonCreated | inputFileRemainsOnBais |
-      | SUCCESS_NO_TRANSACTIONS | MAINTENANCE  |               | true                | false             | false                  |
+      | SUCCESS_NO_TRANSACTIONS | null         |               | true                | false             | false                  |
 
   @NatWestUnknownCaseReference
   Scenario: 07 - A case-like reference with no matching account remains unchanged during preprocessing

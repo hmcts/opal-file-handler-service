@@ -261,6 +261,7 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
         assertNotNull(expectedStatus, "Expected sourceStatus is required");
         String expectedDomain = expected.get("sourceDomain");
         assertNotNull(expectedDomain, "Expected sourceDomain is required");
+        String expectedDomainValue = "null".equals(expectedDomain) ? null : expectedDomain;
         String expectedError = expected.get("errorContains");
         boolean expectBlob = expectedBoolean(expected.get("sourceBlobPreserved"));
         boolean expectSourceJson = expectedBoolean(expected.get("sourceJsonCreated"));
@@ -280,7 +281,7 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
                 assertEquals(expectedStatus, actualSource.get("status"));
                 assertEquals("OPAL", actualSource.get("target"));
                 assertEquals("SOURCE", actualSource.get("type"));
-                assertEquals(expectedDomain, actualSource.get("domain"),
+                assertEquals(expectedDomainValue, actualSource.get("domain"),
                     "SOURCE domain differs from the feature table");
                 if (expectedError == null || expectedError.isBlank()) {
                     assertEquals(null, actualSource.get("errors"), "SOURCE has an unexpected error");
