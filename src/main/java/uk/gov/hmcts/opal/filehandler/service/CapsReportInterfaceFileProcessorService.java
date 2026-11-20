@@ -43,7 +43,8 @@ public class CapsReportInterfaceFileProcessorService extends InterfaceFileProces
     public void processFile(
         InterfaceFileEntity fileEntity,
         InputStream inputStream,
-        long creatorId) {
+        long creatorId,
+        ProcessingFailurePolicy failurePolicy) {
         // Not Required
     }
 

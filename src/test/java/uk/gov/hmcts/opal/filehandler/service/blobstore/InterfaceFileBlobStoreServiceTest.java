@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,10 +26,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.AbstractPlatformTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobStorageContainerNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobUploadException;
+import uk.gov.hmcts.opal.filehandler.service.ProcessingFailurePolicy;
 
 @ExtendWith(MockitoExtension.class)
 class InterfaceFileBlobStoreServiceTest {
@@ -73,7 +80,8 @@ class InterfaceFileBlobStoreServiceTest {
         when(blobClient.getProperties()).thenReturn(blobProperties);
         when(blobProperties.getContentMd5()).thenReturn(HexFormat.of().parseHex(EXPECTED_CHECKSUM));
 
-        blobStoreService.uploadBaisFile(FILESTORE_UUID, BLOB_CONTAINER_NAME, baisFileStream, EXPECTED_CHECKSUM);
+        blobStoreService.uploadBaisFile(FILESTORE_UUID, BLOB_CONTAINER_NAME, baisFileStream, EXPECTED_CHECKSUM,
+            ProcessingFailurePolicy.RECORD_FAILURE);
 
         verify(blobContainerClient).getBlobClient(BLOB_NAME);
         verify(blobClient).upload(baisFileStream);
@@ -90,7 +98,8 @@ class InterfaceFileBlobStoreServiceTest {
         BlobChecksumValidationException exception = assertThrows(
             BlobChecksumValidationException.class,
             () -> blobStoreService.uploadBaisFile(
-                FILESTORE_UUID, BLOB_CONTAINER_NAME, baisFileStream, EXPECTED_CHECKSUM));
+                FILESTORE_UUID, BLOB_CONTAINER_NAME, baisFileStream, EXPECTED_CHECKSUM,
+                ProcessingFailurePolicy.RECORD_FAILURE));
 
         assertThat(exception.getFilestoreUuid()).isEqualTo(FILESTORE_UUID);
         assertThat(exception.getExpectedChecksum()).isEqualTo(EXPECTED_CHECKSUM);
@@ -111,7 +120,8 @@ class InterfaceFileBlobStoreServiceTest {
         BlobUploadException exception = assertThrows(
             BlobUploadException.class,
             () -> blobStoreService.uploadBaisFile(
-                FILESTORE_UUID, BLOB_CONTAINER_NAME, baisFileStream, EXPECTED_CHECKSUM));
+                FILESTORE_UUID, BLOB_CONTAINER_NAME, baisFileStream, EXPECTED_CHECKSUM,
+                ProcessingFailurePolicy.RECORD_FAILURE));
 
         assertThat(exception.getFilestoreUuid()).isEqualTo(FILESTORE_UUID);
         assertThat(exception.getContainerName()).isEqualTo(BLOB_CONTAINER_NAME);
@@ -219,6 +229,132 @@ class InterfaceFileBlobStoreServiceTest {
         BinaryData result = blobStoreService.getFileContents(blobClient);
 
         assertThat(result).isSameAs(downloadedFileContents);
+    }
+
+    @Test
+    void deletesUploadedBlobOnRollback() {
+        stubSuccessfulUpload();
+
+        transactions().executeWithoutResult(status -> {
+            uploadWithPolicy(ProcessingFailurePolicy.PROPAGATE);
+            verify(blobClient, never()).deleteIfExists();
+            status.setRollbackOnly();
+        });
+
+        verify(blobClient).deleteIfExists();
+    }
+
+    @Test
+    void retainsUploadedBlobOnCommit() {
+        stubSuccessfulUpload();
+
+        transactions().executeWithoutResult(status -> uploadWithPolicy(ProcessingFailurePolicy.PROPAGATE));
+
+        verify(blobClient, never()).deleteIfExists();
+    }
+
+    @Test
+    void recordingPolicyRetainsBlobWhenItsTransactionRollsBack() {
+        stubSuccessfulUpload();
+
+        transactions().executeWithoutResult(status -> {
+            uploadWithPolicy(ProcessingFailurePolicy.RECORD_FAILURE);
+            status.setRollbackOnly();
+        });
+
+        verify(blobClient, never()).deleteIfExists();
+    }
+
+    @Test
+    void rollbackCleanupIsRegisteredBeforeFailedUpload() {
+        mockBlobLocation();
+        RuntimeException uploadFailure = new RuntimeException(UPLOAD_FAILURE_MESSAGE);
+        doThrow(uploadFailure).when(blobClient).upload(any(InputStream.class));
+        doThrow(new RuntimeException("Immediate deletion unavailable")).when(blobClient).deleteIfExists();
+
+        BlobUploadException failure = assertThrows(BlobUploadException.class,
+            () -> transactions().executeWithoutResult(status -> uploadWithPolicy(ProcessingFailurePolicy.PROPAGATE)));
+
+        assertThat(failure).hasCause(uploadFailure);
+        assertThat(uploadFailure.getSuppressed()).hasSize(1);
+        // Immediate deletion fails, so the rollback callback must independently attempt cleanup.
+        verify(blobClient, times(2)).deleteIfExists();
+    }
+
+    @Test
+    void checksumFailureAlsoTriggersRollbackCleanup() {
+        mockBlobLocation();
+        when(blobClient.getProperties()).thenReturn(blobProperties);
+        when(blobProperties.getContentMd5()).thenReturn(HexFormat.of().parseHex(MISMATCHED_CHECKSUM));
+
+        assertThrows(BlobChecksumValidationException.class,
+            () -> transactions().executeWithoutResult(status -> uploadWithPolicy(ProcessingFailurePolicy.PROPAGATE)));
+
+        verify(blobClient, times(2)).deleteIfExists();
+    }
+
+    @Test
+    void failedCleanupDoesNotPreventOtherBlobsBeingDeletedOrReplaceOriginalFailure() {
+        stubSuccessfulUpload();
+        UUID otherUuid = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        BlobClient otherBlob = mock(BlobClient.class);
+        when(blobContainerClient.getBlobClient(otherUuid.toString())).thenReturn(otherBlob);
+        when(otherBlob.getProperties()).thenReturn(blobProperties);
+        doThrow(new RuntimeException("Deletion unavailable")).when(blobClient).deleteIfExists();
+        RuntimeException processingFailure = new RuntimeException("Queue publication failed");
+
+        RuntimeException failure = assertThrows(RuntimeException.class,
+            () -> transactions().executeWithoutResult(status -> {
+                uploadWithPolicy(ProcessingFailurePolicy.PROPAGATE);
+                blobStoreService.uploadBaisFile(otherUuid, BLOB_CONTAINER_NAME,
+                    new ByteArrayInputStream(BAIS_FILE_CONTENT), EXPECTED_CHECKSUM, ProcessingFailurePolicy.PROPAGATE);
+                throw processingFailure;
+            }));
+
+        assertThat(failure).isSameAs(processingFailure);
+        verify(blobClient).deleteIfExists();
+        verify(otherBlob).deleteIfExists();
+    }
+
+    @Test
+    void propagatingUploadRequiresTransactionBeforeWritingBlob() {
+        mockBlobLocation();
+
+        assertThrows(IllegalStateException.class, () -> uploadWithPolicy(ProcessingFailurePolicy.PROPAGATE));
+
+        verify(blobClient, never()).upload(any(InputStream.class));
+    }
+
+    private void stubSuccessfulUpload() {
+        mockBlobLocation();
+        when(blobClient.getProperties()).thenReturn(blobProperties);
+        when(blobProperties.getContentMd5()).thenReturn(HexFormat.of().parseHex(EXPECTED_CHECKSUM));
+    }
+
+    private void uploadWithPolicy(ProcessingFailurePolicy policy) {
+        blobStoreService.uploadBaisFile(FILESTORE_UUID, BLOB_CONTAINER_NAME, baisFileStream, EXPECTED_CHECKSUM, policy);
+    }
+
+    private TransactionTemplate transactions() {
+        return new TransactionTemplate(new AbstractPlatformTransactionManager() {
+            @Override
+            protected Object doGetTransaction() {
+                return new Object();
+            }
+
+            @Override
+            protected void doBegin(Object transaction, TransactionDefinition definition) {
+                // No database is needed to exercise Spring's real transaction callbacks.
+            }
+
+            @Override
+            protected void doCommit(DefaultTransactionStatus status) {
+            }
+
+            @Override
+            protected void doRollback(DefaultTransactionStatus status) {
+            }
+        });
     }
 
     private void mockExistingBlob() {
