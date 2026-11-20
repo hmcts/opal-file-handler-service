@@ -428,7 +428,7 @@ dependencies {
   implementation 'uk.gov.hmcts:opal-logging-service-integration-lib:0.0.14'
 
   //Annotation
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.16.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.4.17.Final'
 
   compileOnly 'org.projectlombok:lombok:1.18.48'
   annotationProcessor 'org.projectlombok:lombok:1.18.48'
