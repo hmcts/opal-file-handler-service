@@ -303,7 +303,8 @@ public class InterfaceFilesServiceTest {
             Type.TRANSFORMED_JSON,
             Domain.FINES,
             "dwp-container",
-            1L
+            1L,
+            ProcessingFailurePolicy.RECORD_FAILURE
         )).thenReturn(ingestedEntity);
         when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
         when(repository.findById(24L)).thenReturn(Optional.of(ingestedEntity));
@@ -363,7 +364,8 @@ public class InterfaceFilesServiceTest {
             Type.TRANSFORMED_JSON,
             Domain.FINES,
             containerName,
-            1L
+            1L,
+            ProcessingFailurePolicy.RECORD_FAILURE
         )).thenReturn(ingestedEntity);
         when(repository.save(ingestedEntity)).thenReturn(ingestedEntity);
         when(repository.findById(25L)).thenReturn(Optional.of(ingestedEntity));
@@ -380,7 +382,8 @@ public class InterfaceFilesServiceTest {
             assertArrayEquals(new Short[] {(short) 9876}, ingestedEntity.getBusinessUnitId());
 
             verify(processorService).ingestFile("source.dat", fileBytes, source, target,
-                Type.TRANSFORMED_JSON, Domain.FINES, containerName, 1L);
+                Type.TRANSFORMED_JSON, Domain.FINES, containerName, 1L,
+                ProcessingFailurePolicy.RECORD_FAILURE);
             verify(repository).save(ingestedEntity);
             verify(repository).findById(25L);
             verify(mapper).toInterfaceFileObject(ingestedEntity);

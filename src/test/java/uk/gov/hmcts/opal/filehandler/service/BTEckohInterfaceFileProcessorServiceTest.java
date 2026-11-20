@@ -94,7 +94,7 @@ class BTEckohInterfaceFileProcessorServiceTest {
         InputStream inputStream = InputStream.nullInputStream();
         when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of());
 
-        service.processFile(sourceFile, inputStream, -1L);
+        service.processFile(sourceFile, inputStream, -1L, ProcessingFailurePolicy.RECORD_FAILURE);
 
         assertThat(sourceFile.getStatus()).isEqualTo(Status.SUCCESS_NO_TRANSACTIONS);
         verify(extractionService).extractStandardData(sourceFile, inputStream);

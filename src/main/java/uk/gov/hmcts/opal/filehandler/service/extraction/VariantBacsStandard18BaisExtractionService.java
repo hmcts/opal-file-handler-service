@@ -12,7 +12,7 @@ import uk.gov.hmcts.opal.filehandler.service.extraction.model.InterfaceFileCommo
 @Service
 public class VariantBacsStandard18BaisExtractionService extends BacsStandard18BaisExtractionService {
 
-    private final Pattern fileNamePattern = Pattern.compile("^a121_\\d{6}VB(?<buId>\\d{3})_\\d{2}\\.dat$");
+    private final Pattern fileNamePattern = Pattern.compile("^a121_\\d{6}_VB_(?<buId>\\d{3})_\\d{2}\\.dat$");
 
     public VariantBacsStandard18BaisExtractionService(InterfaceFilesRepository interfaceFilesRepository,
         BusinessUnitBankAccountRepository businessUnitBankAccountRepository) {
