@@ -15,13 +15,13 @@ SELECT pg_advisory_xact_lock(800080, 10);
 -- Exact fixture ID sets; the same manifest is embedded in both files.
 CREATE TEMP TABLE _bu80_fixture ON COMMIT DROP AS
 SELECT n,
-       88008000000000::bigint + n AS defendant_account_id,
-       88008000000100::bigint + n AS defendant_party_id,
-       88008000000200::bigint + n AS creditor_account_id,
-       88008000000300::bigint + n AS creditor_party_id,
-       88008000000400::bigint + n AS defendant_account_party_id,
-       88008000000500::bigint + n AS payment_terms_id,
-       88008000000600::bigint + n AS imposition_id,
+       58008000000000::bigint + n AS defendant_account_id,
+       58008000000100::bigint + n AS defendant_party_id,
+       58008000000200::bigint + n AS creditor_account_id,
+       58008000000300::bigint + n AS creditor_party_id,
+       58008000000400::bigint + n AS defendant_account_party_id,
+       58008000000500::bigint + n AS payment_terms_id,
+       58008000000600::bigint + n AS imposition_id,
        'ZB80D' || lpad(n::text, 4, '0') AS defendant_account_number,
        'ZB80C' || lpad(n::text, 4, '0') AS creditor_account_number,
        'ZZBU80SEED' || lpad(n::text, 4, '0') AS case_reference,
@@ -41,15 +41,15 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM public.results WHERE result_id = 'FCOMP') THEN
         RAISE EXCEPTION 'Result FCOMP is missing; no data inserted.';
     END IF;
-    -- The standard dev sequences are already above this fixture block. Refuse
-    -- a differently provisioned database rather than changing any shared sequence.
+    -- This reserved block is below the normal staging sequence start (60000000000000).
+    -- Refuse a differently provisioned database rather than changing any shared sequence.
     FOR r IN SELECT * FROM (VALUES
-      ('party_id_seq',88008000000310::bigint),
-      ('creditor_account_id_seq',88008000000210::bigint),
-      ('defendant_account_id_seq',88008000000010::bigint),
-      ('defendant_account_party_id_seq',88008000000410::bigint),
-      ('payment_terms_id_seq',88008000000510::bigint),
-      ('imposition_id_seq',88008000000610::bigint)
+      ('party_id_seq',58008000000310::bigint),
+      ('creditor_account_id_seq',58008000000210::bigint),
+      ('defendant_account_id_seq',58008000000010::bigint),
+      ('defendant_account_party_id_seq',58008000000410::bigint),
+      ('payment_terms_id_seq',58008000000510::bigint),
+      ('imposition_id_seq',58008000000610::bigint)
     ) AS x(sequence_name,reserved_max) LOOP
         EXECUTE format('SELECT last_value FROM public.%I',r.sequence_name) INTO sequence_value;
         IF sequence_value < r.reserved_max OR NOT EXISTS (

@@ -18,6 +18,11 @@ file-handler/SFTP setup. Other BAIS features do not trigger this seed.
   the large-account balance exist. A database advisory lock
   serializes preparation across test JVMs and the manual setup/cleanup scripts.
 
+The BU80 Allpay fixtures use reserved IDs in the `580080…` range, below the normal
+staging sequence start of `60000000000000`. The seed checks sequence positions and
+reserved-ID ownership; it never advances or resets shared sequences. BU78 fixtures
+keep their existing `880078…` IDs.
+
 The normal Fines migrations must already provide BU80, BU78, the BU80 court, result FCOMP,
 and the schema. The tests do not provision a database or run application migrations.
 No SQL from Downloads needs to be run manually. Scenario cleanup retains the
@@ -42,11 +47,11 @@ aliases to the corresponding seeded defendant accounts. They are creditor
 numbers in the original seed; the aliases let existing Allpay fixture references
 resolve deliberately rather than assuming creditor-account lookup occurs.
 `TEST-APR-01` and the originator-name APR `ABCXYZ` both resolve to defendant
-account `88008000000001`.
+account `58008000000001`.
 
 `TEST-APR-01` is deliberately present in both BU80 and BU78, which is permitted
 by the `(business_unit_id, apr_text)` unique constraint. The existing BU80 APR
-scenario (`000004.dat`) resolves to `88008000000001`. The duplicate-name scenario
+scenario (`000004.dat`) resolves to `58008000000001`. The duplicate-name scenario
 (`000016.dat`) uses destination bank `678901/67890123` to resolve BU78 and must
 produce account ID `88007800000001`, not the BU80 account.
 
@@ -70,12 +75,12 @@ The originator-name APR fixture has `ABCXYZ` in the 18-character name field and
 lookup instead of requiring separate APRs for every decorated string.
 
 The former-child APR fixture (`a121_00000001_000006.dat`) contains a direct
-payment reference for master account `80000002A` (ID `88008000000002`) and the
+payment reference for master account `80000002A` (ID `58008000000002`) and the
 former child reference `80000003A`. No defendant account or account-number-index
 entry may match `80000003A`. Seed account 3 keeps its original `ZB80D0003` number.
-The APR (`88008000000813`, relationship `CONSOLIDATED`, category `ACC`) maps
+The APR (`58008000000813`, relationship `CONSOLIDATED`, category `ACC`) maps
 `80000003A` to the master. Preprocessing retains the directly matched master
-number and translates the former child reference to master ID `88008000000002`.
+number and translates the former child reference to master ID `58008000000002`.
 
 This fixture proves APR translation only; it does not execute consolidation,
 create consolidation transactions, change consolidation statuses, or allocate payments.
@@ -87,8 +92,8 @@ The large-payment fixtures both contain `99,999,999,999` pence (£999,999,999.99
 
 | File | Reference / resolved account | Outstanding debt |
 | --- | --- | --- |
-| `a121_00000001_000008.dat` | `ZB80C0004` / `80000004A` (`88008000000004`) | £1,000,000,000.00 (`100,000,000,000` pence) |
-| `a121_00000001_000009.dat` | `ZB80C0001` / `80000001A` (`88008000000001`) | £100.00 (`10,000` pence) |
+| `a121_00000001_000008.dat` | `ZB80C0004` / `80000004A` (`58008000000004`) | £1,000,000,000.00 (`100,000,000,000` pence) |
+| `a121_00000001_000009.dat` | `ZB80C0001` / `80000001A` (`58008000000001`) | £100.00 (`10,000` pence) |
 
 Fines stores these debit balances in pounds as `-1000000000.00` and `-100.00`.
 Supplemental setup enlarges account 4's amount imposed, account balance, original

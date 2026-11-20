@@ -26,7 +26,7 @@ public class FinesInterfaceFileTestDatabaseClient implements AutoCloseable {
         try {
             int accountCount = Integer.parseInt(database.queryFirstColumn("""
                 SELECT count(*) FROM public.defendant_accounts
-                WHERE defendant_account_id BETWEEN 88008000000001 AND 88008000000010
+                WHERE defendant_account_id BETWEEN 58008000000001 AND 58008000000010
                 """).getFirst());
             if (accountCount != 0 && accountCount != 10) {
                 throw new IllegalStateException("Partial Allpay Fines base seed: expected zero or ten reserved "
