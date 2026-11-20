@@ -5,13 +5,21 @@ import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
 import java.util.Locale;
 import java.util.Map;
+import uk.gov.hmcts.opal.filehandler.context.ScenarioContextHolder;
 import uk.gov.hmcts.opal.filehandler.db.DatabaseClient;
 import uk.gov.hmcts.opal.filehandler.support.BaisFileFixture;
 import uk.gov.hmcts.opal.filehandler.support.BaisFileTestConfig;
 import uk.gov.hmcts.opal.filehandler.support.BaisFileTestData;
+import uk.gov.hmcts.opal.filehandler.support.BarclaycardFinesSeedFixture;
+import uk.gov.hmcts.opal.filehandler.support.BTEckohFinesSeedFixture;
+import uk.gov.hmcts.opal.filehandler.support.BailiffFinesSeedFixture;
+import uk.gov.hmcts.opal.filehandler.support.FinesSeedFixture;
+import uk.gov.hmcts.opal.filehandler.support.DwpFinesSeedFixture;
 
 /** Applies the common BAIS fixture lifecycle to every BAIS ingestion scenario. */
 public class BaisFileHooks {
+
+    private boolean fixtureStarted;
 
     private static final Map<String, BaisFileFixtureDefinition> FIXTURES = Map.of(
         "bteckoh report", definition(BaisFileTestData.BTECKOH),
@@ -21,7 +29,6 @@ public class BaisFileHooks {
             BaisFileTestData.BTECKOH_TRANSFER,
             "db/bteckoh-transfer/setup.sql",
             "db/bteckoh-transfer/cleanup.sql"),
-        "natwest", definition(BaisFileTestData.NATWEST, "db/natwest/setup.sql", "db/natwest/cleanup.sql"),
         "barclaycard", definition(
             BaisFileTestData.BARCLAYCARD,
             "db/barclaycard/setup.sql",
@@ -35,18 +42,37 @@ public class BaisFileHooks {
     @Before("@BaisFileFixture")
     public void setUpBaisFile(Scenario scenario) {
         BaisFileFixtureDefinition fixture = fixtureFor(scenario);
+        if ("ALLPAY".equals(fixture.config().source())) {
+            FinesSeedFixture.ensurePrepared();
+        } else if ("BARCLAYCARD".equals(fixture.config().source())) {
+            BarclaycardFinesSeedFixture.ensurePrepared();
+        } else if ("BTECKOH".equals(fixture.config().source())) {
+            BTEckohFinesSeedFixture.ensurePrepared();
+        } else if ("DWP".equals(fixture.config().source())) {
+            DwpFinesSeedFixture.ensurePrepared();
+        } else if (fixture.config().verifiesBailiffFinesPreprocessing()) {
+            BailiffFinesSeedFixture.ensurePrepared();
+        }
+        fixtureStarted = true;
         executeScript(fixture.setupScript());
         new BaisFileFixture(fixture.config()).setUp();
     }
 
     @After("@BaisFileFixture")
     public void tearDownBaisFile(Scenario scenario) {
-        BaisFileFixtureDefinition fixture = fixtureFor(scenario);
-        try {
-            new BaisFileFixture(fixture.config()).tearDown();
-        } finally {
-            executeScript(fixture.cleanupScript());
+        if (!fixtureStarted) {
+            return;
         }
+        BaisFileFixtureDefinition fixture = fixtureFor(scenario);
+        String selectedFile = ScenarioContextHolder.current().recall(BaisFileTestData.SELECTED_BAIS_FILE);
+        if (selectedFile != null) {
+            new BaisFileFixture(BaisFileTestData.namedFile(fixture.config().displayName(), selectedFile)).remove();
+            new BaisFileFixture(fixture.config()).setUp();
+        } else {
+            new BaisFileFixture(fixture.config()).tearDown();
+        }
+        // Keep bank mappings available if downstream cleanup preserved pending input.
+        executeScript(fixture.cleanupScript());
     }
 
     private static BaisFileFixtureDefinition definition(BaisFileTestConfig config) {

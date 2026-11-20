@@ -8,6 +8,16 @@ Feature: CDER file ingestion
     And the "Cder" file ingestion job is requested through testing support
     Then the "Cder" file is processed successfully
     And the extracted "Cder" payments are ready for the external interface
+    And Fines preprocessing completes for the stored "Cder" file
+    And the transformed "Cder" file has payment type "CASH" and transaction codes in order
+      | 99 |
+      | 99 |
+    And the transformed "Cder" file contains the account references in order
+      | 23000106E |
+      | 23000113P |
+    And the transformed "Cder" file contains transaction amounts in pence in order
+      | 1000 |
+      | 5000 |
 
   Scenario: A duplicate CDER file is detected
     Given the configured "Cder" file has already been processed
@@ -17,6 +27,7 @@ Feature: CDER file ingestion
     And a duplicate "CDER" interface file is recorded
     And the duplicate "CDER" interface file reuses the original blob
     And the configured "Cder" file no longer exists on bais
+    And Fines preprocessing reuses the original result for the stored "Cder" file
 
   Scenario: An unsupported CDER file is ignored
     Given the configured "Cder" file has an unsupported file on bais

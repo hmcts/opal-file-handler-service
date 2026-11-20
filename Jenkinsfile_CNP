@@ -1,11 +1,14 @@
 #!groovy
 import uk.gov.hmcts.contino.Kubectl
+import uk.gov.hmcts.contino.GradleBuilder
 
 @Library("Infrastructure@2.14.0")
 
 def type = "java"
 def product = "opal"
 def component = "file-handler-service"
+
+GradleBuilder builder = new GradleBuilder(this, product)
 
 def failBuildOnUnstableResults() {
     if (currentBuild.result == 'UNSTABLE') {
@@ -305,6 +308,21 @@ def configureStagingFunctionalTestEnvironment(String valuesFile) {
     if (!env.OPAL_FILE_HANDLER_DB_PASSWORD?.trim()) {
         missingVariables.add('OPAL_FILE_HANDLER_DB_PASSWORD')
     }
+    if (!env.OPAL_FINES_DB_HOST?.trim()) {
+        missingVariables.add('OPAL_FINES_DB_HOST')
+    }
+    if (!env.OPAL_FINES_DB_PORT?.trim()) {
+        missingVariables.add('OPAL_FINES_DB_PORT')
+    }
+    if (!env.OPAL_FINES_DB_NAME?.trim()) {
+        missingVariables.add('OPAL_FINES_DB_NAME')
+    }
+    if (!env.OPAL_FINES_DB_USERNAME?.trim()) {
+        missingVariables.add('OPAL_FINES_DB_USERNAME')
+    }
+    if (!env.OPAL_FINES_DB_PASSWORD?.trim()) {
+        missingVariables.add('OPAL_FINES_DB_PASSWORD')
+    }
     if (!env.FILE_STORE_STORAGE_ACCOUNT_NAME?.trim()) {
         missingVariables.add('FILE_STORE_STORAGE_ACCOUNT_NAME')
     }
@@ -322,6 +340,7 @@ def configureStagingFunctionalTestEnvironment(String valuesFile) {
     }
 
     configureFunctionalTestUserService(valuesFile)
+    env.OPAL_FINES_DB_OPTIONS = functionalTestValues.finesDatabaseOptions?.toString() ?: ''
     env.FUNCTIONAL_TEST_BLOB_CONTAINER_NAME = containerName
     steps.echo "Configured staging functional-test database and blob container ${containerName}"
 }
@@ -373,6 +392,11 @@ def stagingFunctionalTestSecrets = [
                 secret('file-handler-service-POSTGRES-DATABASE', 'OPAL_FILE_HANDLER_DB_NAME'),
                 secret('file-handler-service-POSTGRES-USER', 'OPAL_FILE_HANDLER_DB_USERNAME'),
                 secret('file-handler-service-POSTGRES-PASS', 'OPAL_FILE_HANDLER_DB_PASSWORD'),
+                secret('fines-service-POSTGRES-HOST', 'OPAL_FINES_DB_HOST'),
+                secret('fines-service-POSTGRES-PORT', 'OPAL_FINES_DB_PORT'),
+                secret('fines-service-POSTGRES-DATABASE', 'OPAL_FINES_DB_NAME'),
+                secret('fines-service-POSTGRES-USER', 'OPAL_FINES_DB_USERNAME'),
+                secret('fines-service-POSTGRES-PASS', 'OPAL_FINES_DB_PASSWORD'),
                 secret(
                         'opal-file-handler-service-file-store-account-name',
                         'FILE_STORE_STORAGE_ACCOUNT_NAME'
@@ -468,6 +492,21 @@ withPipeline(type, product, component) {
                 ).trim()
                 env.FUNCTIONAL_TEST_DB_URL = "jdbc:postgresql://127.0.0.1:${port}/" +
                         env.OPAL_FILE_HANDLER_DB_NAME + (env.OPAL_FILE_HANDLER_DB_OPTIONS ?: '')
+                // Fines uses a separate database in the same PR PostgreSQL instance.
+                env.FUNCTIONAL_TEST_FINES_DB_URL = "jdbc:postgresql://127.0.0.1:${port}/opal-fines-db" +
+                        (env.OPAL_FILE_HANDLER_DB_OPTIONS ?: '')
+                env.FUNCTIONAL_TEST_FINES_DB_USERNAME = env.OPAL_FILE_HANDLER_DB_USERNAME
+                env.FUNCTIONAL_TEST_FINES_DB_PASSWORD = env.OPAL_FILE_HANDLER_DB_PASSWORD
+                env.FUNCTIONAL_TEST_DB_CONNECTION_RETRY_SECONDS = '30'
+
+                String finesDeployment = "opal-${component}-pr-${env.CHANGE_ID}-fines"
+                steps.sh "kubectl --namespace '${product}' rollout status " +
+                        "deployment/${finesDeployment} --timeout=300s"
+                // Record the actual image pulled for this run without pinning future runs.
+                steps.sh "kubectl --namespace '${product}' get pods " +
+                        "-l 'app.kubernetes.io/name=${finesDeployment}' " +
+                        "-o 'custom-columns=POD:.metadata.name,IMAGE:.spec.containers[*].image," +
+                        "IMAGE_ID:.status.containerStatuses[*].imageID'"
             }
         }
     }
@@ -475,8 +514,17 @@ withPipeline(type, product, component) {
     afterAlways('functionalTest:dev') {
         try {
             onPR {
-                steps.sh 'bash src/functionalTest/resources/db/port-forward.sh stop'
-                env.FUNCTIONAL_TEST_DB_URL = ''
+                try {
+                    steps.sh 'bash src/functionalTest/resources/db/port-forward.sh stop'
+                } finally {
+                    env.FUNCTIONAL_TEST_DB_URL = ''
+                    env.FUNCTIONAL_TEST_FINES_DB_URL = ''
+                    env.FUNCTIONAL_TEST_FINES_DB_USERNAME = ''
+                    env.FUNCTIONAL_TEST_FINES_DB_PASSWORD = ''
+                    env.FUNCTIONAL_TEST_DB_CONNECTION_RETRY_SECONDS = ''
+                    steps.archiveArtifacts allowEmptyArchive: true,
+                            artifacts: '.functional-test-db-tunnel/**'
+                }
             }
         } finally {
             publishFunctionalResults()
@@ -490,6 +538,7 @@ withPipeline(type, product, component) {
     before('functionalTest:stg') {
         onMaster {
             configureStagingFunctionalTestEnvironment(stgValuesFile)
+            builder.gradle('verifyFunctionalTestDatabases')
         }
     }
 

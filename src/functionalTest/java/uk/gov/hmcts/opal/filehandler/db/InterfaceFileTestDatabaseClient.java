@@ -10,9 +10,10 @@ public class InterfaceFileTestDatabaseClient implements AutoCloseable {
 
     private static final String FIND_BY_FILE_NAME = """
         SELECT interface_file_id, source::text, target::text, type::text, opal_domain::text,
-               file_name, filestore_uuid, checksum, status::text, created_by
+               file_name, filestore_uuid, checksum, status::text, created_by, related_interface_file_id
         FROM public.interface_files
         WHERE file_name = ?
+          AND (?::text IS NULL OR source::text = ?)
         ORDER BY created_datetime, interface_file_id
         """;
 
@@ -30,6 +31,11 @@ public class InterfaceFileTestDatabaseClient implements AutoCloseable {
      * @return matching interface-file records in creation order.
      */
     public List<InterfaceFileRecord> findByFileName(String fileName) {
+        return findByFileNameAndSource(fileName, null);
+    }
+
+    /** Finds records for an interface; a null source preserves the filename-only lookup. */
+    public List<InterfaceFileRecord> findByFileNameAndSource(String fileName, String source) {
         return databaseClient.query(FIND_BY_FILE_NAME, resultSet -> new InterfaceFileRecord(
             resultSet.getLong("interface_file_id"),
             resultSet.getString("source"),
@@ -40,8 +46,9 @@ public class InterfaceFileTestDatabaseClient implements AutoCloseable {
             resultSet.getObject("filestore_uuid", UUID.class),
             resultSet.getString("checksum"),
             resultSet.getString("status"),
-            resultSet.getLong("created_by")
-        ), fileName);
+            resultSet.getLong("created_by"),
+            resultSet.getObject("related_interface_file_id", Long.class)
+        ), fileName, source, source);
     }
 
     /**
@@ -51,6 +58,11 @@ public class InterfaceFileTestDatabaseClient implements AutoCloseable {
      */
     public void deleteByFileName(String fileName) {
         databaseClient.update(DELETE_BY_FILE_NAME, fileName);
+    }
+
+    /** Deletes only the specified interface's records when filenames overlap. */
+    public void deleteByFileNameAndSource(String fileName, String source) {
+        databaseClient.update(DELETE_BY_FILE_NAME + " AND source::text = ?", fileName, source);
     }
 
     @Override
@@ -71,7 +83,8 @@ public class InterfaceFileTestDatabaseClient implements AutoCloseable {
         UUID filestoreUuid,
         String checksum,
         String status,
-        long createdBy
+        long createdBy,
+        Long relatedInterfaceFileId
     ) {
     }
 }

@@ -8,6 +8,13 @@ Feature: Marston file ingestion
     And the "Marston" file ingestion job is requested through testing support
     Then the "Marston" file is processed successfully
     And the extracted "Marston" payments are ready for the external interface
+    And Fines preprocessing completes for the stored "Marston" file
+    And the transformed "Marston" file has payment type "CASH" and transaction codes in order
+      | 99 |
+    And the transformed "Marston" file contains the account references in order
+      | 23000106E |
+    And the transformed "Marston" file contains transaction amounts in pence in order
+      | 1000 |
 
   Scenario: A duplicate Marston file is detected
     Given the configured "Marston" file has already been processed
@@ -17,6 +24,7 @@ Feature: Marston file ingestion
     And a duplicate "MARSTON" interface file is recorded
     And the duplicate "MARSTON" interface file reuses the original blob
     And the configured "Marston" file no longer exists on bais
+    And Fines preprocessing reuses the original result for the stored "Marston" file
 
   Scenario: An unsupported Marston file is ignored
     Given the configured "Marston" file has an unsupported file on bais

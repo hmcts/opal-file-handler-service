@@ -30,12 +30,16 @@ public class BaisPaymentAssertions {
         if ("DWP".equals(config.source())) {
             assertEquals("DWP1234567", response.jsonPath().getString("dwp_court_code"));
             assertEquals("CASH", response.jsonPath().getString("payment_type"));
-            assertEquals("010101", response.jsonPath().getString("destination_details.bank_details.sort_code"));
-            assertEquals("12341234", response.jsonPath().getString("destination_details.bank_details.account_number"));
+            assertEquals("800101", response.jsonPath().getString("destination_details.bank_details.sort_code"));
+            assertEquals("80341234", response.jsonPath().getString("destination_details.bank_details.account_number"));
             assertEquals(List.of(2125, 2125, 2125, 2125, 2001),
                 response.jsonPath().getList("transactions.amount"));
             assertEquals(List.of("99", "99", "99", "99", "99"),
                 response.jsonPath().getList("transactions.transaction_code"));
+            String reference = "%-18s".formatted("NNNNNNNNK");
+            String suffixedReference = "%-18s".formatted("NNNNNNNNK SW");
+            assertEquals(List.of(reference, suffixedReference, suffixedReference, suffixedReference, reference),
+                response.jsonPath().getList("transactions.originator_details.account_reference"));
         }
     }
 
@@ -43,8 +47,8 @@ public class BaisPaymentAssertions {
         return switch (displayName) {
             case "Marston" -> Map.ofEntries(
                 Map.entry("payment_type", "CASH"),
-                Map.entry("destination_details.bank_details.sort_code", "560038"),
-                Map.entry("destination_details.bank_details.account_number", "27048532"),
+                Map.entry("destination_details.bank_details.sort_code", "800038"),
+                Map.entry("destination_details.bank_details.account_number", "80048532"),
                 Map.entry("transactions.size()", "1"),
                 Map.entry("transactions[0].amount", "1000"),
                 Map.entry("transactions[0].transaction_code", "99"),
@@ -64,8 +68,8 @@ public class BaisPaymentAssertions {
             );
             case "Cder" -> Map.ofEntries(
                 Map.entry("payment_type", "CASH"),
-                Map.entry("destination_details.bank_details.sort_code", "560036"),
-                Map.entry("destination_details.bank_details.account_number", "27048530"),
+                Map.entry("destination_details.bank_details.sort_code", "800036"),
+                Map.entry("destination_details.bank_details.account_number", "80048530"),
                 Map.entry("transactions.size()", "2"),
                 Map.entry("transactions[0].amount", "1000"),
                 Map.entry("transactions[0].transaction_code", "99"),
@@ -79,8 +83,8 @@ public class BaisPaymentAssertions {
             );
             case "Allpay" -> Map.ofEntries(
                 Map.entry("payment_type", "CASH"),
-                Map.entry("destination_details.bank_details.sort_code", "010101"),
-                Map.entry("destination_details.bank_details.account_number", "12341234"),
+                Map.entry("destination_details.bank_details.sort_code", "800101"),
+                Map.entry("destination_details.bank_details.account_number", "80341234"),
                 Map.entry("transactions.size()", "2"),
                 Map.entry("transactions[0].amount", "1500"),
                 Map.entry("transactions[0].transaction_code", "99"),
@@ -89,8 +93,8 @@ public class BaisPaymentAssertions {
             );
             case "BTEckoh transfer" -> Map.ofEntries(
                 Map.entry("payment_type", "CASH"),
-                Map.entry("destination_details.bank_details.sort_code", "010102"),
-                Map.entry("destination_details.bank_details.account_number", "12341235"),
+                Map.entry("destination_details.bank_details.sort_code", "800102"),
+                Map.entry("destination_details.bank_details.account_number", "80341235"),
                 Map.entry("transactions.size()", "2"),
                 Map.entry("transactions[0].amount", "1500"),
                 Map.entry("transactions[0].transaction_code", "99"),
@@ -106,8 +110,8 @@ public class BaisPaymentAssertions {
             );
             case "Barclaycard" -> Map.ofEntries(
                 Map.entry("payment_type", "CASH"),
-                Map.entry("destination_details.bank_details.sort_code", "560034"),
-                Map.entry("destination_details.bank_details.account_number", "27048528"),
+                Map.entry("destination_details.bank_details.sort_code", "800034"),
+                Map.entry("destination_details.bank_details.account_number", "80048528"),
                 Map.entry("transactions.size()", "2"),
                 Map.entry("transactions[0].amount", "1500"),
                 Map.entry("transactions[0].transaction_code", "99"),
@@ -116,8 +120,8 @@ public class BaisPaymentAssertions {
             );
             case "Jacobs" -> Map.ofEntries(
                 Map.entry("payment_type", "CASH"),
-                Map.entry("destination_details.bank_details.sort_code", "560037"),
-                Map.entry("destination_details.bank_details.account_number", "27048531"),
+                Map.entry("destination_details.bank_details.sort_code", "800037"),
+                Map.entry("destination_details.bank_details.account_number", "80048531"),
                 Map.entry("transactions.size()", "2"),
                 Map.entry("transactions[0].amount", "1000"),
                 Map.entry("transactions[0].transaction_code", "99"),
