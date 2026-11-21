@@ -83,6 +83,7 @@ java:
     SERVICEBUS_INTERFACE_FILE_PREPROCESS_MAINTENANCE_QUEUE_NAME: "{{ .Release.Name}}-servicebus-banking-interfaces-preprocess-interface-file-maintenance"
     SERVICEBUS_INTERFACE_FILE_PREPROCESS_FINES_QUEUE_NAME: "{{ .Release.Name}}-servicebus-banking-interfaces-preprocess-interface-file-fines"
     SERVICEBUS_CREATE_DRAFT_ACCOUNT_QUEUE_NAME: "{{ .Release.Name}}-servicebus-create-draft-account-queue"
+    SERVICEBUS_ANT_CSV_FILE_PROCESSOR_QUEUE_NAME: "{{ .Release.Name}}-servicebus-ant-csv-file-processor-queue"
     SERVICEBUS_PROTOCOL: amqps
   postgresql:
     enabled: true
@@ -111,6 +112,7 @@ servicebus:
       - name: "banking-interfaces-preprocess-interface-file-fines"
       - name: "banking-interfaces-preprocess-interface-file-maintenance"
       - name: "create-draft-account-queue"
+      - name: "ant-csv-file-processor-queue"
 blobstorage:
   enabled: true
   azureName: "opalfilesapr${CHANGE_ID}"
