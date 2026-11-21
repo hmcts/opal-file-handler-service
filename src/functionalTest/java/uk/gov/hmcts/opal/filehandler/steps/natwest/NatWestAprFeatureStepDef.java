@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.And;
@@ -18,32 +17,29 @@ import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.ResolverStyle;
-import java.util.Locale;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import net.serenitybdd.core.Serenity;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.assertj.core.api.SoftAssertions;
-import org.json.JSONException;
-import org.skyscreamer.jsonassert.JSONCompare;
-import org.skyscreamer.jsonassert.JSONCompareMode;
 import uk.gov.hmcts.opal.filehandler.blob.BlobStorageClient;
 import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 import uk.gov.hmcts.opal.filehandler.db.DatabaseClient;
-import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
-import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient.InterfaceFileRecord;
-import uk.gov.hmcts.opal.filehandler.db.FinesInterfaceFileTestDatabaseClient;
 import uk.gov.hmcts.opal.filehandler.db.FinesInterfaceFileTestDatabaseClient.PreprocessingResult;
-import uk.gov.hmcts.opal.filehandler.steps.BaseStepDef;
-import uk.gov.hmcts.opal.filehandler.support.BaisInterfaceFileClient;
+import uk.gov.hmcts.opal.filehandler.db.FinesInterfaceFileTestDatabaseClient;
+import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient.InterfaceFileRecord;
+import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
 import uk.gov.hmcts.opal.filehandler.sftp.SftpClient;
+import uk.gov.hmcts.opal.filehandler.steps.BaseStepDef;
+import uk.gov.hmcts.opal.filehandler.support.BacsStandard18TestData.PaymentInput;
+import uk.gov.hmcts.opal.filehandler.support.BacsStandard18TestData;
 import uk.gov.hmcts.opal.filehandler.support.BaisFileTestData;
+import uk.gov.hmcts.opal.filehandler.support.BaisInterfaceFileClient;
+import uk.gov.hmcts.opal.filehandler.support.BankingJsonAssertions;
 import uk.gov.hmcts.opal.filehandler.support.FinesPreprocessingFixture;
 
 /** Sets up feature-owned NatWest data and verifies APR translation through TRANSFORMED_JSON. */
@@ -470,17 +466,7 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
                         index + 1, businessUnitId)
                     .isEqualTo(aprDefendantAccounts.get(destinationApr).toString());
             }
-            expectedTransformedTransactions.add(Map.of(
-                "transaction_code", row.get("transactionCode"),
-                "amount", Long.parseLong(row.get("amountInPence")),
-                "date_entry_applied", row.get("dateEntryApplied"),
-                "cheque", expectedBoolean(row.get("cheque")),
-                "valid_transaction", expectedBoolean(row.get("validTransaction")),
-                "originator_details", Map.of(
-                    "name", input.originatorName(),
-                    "account_reference", expectedReference,
-                    "bank_details", Map.of("sort_code", input.originatorSortCode(),
-                        "account_number", input.originatorAccountNumber()))));
+            expectedTransformedTransactions.add(BankingJsonAssertions.expectedTransaction(input, row));
         }
         // Defer assertions until the complete JSON step so totals and all field mismatches are reported together.
     }
@@ -516,17 +502,7 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
     }
 
     private void assertCompleteJsonEquals(Object expected, Object actual) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        // STRICT rejects extra fields and preserves array order while ignoring JSON object key order.
-        try {
-            var comparison = JSONCompare.compareJSON(
-                mapper.writeValueAsString(expected), mapper.writeValueAsString(actual), JSONCompareMode.STRICT);
-            transformedAssertions.assertThat(comparison.passed())
-                .withFailMessage("Transformed NatWest JSON mismatch:%n%s", comparison.getMessage())
-                .isTrue();
-        } catch (JSONException exception) {
-            throw new IllegalStateException("Could not compare transformed NatWest JSON", exception);
-        }
+        BankingJsonAssertions.assertCompleteJsonEquals(transformedAssertions, expected, actual);
     }
 
     private void configureFileHandlerBankMapping() {
@@ -736,17 +712,8 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
     }
 
     private byte[] buildBacsStandard18File(List<PaymentInput> inputPayments, String fileType) {
-        List<String> lines = new ArrayList<>("FPCAS".equals(fileType)
-            ? List.of("VOL1A00001                           ****830000                                3",
-                "HDR1 A123456Z0001                      F     01 09026              081520",
-                "UHL1 08350123456    00000000         000              HMCS - LIBRA")
-            : List.of("VOL1BACSSTANDARD18", "HDR1BACSSTANDARD18", "HDR2BACSSTANDARD18",
-                "UHL1BACSSTANDARD18"));
-        inputPayments.forEach(payment -> lines.add(payment.toLine(destinationSortCode, destinationAccountNumber,
-            destinationName, destinationAccountType)));
-        lines.addAll(List.of("EOF1BACSSTANDARD18", "EOF2BACSSTANDARD18", "UTL1BACSSTANDARD18"));
-        String lineEnding = "FPCAS".equals(fileType) ? "\r\n" : "\n";
-        return (String.join(lineEnding, lines) + lineEnding).getBytes(StandardCharsets.UTF_8);
+        return BacsStandard18TestData.buildFile(inputPayments, fileType, destinationSortCode,
+            destinationAccountNumber, destinationName, destinationAccountType);
     }
 
     private static void pause() {
@@ -755,64 +722,6 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while waiting for NatWest processing", exception);
-        }
-    }
-
-    private record PaymentInput(
-        String transactionCode,
-        long amountInPence,
-        String originatorSortCode,
-        String originatorAccountNumber,
-        String originatorName,
-        String accountReference,
-        String dateEntryApplied,
-        int referenceLeadingSpaces,
-        int referenceTrailingSpaces,
-        boolean expectedInSourceJson,
-        boolean expectedInTransformedJson
-    ) {
-        private static PaymentInput from(Map<String, String> row) {
-            return new PaymentInput(row.get("code"), Long.parseLong(row.get("amountPence")),
-                row.get("originSort"), row.get("originAccount"), row.get("originatorName"),
-                row.get("accountReference") == null ? "" : row.get("accountReference"), row.get("dateEntryApplied"),
-                Integer.parseInt(row.getOrDefault("referenceLeadingSpaces", "0")),
-                Integer.parseInt(row.getOrDefault("referenceTrailingSpaces", "0")),
-                expectedBoolean(row.getOrDefault("expectedInSourceJson", "true")),
-                expectedBoolean(row.getOrDefault("expectedInTransformedJson", "true")));
-        }
-
-        private String toLine(String destinationSortCode, String destinationAccountNumber,
-                              String destinationName, String destinationAccountType) {
-            assertTrue(referenceLeadingSpaces >= 0 && referenceTrailingSpaces >= 0,
-                "Reference padding counts must be nonnegative");
-            String paddedReference = " ".repeat(referenceLeadingSpaces) + accountReference
-                + " ".repeat(referenceTrailingSpaces);
-            String body = destinationSortCode + destinationAccountNumber + destinationAccountType + transactionCode
-                + originatorSortCode + originatorAccountNumber + "    " + leftPad(amountInPence, 11)
-                + rightPad(originatorName, 18) + rightPad(paddedReference, 18)
-                + rightPad(destinationName, 18);
-            LocalDate date = LocalDate.parse(dateEntryApplied,
-                DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT));
-            if (date.getYear() < 2000 || date.getYear() > 2099) {
-                throw new IllegalArgumentException("NatWest date must be between 2000 and 2099: " + dateEntryApplied);
-            }
-            String bankDate = String.format(Locale.ROOT, "%02d%03d", date.getYear() % 100, date.getDayOfYear());
-            return body + " " + bankDate;
-        }
-
-        private static String leftPad(long value, int size) {
-            String text = Long.toString(value);
-            if (text.length() > size) {
-                throw new IllegalArgumentException("Payment amount exceeds BACS field width: " + value);
-            }
-            return " ".repeat(size - text.length()) + text;
-        }
-
-        private static String rightPad(String value, int size) {
-            if (value.length() > size) {
-                throw new IllegalArgumentException("BACS text field exceeds " + size + " characters: " + value);
-            }
-            return value + " ".repeat(size - value.length());
         }
     }
 

@@ -20,8 +20,9 @@ import java.util.UUID;
 import org.apache.commons.codec.digest.DigestUtils;
 import uk.gov.hmcts.opal.filehandler.blob.BlobStorageClient;
 import uk.gov.hmcts.opal.filehandler.db.DatabaseClient;
-import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
 import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient.InterfaceFileRecord;
+import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
+import uk.gov.hmcts.opal.filehandler.support.InterfaceFileUploadClient;
 
 /**
  * Exercises multipart interface-file uploads using the existing auth, database and blob clients.
@@ -189,11 +190,8 @@ public class AddInterfaceFileStepDef extends BaseStepDef {
             {"source":"BTECKOH_REPORT","target":"OPAL","type":"SOURCE","domain":"%s",
              "file_name":"%s","payment_type":"CASH","should_pre_process_file":false}
             """.formatted(domain, metadataFilename);
-        jsonRequestWithOptionalToken(token)
-            .contentType("multipart/form-data")
-            .multiPart("file", fileName, content, "application/octet-stream")
-            .multiPart("metadata", "metadata.json", metadata.getBytes(StandardCharsets.UTF_8), "application/json")
-            .when().post(getTestUrl() + "/interface-files");
+        InterfaceFileUploadClient.upload(jsonRequestWithOptionalToken(token), getTestUrl(),
+            fileName, content, metadata);
     }
 
     private long expectedHumanUserId() {
