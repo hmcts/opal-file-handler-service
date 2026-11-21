@@ -32,7 +32,7 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
 
     private static final short BUSINESS_UNIT_065 = (short) 65;
 
-    private final EnumMap<Domain, InterfaceFilePreprocessQueueService> queueServiceMap;
+    private final EnumMap<Domain, InterfaceFilePreprocessQueueService<Long>> queueServiceMap;
     private final BankingExtractionService<T> bankingExtractionService;
 
     protected AbstractBankingInterfaceFileProcessorWithExtractionService(
@@ -45,14 +45,15 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
         BankingExtractionService<T> extractionService,
         FileIngestionService<String> ingestionService,
         FileProcessorConfiguration config,
-        InterfaceFilePreprocessQueueService finesQueueService,
-        InterfaceFilePreprocessQueueService maintenanceQueueService
+        InterfaceFilePreprocessQueueService<Long> finesQueueService,
+        InterfaceFilePreprocessQueueService<Long> maintenanceQueueService
     ) {
         super(clock, featureFlagUtil, interfaceFileBlobStoreService, interfaceFilesRepository,
             transactionTemplate, objectMapper, extractionService, ingestionService, config);
         this.bankingExtractionService = extractionService;
         this.queueServiceMap = new EnumMap<>(Domain.class);
         this.queueServiceMap.put(Domain.FINES, finesQueueService);
+        this.queueServiceMap.put(Domain.MAINTENANCE, maintenanceQueueService);
         this.queueServiceMap.put(Domain.MAINTENANCE, maintenanceQueueService);
     }
 
@@ -124,8 +125,8 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
         }
     }
 
-    InterfaceFilePreprocessQueueService queueService(Domain domain) {
-        InterfaceFilePreprocessQueueService queue = queueServiceMap.get(domain);
+    InterfaceFilePreprocessQueueService<Long> queueService(Domain domain) {
+        InterfaceFilePreprocessQueueService<Long> queue = queueServiceMap.get(domain);
         if (queue == null) {
             throw new IllegalStateException("Unsupported queue domain '%s'".formatted(domain));
         }

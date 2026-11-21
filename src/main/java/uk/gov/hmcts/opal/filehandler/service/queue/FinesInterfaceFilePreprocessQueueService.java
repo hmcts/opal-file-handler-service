@@ -12,7 +12,7 @@ import uk.gov.hmcts.opal.common.queue.AbstractQueueService;
 @Service
 public class FinesInterfaceFilePreprocessQueueService
     extends AbstractQueueService<Long>
-    implements InterfaceFilePreprocessQueueService  {
+    implements InterfaceFilePreprocessQueueService<Long> {
 
 
     public FinesInterfaceFilePreprocessQueueService(
