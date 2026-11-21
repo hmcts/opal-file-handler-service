@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.mockito.ArgumentCaptor;
@@ -215,12 +216,14 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
             verify(maintenanceQueueService, never()).send(any());
         }
 
-        @Test
-        void shouldPreProcessAndQueueNewExtract() {
+        @ParameterizedTest
+        @CsvSource({"NATWEST, 12", "VARIANT_BANKING, 65"})
+        void shouldPreProcessAndQueueNewExtract(Interface source, short businessUnitId) {
+            sourceFile.setSource(source);
             TestProcessor processor = spy(service);
             InputStream inputStream = new ByteArrayInputStream("source".getBytes(StandardCharsets.UTF_8));
             InterfaceFileCommonDataExtract extract = extract();
-            BusinessUnitBankAccountEntity businessUnit = businessUnit((short) 12, Domain.FINES);
+            BusinessUnitBankAccountEntity businessUnit = businessUnit(businessUnitId, Domain.FINES);
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS, Domain.FINES);
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
@@ -234,7 +237,7 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
 
             processor.processFile(sourceFile, inputStream, CREATOR_ID, ProcessingFailurePolicy.RECORD_FAILURE);
 
-            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 12);
+            assertThat(sourceFile.getBusinessUnitId()).containsExactly(businessUnitId);
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
             verify(processor).createAndUploadSourceJson(sourceFile, extract, CREATOR_ID,
                 ProcessingFailurePolicy.RECORD_FAILURE);
@@ -244,7 +247,7 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
         }
 
         @Test
-        void shouldSkipProcessingExtractWhenBusinessUnitIs065() {
+        void shouldSkipNonVariantBankingExtractWhenBusinessUnitIs065() {
             TestProcessor processor = spy(service);
             InputStream inputStream = new ByteArrayInputStream("source".getBytes(StandardCharsets.UTF_8));
             InterfaceFileCommonDataExtract extract = extract();
@@ -733,11 +736,13 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
     @Nested
     class PreProcessExtract {
 
-        @Test
-        void shouldUpdateSourceFilePopulateBankDetailsAndReturnTrue() {
+        @ParameterizedTest
+        @CsvSource({"NATWEST, 12", "VARIANT_BANKING, 12", "VARIANT_BANKING, 65"})
+        void shouldUpdateSourceFilePopulateBankDetailsAndReturnTrue(Interface source, short businessUnitId) {
+            sourceFile.setSource(source);
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
-            BusinessUnitBankAccountEntity businessUnit = businessUnit((short) 12, Domain.FINES);
+            BusinessUnitBankAccountEntity businessUnit = businessUnit(businessUnitId, Domain.FINES);
 
             when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
             doNothing().when(processor).validateSupportedDomain(sourceFile, Domain.FINES);
@@ -753,8 +758,10 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
             verify(processor).populateMissingDestinationBankDetails(extract, businessUnit);
         }
 
-        @Test
-        void shouldReturnFalseForBusinessUnit065AfterUpdatingSourceFile() {
+        @ParameterizedTest
+        @EnumSource(value = Interface.class, names = "VARIANT_BANKING", mode = Mode.EXCLUDE)
+        void shouldSkipBusinessUnit065ForNonVariantBankingSources(Interface source) {
+            sourceFile.setSource(source);
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
             BusinessUnitBankAccountEntity businessUnit = businessUnit((short) 65, Domain.FINES);

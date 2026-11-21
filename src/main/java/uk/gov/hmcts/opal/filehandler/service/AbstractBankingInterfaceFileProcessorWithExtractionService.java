@@ -13,6 +13,7 @@ import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
+import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.exception.UnexpectedDomainException;
@@ -143,7 +144,9 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
         validateSupportedDomain(sourceInterfaceFile, domain);
         updateSourceBusinessUnitAndDomain(sourceInterfaceFile, businessUnitBankAccount, domain);
 
-        if (BUSINESS_UNIT_065 == businessUnitBankAccount.getId()) {
+        if (BUSINESS_UNIT_065 == businessUnitBankAccount.getId()
+            && !Interface.VARIANT_BANKING.equals(sourceInterfaceFile.getSource())
+        ) {
             return false;
         }
 
