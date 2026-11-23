@@ -1,4 +1,4 @@
-@Opal @VariantBanking
+@Opal @VariantBanking @PO-8744 @JIRA-STORY:PO-8744 @JIRA-EPIC:PO-3952 @JIRA-LABEL:file-handler-service
 Feature: Variant Banking file upload, extraction and Fines preprocessing
 
   @VariantBankingMixed

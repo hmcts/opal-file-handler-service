@@ -15,9 +15,9 @@ import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
 
 /** Reserves filenames across workers without changing shared London reference data. */
 public class VariantBankingFixture implements AutoCloseable {
-    public static final String SORT_CODE = "650034";
-    public static final String ACCOUNT_NUMBER = "65000034";
-    public static final String BANK_NAME = "HMCTS London";
+    public static final String SORT_CODE = "123456";
+    public static final String ACCOUNT_NUMBER = "01234567";
+    public static final String BANK_NAME = "West London Test Bank";
     private final DatabaseClient reservation = new DatabaseClient();
     private String fileName;
 
