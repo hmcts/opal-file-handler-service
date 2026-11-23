@@ -27,6 +27,9 @@ public class VariantBankingFixture implements AutoCloseable {
     }
 
     public String reserve(String unit) {
+        // The service uploads SOURCE files into this interface-specific container. Other banking
+        // fixtures provision their containers during setup; Variant Banking must do the same.
+        blobs().createContainerIfNotExists();
         assertTrue(unit.matches("\\d{3}"), "Filename requires a three-digit business unit ID");
         for (int attempt = 0; attempt < 100; attempt++) {
             LocalDate date = LocalDate.of(2000, 1, 1).plusDays(ThreadLocalRandom.current().nextInt(36525));
