@@ -41,13 +41,18 @@ public class SftpClient implements AutoCloseable {
      */
     public SftpClient(String sftpUsername) {
         this.sftpUsername = sftpUsername;
+        sshClient = new SSHClient();
         try {
-            sshClient = new SSHClient();
             sshClient.addHostKeyVerifier(new PromiscuousVerifier());
             sshClient.connect(TestEnvironment.getSftpHost(), TestEnvironment.getSftpPort());
             authenticate();
             sftpClient = sshClient.newSFTPClient();
         } catch (IOException e) {
+            try {
+                sshClient.close();
+            } catch (IOException closeException) {
+                e.addSuppressed(closeException);
+            }
             throw new IllegalStateException(
                 "Failed to connect to SFTP server for user " + sftpUsername
                     + " at " + TestEnvironment.getSftpHost() + ":" + TestEnvironment.getSftpPort(),
@@ -202,9 +207,8 @@ public class SftpClient implements AutoCloseable {
      */
     @Override
     public void close() {
-        try {
+        try (sshClient) {
             sftpClient.close();
-            sshClient.close();
         } catch (IOException e) {
             throw new IllegalStateException("Failed to close SFTP connection", e);
         }

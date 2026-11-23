@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
 import net.serenitybdd.core.Serenity;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.assertj.core.api.SoftAssertions;
@@ -41,6 +42,7 @@ import uk.gov.hmcts.opal.filehandler.support.BaisFileTestData;
 import uk.gov.hmcts.opal.filehandler.support.BaisInterfaceFileClient;
 import uk.gov.hmcts.opal.filehandler.support.BankingJsonAssertions;
 import uk.gov.hmcts.opal.filehandler.support.FinesPreprocessingFixture;
+import uk.gov.hmcts.opal.filehandler.support.SftpRetry;
 
 /** Sets up feature-owned NatWest data and verifies APR translation through TRANSFORMED_JSON. */
 public class NatWestAprFeatureStepDef extends BaseStepDef {
@@ -184,22 +186,18 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
         payments.addAll(rows.stream().map(PaymentInput::from).toList());
 
         sourceFileContent = buildBacsStandard18File(payments, fileType);
-        try (SftpClient sftp = new SftpClient(SFTP_USERNAME)) {
-            scenarioFileName = uniqueFileName(sftp, fileType);
-            Serenity.recordReportData().withTitle("Generated NatWest filename").andContents(scenarioFileName);
-            NatWestSftpUploader.upload(SFTP_USERNAME, scenarioFileName, sourceFileContent);
-        }
+        scenarioFileName = selectFileName(fileType);
+        Serenity.recordReportData().withTitle("Generated NatWest filename").andContents(scenarioFileName);
+        NatWestSftpUploader.upload(SFTP_USERNAME, scenarioFileName, sourceFileContent);
     }
 
     @Given("a unique NatWest {word} file contains no transactions")
     public void emptyNatWestFile(String fileType) {
         assertTrue(List.of("CARS", "FPCAS").contains(fileType), "NatWest file type must be CARS or FPCAS");
         sourceFileContent = buildBacsStandard18File(List.of(), fileType);
-        try (SftpClient sftp = new SftpClient(SFTP_USERNAME)) {
-            scenarioFileName = uniqueFileName(sftp, fileType);
-            Serenity.recordReportData().withTitle("Generated empty NatWest filename").andContents(scenarioFileName);
-            NatWestSftpUploader.upload(SFTP_USERNAME, scenarioFileName, sourceFileContent);
-        }
+        scenarioFileName = selectFileName(fileType);
+        Serenity.recordReportData().withTitle("Generated empty NatWest filename").andContents(scenarioFileName);
+        NatWestSftpUploader.upload(SFTP_USERNAME, scenarioFileName, sourceFileContent);
     }
 
     @Then("the stored NatWest SOURCE and SOURCE_JSON match the payments above")
@@ -296,10 +294,10 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
                 assertEquals(expectSourceJson,
                     records.stream().anyMatch(record -> "SOURCE_JSON".equals(record.get("type"))),
                     "SOURCE_JSON creation differs from the feature table");
-                try (SftpClient sftp = new SftpClient(SFTP_USERNAME)) {
+                withSftp("check NatWest input file presence", sftp -> {
                     assertEquals(expectInputOnBais, sftp.exists(scenarioFileName),
                         "Input file presence on BAIS differs from the feature table");
-                }
+                });
                 return;
             }
             pause();
@@ -313,9 +311,9 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
         assertNotNull(sourceFile, "Verify the first NatWest SOURCE before retrying the file");
         assertTrue(scenarioFileName.contains("." + fileType + "."), "The file type differs from the original file");
         assertNotNull(preprocessingResult, "Wait for the first Fines preprocessing result before retrying");
-        try (SftpClient sftp = new SftpClient(SFTP_USERNAME)) {
+        withSftp("check original NatWest file was consumed", sftp -> {
             assertFalse(sftp.exists(scenarioFileName), "The first ingestion must remove its BAIS file");
-        }
+        });
         NatWestSftpUploader.upload(SFTP_USERNAME, scenarioFileName, sourceFileContent);
     }
 
@@ -364,10 +362,10 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
                 pause();
             } while (System.nanoTime() < observationDeadline);
         }
-        try (SftpClient sftp = new SftpClient(SFTP_USERNAME)) {
+        withSftp("check duplicate NatWest file presence", sftp -> {
             assertEquals(expectedBoolean(expected.get("inputFileRemainsOnBais")), sftp.exists(scenarioFileName),
                 "Duplicate file presence on BAIS differs from the feature table");
-        }
+        });
     }
 
     @And("the generated NatWest {word} filename has the unsupported suffix {string}")
@@ -376,14 +374,15 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
         assertNotNull(scenarioFileName, "Generate the NatWest CARS file first");
         assertTrue(scenarioFileName.contains("." + fileType + "."), "The file type differs from the original file");
         String unsupportedName = scenarioFileName + suffix;
-        try (DatabaseClient database = new DatabaseClient();
-             SftpClient sftp = new SftpClient(SFTP_USERNAME)) {
+        try (DatabaseClient database = new DatabaseClient()) {
             assertTrue(database.queryFirstColumn(
                 "SELECT interface_file_id FROM public.interface_files WHERE file_name = ?", unsupportedName).isEmpty(),
                 "Unsupported filename already has interface-file records");
+        }
+        withSftp("prepare unsupported NatWest filename", sftp -> {
             assertFalse(sftp.exists(unsupportedName), "Unsupported filename already exists on BAIS");
             sftp.deleteIfExists(scenarioFileName);
-        }
+        });
         NatWestSftpUploader.upload(SFTP_USERNAME, unsupportedName, sourceFileContent);
         scenarioFileName = unsupportedName;
         Serenity.recordReportData().withTitle("Unsupported NatWest filename").andContents(scenarioFileName);
@@ -401,10 +400,10 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
                 "Unsupported NatWest filename produced interface-file records");
             pause();
         } while (System.nanoTime() < deadline);
-        try (SftpClient sftp = new SftpClient(SFTP_USERNAME)) {
+        withSftp("check unsupported NatWest file remains on BAIS", sftp -> {
             assertEquals(expectedBoolean(expected.get("inputFileRemainsOnBais")), sftp.exists(scenarioFileName),
                 "Unsupported file presence on BAIS differs from the feature table");
-        }
+        });
     }
 
     @And("the following NatWest {word} header is replaced:")
@@ -421,9 +420,9 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
         String content = new String(sourceFileContent, StandardCharsets.UTF_8);
         assertTrue(content.startsWith(original), "Generated CARS file does not start with " + original);
         sourceFileContent = (replacement + content.substring(original.length())).getBytes(StandardCharsets.UTF_8);
-        try (SftpClient sftp = new SftpClient(SFTP_USERNAME)) {
+        withSftp("remove NatWest file before replacing its header", sftp -> {
             sftp.deleteIfExists(scenarioFileName);
-        }
+        });
         NatWestSftpUploader.upload(SFTP_USERNAME, scenarioFileName, sourceFileContent);
     }
 
@@ -597,6 +596,22 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
         return new BaisInterfaceFileClient(this::authorisedJsonRequest, getTestUrl());
     }
 
+    private String selectFileName(String fileType) {
+        return SftpRetry.withRetry("select unused NatWest " + fileType + " filename", () -> {
+            try (SftpClient sftp = new SftpClient(SFTP_USERNAME)) {
+                return uniqueFileName(sftp, fileType);
+            }
+        });
+    }
+
+    private static void withSftp(String operation, Consumer<SftpClient> action) {
+        SftpRetry.withRetry(operation, () -> {
+            try (SftpClient sftp = new SftpClient(SFTP_USERNAME)) {
+                action.accept(sftp);
+            }
+        });
+    }
+
     private String uniqueFileName(SftpClient sftp, String fileType) {
         try (DatabaseClient database = new DatabaseClient()) {
             for (int attempt = 0; attempt < 100; attempt++) {
@@ -619,14 +634,14 @@ public class NatWestAprFeatureStepDef extends BaseStepDef {
     /** Clears prior NatWest processing data before setup; keeps the current run for inspection. */
     private void cleanPreviousProcessedFiles() {
         List<String> removedFiles = new ArrayList<>();
-        try (SftpClient sftp = new SftpClient(SFTP_USERNAME)) {
+        withSftp("remove previous NatWest input files", sftp -> {
             for (var entry : sftp.listDirectory(".")) {
                 String name = entry.getName();
                 if (!entry.isDirectory() && (name.startsWith("Y01A.CARS.") || name.startsWith("Y01A.FPCAS."))) {
                     sftp.deleteIfExists(name);
                 }
             }
-        }
+        });
         try (DatabaseClient database = new DatabaseClient();
              InterfaceFileTestDatabaseClient files = new InterfaceFileTestDatabaseClient()) {
             List<String> candidates = database.queryFirstColumn(

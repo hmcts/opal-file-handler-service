@@ -8,6 +8,7 @@ import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.schmizz.sshj.xfer.InMemorySourceFile;
 import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
+import uk.gov.hmcts.opal.filehandler.support.SftpRetry;
 
 /** Uploads a NatWest file built from feature data to the BAIS SFTP user. */
 final class NatWestSftpUploader {
@@ -16,6 +17,10 @@ final class NatWestSftpUploader {
     }
 
     static void upload(String username, String fileName, byte[] content) {
+        SftpRetry.withRetry("upload NatWest file " + fileName, () -> uploadOnce(username, fileName, content));
+    }
+
+    private static void uploadOnce(String username, String fileName, byte[] content) {
         try (SSHClient ssh = new SSHClient()) {
             ssh.addHostKeyVerifier(new PromiscuousVerifier());
             ssh.connect(TestEnvironment.getSftpHost(), TestEnvironment.getSftpPort());
