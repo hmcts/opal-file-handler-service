@@ -160,18 +160,19 @@ public class FinesPreprocessingStepDef extends BaseStepDef {
             do {
                 records = database.findByFileName(config.fileName()).stream()
                     .filter(record -> "SOURCE_JSON".equals(record.type()))
+                    .filter(record -> !"FAILED_SUPERSEDED".equals(record.status()))
                     .filter(record -> Long.valueOf(sourceId).equals(record.relatedInterfaceFileId())).toList();
-                assertTrue(records.size() <= 1, "Multiple source JSON files for source " + sourceId + ": " + records);
-                if (!records.isEmpty()) {
-                    InterfaceFileRecord record = records.getFirst();
-                    assertEquals("SUCCESS", record.status(), "Source JSON cannot reach Fines: " + record);
-                    return record;
+                assertTrue(records.size() <= 1,
+                    "Multiple current source JSON files for source " + sourceId + ": " + records);
+                if (records.size() == 1 && "SUCCESS".equals(records.getFirst().status())) {
+                    return records.getFirst();
                 }
                 pause();
             } while (System.nanoTime() < deadline);
         }
-        throw new AssertionError("No SOURCE_JSON linked to source " + sourceId + " within "
-            + TestEnvironment.getFinesPreprocessingTimeoutSeconds() + " seconds; records: " + records);
+        throw new AssertionError("Expected exactly one successful current SOURCE_JSON linked to source "
+            + sourceId + " within " + TestEnvironment.getFinesPreprocessingTimeoutSeconds()
+            + " seconds; last observed current records: " + records);
     }
 
     private BaisFileTestConfig config(String displayName) {
