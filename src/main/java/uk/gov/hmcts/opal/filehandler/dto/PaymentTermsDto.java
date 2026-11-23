@@ -8,7 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import uk.gov.hmcts.opal.filehandler.dto.types.PaymentTermsTypeCode;
-import uk.gov.hmcts.opal.filehandler.dto.types.InstallmentPeriod;
+import uk.gov.hmcts.opal.filehandler.dto.types.InstalmentPeriod;
 
 @Data
 @Builder
@@ -18,7 +18,7 @@ public class PaymentTermsDto {
 
     private PaymentTermsTypeCode paymentTermsTypeCode;
     private LocalDate effectiveDate;
-    private InstallmentPeriod instalmentPeriod;
+    private InstalmentPeriod instalmentPeriod;
     private BigDecimal lumpSumAmount;
     private BigDecimal instalmentAmount;
     private Integer defaultDaysInJail;
