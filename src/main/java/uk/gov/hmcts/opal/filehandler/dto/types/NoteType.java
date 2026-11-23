@@ -1,6 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.dto.types;
 
-public enum LanguageType {
-    CY,
-    EN
+public enum NoteType {
+    AC,
+    AA,
+    AN
 }

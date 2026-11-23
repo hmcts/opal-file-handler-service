@@ -1,6 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.dto.types;
 
-public enum EnforcementType {
+public enum PaymentTermsTypeCode {
     B,
     P,
     I

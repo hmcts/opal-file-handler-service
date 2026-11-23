@@ -6,13 +6,13 @@ import lombok.Data;
 
 import java.util.List;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.dto.types.RecipientType;
+import uk.gov.hmcts.opal.filehandler.dto.types.ResultId;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class EnforcementDto {
-    private RecipientType resultId;
+    private ResultId resultId;
     private List<EnforcementResultResponseDto> enforcementResultResponses;
 }

@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.dto.types.AccountType;
+import uk.gov.hmcts.opal.filehandler.dto.types.NoteType;
 
 @Data
 @Builder
@@ -14,5 +14,5 @@ public class AccountNoteDto {
 
     private Integer accountNoteSerial;
     private String accountNoteText;
-    private AccountType noteType;
+    private NoteType noteType;
 }

@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uk.gov.hmcts.opal.filehandler.dto.types.LanguageType;
+import uk.gov.hmcts.opal.filehandler.dto.types.LanguageCode;
 
 @Data
 @Builder
@@ -15,8 +15,8 @@ public class DebtorDetailDto {
 
     private String vehicleMake;
     private String vehicleRegistrationMark;
-    private LanguageType documentLanguage;
-    private LanguageType hearingLanguage;
+    private LanguageCode documentLanguage;
+    private LanguageCode hearingLanguage;
     private String employeeReference;
     private String employerCompanyName;
     private String employerAddressLine1;
