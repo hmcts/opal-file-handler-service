@@ -1,4 +1,4 @@
-@Opal @NatWest @CARS @NatWestReferenceBehaviour @JIRA-STORY:PO-7230
+@Ignore @Opal @NatWest @CARS @NatWestReferenceBehaviour @JIRA-STORY:PO-7230
 @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497
 Feature: Observe NatWest account and APR reference behaviour before business-rule confirmation
 

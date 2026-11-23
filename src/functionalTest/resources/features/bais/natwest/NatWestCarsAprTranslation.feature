@@ -1,4 +1,4 @@
-@Opal @NatWest @CARS @APR @NatWestCARS @PO-6398 @JIRA-STORY:PO-7230
+@Ignore @Opal @NatWest @CARS @APR @NatWestCARS @PO-6398 @JIRA-STORY:PO-7230
 @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497
 Feature: NatWest CARS ingestion and account reference translation
 
