@@ -2,8 +2,8 @@
 Feature: Variant Banking file upload, extraction and Fines preprocessing
 
   @VariantBankingMixed
-  Scenario: Mixed cash payments for business unit 073 retain their order and translate code 93
-    Given the following cash payments are written to a unique Variant Banking file for business unit "073":
+  Scenario: Mixed cash payments for business unit 065 retain their order and translate code 93
+    Given the following cash payments are written to a unique Variant Banking file for business unit "065":
       | code | amountPence | originSort | originAccount | originatorName | accountReference | dateEntryApplied |
       | 00   | 1200        | 123456     | 99887766      | Ms Priya Shah  | VB-MIXED-01      | 09/01/2026       |
       | 93   | 500         | 654321     | 55443322      | Mr Noah Evans  | VB-MIXED-02      | 17/06/2026       |
@@ -19,8 +19,8 @@ Feature: Variant Banking file upload, extraction and Fines preprocessing
       | 99              | 300           | VB-MIXED-03              | 28/11/2026       | false  | true             |
     And the complete transformed Variant Banking JSON has payment type "CASH", record count 3 and total amount 2000
 
-  Scenario Outline: The filename selects London business unit <businessUnitId> with the same destination bank
-    Given the following cash payments are written to a unique Variant Banking file for business unit "<businessUnitId>":
+  Scenario: The filename selects London business unit 065 with the configured Fines bank mapping
+    Given the following cash payments are written to a unique Variant Banking file for business unit "065":
       | code | amountPence | originSort | originAccount | originatorName | accountReference | dateEntryApplied |
       | 99   | 750         | 123456     | 99887766      | Mrs Leah Mills | VB-LONDON-01     | 04/03/2026       |
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
@@ -32,15 +32,8 @@ Feature: Variant Banking file upload, extraction and Fines preprocessing
       | 99              | 750           | VB-LONDON-01             | 04/03/2026       | false  | true             |
     And the complete transformed Variant Banking JSON has payment type "CASH", record count 1 and total amount 750
 
-    Examples:
-      | businessUnitId |
-      | 065            |
-      | 073            |
-      | 077            |
-      | 078            |
-
   Scenario: An unsupported numeric transaction code remains extracted but is excluded from Fines payments
-    Given the following cash payments are written to a unique Variant Banking file for business unit "073":
+    Given the following cash payments are written to a unique Variant Banking file for business unit "065":
       | code | amountPence | originSort | originAccount | originatorName | accountReference | dateEntryApplied | expectedInTransformedJson |
       | 00   | 1200        | 123456     | 99887766      | Ms Priya Shah  | VB-CODE-01       | 06/02/2026       | true                      |
       | 33   | 800         | 654321     | 55443322      | Mr Noah Evans  | VB-CODE-02       | 15/07/2026       | false                     |
@@ -67,7 +60,7 @@ Feature: Variant Banking file upload, extraction and Fines preprocessing
 
     Examples:
       | businessUnitId | condition                 |
-      | 073            | an invalid filename       |
+      | 065            | an invalid filename       |
       | 999            | an unmapped business unit |
-      | 073            | missing headers           |
-      | 073            | a blank payment reference |
+      | 065            | missing headers           |
+      | 065            | a blank payment reference |

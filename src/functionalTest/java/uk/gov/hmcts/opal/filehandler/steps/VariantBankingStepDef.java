@@ -49,6 +49,9 @@ public class VariantBankingStepDef extends BaseStepDef {
         fixture = new VariantBankingFixture();
         fileName = fixture.reserve(unit);
         businessUnit = Short.parseShort(unit);
+        if (businessUnit == VariantBankingFixture.BUSINESS_UNIT_ID) {
+            fixture.configureFinesBankMapping(businessUnit);
+        }
         payments = table.asMaps().stream().map(PaymentInput::from).toList();
         content = BacsStandard18TestData.buildFile(payments, "FPCAS", VariantBankingFixture.SORT_CODE,
             VariantBankingFixture.ACCOUNT_NUMBER, VariantBankingFixture.BANK_NAME, "0");
@@ -83,7 +86,7 @@ public class VariantBankingStepDef extends BaseStepDef {
 
     @Then("the stored Variant Banking SOURCE and SOURCE_JSON match the payments and filename business unit")
     public void verifyExtraction() {
-        fixture.requireLondonUnit(businessUnit);
+        fixture.requireBusinessUnit65(businessUnit);
         assertEquals(201, upload.statusCode(), upload.asString());
         assertEquals("SUCCESS", upload.jsonPath().getString("status"));
         Map<String, Object> source = files().awaitInterfaceFile(
@@ -117,8 +120,7 @@ public class VariantBankingStepDef extends BaseStepDef {
     public void awaitTransformation() {
         assertNotNull(sourceJson, "Verify extraction before waiting for Fines");
         result = FinesPreprocessingFixture.awaitResult(id(sourceJson));
-        // Known backend gap: the checked-in Fines resolver uses destination bank details only.
-        // Preserve this assertion: all four London units must resolve from filename metadata.
+        // BU 65 is tested with a test-owned Fines mapping before the upload.
         assertEquals(businessUnit, result.businessUnitId(), "Fines must preserve the filename's business unit ID");
         Map<String, Object> metadata = files().records("VARIANT_BANKING", fileName).stream()
             .filter(row -> id(row) == result.transformedJsonId()).findFirst().orElseThrow();

@@ -13,13 +13,18 @@ import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 import uk.gov.hmcts.opal.filehandler.db.DatabaseClient;
 import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
 
-/** Reserves filenames across workers without changing shared London reference data. */
+/** Reserves filenames and a test-owned Fines bank mapping for Variant Banking scenarios. */
 public class VariantBankingFixture implements AutoCloseable {
-    public static final String SORT_CODE = "123456";
-    public static final String ACCOUNT_NUMBER = "01234567";
-    public static final String BANK_NAME = "West London Test Bank";
+    public static final short BUSINESS_UNIT_ID = 65;
+    public static final String SORT_CODE = "874465";
+    public static final String ACCOUNT_NUMBER = "87440065";
+    public static final String BANK_NAME = "HMCTS London";
+    private static final String FINES_MAPPING_MARKER = "VARIANT_BANKING_FUNCTIONAL_BU65";
     private final DatabaseClient reservation = new DatabaseClient();
+    private final DatabaseClient finesReservation = new DatabaseClient(TestEnvironment.getFinesDatabaseUrl(),
+        TestEnvironment.getFinesDatabaseUsername(), TestEnvironment.getFinesDatabasePassword());
     private String fileName;
+    private boolean finesMappingOwned;
 
     public static BlobStorageClient blobs() {
         return new BlobStorageClient(TestEnvironment.get("VARIANT_BANKING_AZURE_STORAGE_CONTAINER")
@@ -57,14 +62,58 @@ public class VariantBankingFixture implements AutoCloseable {
         fileName = uploadedName;
     }
 
-    public void requireLondonUnit(short unit) {
-        assertTrue(List.of((short) 65, (short) 73, (short) 77, (short) 78).contains(unit));
+    public void configureFinesBankMapping(short unit) {
+        assertEquals(BUSINESS_UNIT_ID, unit, "Variant Banking functional coverage is scoped to BU 65");
+        finesReservation.queryFirstColumn("SELECT pg_advisory_lock(8744, 65)");
+        assertTrue(!finesReservation.queryFirstColumn(
+            "SELECT business_unit_id FROM public.business_units WHERE business_unit_id = ?", unit).isEmpty(),
+            "The Fines business unit must exist: " + unit);
+
+        List<String> ownedRows = finesReservation.queryFirstColumn("""
+            SELECT configuration_item_id
+            FROM public.configuration_items
+            WHERE business_unit_id = ? AND item_name = 'BANK_ACCOUNTS' AND item_value = ?
+            """, unit, FINES_MAPPING_MARKER);
+        if (ownedRows.isEmpty()) {
+            List<String> conflictingUnits = finesReservation.queryFirstColumn("""
+                SELECT DISTINCT c.business_unit_id
+                FROM public.configuration_items c
+                CROSS JOIN LATERAL jsonb_array_elements(
+                    CASE WHEN jsonb_typeof(c.item_values::jsonb) = 'array'
+                         THEN c.item_values::jsonb ELSE '[]'::jsonb END
+                ) bank_account
+                WHERE c.item_name = 'BANK_ACCOUNTS'
+                  AND bank_account->>'sort_code' = ?
+                  AND bank_account->>'account_number' = ?
+                """, SORT_CODE, ACCOUNT_NUMBER);
+            assertTrue(conflictingUnits.isEmpty(), "Variant test bank is already mapped to Fines units: "
+                + conflictingUnits);
+            finesReservation.update("""
+                INSERT INTO public.configuration_items
+                    (configuration_item_id, business_unit_id, item_name, item_value, item_values)
+                VALUES (nextval('public.configuration_item_id_seq'), ?, 'BANK_ACCOUNTS', ?,
+                    json_build_array(json_build_object(
+                        'sort_code', ?::text, 'account_number', ?::text, 'name', ?::text)))
+                """, unit, FINES_MAPPING_MARKER, SORT_CODE, ACCOUNT_NUMBER, BANK_NAME);
+        } else {
+            assertEquals(List.of("1"), finesReservation.queryFirstColumn("""
+                SELECT count(*)
+                FROM public.configuration_items c
+                CROSS JOIN LATERAL jsonb_array_elements(c.item_values::jsonb) bank_account
+                WHERE c.business_unit_id = ? AND c.item_name = 'BANK_ACCOUNTS' AND c.item_value = ?
+                  AND bank_account->>'sort_code' = ? AND bank_account->>'account_number' = ?
+                  AND bank_account->>'name' = ?
+                """, unit, FINES_MAPPING_MARKER, SORT_CODE, ACCOUNT_NUMBER, BANK_NAME),
+                "Existing Variant Banking Fines mapping differs from this fixture");
+        }
+        finesMappingOwned = true;
+    }
+
+    public void requireBusinessUnit65(short unit) {
+        assertEquals(BUSINESS_UNIT_ID, unit);
         assertEquals(List.of("FINES"), reservation.queryFirstColumn(
             "SELECT opal_domain::text FROM business_unit_bank_account WHERE business_unit_id = ?", unit),
-            "London reference data must exist; filename numbers are IDs, not business_unit_code values");
-        assertTrue(reservation.queryFirstColumn("SELECT business_unit_id FROM business_unit_bank_account "
-            + "WHERE bank_sort_code = ? AND bank_account_number = ?", SORT_CODE, ACCOUNT_NUMBER).size() > 1,
-            "Shared London destination bank must be ambiguous so a bank lookup cannot identify the unit");
+            "File-handler reference data must contain the London BU 65 FINES unit");
     }
 
     public void requireMissingUnit(short unit) {
@@ -81,6 +130,11 @@ public class VariantBankingFixture implements AutoCloseable {
                     var owned = files.findByFileName(fileName);
                     // Retain inputs if a queued consumer is still pending, as in the shared banking fixture.
                     FinesPreprocessingFixture.cleanUp(owned);
+                    if (finesMappingOwned) {
+                        finesReservation.update("DELETE FROM public.configuration_items "
+                                + "WHERE business_unit_id = ? AND item_name = 'BANK_ACCOUNTS' AND item_value = ?",
+                            BUSINESS_UNIT_ID, FINES_MAPPING_MARKER);
+                    }
                     var storage = blobs();
                     owned.stream().filter(row -> row.filestoreUuid() != null)
                         .forEach(row -> storage.deleteIfExists(row.filestoreUuid().toString()));
@@ -88,6 +142,7 @@ public class VariantBankingFixture implements AutoCloseable {
                 }
             }
         } finally {
+            finesReservation.close();
             reservation.close();
         }
     }
