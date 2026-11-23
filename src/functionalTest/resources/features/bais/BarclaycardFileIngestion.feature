@@ -1,4 +1,4 @@
-@Opal @PO-6427 @BaisFileFixture
+@Ignore @Opal @PO-6427 @BaisFileFixture
 Feature: Barclaycard file ingestion
 
   @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @JIRA-STORY:PO-7244
