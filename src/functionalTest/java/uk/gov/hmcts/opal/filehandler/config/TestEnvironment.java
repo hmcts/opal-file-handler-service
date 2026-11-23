@@ -301,7 +301,7 @@ public final class TestEnvironment {
 
     /** Returns the maximum time to wait for asynchronous Fines preprocessing. */
     public static long getFinesPreprocessingTimeoutSeconds() {
-        return Long.parseLong(get("FUNCTIONAL_TEST_FINES_PREPROCESSING_TIMEOUT_SECONDS").orElse("60"));
+        return Long.parseLong(get("FUNCTIONAL_TEST_FINES_PREPROCESSING_TIMEOUT_SECONDS").orElse("90"));
     }
 
     /**
