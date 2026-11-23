@@ -13,8 +13,8 @@ import lombok.experimental.SuperBuilder;
 public abstract class CommonPersonDto {
 
     private Boolean companyFlag;
-    private String companyName;
     private String surname;
+    private String companyName;
     private String forenames;
     private LocalDate dob;
     private String addressLine1;
@@ -23,12 +23,5 @@ public abstract class CommonPersonDto {
     private String addressLine4;
     private String addressLine5;
     private String postCode;
-    private String telephoneNumberHome;
-    private String telephoneNumberBusiness;
-    private String telephoneNumberMobile;
-    private String emailAddress1;
-    private String emailAddress2;
-    private DebtorDetailDto debtorDetail;
-    private String nationalInsuranceNumber;
 
 }

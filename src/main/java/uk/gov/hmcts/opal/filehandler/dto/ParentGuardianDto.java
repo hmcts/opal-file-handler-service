@@ -8,4 +8,6 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class ParentGuardianDto extends CommonPersonDto {
+
+    private DebtorContactDetailsDto contactDetails;
 }

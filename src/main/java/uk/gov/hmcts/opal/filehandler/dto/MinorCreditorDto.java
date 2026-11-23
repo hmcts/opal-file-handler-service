@@ -13,6 +13,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class MinorCreditorDto extends CommonPersonDto {
 
+    private TitleDto  title;
     private String telephone;
     private String emailAddress;
     private boolean payoutHold;
