@@ -13,5 +13,12 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class ParentGuardianDto extends CommonPersonDto {
 
-    private DebtorContactDetailsDto contactDetails;
+    private String telephoneNumberHome;
+    private String telephoneNumberBusiness;
+    private String telephoneNumberMobile;
+    private String nationalInsuranceNumber;
+    private String emailAddress1;
+    private String emailAddress2;
+    private DebtorDetailDto debtorDetail;
+
 }

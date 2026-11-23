@@ -14,7 +14,6 @@ import lombok.experimental.SuperBuilder;
 public class DefendantDto extends CommonPersonDto {
 
     private String title;
-    private DebtorContactDetailsDto contactDetails;
     private String drivingLicenceNumber;
     private String pncId;
     private String nationality1;
@@ -28,5 +27,12 @@ public class DefendantDto extends CommonPersonDto {
     private String prisonNumber;
     private String interpreterLang;
     private ParentGuardianDto parentGuardian;
+    private String telephoneNumberHome;
+    private String telephoneNumberBusiness;
+    private String telephoneNumberMobile;
+    private String nationalInsuranceNumber;
+    private String emailAddress1;
+    private String emailAddress2;
+    private DebtorDetailDto debtorDetail;
 
 }
