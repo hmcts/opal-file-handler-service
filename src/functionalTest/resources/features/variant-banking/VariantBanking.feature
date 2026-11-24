@@ -32,6 +32,22 @@ Feature: Variant Banking file upload, extraction and Fines preprocessing
       | 99              | 750           | VB-LONDON-01             | 04/03/2026       | false  | true             |
     And the complete transformed Variant Banking JSON has payment type "CASH", record count 1 and total amount 750
 
+  @VariantBankingDuplicate
+  Scenario: Re-uploading a successfully processed Variant Banking file is recorded as a duplicate
+    Given the following cash payments are written to a unique Variant Banking file for business unit "065":
+      | code | amountPence | originSort | originAccount | originatorName | accountReference | dateEntryApplied |
+      | 99   | 640         | 123456     | 99887766      | Ms Hana Cole   | VB-DUPLICATE-01  | 12/09/2026       |
+    When I am testing as the "opal-test@dev.platform.hmcts.net" user
+    And the Variant Banking file is uploaded through the Add Interface Files API
+    Then the stored Variant Banking SOURCE and SOURCE_JSON match the payments and filename business unit
+    And Fines preprocessing creates a TRANSFORMED_JSON for the Variant Banking file
+    And the expected transformed Variant Banking payments are:
+      | transactionCode | amountInPence | expectedAccountReference | dateEntryApplied | cheque | validTransaction |
+      | 99              | 640           | VB-DUPLICATE-01           | 12/09/2026       | false  | true             |
+    And the complete transformed Variant Banking JSON has payment type "CASH", record count 1 and total amount 640
+    When the same Variant Banking file is uploaded again through the Add Interface Files API
+    Then the duplicate Variant Banking upload reuses the original file and preprocessing result
+
   Scenario: An unsupported numeric transaction code remains extracted but is excluded from Fines payments
     Given the following cash payments are written to a unique Variant Banking file for business unit "065":
       | code | amountPence | originSort | originAccount | originatorName | accountReference | dateEntryApplied | expectedInTransformedJson |
