@@ -131,7 +131,7 @@ Configure the Fines connection independently of the file-handler database:
 | `FUNCTIONAL_TEST_FINES_DB_USERNAME` | File-handler test database username |
 | `FUNCTIONAL_TEST_FINES_DB_PASSWORD` | File-handler test database password |
 | `FUNCTIONAL_TEST_FINES_BUSINESS_UNIT_ID` | `80` |
-| `FUNCTIONAL_TEST_FINES_PREPROCESSING_TIMEOUT_SECONDS` | `60` |
+| `FUNCTIONAL_TEST_FINES_PREPROCESSING_TIMEOUT_SECONDS` | `90` |
 
 The checks require the Fines seed above, running Fines and file-handler services,
 and a working Service Bus consumer. They do not invoke payment allocation.

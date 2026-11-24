@@ -1,4 +1,4 @@
-@Ignore @Opal @PO-6426 @BaisFileFixture
+@Opal @PO-6426 @BaisFileFixture
 Feature: Allpay file ingestion
 
   Scenario: A valid Allpay file with mixed transaction codes is ingested
