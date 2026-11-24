@@ -2,6 +2,7 @@ package uk.gov.hmcts.opal.filehandler.steps;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.assertj.core.api.SoftAssertions;
+import uk.gov.hmcts.opal.filehandler.db.FinesInterfaceFileTestDatabaseClient;
 import uk.gov.hmcts.opal.filehandler.db.FinesInterfaceFileTestDatabaseClient.PreprocessingResult;
 import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
 import uk.gov.hmcts.opal.filehandler.support.BacsStandard18TestData;
@@ -38,6 +40,7 @@ public class VariantBankingStepDef extends BaseStepDef {
     private byte[] content;
     private List<PaymentInput> payments;
     private Response upload;
+    private Map<String, Object> source;
     private Map<String, Object> sourceJson;
     private JsonPath transformed;
     private PreprocessingResult result;
@@ -84,12 +87,17 @@ public class VariantBankingStepDef extends BaseStepDef {
         upload = InterfaceFileUploadClient.upload(authorisedJsonRequest(), getTestUrl(), fileName, content, metadata);
     }
 
+    @When("the same Variant Banking file is uploaded again through the Add Interface Files API")
+    public void uploadSameFileAgain() {
+        upload();
+    }
+
     @Then("the stored Variant Banking SOURCE and SOURCE_JSON match the payments and filename business unit")
     public void verifyExtraction() {
         fixture.requireBusinessUnit65(businessUnit);
         assertEquals(201, upload.statusCode(), upload.asString());
         assertEquals("SUCCESS", upload.jsonPath().getString("status"));
-        Map<String, Object> source = files().awaitInterfaceFile(
+        source = files().awaitInterfaceFile(
             "VARIANT_BANKING", fileName, "Variant Banking", "SOURCE", "SUCCESS");
         assertEquals(upload.jsonPath().getLong("interface_file_id"), id(source));
         assertMetadata(source);
@@ -114,6 +122,41 @@ public class VariantBankingStepDef extends BaseStepDef {
             extracted.getList("transactions.originator_details.account_reference"));
         assertEquals(payments.stream().map(PaymentInput::dateEntryApplied).toList(),
             extracted.getList("transactions.date_entry_applied"));
+    }
+
+    @Then("the duplicate Variant Banking upload reuses the original file and preprocessing result")
+    public void verifyDuplicateUpload() {
+        assertNotNull(source, "Process the original Variant Banking upload before retrying it");
+        assertNotNull(sourceJson, "Extract the original Variant Banking upload before retrying it");
+        assertNotNull(result, "Complete Fines preprocessing before retrying the Variant Banking file");
+        assertEquals(201, upload.statusCode(), upload.asString());
+        assertEquals("DUPLICATE", upload.jsonPath().getString("status"));
+
+        long originalSourceId = id(source);
+        Map<String, Object> duplicate = files().awaitInterfaceFile(
+            "VARIANT_BANKING", fileName, "Variant Banking", "SOURCE", "DUPLICATE");
+        assertEquals(upload.jsonPath().getLong("interface_file_id"), id(duplicate));
+        assertNotEquals(originalSourceId, id(duplicate));
+        assertEquals(source.get("checksum"), duplicate.get("checksum"));
+        assertEquals(source.get("filestore_uuid"), duplicate.get("filestore_uuid"),
+            "The duplicate SOURCE must reuse the original blob");
+        assertTrue(upload.jsonPath().getString("errors").contains("is a duplicate of " + originalSourceId),
+            "The duplicate response should identify the original SOURCE record");
+
+        List<Map<String, Object>> records = files().records("VARIANT_BANKING", fileName);
+        assertEquals(2, records.stream().filter(row -> "SOURCE".equals(row.get("type"))).count(),
+            "The repeated upload should add one duplicate SOURCE record");
+        assertEquals(1, records.stream().filter(row -> "SOURCE_JSON".equals(row.get("type"))).count(),
+            "Duplicate upload must not create another SOURCE_JSON");
+        assertEquals(1, records.stream().filter(row -> "TRANSFORMED_JSON".equals(row.get("type"))).count(),
+            "Duplicate upload must not create another TRANSFORMED_JSON");
+
+        try (FinesInterfaceFileTestDatabaseClient fines = new FinesInterfaceFileTestDatabaseClient()) {
+            List<PreprocessingResult> results = fines.findBySourceJsonId(id(sourceJson));
+            assertEquals(1, results.size(), "Duplicate upload must not start another Fines preprocessing job");
+            assertEquals(result.jobId(), results.getFirst().jobId());
+            assertEquals(result.transformedJsonId(), results.getFirst().transformedJsonId());
+        }
     }
 
     @Then("Fines preprocessing creates a TRANSFORMED_JSON for the Variant Banking file")
