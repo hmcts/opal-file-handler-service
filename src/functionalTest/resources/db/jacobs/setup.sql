@@ -8,4 +8,4 @@ WHERE bank_sort_code = '800037'
 INSERT INTO public.business_unit_bank_account
     (business_unit_id, business_unit_code, opal_domain,
      bank_sort_code, bank_account_number, dwp_court_code)
-VALUES (3024, 'JA01', 'FINES', '800037', '80048531', '0000031716');
+VALUES (3024, 'JA01', 'FINES', '800037', '80048531', '0000083024');

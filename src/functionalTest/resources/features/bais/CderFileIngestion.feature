@@ -1,4 +1,4 @@
-@Ignore @Opal @PO-6438 @BaisFileFixture
+@Opal @PO-6438 @BaisFileFixture
 Feature: CDER file ingestion
 
   @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @JIRA-STORY:PO-7244
