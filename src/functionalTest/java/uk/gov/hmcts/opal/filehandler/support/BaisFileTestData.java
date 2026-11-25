@@ -189,7 +189,7 @@ public final class BaisFileTestData {
         "JACOBS_FILE_TRANSFER_JOB_ENABLED",
         "0000031712_dat_0000098475_20260408_103500.txt",
         "0000031712_dat_0000098475_20260408_103500.csv",
-        "704540e1dd09077352c715efcd253cb2",
+        "ffc1c3f557962f7b44bb93766f341430",
         "test-data/bailiffs/jacobs-unique.txt"
     );
 
@@ -204,7 +204,7 @@ public final class BaisFileTestData {
         "CDER_FILE_TRANSFER_JOB_ENABLED",
         "0000031712_dat_0000098475_20260408_103500.txt",
         "0000031712_dat_0000098475_20260408_103500.csv",
-        "f10a7bdc5853ca8c7583de8763b254c1",
+        "4ecc1fc96542d34f0812f01479630a37",
         "test-data/bailiffs/cder-unique.txt"
     );
 
