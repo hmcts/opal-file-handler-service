@@ -54,7 +54,6 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
         this.queueServiceMap = new EnumMap<>(Domain.class);
         this.queueServiceMap.put(Domain.FINES, finesQueueService);
         this.queueServiceMap.put(Domain.MAINTENANCE, maintenanceQueueService);
-        this.queueServiceMap.put(Domain.MAINTENANCE, maintenanceQueueService);
     }
 
 
