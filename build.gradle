@@ -236,6 +236,23 @@ tasks.register('integration', Test) {
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
   classpath = sourceSets.integrationTest.runtimeClasspath
   failFast = false
+  reports.html.required = true
+  finalizedBy 'packageIntegrationOutput'
+}
+
+tasks.register('packageIntegrationOutput', Sync) {
+  description = "Packages the integration test HTML and Zephyr reports"
+  group = "Verification"
+  into("${rootDir}/integration-output")
+  from(layout.buildDirectory.dir("reports/tests/integration")) {
+    into("report")
+  }
+  from("${rootDir}/target/zephyr-reports/Junit5Report-IntegrationTest.json") {
+    into("zephyr")
+  }
+  doLast {
+    logPublishedHtmlReport("Integration Test Report", "${rootDir}/integration-output/report")
+  }
 }
 
 
