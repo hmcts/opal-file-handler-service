@@ -13,7 +13,8 @@ public class InterfaceFileContentBlobHooks {
     private static final String FINES_BLOB_NAME = "f0000000-0000-0000-0000-000000000014";
     private static final String UNASSIGNED_BLOB_NAME = "f0000000-0000-0000-0000-000000000016";
     private static final String MISSING_BLOB_NAME = "f0000000-0000-0000-0000-000000000002";
-    private static final String BTECKOH_RESOURCE = "test-data/bteckoh-report/bteckoh-test-file.xlsx";
+    private static final String BTECKOH_RESOURCE =
+        "test-data/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-Daily-2026-04-08-06-00-14.xlsx";
 
     private final BlobStorageClient blobStorageClient = new BlobStorageClient();
 

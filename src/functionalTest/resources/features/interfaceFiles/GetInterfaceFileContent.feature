@@ -10,7 +10,7 @@ Feature: Get Interface File Content
     When I request the content for interface file 9000000000000001
     Then the response status code is 200
     And the interface file content type is application octet stream
-    And the interface file content matches the classpath resource "test-data/bteckoh-report/bteckoh-test-file.xlsx"
+    And the interface file content matches the classpath resource "test-data/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-Daily-2026-04-08-06-00-14.xlsx"
 
   @JIRA-STORY:PO-3948 @JIRA-EPIC:PO-3495
   Scenario: Non-existent file returns not found

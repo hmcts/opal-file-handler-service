@@ -29,7 +29,8 @@ import uk.gov.hmcts.opal.filehandler.support.InterfaceFileUploadClient;
  */
 public class AddInterfaceFileStepDef extends BaseStepDef {
 
-    private static final String WORKBOOK = "test-data/bteckoh-report/bteckoh-test-file.xlsx";
+    private static final String WORKBOOK =
+        "test-data/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-Daily-2026-04-08-06-00-14.xlsx";
     private String fileName;
     private byte[] content;
     private long originalId;

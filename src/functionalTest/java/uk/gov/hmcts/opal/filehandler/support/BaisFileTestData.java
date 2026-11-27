@@ -23,7 +23,7 @@ public final class BaisFileTestData {
         "2498-MCPLDB-MOJ-Payments-Report-Daily-2026-07-06-06-00-18.xlsx",
         "2498-MCPLDB-MOJ-Payments-Report-Daily-2026-07-06-06-00-18.txt",
         "d553f8f289bd08e5c513de5c000c0374",
-        "test-data/bteckoh-report/bteckoh-test-file.xlsx"
+        "test-data/bteckoh-report/2498-MCPLDB-MOJ-Payments-Report-Daily-2026-04-08-06-00-14.xlsx"
     );
 
     public static final BaisFileTestConfig CAPS = new BaisFileTestConfig(
@@ -38,7 +38,7 @@ public final class BaisFileTestData {
         "CapFa.GB.20260701.173024.xml",
         "CapFa.GB.20260701.173024.txt",
         "9f5674b5b59771bffdd95f767fafd239",
-        "test-data/caps-report/caps-test-file.xml"
+        "test-data/caps-report/CapFa.GB.20260311.173015.xml"
     );
 
     public static final BaisFileTestConfig DWP = new BaisFileTestConfig(
