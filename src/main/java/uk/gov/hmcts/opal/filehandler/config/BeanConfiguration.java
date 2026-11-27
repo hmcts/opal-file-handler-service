@@ -1,9 +1,9 @@
 package uk.gov.hmcts.opal.filehandler.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Clock;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.time.Clock;
 
 @Configuration
 public class BeanConfiguration {
@@ -11,5 +11,10 @@ public class BeanConfiguration {
     @Bean
     public Clock clock() {
         return Clock.systemUTC();
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 }
