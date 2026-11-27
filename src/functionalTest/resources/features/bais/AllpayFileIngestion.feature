@@ -1,4 +1,4 @@
-@Opal @PO-6426 @BaisFileFixture
+@Opal @PO-6426 @JIRA-LABEL:file-handler-service @JIRA-EPIC:PO-3497 @BaisFileFixture
 Feature: Allpay file ingestion
 
   Scenario: A valid Allpay file with mixed transaction codes is ingested
