@@ -1,11 +1,15 @@
 package uk.gov.hmcts.opal.filehandler.support;
 
+import java.util.Map;
 import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
 
 /**
  * Stable local report definitions used by BAIS ingestion functional scenarios.
  */
 public final class BaisFileTestData {
+
+    public static final String SELECTED_BAIS_FILE = "selectedBaisFile";
+    public static final String SOURCE_INTERFACE_FILE_ID = "baisSourceInterfaceFileId";
 
     public static final BaisFileTestConfig BTECKOH = new BaisFileTestConfig(
         "BTEckoh",
@@ -52,6 +56,16 @@ public final class BaisFileTestData {
         "test-data/dwp/0000015232_dat_0000000612_08011008_111355.txt"
     );
 
+    public static final BaisFileTestConfig DWP_APR = new BaisFileTestConfig(
+        "DWP", DWP.source(), DWP.automatedTaskName(), DWP.sftpUsername(),
+        DWP.sftpUsernameEnvironmentVariable(), DWP.blobContainerName(),
+        DWP.blobContainerEnvironmentVariable(), DWP.jobFlagEnvironmentVariable(),
+        "0000015232_dat_0000000612_08011008_111356.txt",
+        "0000015232_dat_0000000612_08011008_111356.csv",
+        "41102b9042c29e45a911db0d1f0ae9d1",
+        "test-data/dwp/0000015232_dat_0000000612_08011008_111356.txt"
+    );
+
     public static final BaisFileTestConfig ALLPAY = new BaisFileTestConfig(
         "Allpay",
         "ALLPAY",
@@ -63,9 +77,61 @@ public final class BaisFileTestData {
         "ALLPAY_FILE_TRANSFER_JOB_ENABLED",
         "a121_00350005_300000.dat",
         "a121_00350005_300000.csv",
-        "188cb3326a8168a2c54e086e18f4774c",
-        "test-data/bacs/a121_00350005_300000.dat"
+        "f5b277b252676554397193a58e976187",
+        "test-data/bacs/a121_00000001_000001.dat"
     );
+
+    private static final Map<String, String> ALLPAY_CHECKSUMS = Map.ofEntries(
+        Map.entry("a121_00000001_000001.dat", "f5b277b252676554397193a58e976187"),
+        Map.entry("a121_00000001_000002.dat", "c4e24c4a6774da6472481969455705c6"),
+        Map.entry("a121_00000001_000003.dat", "aaccf5735f4acb8cd2a8ee5d93ba6a51"),
+        Map.entry("a121_00000001_000004.dat", "c821a553cf85d41e37922e504d3acb59"),
+        Map.entry("a121_00000001_000005.dat", "90f3a541406cd322fad69dd836c7462f"),
+        Map.entry("a121_00000001_000006.dat", "6b6d7d33138c4109dad9666bfcc9908f"),
+        Map.entry("a121_00000001_000007.dat", "5c7cf5af8627a5367269c0bf710f7ea1"),
+        Map.entry("a121_00000001_000008.dat", "d8a84fc0516a634f6c6a04a92b7b4f57"),
+        Map.entry("a121_00000001_000009.dat", "697bfe92ce979228622df71215ce932d"),
+        Map.entry("a121_00000001_000010.dat", "ba7c857c55b56c7c3b01dd6f79986370"),
+        Map.entry("a121_00000001_000011.dat", "0229a706d8c2425af69425f2ebc3f886"),
+        Map.entry("a121_00000001_000012.dat", "8c61b6714c63e7f459312a07221992bc"),
+        Map.entry("a121_00000001_000013.dat", "7520adce395964fb5bcdd1bec0e1a7e4"),
+        Map.entry("a121_00000001_000014.dat", "a12db8feec4da7ce523a276b0a15f734"),
+        Map.entry("a121_00000001_000015.dat", "2f5620c1451a54bad4bf446d5ebe7430"),
+        Map.entry("a121_00000001_000016.dat", "74fe9eeec9b01a0cf750b3fdfd7e9fca")
+    );
+
+    /**
+     * Returns the fixture selected by an Allpay scenario-outline example.
+     *
+     * @param fileName local resource name and filename to upload to BAIS.
+     * @return Allpay configuration with the example's filename and expected checksum.
+     */
+    public static BaisFileTestConfig allpayFile(String fileName) {
+        String checksum = ALLPAY_CHECKSUMS.get(fileName);
+        if (checksum == null) {
+            throw new IllegalArgumentException("Unsupported Allpay test file: " + fileName);
+        }
+        return new BaisFileTestConfig(
+            ALLPAY.displayName(), ALLPAY.source(), ALLPAY.automatedTaskName(), ALLPAY.sftpUsername(),
+            ALLPAY.sftpUsernameEnvironmentVariable(), ALLPAY.blobContainerName(),
+            ALLPAY.blobContainerEnvironmentVariable(), ALLPAY.jobFlagEnvironmentVariable(),
+            fileName, fileName.replace(".dat", ".csv"), checksum, "test-data/bacs/" + fileName
+        );
+    }
+
+    /** Returns a supported named fixture for the requested interface. */
+    public static BaisFileTestConfig namedFile(String displayName, String fileName) {
+        if ("Allpay".equals(displayName)) {
+            return allpayFile(fileName);
+        }
+        if ("DWP".equals(displayName) && DWP.fileName().equals(fileName)) {
+            return DWP;
+        }
+        if ("DWP".equals(displayName) && DWP_APR.fileName().equals(fileName)) {
+            return DWP_APR;
+        }
+        throw new IllegalArgumentException("Unsupported " + displayName + " test file: " + fileName);
+    }
 
     public static final BaisFileTestConfig NATWEST = new BaisFileTestConfig(
         "NatWest",
@@ -93,7 +159,7 @@ public final class BaisFileTestData {
         "BARCLAYCARD_FILE_TRANSFER_JOB_ENABLED",
         "a121_00010065_317608.dat",
         "a121_00010065_317608.err",
-        "054a5f946f89dc18c776a12e7ad0b5dc",
+        "a1b994a631b8b4d4b480b6b309905f65",
         "test-data/bacs/barclaycard-unique.dat"
     );
 
@@ -108,7 +174,7 @@ public final class BaisFileTestData {
         "BTECKOH_FILE_TRANSFER_JOB_ENABLED",
         "a121_00350005_300000.dat",
         "a121_00350005_300000.err",
-        "0b37ec09e1e2122f934c00e1e59026b3",
+        "317090629247b298f0f175de074de949",
         "test-data/bacs/bteckoh-unique.dat"
     );
 
@@ -123,7 +189,7 @@ public final class BaisFileTestData {
         "JACOBS_FILE_TRANSFER_JOB_ENABLED",
         "0000031712_dat_0000098475_20260408_103500.txt",
         "0000031712_dat_0000098475_20260408_103500.csv",
-        "704540e1dd09077352c715efcd253cb2",
+        "ffc1c3f557962f7b44bb93766f341430",
         "test-data/bailiffs/jacobs-unique.txt"
     );
 
@@ -138,7 +204,7 @@ public final class BaisFileTestData {
         "CDER_FILE_TRANSFER_JOB_ENABLED",
         "0000031712_dat_0000098475_20260408_103500.txt",
         "0000031712_dat_0000098475_20260408_103500.csv",
-        "f10a7bdc5853ca8c7583de8763b254c1",
+        "4ecc1fc96542d34f0812f01479630a37",
         "test-data/bailiffs/cder-unique.txt"
     );
 
@@ -151,8 +217,8 @@ public final class BaisFileTestData {
         "marston",
         "MARSTON_AZURE_STORAGE_CONTAINER",
         "MARSTON_FILE_TRANSFER_JOB_ENABLED",
-        "1234567890_dat_0987654321_20260910_143015.txt",
-        "1234567890_dat_0987654321_20260910_143015.csv",
+        "8034567890_dat_0987654321_20260910_143015.txt",
+        "8034567890_dat_0987654321_20260910_143015.csv",
         "917c82d4d3144b3dfcdb08d7eb25e3f0",
         "test-data/bailiffs/marston-unique.txt"
     );

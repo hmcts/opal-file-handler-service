@@ -10,12 +10,13 @@ properties([
   ])
 ])
 
+import groovy.json.JsonOutput
 import uk.gov.hmcts.contino.GradleBuilder
 
 import java.time.DayOfWeek
 import java.time.ZonedDateTime
 
-@Library("Infrastructure@2.13.6")
+@Library("Infrastructure@2.15.0")
 
 def type = "java"
 def product = "opal"
@@ -26,7 +27,7 @@ GradleBuilder builder = new GradleBuilder(this, product)
 def stagingValuesFile = 'charts/opal-file-handler-service/values.stg.template.yaml'
 def stagingEnvironment = [
   name                : 'staging',
-  testUrl             : 'https://opal-file-handler-service-staging.staging.platform.hmcts.net',
+  testUrl             : 'https://opal-file-handler-service.staging.platform.hmcts.net',
   userServiceApiUrl   : 'https://opal-user-service.staging.platform.hmcts.net',
   loggingServiceApiUrl: 'https://opal-logging-service.staging.platform.hmcts.net',
 ]
@@ -58,6 +59,11 @@ def secrets = [
     secret('file-handler-service-POSTGRES-DATABASE', 'OPAL_FILE_HANDLER_DB_NAME'),
     secret('file-handler-service-POSTGRES-USER', 'OPAL_FILE_HANDLER_DB_USERNAME'),
     secret('file-handler-service-POSTGRES-PASS', 'OPAL_FILE_HANDLER_DB_PASSWORD'),
+    secret('fines-service-POSTGRES-HOST', 'OPAL_FINES_DB_HOST'),
+    secret('fines-service-POSTGRES-PORT', 'OPAL_FINES_DB_PORT'),
+    secret('fines-service-POSTGRES-DATABASE', 'OPAL_FINES_DB_NAME'),
+    secret('fines-service-POSTGRES-USER', 'OPAL_FINES_DB_USERNAME'),
+    secret('fines-service-POSTGRES-PASS', 'OPAL_FINES_DB_PASSWORD'),
     secret('opal-file-handler-service-file-store-account-name', 'FILE_STORE_STORAGE_ACCOUNT_NAME'),
     secret('opal-file-handler-service-file-store-blob-endpoint', 'FILE_STORE_STORAGE_URL'),
     secret('opal-file-handler-service-file-store-access-key', 'FILE_STORE_STORAGE_KEY'),
@@ -110,6 +116,21 @@ def configureFunctionalTestEnvironment = { valuesFile ->
   if (!env.OPAL_FILE_HANDLER_DB_PASSWORD?.trim()) {
     missingVariables.add('OPAL_FILE_HANDLER_DB_PASSWORD')
   }
+  if (!env.OPAL_FINES_DB_HOST?.trim()) {
+    missingVariables.add('OPAL_FINES_DB_HOST')
+  }
+  if (!env.OPAL_FINES_DB_PORT?.trim()) {
+    missingVariables.add('OPAL_FINES_DB_PORT')
+  }
+  if (!env.OPAL_FINES_DB_NAME?.trim()) {
+    missingVariables.add('OPAL_FINES_DB_NAME')
+  }
+  if (!env.OPAL_FINES_DB_USERNAME?.trim()) {
+    missingVariables.add('OPAL_FINES_DB_USERNAME')
+  }
+  if (!env.OPAL_FINES_DB_PASSWORD?.trim()) {
+    missingVariables.add('OPAL_FINES_DB_PASSWORD')
+  }
   if (!env.FILE_STORE_STORAGE_ACCOUNT_NAME?.trim()) {
     missingVariables.add('FILE_STORE_STORAGE_ACCOUNT_NAME')
   }
@@ -126,8 +147,10 @@ def configureFunctionalTestEnvironment = { valuesFile ->
     )
   }
 
+  env.OPAL_FINES_DB_OPTIONS = functionalTestValues.finesDatabaseOptions?.toString() ?: ''
   env.FUNCTIONAL_TEST_BLOB_CONTAINER_NAME = containerName
   echo "Configured staging functional-test database and blob container ${containerName}"
+  builder.gradle('verifyFunctionalTestDatabases')
 }
 
 def configureZephyrExecution = { testEnvironment ->
@@ -384,6 +407,7 @@ def runSmokeStage = { shouldRunWithZephyr ->
   }
 }
 
+try {
 withNightlyPipeline(type, product, component) {
   loadVaultSecrets(secrets)
   configureTestEnvironment(stagingEnvironment)
@@ -418,5 +442,30 @@ withNightlyPipeline(type, product, component) {
       currentBuild.result = 'FAILURE'
       error("One or more selected test stages failed:\n - ${stageFailures.join('\n - ')}")
     }
+  }
+}
+} finally {
+  // Dispatch the nightly result separately from the regular master status.
+  if (env.GIT_CREDENTIALS_ID) {
+    def result = currentBuild.currentResult
+    try {
+      httpRequest(
+        url: 'https://api.github.com/repos/hmcts/opal-file-handler-service/dispatches',
+        httpMode: 'POST',
+        authentication: env.GIT_CREDENTIALS_ID,
+        contentType: 'APPLICATION_JSON',
+        requestBody: JsonOutput.toJson([
+          event_type: 'opal-nightly-build',
+          client_payload: [result: result, build_url: env.BUILD_URL, sha: env.GIT_COMMIT ?: '']
+        ]),
+        quiet: true,
+        timeout: 15,
+        validResponseCodes: '204'
+      )
+    } catch (err) {
+      echo "Unable to dispatch nightly result to GitHub: ${err.message}"
+    }
+  } else {
+    echo 'Nightly result not dispatched: GitHub credentials were not established.'
   }
 }

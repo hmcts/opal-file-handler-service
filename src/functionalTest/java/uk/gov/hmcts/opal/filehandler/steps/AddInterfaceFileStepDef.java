@@ -20,8 +20,9 @@ import java.util.UUID;
 import org.apache.commons.codec.digest.DigestUtils;
 import uk.gov.hmcts.opal.filehandler.blob.BlobStorageClient;
 import uk.gov.hmcts.opal.filehandler.db.DatabaseClient;
-import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
 import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient.InterfaceFileRecord;
+import uk.gov.hmcts.opal.filehandler.db.InterfaceFileTestDatabaseClient;
+import uk.gov.hmcts.opal.filehandler.support.InterfaceFileUploadClient;
 
 /**
  * Exercises multipart interface-file uploads using the existing auth, database and blob clients.
@@ -88,23 +89,23 @@ public class AddInterfaceFileStepDef extends BaseStepDef {
 
     @Given("an ingested upload exists for this scenario")
     public void ingestedUploadExists() {
-        uploadWorkbook();
-        assertEquals(201, lastResponse().statusCode());
-        uploadedFileIsPersisted("INGESTED");
-        uploadedBlobMatchesWorkbook();
-        originalId = lastResponse().jsonPath().getLong("interface_file_id");
-        originalBlob = lastResponse().jsonPath().getString("filestore_uuid");
+        successfulUploadExists();
+        try (DatabaseClient database = new DatabaseClient()) {
+            assertEquals(1, database.update(
+                "UPDATE public.interface_files SET status = 'INGESTED' "
+                    + "WHERE interface_file_id = ? AND file_name = ? AND status = 'SUCCESS'",
+                originalId, fileName));
+        }
     }
 
     @Given("a successfully processed upload exists for this scenario")
     public void successfulUploadExists() {
-        ingestedUploadExists();
-        // Explicit duplicate-lookup precondition; this does not test downstream processing.
-        try (DatabaseClient database = new DatabaseClient()) {
-            assertEquals(1, database.update(
-                "UPDATE public.interface_files SET status = 'SUCCESS' WHERE interface_file_id = ? AND file_name = ?",
-                originalId, fileName));
-        }
+        uploadWorkbook();
+        assertEquals(201, lastResponse().statusCode());
+        uploadedFileIsPersisted("SUCCESS");
+        uploadedBlobMatchesWorkbook();
+        originalId = lastResponse().jsonPath().getLong("interface_file_id");
+        originalBlob = lastResponse().jsonPath().getString("filestore_uuid");
     }
 
     @Then("the uploaded interface file is persisted with status {string}")
@@ -153,7 +154,7 @@ public class AddInterfaceFileStepDef extends BaseStepDef {
     public void repeatHasSeparateBlob() {
         assertNotEquals(originalId, lastResponse().jsonPath().getLong("interface_file_id"));
         assertNotEquals(originalBlob, lastResponse().jsonPath().getString("filestore_uuid"));
-        assertTwoRecords("INGESTED", "INGESTED");
+        assertTwoRecords("INGESTED", "SUCCESS");
         uploadedBlobMatchesWorkbook();
         assertTrue(new BlobStorageClient().contentMatchesResource(originalBlob, WORKBOOK));
     }
@@ -189,11 +190,8 @@ public class AddInterfaceFileStepDef extends BaseStepDef {
             {"source":"BTECKOH_REPORT","target":"OPAL","type":"SOURCE","domain":"%s",
              "file_name":"%s","payment_type":"CASH","should_pre_process_file":false}
             """.formatted(domain, metadataFilename);
-        jsonRequestWithOptionalToken(token)
-            .contentType("multipart/form-data")
-            .multiPart("file", fileName, content, "application/octet-stream")
-            .multiPart("metadata", "metadata.json", metadata.getBytes(StandardCharsets.UTF_8), "application/json")
-            .when().post(getTestUrl() + "/interface-files");
+        InterfaceFileUploadClient.upload(jsonRequestWithOptionalToken(token), getTestUrl(),
+            fileName, content, metadata);
     }
 
     private long expectedHumanUserId() {

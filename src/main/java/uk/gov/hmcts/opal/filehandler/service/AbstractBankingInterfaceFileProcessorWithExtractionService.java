@@ -13,6 +13,7 @@ import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.opal.filehandler.config.FileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.BusinessUnitBankAccountEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
+import uk.gov.hmcts.opal.filehandler.entity.Interface;
 import uk.gov.hmcts.opal.filehandler.entity.InterfaceFileEntity;
 import uk.gov.hmcts.opal.filehandler.entity.Status;
 import uk.gov.hmcts.opal.filehandler.exception.UnexpectedDomainException;
@@ -113,10 +114,13 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
     }
 
 
-    void sendToQueue(InterfaceFileEntity sourceJson, Domain domain) {
+    void sendToQueue(InterfaceFileEntity sourceJson, Domain domain, ProcessingFailurePolicy failurePolicy) {
         try {
             queueService(domain).send(sourceJson.getInterfaceFileId());
         } catch (RuntimeException e) {
+            if (failurePolicy == ProcessingFailurePolicy.PROPAGATE) {
+                throw e;
+            }
             markSourceJsonFailed(sourceJson, "Queue send failed: %s".formatted(e.getMessage()), e);
         }
     }
@@ -140,7 +144,9 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
         validateSupportedDomain(sourceInterfaceFile, domain);
         updateSourceBusinessUnitAndDomain(sourceInterfaceFile, businessUnitBankAccount, domain);
 
-        if (BUSINESS_UNIT_065 == businessUnitBankAccount.getId()) {
+        if (BUSINESS_UNIT_065 == businessUnitBankAccount.getId()
+            && !Interface.VARIANT_BANKING.equals(sourceInterfaceFile.getSource())
+        ) {
             return false;
         }
 
@@ -149,9 +155,12 @@ public abstract class AbstractBankingInterfaceFileProcessorWithExtractionService
     }
 
     @Override
-    public void postProcessExtract(InterfaceFileEntity sourceJson, T extract) {
+    public void postProcessExtract(InterfaceFileEntity sourceJson, T extract, ProcessingFailurePolicy failurePolicy) {
         if (sourceJson.getStatus() == Status.SUCCESS) {
-            sendToQueue(sourceJson, sourceJson.getOpalDomain());
+            if (failurePolicy == ProcessingFailurePolicy.PROPAGATE) {
+                interfaceFilesRepository.flush();
+            }
+            sendToQueue(sourceJson, sourceJson.getOpalDomain(), failurePolicy);
             if (sourceJson.getStatus() == Status.FAILED) {
                 interfaceFilesRepository.save(sourceJson);
             }

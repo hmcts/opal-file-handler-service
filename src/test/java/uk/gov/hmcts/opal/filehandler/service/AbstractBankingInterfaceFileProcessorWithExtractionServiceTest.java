@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.mockito.ArgumentCaptor;
@@ -147,6 +148,46 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
         mockedSecurityUtil.close();
     }
 
+    @Test
+    void propagatesJsonUploadFailureWithoutRecordingFailedStatus() {
+        InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
+        RuntimeException failure = new RuntimeException("Blob unavailable");
+        doThrow(failure).when(blobStoreService).uploadBaisFile(any(UUID.class), eq(CONTAINER),
+            any(InputStream.class), anyString(), eq(ProcessingFailurePolicy.PROPAGATE));
+
+        assertThatThrownBy(() -> service.uploadSourceJson(sourceJson, new byte[] {1},
+            ProcessingFailurePolicy.PROPAGATE)).isSameAs(failure);
+
+        assertThat(sourceJson.getStatus()).isEqualTo(Status.SUCCESS);
+        assertThat(sourceJson.getErrors()).isNull();
+    }
+
+    @Test
+    void propagatesJsonChecksumFailureWithoutRecordingFailedStatus() {
+        InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
+        BlobChecksumValidationException failure = new BlobChecksumValidationException(FILE_UUID, "expected", "actual");
+        doThrow(failure).when(blobStoreService).uploadBaisFile(any(UUID.class), eq(CONTAINER),
+            any(InputStream.class), anyString(), eq(ProcessingFailurePolicy.PROPAGATE));
+
+        assertThatThrownBy(() -> service.uploadSourceJson(sourceJson, new byte[] {1},
+            ProcessingFailurePolicy.PROPAGATE)).isSameAs(failure);
+
+        assertThat(sourceJson.getStatus()).isEqualTo(Status.SUCCESS);
+    }
+
+    @Test
+    void propagatesQueueFailureWithoutRecordingFailedStatus() {
+        InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
+        RuntimeException failure = new RuntimeException("Queue unavailable");
+        doThrow(failure).when(finesQueueService).send(200L);
+
+        assertThatThrownBy(() -> service.sendToQueue(sourceJson, Domain.FINES,
+            ProcessingFailurePolicy.PROPAGATE)).isSameAs(failure);
+
+        assertThat(sourceJson.getStatus()).isEqualTo(Status.SUCCESS);
+        assertThat(sourceJson.getErrors()).isNull();
+    }
+
     @Nested
     class ProcessFile {
 
@@ -159,7 +200,7 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
             when(mockedToken.getUserId()).thenReturn(CREATOR_ID);
 
             TestProcessor processor = spy(service);
-            processor.processFile(sourceFile, inputStream, CREATOR_ID);
+            processor.processFile(sourceFile, inputStream, CREATOR_ID, ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(sourceFile.getStatus()).isEqualTo(Status.SUCCESS_NO_TRANSACTIONS);
             verify(repository).save(sourceFile);
@@ -167,40 +208,46 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
             verify(extractionService, never()).getBusinessUnitBankAccount(any());
             verify(processor, never()).validateSupportedDomain(any(), any());
             verify(processor, never()).updateSourceBusinessUnitAndDomain(any(), any(), any());
-            verify(processor, never()).createAndUploadSourceJson(any(), any(), anyLong());
-            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+            verify(processor, never()).createAndUploadSourceJson(any(), any(), anyLong(),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any(),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
             verify(finesQueueService, never()).send(any());
             verify(maintenanceQueueService, never()).send(any());
         }
 
-        @Test
-        void shouldPreProcessAndQueueNewExtract() {
+        @ParameterizedTest
+        @CsvSource({"NATWEST, 12", "VARIANT_BANKING, 65"})
+        void shouldPreProcessAndQueueNewExtract(Interface source, short businessUnitId) {
+            sourceFile.setSource(source);
             TestProcessor processor = spy(service);
             InputStream inputStream = new ByteArrayInputStream("source".getBytes(StandardCharsets.UTF_8));
             InterfaceFileCommonDataExtract extract = extract();
-            BusinessUnitBankAccountEntity businessUnit = businessUnit((short) 12, Domain.FINES);
+            BusinessUnitBankAccountEntity businessUnit = businessUnit(businessUnitId, Domain.FINES);
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS, Domain.FINES);
 
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
             when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
-            doReturn(sourceJson).when(processor).createAndUploadSourceJson(sourceFile, extract, CREATOR_ID);
+            doReturn(sourceJson).when(processor).createAndUploadSourceJson(sourceFile, extract, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
 
             mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
                 .thenReturn(mockedToken);
             when(mockedToken.getUserId()).thenReturn(CREATOR_ID);
 
-            processor.processFile(sourceFile, inputStream, CREATOR_ID);
+            processor.processFile(sourceFile, inputStream, CREATOR_ID, ProcessingFailurePolicy.RECORD_FAILURE);
 
-            assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 12);
+            assertThat(sourceFile.getBusinessUnitId()).containsExactly(businessUnitId);
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
-            verify(processor).createAndUploadSourceJson(sourceFile, extract, CREATOR_ID);
+            verify(processor).createAndUploadSourceJson(sourceFile, extract, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
             verify(finesQueueService).send(200L);
             verify(maintenanceQueueService, never()).send(any());
             verify(repository).save(sourceFile);
         }
 
         @Test
-        void shouldSkipProcessingExtractWhenBusinessUnitIs065() {
+        void shouldSkipNonVariantBankingExtractWhenBusinessUnitIs065() {
             TestProcessor processor = spy(service);
             InputStream inputStream = new ByteArrayInputStream("source".getBytes(StandardCharsets.UTF_8));
             InterfaceFileCommonDataExtract extract = extract();
@@ -209,12 +256,14 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(extract));
             when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
 
-            processor.processFile(sourceFile, inputStream, CREATOR_ID);
+            processor.processFile(sourceFile, inputStream, CREATOR_ID, ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 65);
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.FINES);
-            verify(processor, never()).createAndUploadSourceJson(any(), any(), anyLong());
-            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+            verify(processor, never()).createAndUploadSourceJson(any(), any(), anyLong(),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any(),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
             verify(finesQueueService, never()).send(any());
             verify(maintenanceQueueService, never()).send(any());
             verify(repository).save(sourceFile);
@@ -237,20 +286,23 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
             when(extractionService.extractStandardData(sourceFile, inputStream)).thenReturn(List.of(first, second));
             when(extractionService.getBusinessUnitBankAccount(first)).thenReturn(firstBusinessUnit);
             when(extractionService.getBusinessUnitBankAccount(second)).thenReturn(secondBusinessUnit);
-            doReturn(firstSourceJson).when(processor).createAndUploadSourceJson(sourceFile, first, CREATOR_ID);
+            doReturn(firstSourceJson).when(processor).createAndUploadSourceJson(sourceFile, first, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
             doReturn(secondSourceJson).when(processor)
-                .createAndUploadSourceJson(sourceFile, second, CREATOR_ID);
+                .createAndUploadSourceJson(sourceFile, second, CREATOR_ID, ProcessingFailurePolicy.RECORD_FAILURE);
 
             mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
                 .thenReturn(mockedToken);
             when(mockedToken.getUserId()).thenReturn(CREATOR_ID);
 
-            processor.processFile(sourceFile, inputStream, CREATOR_ID);
+            processor.processFile(sourceFile, inputStream, CREATOR_ID, ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(sourceFile.getBusinessUnitId()).containsExactly((short) 12, (short) 1);
             assertThat(sourceFile.getOpalDomain()).isEqualTo(Domain.MAINTENANCE);
-            verify(processor).createAndUploadSourceJson(sourceFile, first, CREATOR_ID);
-            verify(processor).createAndUploadSourceJson(sourceFile, second, CREATOR_ID);
+            verify(processor).createAndUploadSourceJson(sourceFile, first, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
+            verify(processor).createAndUploadSourceJson(sourceFile, second, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE);
             verify(finesQueueService).send(200L);
             verify(maintenanceQueueService).send(201L);
             verify(repository).save(sourceFile);
@@ -270,11 +322,14 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
                 .thenReturn(mockedToken);
             when(mockedToken.getUserId()).thenReturn(CREATOR_ID);
 
-            assertThatThrownBy(() -> processor.processFile(sourceFile, inputStream, CREATOR_ID))
+            assertThatThrownBy(() -> processor.processFile(sourceFile, inputStream, CREATOR_ID,
+                ProcessingFailurePolicy.RECORD_FAILURE))
                 .isInstanceOf(UnexpectedDomainException.class);
 
-            verify(processor, never()).createAndUploadSourceJson(any(), any(), anyLong());
-            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+            verify(processor, never()).createAndUploadSourceJson(any(), any(), anyLong(),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any(),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
             verify(finesQueueService, never()).send(any());
             verify(maintenanceQueueService, never()).send(any());
             verify(repository, never()).save(any());
@@ -470,11 +525,12 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
             byte[] jsonBytes = "{}".getBytes(StandardCharsets.UTF_8);
             ArgumentCaptor<InputStream> inputStreamCaptor = ArgumentCaptor.forClass(InputStream.class);
 
-            service.uploadSourceJson(sourceJson, jsonBytes);
+            service.uploadSourceJson(sourceJson, jsonBytes, ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(sourceJson.getFilestoreUuid()).isNotNull();
             verify(blobStoreService).uploadBaisFile(any(UUID.class), eq(CONTAINER), inputStreamCaptor.capture(),
-                eq(sourceJson.getChecksum()));
+                eq(sourceJson.getChecksum()),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
             assertThat(inputStreamCaptor.getValue().readAllBytes()).isEqualTo(jsonBytes);
         }
 
@@ -484,9 +540,11 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
             BlobChecksumValidationException exception = new BlobChecksumValidationException(
                 UUID.fromString("11111111-1111-1111-1111-111111111111"), "expected", "actual");
             doThrow(exception).when(blobStoreService)
-                .uploadBaisFile(any(UUID.class), eq(CONTAINER), any(InputStream.class), eq(sourceJson.getChecksum()));
+                .uploadBaisFile(any(UUID.class), eq(CONTAINER), any(InputStream.class), eq(sourceJson.getChecksum()),
+                    eq(ProcessingFailurePolicy.RECORD_FAILURE));
 
-            service.uploadSourceJson(sourceJson, "{}".getBytes(StandardCharsets.UTF_8));
+            service.uploadSourceJson(sourceJson, "{}".getBytes(StandardCharsets.UTF_8),
+                ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(sourceJson.getStatus()).isEqualTo(Status.FAILED);
             assertThat(sourceJson.getErrors())
@@ -500,9 +558,11 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
         void shouldMarkFailedWhenUploadThrowsGenericRuntimeException() {
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
             doThrow(new RuntimeException("blob unavailable")).when(blobStoreService)
-                .uploadBaisFile(any(UUID.class), eq(CONTAINER), any(InputStream.class), eq(sourceJson.getChecksum()));
+                .uploadBaisFile(any(UUID.class), eq(CONTAINER), any(InputStream.class), eq(sourceJson.getChecksum()),
+                    eq(ProcessingFailurePolicy.RECORD_FAILURE));
 
-            service.uploadSourceJson(sourceJson, "{}".getBytes(StandardCharsets.UTF_8));
+            service.uploadSourceJson(sourceJson, "{}".getBytes(StandardCharsets.UTF_8),
+                ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(sourceJson.getStatus()).isEqualTo(Status.FAILED);
             assertThat(sourceJson.getErrors())
@@ -518,7 +578,7 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
         void shouldSendToSelectedQueue() {
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
 
-            service.sendToQueue(sourceJson, Domain.FINES);
+            service.sendToQueue(sourceJson, Domain.FINES, ProcessingFailurePolicy.RECORD_FAILURE);
 
             verify(finesQueueService).send(200L);
             verify(maintenanceQueueService, never()).send(any());
@@ -529,7 +589,7 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS);
             doThrow(new RuntimeException("queue unavailable")).when(finesQueueService).send(200L);
 
-            service.sendToQueue(sourceJson, Domain.FINES);
+            service.sendToQueue(sourceJson, Domain.FINES, ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(sourceJson.getStatus()).isEqualTo(Status.FAILED);
             assertThat(sourceJson.getErrors()).isEqualTo("{\"message\":\"Queue send failed: queue unavailable\"}");
@@ -676,11 +736,13 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
     @Nested
     class PreProcessExtract {
 
-        @Test
-        void shouldUpdateSourceFilePopulateBankDetailsAndReturnTrue() {
+        @ParameterizedTest
+        @CsvSource({"NATWEST, 12", "VARIANT_BANKING, 12", "VARIANT_BANKING, 65"})
+        void shouldUpdateSourceFilePopulateBankDetailsAndReturnTrue(Interface source, short businessUnitId) {
+            sourceFile.setSource(source);
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
-            BusinessUnitBankAccountEntity businessUnit = businessUnit((short) 12, Domain.FINES);
+            BusinessUnitBankAccountEntity businessUnit = businessUnit(businessUnitId, Domain.FINES);
 
             when(extractionService.getBusinessUnitBankAccount(extract)).thenReturn(businessUnit);
             doNothing().when(processor).validateSupportedDomain(sourceFile, Domain.FINES);
@@ -696,8 +758,10 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
             verify(processor).populateMissingDestinationBankDetails(extract, businessUnit);
         }
 
-        @Test
-        void shouldReturnFalseForBusinessUnit065AfterUpdatingSourceFile() {
+        @ParameterizedTest
+        @EnumSource(value = Interface.class, names = "VARIANT_BANKING", mode = Mode.EXCLUDE)
+        void shouldSkipBusinessUnit065ForNonVariantBankingSources(Interface source) {
+            sourceFile.setSource(source);
             TestProcessor processor = spy(service);
             InterfaceFileCommonDataExtract extract = extract();
             BusinessUnitBankAccountEntity businessUnit = businessUnit((short) 65, Domain.FINES);
@@ -724,11 +788,11 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
             TestProcessor processor = spy(service);
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.SUCCESS, Domain.FINES);
             InterfaceFileCommonDataExtract extract = extract();
-            doNothing().when(processor).sendToQueue(sourceJson, Domain.FINES);
+            doNothing().when(processor).sendToQueue(sourceJson, Domain.FINES, ProcessingFailurePolicy.RECORD_FAILURE);
 
-            processor.postProcessExtract(sourceJson, extract);
+            processor.postProcessExtract(sourceJson, extract, ProcessingFailurePolicy.RECORD_FAILURE);
 
-            verify(processor).sendToQueue(sourceJson, Domain.FINES);
+            verify(processor).sendToQueue(sourceJson, Domain.FINES, ProcessingFailurePolicy.RECORD_FAILURE);
             verify(repository, never()).save(sourceJson);
         }
 
@@ -738,9 +802,9 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
             InterfaceFileEntity sourceJson = sourceJsonFile(200L, Status.FAILED, Domain.FINES);
             InterfaceFileCommonDataExtract extract = extract();
 
-            processor.postProcessExtract(sourceJson, extract);
+            processor.postProcessExtract(sourceJson, extract, ProcessingFailurePolicy.RECORD_FAILURE);
 
-            verify(processor, never()).sendToQueue(sourceJson, Domain.FINES);
+            verify(processor, never()).sendToQueue(sourceJson, Domain.FINES, ProcessingFailurePolicy.RECORD_FAILURE);
             verify(repository, never()).save(sourceJson);
         }
 
@@ -753,13 +817,13 @@ class AbstractBankingInterfaceFileProcessorWithExtractionServiceTest {
                 sourceJson.setStatus(Status.FAILED);
                 sourceJson.setErrors("{\"message\":\"Queue send failed: queue unavailable\"}");
                 return null;
-            }).when(processor).sendToQueue(sourceJson, Domain.FINES);
+            }).when(processor).sendToQueue(sourceJson, Domain.FINES, ProcessingFailurePolicy.RECORD_FAILURE);
 
-            processor.postProcessExtract(sourceJson, extract);
+            processor.postProcessExtract(sourceJson, extract, ProcessingFailurePolicy.RECORD_FAILURE);
 
             assertThat(sourceJson.getStatus()).isEqualTo(Status.FAILED);
             assertThat(sourceJson.getErrors()).isEqualTo("{\"message\":\"Queue send failed: queue unavailable\"}");
-            verify(processor).sendToQueue(sourceJson, Domain.FINES);
+            verify(processor).sendToQueue(sourceJson, Domain.FINES, ProcessingFailurePolicy.RECORD_FAILURE);
             verify(repository).save(sourceJson);
         }
     }

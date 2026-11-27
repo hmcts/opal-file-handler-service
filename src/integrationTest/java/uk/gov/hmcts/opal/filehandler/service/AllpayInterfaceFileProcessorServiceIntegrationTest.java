@@ -155,7 +155,7 @@ public class AllpayInterfaceFileProcessorServiceIntegrationTest
         String file = ALLPAY_FILE + fileEnding;
 
         var source = assertSuccessfulInterfaceFile(
-            file, ALLPAY_FILE_CHECKSUM, Interface.ALLPAY, Type.SOURCE, Domain.MAINTENANCE);
+            file, ALLPAY_FILE_CHECKSUM, Interface.ALLPAY, Type.SOURCE, null);
         assertThat(repository.findAll())
             .filteredOn(interfaceFile -> interfaceFile.getType() == Type.SOURCE_JSON)
             .filteredOn(interfaceFile -> file.equals(interfaceFile.getFileName()))

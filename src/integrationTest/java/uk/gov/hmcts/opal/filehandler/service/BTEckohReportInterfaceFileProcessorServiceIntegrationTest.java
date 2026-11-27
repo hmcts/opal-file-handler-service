@@ -137,7 +137,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
         service.run();
 
         assertSuccessfulInterfaceFile(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE,
-            Domain.MAINTENANCE);
+            Domain.FINES);
         assertBlobChecksum(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, config.getContainerName());
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
         assertReportCanBeListedAndDownloaded(
@@ -153,7 +153,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
         service.run();
 
         assertThat(assertSuccessfulInterfaceFile(
-            BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE, Domain.MAINTENANCE
+            BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE, Domain.FINES
         ).getCreatedBy()).isEqualTo(-1L);
     }
 
@@ -180,7 +180,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
         uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
         service.run();
         final InterfaceFileEntity success = assertSuccessfulInterfaceFile(
-            BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE, Domain.MAINTENANCE);
+            BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE, Domain.FINES);
         final var before = storedBlobs(config.getContainerName());
         uploadResourceToSftp(BTECKOH_FILE_RESOURCE, BTECKOH_FILE_CONTAINER);
         uploadResourceToSftp(BTECKOH_FILE_RESOURCE_2, BTECKOH_FILE_CONTAINER_2);
@@ -223,7 +223,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
         assertNumberOfSftpFiles(config.getSftpUsername(), 0);
         assertEntitiesWithStatus(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Status.FAILED_SUPERSEDED);
         assertSuccessfulInterfaceFile(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE,
-            Domain.MAINTENANCE);
+            Domain.FINES);
         assertBlobChecksum(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, config.getContainerName());
     }
 
@@ -290,7 +290,7 @@ public class BTEckohReportInterfaceFileProcessorServiceIntegrationTest
         assertThat(repository.findAll()).hasSize(2);
         assertThat(repository.findById(failedId).orElseThrow().getStatus()).isEqualTo(Status.FAILED);
         var success = assertSuccessfulInterfaceFile(
-            BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE, Domain.MAINTENANCE);
+            BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, Interface.BTECKOH_REPORT, Type.SOURCE, Domain.FINES);
         assertThat(storedBlobs(config.getContainerName()))
             .containsOnlyKeys(success.getFilestoreUuid().toString());
         assertBlobChecksum(BTECKOH_FILE, BTECKOH_FILE_CHECKSUM, config.getContainerName());

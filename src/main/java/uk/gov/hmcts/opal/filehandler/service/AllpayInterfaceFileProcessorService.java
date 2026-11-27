@@ -45,13 +45,14 @@ public class AllpayInterfaceFileProcessorService
     protected void processFile(
         InterfaceFileEntity sourceInterfaceFile,
         InputStream inputStream,
-        long creatorId
+        long creatorId,
+        ProcessingFailurePolicy failurePolicy
     ) {
         if (!sourceInterfaceFile.getFileName().endsWith(DATA_FILE_EXTENSION)) {
             return;
         }
 
-        super.processFile(sourceInterfaceFile, inputStream, creatorId);
+        super.processFile(sourceInterfaceFile, inputStream, creatorId, failurePolicy);
     }
 
 }

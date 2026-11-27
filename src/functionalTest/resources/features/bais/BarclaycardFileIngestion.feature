@@ -8,6 +8,19 @@ Feature: Barclaycard file ingestion
     And the "Barclaycard" file ingestion job is requested through testing support
     Then the "Barclaycard" file is processed successfully
     And the extracted "Barclaycard" payments are ready for the external interface
+    And the stored "Barclaycard" JSON file contains the account references in order
+      | 80100001A |
+      | BC-APR-01 |
+    And Fines preprocessing completes for the stored "Barclaycard" file
+    And the transformed "Barclaycard" file has payment type "CASH" and transaction codes in order
+      | 99 |
+      | 99 |
+    And the transformed "Barclaycard" file contains the account references in order
+      | 80100001A |
+      | 88008010000002 |
+    And the transformed "Barclaycard" file contains transaction amounts in pence in order
+      | 1500 |
+      | 500 |
 
   Scenario: A duplicate Barclaycard file is detected
     Given the configured "Barclaycard" file has already been processed
@@ -17,6 +30,7 @@ Feature: Barclaycard file ingestion
     And a duplicate "BARCLAYCARD" interface file is recorded
     And the duplicate "BARCLAYCARD" interface file reuses the original blob
     And the configured "Barclaycard" file no longer exists on bais
+    And Fines preprocessing reuses the original result for the stored "Barclaycard" file
 
   Scenario: An unsupported Barclaycard file is ignored
     Given the configured "Barclaycard" file has an unsupported file on bais
@@ -26,7 +40,7 @@ Feature: Barclaycard file ingestion
     And no "BARCLAYCARD" interface file is stored for the unsupported file
     And the unsupported "Barclaycard" file remains on bais
 
-  Scenario: Invalid Barclaycard content is recorded as failed with its source blob
+  Scenario: Malformed Barclaycard content is recorded as failed with its source blob
     Given the configured "Barclaycard" file has invalid content on bais
     When I am testing as the "opal-test@dev.platform.hmcts.net" user
     And the "Barclaycard" file ingestion job is requested through testing support

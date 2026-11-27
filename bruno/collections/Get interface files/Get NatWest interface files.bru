@@ -1,0 +1,45 @@
+meta {
+  name: Get NatWest interface files
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseURL}}/interface-files?source=NATWEST
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("returns NatWest interface-file metadata", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.interface_files).to.be.an("array");
+    expect(res.body.number_of_results).to.be.a("number");
+    res.body.interface_files.forEach((file) => {
+      expect(file.source).to.equal("NATWEST");
+      expect(file.interface_file_id).to.be.a("number");
+    });
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Lists NatWest records using the same endpoint as the ingestion and APR functional tests.
+  Run again after Fines preprocessing to see the TRANSFORMED_JSON record.
+
+  Find your file_name in the response and inspect its type and status:
+  - SOURCE: original bank file; expected ingestion status SUCCESS.
+  - SOURCE_JSON: extracted payments; expected ingestion status SUCCESS.
+  - TRANSFORMED_JSON: payments after Fines preprocessing; status may be INGESTED.
+
+  Use interface_file_id with the existing Get interface file and Get interface file content requests.
+  The content request currently has a request variable interfaceFileId set to 1; change it to your record ID.
+  The content endpoint serves SUCCESS files. INGESTED transformed files return HTTP 422;
+  the functional test reads their content from blob storage instead.
+
+  An empty list is valid when no NatWest files are stored, including after test cleanup.
+}

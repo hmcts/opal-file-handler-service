@@ -10,11 +10,14 @@ import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import uk.gov.hmcts.common.exceptions.standard.ServiceUnavailableException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobChecksumValidationException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobStorageContainerNotFoundException;
 import uk.gov.hmcts.opal.filehandler.exception.BlobUploadException;
+import uk.gov.hmcts.opal.filehandler.service.ProcessingFailurePolicy;
 
 @Service
 @Slf4j(topic = "opal.InterfaceFilesBlobStoreService")
@@ -23,10 +26,15 @@ public class InterfaceFileBlobStoreService {
 
     private final BlobServiceClient blobServiceClient;
 
-    public void uploadBaisFile(UUID fileUuid, String containerName, InputStream stream, String expectedChecksum) {
+    public void uploadBaisFile(UUID fileUuid, String containerName, InputStream stream, String expectedChecksum,
+        ProcessingFailurePolicy failurePolicy) {
         BlobClient blobClient = blobServiceClient
             .getBlobContainerClient(containerName)
             .getBlobClient(fileUuid.toString());
+
+        if (failurePolicy == ProcessingFailurePolicy.PROPAGATE) {
+            registerRollbackCleanup(blobClient, fileUuid, containerName);
+        }
 
         try {
             blobClient.upload(stream);
@@ -41,6 +49,28 @@ public class InterfaceFileBlobStoreService {
             deleteFailedUpload(blobClient, exception);
             throw exception;
         }
+    }
+
+    private void registerRollbackCleanup(BlobClient blobClient, UUID fileUuid, String containerName) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+            throw new IllegalStateException("Rollback cleanup requires an active database transaction");
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    try {
+                        blobClient.deleteIfExists();
+                    } catch (RuntimeException exception) {
+                        log.error("Rollback cleanup failed for filestoreUuid={} container={}",
+                            fileUuid, containerName, exception);
+                    }
+                } else if (status == STATUS_UNKNOWN) {
+                    log.error("Transaction outcome unknown for filestoreUuid={} container={}; reconciliation required",
+                        fileUuid, containerName);
+                }
+            }
+        });
     }
 
     private void validateChecksum(BlobClient blobClient, UUID filestoreUuid, String expectedChecksum) {

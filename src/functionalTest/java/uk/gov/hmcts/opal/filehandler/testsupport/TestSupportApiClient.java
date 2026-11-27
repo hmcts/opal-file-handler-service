@@ -1,16 +1,16 @@
 package uk.gov.hmcts.opal.filehandler.testsupport;
 
-import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
-import uk.gov.hmcts.opal.filehandler.steps.BearerTokenStepDef;
-import uk.gov.hmcts.opal.filehandler.support.TestHttpClient;
-import uk.gov.hmcts.opal.filehandler.support.TestHttpClient.TestHttpResponse;
-
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import net.serenitybdd.core.Serenity;
+import uk.gov.hmcts.opal.filehandler.config.TestEnvironment;
+import uk.gov.hmcts.opal.filehandler.steps.BearerTokenStepDef;
+import uk.gov.hmcts.opal.filehandler.support.TestHttpClient;
+import uk.gov.hmcts.opal.filehandler.support.TestHttpClient.TestHttpResponse;
 
 /**
  * Lightweight client for file-handler `/testing-support/**` endpoints.
@@ -24,7 +24,7 @@ public class TestSupportApiClient {
      * @return response returned by the endpoint.
      */
     public TestHttpResponse get(String path) {
-        return TestHttpClient.get(testSupportUrl(path), defaultHeaders());
+        return execute("GET", testSupportUrl(path), defaultHeaders(), null);
     }
 
     /**
@@ -35,7 +35,7 @@ public class TestSupportApiClient {
      * @return response returned by the endpoint.
      */
     public TestHttpResponse post(String path, String body) {
-        return TestHttpClient.request("POST", testSupportUrl(path), headersForBody(body), body);
+        return execute("POST", testSupportUrl(path), headersForBody(body), body);
     }
 
     /**
@@ -52,7 +52,7 @@ public class TestSupportApiClient {
             headers.remove("Authorization");
         }
 
-        return TestHttpClient.request("POST", testSupportUrl(path), headers, null);
+        return execute("POST", testSupportUrl(path), headers, null);
     }
 
     /**
@@ -63,7 +63,23 @@ public class TestSupportApiClient {
      * @return response returned by the endpoint.
      */
     public TestHttpResponse patch(String path, String body) {
-        return TestHttpClient.request("PATCH", testSupportUrl(path), headersForBody(body), body);
+        return execute("PATCH", testSupportUrl(path), headersForBody(body), body);
+    }
+
+    private static TestHttpResponse execute(String method, String url, Map<String, String> headers, String body) {
+        TestHttpResponse response = TestHttpClient.request(method, url, headers, body);
+        String evidence = "Request: " + method + " " + url + "\n"
+            + "Request body: " + displayBody(body) + "\n\n"
+            + "Response status: " + response.statusCode() + "\n"
+            + "Response body: " + displayBody(response.body());
+
+        // Keep credentials out of Serenity evidence; only the request line, payload, and response are recorded.
+        Serenity.recordReportData().withTitle("Testing-support HTTP exchange").andContents(evidence);
+        return response;
+    }
+
+    private static String displayBody(String body) {
+        return body == null || body.isBlank() ? "<empty>" : body;
     }
 
     /**

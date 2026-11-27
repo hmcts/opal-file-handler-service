@@ -201,8 +201,24 @@ These additional Maintenance cases do not replace the ticket's Fines acceptance 
 The eight PO-7244 functional happy paths express processing and extracted-payment outcomes.
 `BaisInterfaceFileClient` handles metadata polling/content retrieval and `BaisPaymentAssertions`
 retains the fixture-specific routing, checksum and payment assertions. Existing authentication,
-fixture hooks, tags and Serenity reporting remain in use. Readiness for an external interface means
-successful extraction here; APR resolution and final payment allocation require separate E2E evidence.
+fixture hooks, tags and Serenity reporting remain in use. Fines-routed payment scenarios also verify
+the transformed JSON and its linked Fines interface-file/job records at the end of preprocessing.
+Payment/till processing and final allocation remain outside these ingestion scenarios.
+
+The primary Fines preprocessing fixtures use BU80 (Westminster); cross-business-unit
+scenarios continue to use BU78. BU80 seeds use their own IDs, ownership markers and
+destination bank details so retained BU77 fixtures can coexist without being altered.
+The Allpay base seed references BU80 court `800000000001`.
+
+The DWP functional fixture routes `DWP1234567` to Fines. Its guarded
+`db/dwp/fines/setup.sql` seed maps destination bank `800101 / 80341234` to Fines BU80.
+The happy path verifies five cash payments totalling 10,501 pence and unchanged unmatched
+account references, including their original fixed-width padding. A separate APR scenario verifies
+that `DWP-APR-01` resolves to owned Fines account `80400001A` (ID `88008040000001`)
+in the transformed JSON for a 2,125-pence payment. The duplicate case verifies
+reuse of the original Fines job and transformed file. Shared preprocessing cleanup removes
+only the scenario's unprocessed Fines records before deleting its File Handler artifacts;
+the owned Fines bank mapping, account and APR are retained for subsequent runs.
 
 
 ### Local DWP and Bailiffs rejection checks
@@ -235,3 +251,51 @@ Their observed transformed-business-unit and content-download failures are track
 [PO-11480](https://hmcts.atlassian.net/browse/PO-11480), related to PO-7244 and existing migration work.
 Existing shared eight-interface processing coverage and persistent input-pack tests remain intact.
 See [the retained fixture checklist](src/functionalTest/resources/test-data/banking-cycle/README.md).
+
+### Fines preprocessing in dev PR tests
+
+Each file-handler PR deploys a dedicated Fines consumer using
+`hmctsprod.azurecr.io/opal/fines-service:latest` with `imagePullPolicy: Always`.
+Jenkins records the running image ID so a test run can be traced to its exact Fines image.
+No separate Fines PR is required.
+
+The consumer reads the file-handler PR's preprocessing queue and calls back to that PR's API.
+It runs its existing migrations against a separate `opal-fines-db` database in the PR's PostgreSQL
+instance. Jenkins uses the existing PostgreSQL tunnel and PR credentials to seed and inspect that
+database, and waits for the Fines deployment before running functional tests. Both consumer flags
+are enabled; payment allocation and its job consumer are disabled.
+
+The Fines deployment is disabled in the base chart, so this addition applies only to dev PRs.
+It belongs to the same Helm release and follows the existing PR cleanup lifecycle.
+The deployment requires the startup secrets already used by Fines dev deployments and the
+`opal-system-user` credentials used to call the file-handler API.
+
+The dedicated Fines resources reuse the existing Java chart's HMCTS library templates rather
+than adding a second Java chart dependency. This keeps the release to one PostgreSQL instance,
+with separate file-handler and Fines databases. The Fines process receives only its own environment
+and secrets, while sharing Java health-probe and resource defaults.
+
+The Jenkins database tunnel is supervised for up to 45 minutes. If `kubectl port-forward`
+exits, it restarts on the same loopback port so both JDBC URLs remain valid. During dev PR
+runs, new JDBC connections retry connection-class SQL errors for up to 30 seconds while the
+tunnel recovers. Authentication errors and SQL statements/transactions are not retried.
+Local runs retain immediate connection failure unless
+`FUNCTIONAL_TEST_DB_CONNECTION_RETRY_SECONDS` is explicitly set. Tunnel output and pod restart
+diagnostics are archived under `.functional-test-db-tunnel` even when the functional run fails.
+
+### Master and nightly functional tests on staging
+
+Master and nightly runs use the shared staging Fines service and its existing Azure PostgreSQL
+server. Both pipelines load `fines-service-POSTGRES-HOST`, `PORT`, `DATABASE`, `USER` and `PASS`
+from the staging vault into the corresponding `OPAL_FINES_DB_*` variables. Missing configuration
+fails before the scenarios start. `functionalTest.finesDatabaseOptions` in the staging values adds
+`?sslmode=require`; `FUNCTIONAL_TEST_FINES_DB_URL` still takes precedence when explicitly set.
+
+The `verifyFunctionalTestDatabases` Gradle task opens and validates both database connections
+before staging fixtures run. It does not seed data or run migrations. Master retains the temporary
+`-staging` release URL supplied by the Jenkins deployment/test environment. Nightly uses the shared
+`https://opal-file-handler-service.staging.platform.hmcts.net` API hostname.
+The shared Fines deployment must enable both preprocessing consumer flags, consume
+`banking-interfaces-preprocess-interface-file-fines`, and call back to that same file-handler API.
+The Fines chart change enabling these settings for `stg` must be deployed before the new staging
+preprocessing scenarios can pass. The dedicated Fines instance and supervised tunnel remain dev-only.

@@ -87,7 +87,7 @@ Feature: Get Interface Files
       | target    | OPAL             |
       | type      | SOURCE           |
       | domain    | MAINTENANCE      |
-      | status    | INGESTED         |
+      | status    | SUCCESS         |
       | from_date | 2099-01-01T20:00 |
       | to_date   | 2099-01-01T20:00 |
     Then the response status code is 200
@@ -97,7 +97,7 @@ Feature: Get Interface Files
       | target | OPAL        |
       | type   | SOURCE      |
       | domain | MAINTENANCE |
-      | status | INGESTED    |
+      | status | SUCCESS    |
 
   @JIRA-STORY:PO-3947 @JIRA-EPIC:PO-3495
   Scenario: Returns interface files in created datetime order
@@ -107,9 +107,9 @@ Feature: Get Interface Files
     And the returned interface files are ordered by created datetime ascending
 
   @JIRA-STORY:PO-3947 @JIRA-EPIC:PO-3495
-  Scenario: Returns not acceptable for a non-existent status
+  Scenario: Rejects an invalid status filter
     When I request interface files with source "CAPS_REPORT" and status "INVALID_STATUS"
-    Then the response status code is 406
+    Then the response status code is 400
 
   @JIRA-STORY:PO-3947 @JIRA-EPIC:PO-3495
   Scenario: Returns an empty response when no interface files match

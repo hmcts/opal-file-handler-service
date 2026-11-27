@@ -1,6 +1,7 @@
 package uk.gov.hmcts.opal.filehandler.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -11,25 +12,28 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,11 +41,16 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
+import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -49,6 +58,8 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationToken;
 import uk.gov.hmcts.opal.common.util.SecurityUtil;
+import uk.gov.hmcts.opal.filehandler.config.AbstractBaisFileProcessorConfiguration;
+import uk.gov.hmcts.opal.filehandler.config.AbstractFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.config.BaisFileProcessorConfiguration;
 import uk.gov.hmcts.opal.filehandler.entity.Domain;
 import uk.gov.hmcts.opal.filehandler.entity.Interface;
@@ -141,6 +152,32 @@ class InterfaceFileProcessorServiceTest {
         ingestionLogger.detachAppender(logAppender);
         logAppender.stop();
         mockedSecurityUtil.close();
+    }
+
+    @Test
+    void propagatesValidationFailureWithoutSavingFailedRecord() {
+        InvalidReportFileException failure = new InvalidReportFileException("Invalid file", null);
+        service.validationFailure = failure;
+
+        assertThatThrownBy(() -> service.ingestFile(MATCHING_FILE, FILE_CONTENT, Interface.CAPS_REPORT,
+            Interface.OPAL, Type.SOURCE, Domain.FINES, CONTAINER, 1L, ProcessingFailurePolicy.PROPAGATE))
+            .isSameAs(failure);
+
+        verify(repository, never()).save(any());
+        verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void propagatesChecksumFailureWithoutSavingFailedRecord() {
+        BlobChecksumValidationException failure = new BlobChecksumValidationException(FILE_UUID, CHECKSUM, "actual");
+        doThrow(failure).when(blobStoreService).uploadBaisFile(any(UUID.class), eq(CONTAINER),
+            any(InputStream.class), eq(CHECKSUM), eq(ProcessingFailurePolicy.PROPAGATE));
+
+        assertThatThrownBy(() -> service.ingestFile(MATCHING_FILE, FILE_CONTENT, Interface.CAPS_REPORT,
+            Interface.OPAL, Type.SOURCE, Domain.FINES, CONTAINER, 1L, ProcessingFailurePolicy.PROPAGATE))
+            .isSameAs(failure);
+
+        verify(repository, never()).save(any());
     }
 
     @Nested
@@ -238,6 +275,42 @@ class InterfaceFileProcessorServiceTest {
     }
 
     @Nested
+    @DisplayName("completeIngestion()")
+    class CompleteIngestion {
+
+        @Test
+        @DisplayName("Deletes the source file and marks it successful when source deletion is enabled")
+        void completesAndDeletesSourceFile() {
+            executeTransactionsImmediately();
+            InterfaceFileEntity entity = failedEntity(123L);
+            entity.setStatus(Status.INGESTED);
+            when(baisSftpClient.deleteFile(SFTP_USERNAME, MATCHING_FILE)).thenReturn(true);
+
+            service.completeIngestion(MATCHING_FILE, entity, true);
+
+            assertThat(entity.getStatus()).isEqualTo(Status.SUCCESS);
+            verify(baisSftpClient).deleteFile(SFTP_USERNAME, MATCHING_FILE);
+            verify(repository).save(entity);
+            verify(transactionTemplate).executeWithoutResult(any());
+        }
+
+        @Test
+        @DisplayName("Marks the file successful without deleting it when source deletion is disabled")
+        void completesWithoutDeletingSourceFile() {
+            executeTransactionsImmediately();
+            InterfaceFileEntity entity = failedEntity(123L);
+            entity.setStatus(Status.INGESTED);
+
+            service.completeIngestion(MATCHING_FILE, entity, false);
+
+            assertThat(entity.getStatus()).isEqualTo(Status.SUCCESS);
+            verify(repository).save(entity);
+            verify(transactionTemplate).executeWithoutResult(any());
+            verifyNoInteractions(baisSftpClient);
+        }
+    }
+
+    @Nested
     class Run {
 
         @BeforeEach
@@ -257,6 +330,30 @@ class InterfaceFileProcessorServiceTest {
             service.run();
 
             verify(baisSftpClient).downloadFile(eq(SFTP_USERNAME), eq(selectedFile), any());
+        }
+
+        @ParameterizedTest
+        @MethodSource("uk.gov.hmcts.opal.filehandler.service.InterfaceFileProcessorServiceTest#defaultDomains")
+        void shouldPersistConfiguredDefaultDomain(
+            AbstractBaisFileProcessorConfiguration processorConfig, Interface source, Domain expectedDomain
+        ) {
+            processorConfig.setSftpUsername(SFTP_USERNAME);
+            processorConfig.setContainerName(CONTAINER);
+            processorConfig.setSource(source);
+            processorConfig.setTarget(Interface.OPAL);
+            mockedSecurityUtil.when(SecurityUtil::getOpalJwtAuthenticationTokenForCurrentUser)
+                .thenReturn(mockedToken);
+            when(mockedToken.getUserId()).thenReturn(-1L);
+
+            service = new TestProcessor(featureFlagUtil, baisSftpClient, blobStoreService, repository,
+                transactionTemplate, objectMapper, processorConfig);
+            service.stubFilesToProcess(MATCHING_FILE);
+            service.run();
+
+            assertThat(savedStatuses).containsExactly(Status.INGESTED, Status.SUCCESS);
+            assertThat(service.processCount).isOne();
+            assertThat(service.lastSavedEntity.getOpalDomain()).isEqualTo(expectedDomain);
+            assertThat(service.lastSavedEntity.getSource()).isEqualTo(source);
         }
 
         @Test
@@ -290,7 +387,8 @@ class InterfaceFileProcessorServiceTest {
             assertThat(service.processCount).isZero();
             assertThat(savedStatuses).containsExactly(Status.DUPLICATE);
             assertThat(service.lastSavedEntity.getFilestoreUuid()).isEqualTo(FILE_UUID);
-            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any(),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
             String errorMessage = "File with name 'matching-file.dat' "
                 + "and checksum '3685d7f2b30e9b34b8d3e5496fb45506' for source "
                 + "'CAPS_REPORT' is a duplicate of 123";
@@ -315,7 +413,8 @@ class InterfaceFileProcessorServiceTest {
             doThrow(new BlobUploadException(
                 UUID.randomUUID(), "test-container", new RuntimeException("storage said \"no\"\nretry later")))
                 .when(blobStoreService)
-                .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
+                .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM),
+                    eq(ProcessingFailurePolicy.RECORD_FAILURE));
 
             service.run();
 
@@ -348,7 +447,8 @@ class InterfaceFileProcessorServiceTest {
             assertThat(service.lastSavedEntity.getErrors()).contains("Invalid report");
             assertThat(previousFailure.getStatus()).isEqualTo(Status.FAILED_SUPERSEDED);
             assertThat(service.processCount).isZero();
-            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any());
+            verify(blobStoreService, never()).uploadBaisFile(any(), any(), any(), any(),
+                eq(ProcessingFailurePolicy.RECORD_FAILURE));
             verify(baisSftpClient, never()).deleteFile(any(), any());
         }
 
@@ -422,7 +522,8 @@ class InterfaceFileProcessorServiceTest {
             doThrow(new BlobChecksumValidationException(
                 FILE_UUID, CHECKSUM, "00000000000000000000000000000000"))
                 .when(blobStoreService)
-                .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM));
+                .uploadBaisFile(any(UUID.class), eq("test-container"), any(InputStream.class), eq(CHECKSUM),
+                    eq(ProcessingFailurePolicy.RECORD_FAILURE));
 
             service.run();
 
@@ -432,6 +533,31 @@ class InterfaceFileProcessorServiceTest {
                     + "expected '3685d7f2b30e9b34b8d3e5496fb45506' but was '00000000000000000000000000000000'");
             assertThat(service.processCount).isZero();
             verify(baisSftpClient, never()).deleteFile(any(), any());
+        }
+    }
+
+    private static Stream<Arguments> defaultDomains() {
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(context, false);
+            scanner.addIncludeFilter(new AssignableTypeFilter(AbstractFileProcessorConfiguration.class));
+            scanner.scan(BaisFileProcessorConfiguration.class.getPackageName());
+            context.refresh();
+
+            return Arrays.stream(Interface.values())
+                .filter(source -> source.getConfigComponentName() != null)
+                .filter(source -> BaisFileProcessorConfiguration.class.isAssignableFrom(
+                    context.getType(source.getConfigComponentName())))
+                .map(source -> {
+                    AbstractBaisFileProcessorConfiguration processorConfig = context.getBean(
+                        source.getConfigComponentName(), AbstractBaisFileProcessorConfiguration.class);
+                    Domain expectedDomain = switch (source) {
+                        case CAPS_REPORT -> Domain.MAINTENANCE;
+                        case BTECKOH_REPORT -> Domain.FINES;
+                        default -> null;
+                    };
+                    return Arguments.of(processorConfig, source, expectedDomain);
+                })
+                .toList().stream();
         }
     }
 
@@ -539,7 +665,8 @@ class InterfaceFileProcessorServiceTest {
         protected void processFile(
             InterfaceFileEntity fileEntity,
             InputStream inputStream,
-            long creatorId
+            long creatorId,
+            ProcessingFailurePolicy failurePolicy
         ) {
             processCount++;
             lastProcessConfig = (BaisFileProcessorConfiguration) config;
