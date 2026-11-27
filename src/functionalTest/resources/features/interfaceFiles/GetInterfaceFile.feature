@@ -50,11 +50,11 @@ Feature: Get Interface File
   @JIRA-STORY:PO-7205 @JIRA-EPIC:PO-3495
   Scenario: Rejects an interface file request with an invalid ID format
     When I call GET "/interface-files/110000000X"
-    Then the response status code is 406
+    Then the response status code is 400
     And the response is as expected:
       | detail    | Invalid parameter value format                                                                                                              |
-      | status    | 406                                                                                                                                         |
-      | title     | Not Acceptable                                                                                                                              |
+      | status    | 400                                                                                                                                         |
+      | title     | Bad Request                                                                                                                                 |
       | type      | https://hmcts.gov.uk/problems/type-mismatch                                                                                                 |
       | retriable | false                                                                                                                                       |
       | reason    | Method parameter 'id': Failed to convert value of type 'java.lang.String' to required type 'java.lang.Long'; For input string: "110000000X" |
