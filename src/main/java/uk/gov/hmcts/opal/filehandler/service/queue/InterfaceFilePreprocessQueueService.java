@@ -1,6 +1,6 @@
 package uk.gov.hmcts.opal.filehandler.service.queue;
 
-public interface InterfaceFilePreprocessQueueService {
+public interface InterfaceFilePreprocessQueueService<T> {
 
-    void send(Long interfaceFileId);
+    void send(T obj);
 }
